@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+argoneut_geo:
+{
+ SurfaceY:     130.0e2                      #in cm, vertical distance to the surface
+ Name:         "argoneut"
+ GDML:         "argoneut.gdml"
+ ROOT:         "argoneut.gdml"
+}
+
+END_PROLOG

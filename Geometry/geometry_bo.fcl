@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+bo_geo:
+{
+ SurfaceY:     2.0e2                   #in cm, vertical distance to the surface
+ Name:         "bo"
+ GDML:         "longbo.gdml"
+ ROOT:         "longbo.gdml"
+}
+
+END_PROLOG

@@ -1,0 +1,181 @@
+////////////////////////////////////////////////////////////////////////
+/// \file PlaneGeo.cxx
+///
+/// \version $Id: PlaneGeo.cxx,v 1.12 2010/03/05 19:47:51 bpage Exp $
+/// \author  brebel@fnal.gov
+////////////////////////////////////////////////////////////////////////
+#include <iostream>
+#include <cmath>
+
+
+// ROOT includes
+#include "TMath.h"
+#include "TVector3.h"
+#include "TGeoManager.h"
+#include "TGeoNode.h"
+#include "TGeoMatrix.h"
+
+// Framework includes
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "cetlib/exception.h"
+
+// LArSoft includes
+#include "Geometry/PlaneGeo.h"
+#include "Geometry/WireGeo.h"
+
+namespace geo{
+
+
+  //......................................................................
+  PlaneGeo::PlaneGeo(std::vector<const TGeoNode*>& path, int depth)
+  {
+    // build a matrix to take us from the local to the world coordinates
+    // in one step
+    fGeoMatrix = new TGeoHMatrix(*path[0]->GetMatrix());
+    for(int i = 1; i <= depth; ++i){
+      fGeoMatrix->Multiply(path[i]->GetMatrix());
+    }
+  
+    // find the wires for the plane so that you can use them later
+    this->FindWire(path, depth);
+
+    // view and signal are now set at TPC level with SetView and SetSignal
+    fOrientation = kVertical;
+
+    // determine the pitch of wires in this plane
+    // assumes same pitch between all wires in this plane
+    double xyz[3]  = {0.};
+    double xyz1[3] = {0.};
+
+    double halfL1 = this->Wire(0).HalfL();
+    double halfL2 = this->Wire(1).HalfL();
+
+    this->Wire(0).GetCenter(xyz,  halfL1);
+    this->Wire(1).GetCenter(xyz1, halfL2);
+
+    if(xyz1[2] - xyz[2] < 0.01){
+      this->Wire(0).GetCenter(xyz,  -halfL1);
+      this->Wire(1).GetCenter(xyz1, -halfL2);
+    }
+
+    double thetaz = this->Wire(1).ThetaZ();
+    fWirePitch    = std::abs((xyz1[2]-xyz[2])*std::sin(thetaz) 
+			     -(xyz1[1]-xyz[1])*std::cos(thetaz));
+
+  }
+
+  //......................................................................
+
+  PlaneGeo::~PlaneGeo()
+  {
+    for(unsigned int i = 0; i < fWire.size(); ++i)
+      if(fWire[i]) delete fWire[i];
+  
+    fWire.clear();
+
+    if(fGeoMatrix) delete fGeoMatrix;
+
+  }
+
+  //......................................................................
+
+  void PlaneGeo::FindWire(std::vector<const TGeoNode*>& path,
+			  unsigned int depth) 
+  {
+    // Check if the current node is a wire
+    const char* wire = "volTPCWire";
+    if(strncmp(path[depth]->GetName(), wire, strlen(wire)) == 0){
+      this->MakeWire(path, depth);
+      return;
+    }
+  
+    // Explore the next layer down
+    unsigned int deeper = depth+1;
+    if (deeper>=path.size()) {
+      throw cet::exception("ExceededMaxDepth") << "Exceeded maximum depth";
+    }
+    const TGeoVolume* v = path[depth]->GetVolume();
+    int nd = v->GetNdaughters();
+    for (int i=0; i<nd; ++i) {
+      path[deeper] = v->GetNode(i);
+      this->FindWire(path, deeper);
+    }
+  }
+
+  //......................................................................
+
+  void PlaneGeo::MakeWire(std::vector<const TGeoNode*>& path, int depth) 
+  {
+    fWire.push_back(new WireGeo(path, depth));
+  }
+
+  //......................................................................
+
+  // sort the WireGeo objects
+  void PlaneGeo::SortWires(geo::GeoObjectSorter const& sorter )
+  {
+    sorter.SortWires(fWire);
+    return;
+  }
+
+  //......................................................................
+
+  void PlaneGeo::LocalToWorld(const double* plane, double* world) const
+  {
+    fGeoMatrix->LocalToMaster(plane, world);
+  }
+
+  //......................................................................
+
+  void PlaneGeo::LocalToWorldVect(const double* plane, double* world) const
+  {
+    fGeoMatrix->LocalToMasterVect(plane, world);
+  }
+
+  //......................................................................
+
+  void PlaneGeo::WorldToLocal(const double* world, double* plane) const
+  {
+    fGeoMatrix->MasterToLocal(world, plane);
+  }
+
+  //......................................................................
+
+  const TVector3 PlaneGeo::WorldToLocal( const TVector3& world ) const
+  {
+    double worldArray[4];
+    double localArray[4];
+    worldArray[0] = world.X();
+    worldArray[1] = world.Y();
+    worldArray[2] = world.Z();
+    worldArray[3] = 1.; 
+    fGeoMatrix->MasterToLocal(worldArray,localArray);
+    return TVector3(localArray);
+  }
+
+  //......................................................................
+
+  const TVector3 PlaneGeo::LocalToWorld( const TVector3& local ) const
+  {
+    double worldArray[4];
+    double localArray[4];
+    localArray[0] = local.X();
+    localArray[1] = local.Y();
+    localArray[2] = local.Z();
+    localArray[3] = 1.;
+    fGeoMatrix->LocalToMaster(localArray,worldArray);
+    return TVector3(worldArray);
+  }
+
+  //......................................................................
+
+  // Convert a vector from world frame to the local plane frame
+  // \param world : 3-D array. Vector in world coordinates; input.
+  // \param plane : 3-D array. Vector in plane coordinates; plane.
+  void PlaneGeo::WorldToLocalVect(const double* world, double* plane) const
+  {
+    fGeoMatrix->MasterToLocalVect(world,plane);
+  }
+
+}
+////////////////////////////////////////////////////////////////////////

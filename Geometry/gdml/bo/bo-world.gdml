@@ -1,0 +1,16 @@
+<solids>
+   <box name="World" lunit="cm"
+     x="kWorldW" y="kWorldH" z="kWorldL"
+   />
+</solids>
+
+<structure>
+ <volume name="volWorld" >
+  <materialref ref="Vacuum"/> <solidref ref="World"/>
+   <physvol>
+    <volumeref ref="volDetEnclosure"/>
+    <rotationref ref="rPlus90AboutXPlus90AboutZ"/>
+    <position name="posDetEnclosure" unit="cm" x="-0.5*kBoOuterShellHeight-0.5*kBoTopLidThickness+kTPCTopDistanceToBoTop-3*kTPCWireRingThickness" y="kTPCCenterDistanceToBoCenter" z="0.5*kTPCSheetOuterDiameter"/>
+   </physvol>
+ </volume> 
+</structure>

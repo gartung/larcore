@@ -1,0 +1,58 @@
+<solids>
+ <tube name="TPCSheet" 
+   rmin="0.5*kTPCSheetInnerDiameter"
+   rmax="0.5*kTPCSheetOuterDiameter"
+   z="kTPCSheetHeight"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+ <tube name="TPC"
+   rmin="0.5*kTPCInnerDiameter"
+   rmax="0.5*kTPCOuterDiameter"
+   z="kTPCSheetHeight+2*kTPCBottomRingThickness"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+ <torus name="TPCBottomRing"
+   rmax="0.5*kTPCBottomRingThickness"
+   rtor="0.5*kTPCSheetOuterDiameter"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+</solids>
+<structure>
+ <volume name="volTPCSheet">
+  <materialref ref="G10" />
+  <solidref ref="TPCSheet" />
+ </volume>
+ <volume name="volTPCBottomRing">
+  <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
+  <solidref ref="TPCBottomRing"/>
+ </volume>
+ <volume name="volTPC">
+  <materialref ref="LAr" />
+  <solidref ref="TPC" />
+ <physvol>
+   <volumeref ref="volTPCSheet"/>
+   <position name="posTPCSheet" unit="cm" x="0" y="0" z="0"/>
+  </physvol>
+  <physvol>
+   <volumeref ref="volTPCBottomRing"/>
+   <position name="posTPCBottomRing" unit="cm" x="0" y="0" z="-0.5*kTPCSheetHeight-0.5*kTPCBottomRingThickness"/>
+  </physvol>
+  <physvol>
+   <volumeref ref="volTPCPlane"/>
+   <position name="posTPCWireRingModule1" unit="cm" x="0" y="0" z="0.5*kTPCSheetHeight+0.5*kTPCWireRingThickness"/>
+  </physvol>
+  <physvol>
+   <volumeref ref="volTPCPlane"/>
+   <rotationref ref="r60"/>
+   <position name="posTPCWireRingModule2" unit="cm" x="0" y="0" z="0.5*kTPCSheetHeight+1.5*kTPCWireRingThickness"/>
+  </physvol>
+  <physvol>
+   <volumeref ref="volTPCPlane"/>
+   <rotationref ref="r120"/>
+   <position name="posTPCWireRingModule3" unit="cm" x="0" y="0" z="0.5*kTPCSheetHeight+2.5*kTPCWireRingThickness"/>
+  </physvol>
+ </volume>
+</structure>
