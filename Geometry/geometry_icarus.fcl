@@ -11,4 +11,9 @@ icarus_geo:
                                                   #  [GDMLFileName]_nowires.gdml
 }
 
+icarus_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG

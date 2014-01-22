@@ -13,6 +13,7 @@ services:
   user: {}
 }
 
+services.user.ExptGeoHelperInterface: @local::standard_geometry_helper
 services.user.Geometry: @local::detector_geo
 
 source:

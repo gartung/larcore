@@ -9,4 +9,9 @@ jp250L_geo:
  ROOT:         "jp250L.gdml"
 }
 
+jp250L_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG

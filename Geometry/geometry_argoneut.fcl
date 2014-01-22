@@ -8,4 +8,9 @@ argoneut_geo:
  ROOT:         "argoneut.gdml"
 }
 
+argoneut_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG

@@ -16,6 +16,7 @@
 
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/ChannelMapAlg.h"
+#include "Geometry/ExptGeoHelperInterface.h"
 
 #include <TString.h>
 #include <TVector3.h>
@@ -25,6 +26,7 @@
 #include <map>
 #include <set>
 #include <cstring>
+#include <memory>
 #include <stdint.h>
 
 #include "fhiclcpp/ParameterSet.h"
@@ -348,8 +350,11 @@ namespace geo {
                                                  ///< files specified in the fcl file
     geo::DetId_t              fDetId;            ///< Detector type
     double                    fPositionWiggle;   ///< accounting for rounding errors when testing positions
-    geo::ChannelMapAlg*       fChannelMapAlg;    ///< Object containing the channel to wire mapping
+    std::shared_ptr<const geo::ChannelMapAlg>
+                              fChannelMapAlg;    ///< Object containing the channel to wire mapping
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
+    art::ServiceHandle<geo::ExptGeoHelperInterface>
+                              fExptGeoHelper;    ///< Expt-specific geometry helper service
   };
 
 } // namespace geo

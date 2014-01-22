@@ -25,4 +25,9 @@ standard_geo:
  SortingParameters: {}                            # empty parameter set for default
 }
 
+standard_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG

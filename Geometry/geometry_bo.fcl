@@ -8,4 +8,9 @@ bo_geo:
  ROOT:         "longbo.gdml"
 }
 
+bo_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG
