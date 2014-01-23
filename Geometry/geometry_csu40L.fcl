@@ -9,4 +9,9 @@ csu40L_geo:
  DisableWiresInG4: false                         # Has no wires
 }
 
+csu40L_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
 END_PROLOG

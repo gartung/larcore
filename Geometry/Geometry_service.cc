@@ -29,8 +29,8 @@ extern "C" {
 #include "Geometry/AuxDetGeo.h"
 #include "SummaryData/RunData.h"
 #include "Geometry/ChannelMapStandardAlg.h"
-#include "Geometry/ChannelMapAPAAlg.h"
-#include "Geometry/ChannelMap35Alg.h"
+// #include "Geometry/ChannelMapAPAAlg.h"
+// #include "Geometry/ChannelMap35Alg.h"
 
 // ROOT includes
 #include <TMath.h>
@@ -61,8 +61,9 @@ namespace geo {
     , fDisableWiresInG4 (pset.get< bool              >("DisableWiresInG4", false))
     , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" , false))
     , fPositionWiggle   (pset.get< double            >("PositionEpsilon",  1.e-4))
-    , fChannelMapAlg    (0)
+    , fChannelMapAlg    (nullptr)
     , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
+    , fExptGeoHelper(art::ServiceHandle<geo::ExptGeoHelperInterface>())
   {
     reg.sPreBeginRun.watch(this, &Geometry::preBeginRun);
 
@@ -139,25 +140,25 @@ namespace geo {
       
       switch(fDetId){
       case geo::kBo         : 
-	relpathgdml += "bo";         relpathroot += "bo.gdml";         break;
+	relpathgdml += "bo";         relpathroot += "bo.gdml";    fDetectorName = "bo";     break;
       case geo::kArgoNeuT   : 
-	relpathgdml += "argoneut";   relpathroot += "argoneut.gdml";   break;
+	relpathgdml += "argoneut";   relpathroot += "argoneut.gdml";  fDetectorName = "argoneut";  break;
       case geo::kLArIAT   : 
-	relpathgdml += "lariat";   relpathroot += "lariat.gdml";   break;	
+	relpathgdml += "lariat";   relpathroot += "lariat.gdml";  fDetectorName = "lariat"; break;	
       case geo::kMicroBooNE : 
-	relpathgdml += "microboone"; relpathroot += "microboone.gdml"; break;
+	relpathgdml += "microboone"; relpathroot += "microboone.gdml"; fDetectorName = "microboone"; break;
       case geo::kLBNE10kt   : 
-	relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   break;
+	relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt"; break;
       case geo::kLBNE34kt   : 
-	relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   break;
+	relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   fDetectorName = "lbne34kt"; break;
       case geo::kLBNE35t    : 
-	relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    break;
+	relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    fDetectorName = "lbne35t"; break;
       case geo::kJP250L     : 
-	relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     break;
+	relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     fDetectorName = "jp250L"; break;
       case geo::kCSU40L     : 
-	relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     break;
+	relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     fDetectorName = "csu40l"; break;
       case geo::kICARUS     : 
-	relpathgdml += "icarus";     relpathroot += "icarus.gdml";     break;
+	relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus"; break;
       default               : 
 	throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up";
       }
@@ -191,34 +192,42 @@ namespace geo {
   //......................................................................
   void Geometry::InitializeChannelMap()
   {
-    if(fChannelMapAlg) delete fChannelMapAlg;
-    fChannelMapAlg = 0;
+    // if(fChannelMapAlg) delete fChannelMapAlg;
+    // fChannelMapAlg = 0;
 
-    // set the channel map algorithm if it isn't already
-    switch(fDetId){
-    case geo::kBo         :
-    case geo::kArgoNeuT   :
-    case geo::kLArIAT	  :
-    case geo::kMicroBooNE : 
-    case geo::kJP250L     :
-    case geo::kCSU40L     : 
-    case geo::kICARUS     :
-      fChannelMapAlg = new geo::ChannelMapStandardAlg(fSortingParameters);
-      break;
-    case geo::kLBNE10kt   : 
-    case geo::kLBNE34kt   : 
-      fChannelMapAlg = new geo::ChannelMapAPAAlg(fSortingParameters);
-      break;
-    case geo::kLBNE35t    : 
-      fChannelMapAlg = new geo::ChannelMap35Alg(fSortingParameters);
-      break;
-    default               : 
+    fExptGeoHelper->ConfigureChannelMapAlg( fDetectorName, fSortingParameters, fCryostats );
+    
+    fChannelMapAlg = fExptGeoHelper->GetChannelMapAlg();
+    if ( ! fChannelMapAlg ) {
       throw cet::exception("ChannelMapLoadFail") << "detid invalid, " << fDetId
-						 << " failed to load new channel map";
+                                                 << " failed to load new channel map";
     }
 
-
-    fChannelMapAlg->Initialize(fCryostats);
+//     // set the channel map algorithm if it isn't already
+//     switch(fDetId){
+//     case geo::kBo         :
+//     case geo::kArgoNeuT   :
+//     case geo::kLArIAT	  :
+//     case geo::kMicroBooNE : 
+//     case geo::kJP250L     :
+//     case geo::kCSU40L     : 
+//     case geo::kICARUS     :
+//       fChannelMapAlg = new geo::ChannelMapStandardAlg(fSortingParameters);
+//       break;
+//     case geo::kLBNE10kt   : 
+//     case geo::kLBNE34kt   : 
+//       fChannelMapAlg = new geo::ChannelMapAPAAlg(fSortingParameters);
+//       break;
+//     case geo::kLBNE35t    : 
+//       fChannelMapAlg = new geo::ChannelMap35Alg(fSortingParameters);
+//       break;
+//     default               : 
+//       throw cet::exception("ChannelMapLoadFail") << "detid invalid, " << fDetId
+// 						 << " failed to load new channel map";
+//     }
+// 
+// 
+//     fChannelMapAlg->Initialize(fCryostats);
 
     return;
   }

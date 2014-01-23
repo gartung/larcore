@@ -51,6 +51,11 @@ lbne35t_geo:
 }
 
 
+lbne_geometry_helper:
+{
+ service_provider : LBNEGeometryHelper
+}
+
 
 
 END_PROLOG
