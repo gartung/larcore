@@ -201,6 +201,7 @@ namespace geo {
     if ( ! fChannelMapAlg ) {
       throw cet::exception("ChannelMapLoadFail") << "detid invalid, " << fDetId
                                                  << " failed to load new channel map";
+    }
 
 //     // set the channel map algorithm if it isn't already
 //     switch(fDetId){
