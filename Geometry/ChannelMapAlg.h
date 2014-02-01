@@ -38,8 +38,8 @@ namespace geo{
                                	                       unsigned int wire,		   
                                	                       unsigned int tpc,		   
                                	                       unsigned int cstat)    const = 0;
-   virtual const View_t	       	    View( uint32_t const channel ) 	      const = 0;
-   virtual const SigType_t     	    SignalType( uint32_t const channel )      const = 0;
+   virtual View_t	       	    View( uint32_t const channel ) 	      const = 0;
+   virtual SigType_t     	    SignalType( uint32_t const channel )      const = 0;
    virtual std::set<View_t>  const& Views()                                   const = 0;
    virtual std::set<PlaneID> const& PlaneIDs()                                const = 0;
    unsigned int                     NearestWire(const TVector3& worldPos,

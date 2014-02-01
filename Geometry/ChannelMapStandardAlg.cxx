@@ -273,7 +273,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  const SigType_t ChannelMapStandardAlg::SignalType(uint32_t const channel) const
+  SigType_t ChannelMapStandardAlg::SignalType(uint32_t const channel) const
   {
 
     // still assume one cryostat for now -- faster
@@ -300,7 +300,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  const View_t ChannelMapStandardAlg::View(uint32_t const channel) const
+  View_t ChannelMapStandardAlg::View(uint32_t const channel) const
   {
 
     // still assume one cryostat for now -- faster
