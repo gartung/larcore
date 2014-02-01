@@ -106,10 +106,10 @@ namespace geo {
                                                                             // list of possible
                                                                             // WireIDs
 
-    const SigType_t     SignalType(uint32_t     const channel)    const; // return the signal type for a given channel
-    const SigType_t     SignalType(geo::PlaneID const pid)        const; // return the signal type for a given channel
-    const View_t        View(uint32_t   const channel)            const; // return the view type for a given channel
-    const View_t        View(geo::PlaneID const pid)              const; // return the view type for a given channel
+    SigType_t         SignalType(uint32_t     const channel)    const; // return the signal type for a given channel
+    SigType_t         SignalType(geo::PlaneID const pid)        const; // return the signal type for a given channel
+    View_t            View(uint32_t   const channel)            const; // return the view type for a given channel
+    View_t            View(geo::PlaneID const pid)              const; // return the view type for a given channel
     std::set<View_t>  const& Views()                              const; // return vector of possible views in the detector
     std::set<PlaneID> const& PlaneIDs()                           const; // return vector of possible PlaneIDs in the detector
 
