@@ -94,7 +94,7 @@ namespace geo{
   }
 
   //......................................................................
-  void GeometryTest::analyze(art::Event const& evt)
+  void GeometryTest::analyze(art::Event const& /* evt */)
   {
     art::ServiceHandle<geo::Geometry> geom;
 

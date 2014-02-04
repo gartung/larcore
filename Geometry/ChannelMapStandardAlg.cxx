@@ -205,11 +205,11 @@ namespace geo{
     // This part is the actual calculation of the nearest wire number, where we assume
     //  uniform wire pitch and angle within a wireplane
     
-    unsigned int NearestWireNumber = (unsigned int)(worldPos[1]*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
+    int NearestWireNumber = int(worldPos[1]*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
 						    + worldPos[2]*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
 						    - fFirstWireProj[cstat][TPCNo][PlaneNo]);
     
-    unsigned int wireNumber = NearestWireNumber;
+    unsigned int wireNumber = (unsigned int) NearestWireNumber;
     
     // If we are outside of the wireplane range, throw an exception
     // (this response maintains consistency with the previous
@@ -273,7 +273,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  const SigType_t ChannelMapStandardAlg::SignalType(uint32_t const channel) const
+  SigType_t ChannelMapStandardAlg::SignalType(uint32_t const channel) const
   {
 
     // still assume one cryostat for now -- faster
@@ -300,7 +300,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  const View_t ChannelMapStandardAlg::View(uint32_t const channel) const
+  View_t ChannelMapStandardAlg::View(uint32_t const channel) const
   {
 
     // still assume one cryostat for now -- faster

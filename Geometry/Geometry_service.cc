@@ -526,26 +526,26 @@ namespace geo {
   }
 
   //......................................................................
-  const SigType_t Geometry::SignalType(uint32_t const channel) const
+  SigType_t Geometry::SignalType(uint32_t const channel) const
   {
     return fChannelMapAlg->SignalType(channel);
   }
 
   //......................................................................
-  const SigType_t Geometry::SignalType(geo::PlaneID const pid) const
+  SigType_t Geometry::SignalType(geo::PlaneID const pid) const
   {
     return this->Cryostat(pid.Cryostat).TPC(pid.TPC).Plane(pid.Plane).SignalType();
   }
 
 
   //......................................................................
-  const View_t Geometry::View(uint32_t const channel) const
+  View_t Geometry::View(uint32_t const channel) const
   {
     return fChannelMapAlg->View(channel);
   }
 
   //......................................................................
-  const View_t Geometry::View(geo::PlaneID const pid) const
+  View_t Geometry::View(geo::PlaneID const pid) const
   {
     return this->Cryostat(pid.Cryostat).TPC(pid.TPC).Plane(pid.Plane).View();
   }
