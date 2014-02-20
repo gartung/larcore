@@ -205,9 +205,9 @@ namespace geo{
     // This part is the actual calculation of the nearest wire number, where we assume
     //  uniform wire pitch and angle within a wireplane
     
-    int NearestWireNumber = int(worldPos[1]*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
-						    + worldPos[2]*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
-						    - fFirstWireProj[cstat][TPCNo][PlaneNo]);
+    int NearestWireNumber = int(std::nearbyint(worldPos[1]*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
+					       + worldPos[2]*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
+					       - fFirstWireProj[cstat][TPCNo][PlaneNo]));
     
     unsigned int wireNumber = (unsigned int) NearestWireNumber;
     
