@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v1_00_02
+parent	larcore	v1_00_03
 defaultqual	e4
 
 # These optional lines define the installed directories where
@@ -15,8 +15,9 @@ defaultqual	e4
 # fcldir  product_dir  fcl
 # libdir  fq_dir       lib
 # bindir  fq_dir       bin
-#
+
 fcldir product_dir job
+gdmldir product_dir
 #
 # geant4 is included via root, but we also list it explicitly here
 # because we are going to set GDML_SCHEMA_DIR 
@@ -28,7 +29,7 @@ gcc		v4_8_1
 
 # list products required ONLY for the build
 # any products here must NOT have qualifiers
-only_for_build  cetbuildtools   v3_07_07
+only_for_build  cetbuildtools   v3_07_10
   
 # e4  - with gcc 4.8.1 and -std=c++11
 qualifier	art		geant4		gcc	notes
