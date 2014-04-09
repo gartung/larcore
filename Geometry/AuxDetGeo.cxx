@@ -31,7 +31,7 @@ namespace geo{
     if(vc){
       fTotalVolume = vc;
       if(!fTotalVolume)
-        throw cet::exception("AuxDetGeo") << "cannot find AuxDet volume";
+        throw cet::exception("AuxDetGeo") << "cannot find AuxDet volume\n";
       
     }// end if found volume
     

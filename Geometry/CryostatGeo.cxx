@@ -73,7 +73,7 @@ namespace geo{
     if(vc){
       fVolume = vc;
       if(!vc)
-	throw cet::exception("CryostatGeo") << "cannot find cryostat outline volume";
+	throw cet::exception("CryostatGeo") << "cannot find cryostat outline volume\n";
       
     }// end if found volume
 
@@ -129,7 +129,7 @@ namespace geo{
     //explore the next layer down
     unsigned int deeper = depth+1;
     if(deeper >= path.size()){
-      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth";
+      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth\n";
     }
 
     const TGeoVolume *v = path[depth]->GetVolume();
@@ -183,7 +183,7 @@ namespace geo{
   {
     if(itpc >= fTPCs.size()){
       throw cet::exception("TPCOutOfRange") << "Request for non-existant TPC " 
-					    << itpc;
+					    << itpc << "\n";
     }
 
     return *fTPCs[itpc];
@@ -205,7 +205,7 @@ namespace geo{
     //explore the next layer down
     unsigned int deeper = depth+1;
     if(deeper >= path.size()){
-      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth";
+      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth\n";
     }
 
     const TGeoVolume *v = path[depth]->GetVolume();
@@ -291,7 +291,7 @@ namespace geo{
       throw cet::exception("Geometry") << "Can't find TPC for position (" 
 				       << worldLoc[0] << ","
 				       << worldLoc[1] << "," 
-				       << worldLoc[2] << ")";
+				       << worldLoc[2] << ")\n";
 			
     return this->TPC(tpc);
   }

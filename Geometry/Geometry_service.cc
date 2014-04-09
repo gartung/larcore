@@ -95,12 +95,12 @@ namespace geo {
     if( !sp.find_file(GDMLFileName, fGDMLfile) )
       throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
 				       << GDMLFileName
-				       << "\n bail ungracefully.";
+				       << "\n bail ungracefully.\n";
 
     if( !sp.find_file(ROOTFileName, fROOTfile) )
       throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
 				       << ROOTFileName
-				       << "\n bail ungracefully.";
+				       << "\n bail ungracefully.\n";
 
     
     this->LoadGeometryFile(fGDMLfile, fROOTfile);
@@ -160,7 +160,7 @@ namespace geo {
       case geo::kICARUS     : 
 	relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus"; break;
       default               : 
-	throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up";
+	throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up\n";
       }
       
       if(fDisableWiresInG4) relpathgdml+="_nowires.gdml";
@@ -173,12 +173,12 @@ namespace geo {
       if( !sp.find_file(relpathgdml, fGDMLfile) )
 	throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
 					 << relpathgdml
-					 << "\n bail ungracefully.";
+					 << "\n bail ungracefully.\n";
 
       if( !sp.find_file(relpathroot, fROOTfile) )
 	throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
 					 << relpathroot
-					 << "\n bail ungracefully.";
+					 << "\n bail ungracefully.\n";
       
       this->LoadGeometryFile(fGDMLfile, fROOTfile);
     }
@@ -239,11 +239,11 @@ namespace geo {
     struct stat sb;
     if (gdmlfile.empty() || stat(gdmlfile.c_str(), &sb)!=0)
       // Failed to resolve the file name
-      throw cet::exception("Geometry") << "No GDML Geometry file " << gdmlfile << " found!";
+      throw cet::exception("Geometry") << "No GDML Geometry file " << gdmlfile << " found!\n";
 
     if (rootfile.empty() || stat(rootfile.c_str(), &sb)!=0)
       // Failed to resolve the file name
-      throw cet::exception("Geometry") << "No ROOT Geometry file " << rootfile << " found!";
+      throw cet::exception("Geometry") << "No ROOT Geometry file " << rootfile << " found!\n";
  
     // clear the Cryostat array
     for (size_t i = 0; i < fCryostats.size(); ++i) {
@@ -347,7 +347,7 @@ namespace geo {
     if(cstat >= fCryostats.size()) 
       throw cet::exception("Geometry") << "Cryostat " 
 				       << cstat 
-				       << " does not exist";
+				       << " does not exist\n";
 
     return *fCryostats[cstat];
   }
@@ -366,7 +366,7 @@ namespace geo {
     if(ad >= fAuxDets.size())
     throw cet::exception("Geometry") << "AuxDet "
     << ad
-    << " does not exist";
+    << " does not exist\n";
     
     return *fAuxDets[ad];
   }
@@ -446,7 +446,7 @@ namespace geo {
       throw cet::exception("Geometry") << "Can't find Cryostat for position (" 
 				       << worldLoc[0] << ","
 				       << worldLoc[1] << "," 
-				       << worldLoc[2] << ")";
+				       << worldLoc[2] << ")\n";
 			
     return this->Cryostat(cstat);
   }
@@ -504,7 +504,7 @@ namespace geo {
     throw cet::exception("Geometry") << "Can't find AuxDet for position ("
     << worldLoc[0] << ","
     << worldLoc[1] << ","
-    << worldLoc[2] << ")";
+    << worldLoc[2] << ")\n";
     
     return this->AuxDet(ad);
   }
@@ -727,7 +727,7 @@ namespace geo {
   {
     const TGeoShape* s = gGeoManager->GetVolume("volWorld")->GetShape();
     if(!s)
-      throw cet::exception("Geometry") << "no pointer to world volume TGeoShape";
+      throw cet::exception("Geometry") << "no pointer to world volume TGeoShape\n";
 
     if (xlo || xhi) {
       double x1, x2;
@@ -819,7 +819,7 @@ namespace geo {
     //explore the next layer down
     unsigned int deeper = depth+1;
     if(deeper >= path.size()){
-      throw cet::exception("Geometry") << "exceeded maximum TGeoNode depth";
+      throw cet::exception("Geometry") << "exceeded maximum TGeoNode depth\n";
     }
 
     const TGeoVolume *v = path[depth]->GetVolume();
@@ -850,7 +850,7 @@ namespace geo {
     //explore the next layer down
     unsigned int deeper = depth+1;
     if(deeper >= path.size()){
-      throw cet::exception("Geometry") << "exceeded maximum TGeoNode depth";
+      throw cet::exception("Geometry") << "exceeded maximum TGeoNode depth\n";
     }
     
     const TGeoVolume *v = path[depth]->GetVolume();
@@ -882,7 +882,7 @@ namespace geo {
 
     throw cet::exception("Geometry") << "could not find specified volume " 
 				     << vol
-				     << " to determine total mass"; 
+				     << " to determine total mass\n"; 
   }
 
   //......................................................................
@@ -974,7 +974,7 @@ namespace geo {
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
 							     << "worldPos: " 
-							     << worldPos.size();
+							     << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestWire(wp, PlaneNo, TPCNo, cstat);
   }
@@ -996,7 +996,7 @@ namespace geo {
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
 							     << "worldPos: " 
-							     << worldPos.size();
+							     << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestWireID(wp,PlaneNo,TPCNo,cstat);
   }
@@ -1029,7 +1029,7 @@ namespace geo {
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
 							     << "worldPos: " 
-							     << worldPos.size();
+							     << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestChannel(wp, PlaneNo, TPCNo, cstat);
   }
@@ -1409,7 +1409,7 @@ namespace geo {
     else{
       throw cet::exception("OpDetCryoToOpID Error") << "Coordinates c=" << c 
 						    << ", o=" << o 
-						    << " out of range. Abort";
+						    << " out of range. Abort\n";
     }
     
     // if all is well, we never get to this point in the method
@@ -1448,7 +1448,7 @@ namespace geo {
       }
     }
     // If we made it here, we didn't find the right combination. abort
-    throw cet::exception("OpID To OpDetCryo error")<<"OpID out of range, "<< OpChannel;
+    throw cet::exception("OpID To OpDetCryo error")<<"OpID out of range, "<< OpChannel << "\n";
 
     return;
   }

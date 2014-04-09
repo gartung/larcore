@@ -92,7 +92,7 @@ namespace geo{
     // Explore the next layer down
     unsigned int deeper = depth+1;
     if (deeper>=path.size()) {
-      throw cet::exception("ExceededMaxDepth") << "Exceeded maximum depth";
+      throw cet::exception("ExceededMaxDepth") << "Exceeded maximum depth\n";
     }
     const TGeoVolume* v = path[depth]->GetVolume();
     int nd = v->GetNdaughters();

@@ -43,7 +43,7 @@ namespace geo{
     if(vc){
       fTotalVolume = vc;
       if(!vc){ 
-	throw cet::exception("Geometry") << "cannot find detector outline volume - bail ungracefully";
+	throw cet::exception("Geometry") << "cannot find detector outline volume - bail ungracefully\n";
       }
       
       // loop over the daughters of this node and look for the active volume
@@ -143,7 +143,7 @@ namespace geo{
     //explore the next layer down
     unsigned int deeper = depth+1;
     if(deeper >= path.size()){
-      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth";
+      throw cet::exception("BadTGeoNode") << "exceeded maximum TGeoNode depth\n";
     }
 
     const TGeoVolume *v = path[depth]->GetVolume();
@@ -213,7 +213,7 @@ namespace geo{
   const PlaneGeo& TPCGeo::Plane(unsigned int iplane) const
   {
     if(iplane >= fPlanes.size()){
-      throw cet::exception("PlaneOutOfRange") << "Request for non-existant plane " << iplane;
+      throw cet::exception("PlaneOutOfRange") << "Request for non-existant plane " << iplane << "\n";
     }
 
     return *fPlanes[iplane];

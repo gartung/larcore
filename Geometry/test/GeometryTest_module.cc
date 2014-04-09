@@ -378,7 +378,7 @@ namespace geo{
       else if(dir == geo::kPosX) 
 	mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards positive x values";
       else{
-	throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown";
+	throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
       }
 
       mf::LogVerbatim("GeometryTest") << "\t testing PositionToTPC...";
@@ -392,7 +392,7 @@ namespace geo{
 
       if(tpc != t)
 	throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
-							 << tpc << " should be " << t;
+							 << tpc << " should be " << t << "\n";
 
       mf::LogVerbatim("GeometryTest") << "done.";
     }
@@ -446,7 +446,7 @@ namespace geo{
 	      throw cet::exception("BadChannelLookup") << "requested channel " << channel 
 						       << "expected to return" << cs << "," << tpc
 						       << "," << plane << "," << wire << "\n"
-						       << "no returned geo::WireID structs matched";
+						       << "no returned geo::WireID structs matched\n";
             }
 
 	    if(geom->SignalType(channel) != geom->Plane(plane, tpc, cs).SignalType() )
@@ -457,7 +457,7 @@ namespace geo{
 						       << cs << ", " << tpc << ", " << plane << ", " << wire
 						       << "), got: Plane(" << plane << ", " << tpc 
 						                           << ", " << cs << ").SignalType() = "
-						       << geom->Plane(plane, tpc, cs).SignalType();
+						       << geom->Plane(plane, tpc, cs).SignalType() << "\n";
 
 
 	    if(geom->View(channel) != geom->Plane(plane, tpc, cs).View() )
@@ -468,7 +468,7 @@ namespace geo{
 						       << cs << ", " << tpc << ", " << plane << ", " << wire
 						       << "), got: Plane(" << plane << ", " << tpc 
 						                           << ", " << cs << ").View() = "
-						       << geom->Plane(plane, tpc, cs).View();
+						       << geom->Plane(plane, tpc, cs).View() << "\n";
 
 	  }
 	}
@@ -521,7 +521,7 @@ namespace geo{
 							<< "Cryostat " << cs
 							<< ", TPC " << t
 							<< ", Plane " << i
-							<< ";  at wire " << j;
+							<< ";  at wire " << j << "\n";
 
 	  }// end loop over wires
 	}// end loop over planes
@@ -560,14 +560,14 @@ namespace geo{
 							<< "Cryostat " << cs
 							<< ", TPC " << t
 							<< ", Plane " << i
-							<< ";  at wire " << j;
+							<< ";  at wire " << j << "\n";
             // bottom TPC wires increase in +y
 	    else if(tpcworld[1] < 0 && xyz[1] < xyzprev[1])
 	      throw cet::exception("WireOrderProblem") 	<< "\n\tbottom TPC wires do not increase in +y order in"
                                                         << "Cryostat " << cs
 							<< ", TPC " << t
                                                         << ", Plane " << i 
-                                                        << ";  at wire " << j;
+                                                        << ";  at wire " << j << "\n";
 	  }// end loop over wires
 	}// end loop over planes
       }// end loop over tpcs
@@ -730,7 +730,7 @@ namespace geo{
 							  << " for cryostat " << c
 							  << ", tpc " << t
 							  << ", plane " << p
-							  << "; wires: " << w << ", " << w+1;
+							  << "; wires: " << w << ", " << w+1 << "\n";
 	    }// end if pitch is wrong
 	  }// end loop over wires
         }// end loop over planes
@@ -760,7 +760,7 @@ namespace geo{
 	double pitch = std::abs(geom->TPC(t).PlanePitch(p, p+1));
 	if(std::abs(pitch - shouldbe) > 0.1*shouldbe){
 	  throw cet::exception("UnexpectedPlanePitch") << "\n\tunexpected pitch: " 
-						       << pitch << "/" << shouldbe; 
+						       << pitch << "/" << shouldbe << "\n"; 
 	}// end if wrong pitch
       }// end loop over planes
     }// end loop over TPCs

@@ -57,7 +57,7 @@ inline void geo::ProjectToBoxEdge(const double xyz[],
       !(xyz[1]>=ylo && xyz[1]<=yhi) ||
       !(xyz[2]>=zlo && xyz[2]<=zhi)  )
     throw cet::exception("ProjectToBoxEdge") << "desired point is not"
-					     << " in the specififed box"; 
+					     << " in the specififed box\n"; 
   
   // Compute the distances to the x/y/z walls
   double dx = 99.E99;

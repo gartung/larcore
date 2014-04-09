@@ -160,7 +160,7 @@ namespace geo{
     
     // first check if this channel ID is legal
     if(channel > fTopChannel)
-      throw cet::exception("Geometry") << "ILLEGAL CHANNEL ID for channel " << channel;
+      throw cet::exception("Geometry") << "ILLEGAL CHANNEL ID for channel " << channel << "\n";
     
     // then go find which plane, tpc and cryostat it is in from the information we stored earlier
     bool foundWid(false);
@@ -219,12 +219,12 @@ namespace geo{
       if(NearestWireNumber < 0 ) wireNumber = 0;
       else                       wireNumber = fWireCounts[cstat][TPCNo][PlaneNo] - 1;
       
-      throw cet::exception("Can't Find Nearest Wire") << "for position (" 
-						      << worldPos[0] << ","
-						      << worldPos[1] << "," 
-						      << worldPos[2] << ")"
-						      << " approx wire number # " 
-						      << wireNumber;
+      throw cet::exception("Geometry") << "Can't Find Nearest Wire for position (" 
+				       << worldPos[0] << ","
+				       << worldPos[1] << "," 
+				       << worldPos[2] << ")"
+				       << " approx wire number # " 
+				       << wireNumber << "\n";
     }
     
     WireID wid(cstat, PlaneNo, TPCNo, wireNumber);
