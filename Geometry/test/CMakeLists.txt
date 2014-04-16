@@ -1,3 +1,4 @@
+cet_enable_asserts()
 
 simple_plugin ( GeometryTest "module"
                      Geometry
