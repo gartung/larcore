@@ -4,6 +4,9 @@
  * @author  Gianluca Petrillo (petrillo@fnal.gov)
  * @date    April 22, 2014
  * @version 1.0
+ *
+ * A lot of the code is wrapped in "#ifndef __GCCXML__" areas in order not to
+ * disturb GenReflex, which does not know about C++11.
  */
 
 
@@ -14,13 +17,14 @@
 // C/C++ standard library
 #include <cstddef> // std::ptrdiff_t
 #include <stdexcept> // std::out_of_range()
-#include <type_traits> // std::is_integral
 #include <vector>
 #include <ostream>
 #include <iterator> // std::distance()
 #include <algorithm> // std::lower_bound(), std::max()
 
-
+#ifndef __GCCXML__
+#	include <type_traits> // std::is_integral
+#endif // __GCCXML__
 
 /// Namespace for generic larsoft
 namespace lar {
@@ -57,14 +61,15 @@ class const_value_box {
 }; // class const_value_box
 
 
+#ifndef __GCCXML__
 /// @brief A constant iterator returning always the same value
 /// @param T type of the value returned by dereferenciation
 template <typename T>
 class value_const_iterator:
 	public std::iterator<std::random_access_iterator_tag, T>
 {
-	using base_t = std::iterator<std::random_access_iterator_tag, T>; ///< base type
-	using this_t = value_const_iterator<T>; ///< alias for this type
+	typedef std::iterator<std::random_access_iterator_tag, T> base_t; ///< base type
+	typedef value_const_iterator<T> this_t; ///< alias for this type
 	
 		public:
 	
@@ -74,10 +79,10 @@ class value_const_iterator:
 	/// Default constructor: use the default value
 	value_const_iterator(): value() {}
 	
-	/// Constructor: specify the value that will be returned
+	/// Constructor: value that will be returned
 	value_const_iterator(value_type new_value): value(new_value) {}
 	
-	/// Constructor: specify the value to be returned and the current iterator "position"
+	/// Constructor: value to be returned and current iterator "position"
 	value_const_iterator(value_type new_value, difference_type offset):
 		index(offset), value(new_value) {}
 	
@@ -163,6 +168,7 @@ class value_iterator: public value_const_iterator<T> {
 	
 }; // class value_iterator<>
 */
+#endif // __GCCXML__
 
 
 /**
@@ -177,14 +183,16 @@ class range_t {
 	typedef SIZE size_type; ///< type for the indices in the range
 	typedef std::ptrdiff_t difference_type; ///< type for index difference
 	
+#ifndef __GCCXML__
 	static_assert
 		(std::is_integral<size_type>::value, "range_t needs an integral type");
+#endif // __GCCXML__
 	
-	size_type offset{0}; ///< offset (absolute index) of the first element
-	size_type last{0}; ///< offset (absolute index) after the last element
+	size_type offset; ///< offset (absolute index) of the first element
+	size_type last; ///< offset (absolute index) after the last element
 	
 	/// Default constructor: empty range
-	range_t() = default;
+	range_t(): offset(0), last(0) {}
 	
 	/// Constructor from first and last index
 	range_t(size_type from, size_type to):
@@ -438,7 +446,7 @@ class range_t {
  */
 template <typename T>
 class sparse_vector {
-	using this_t = sparse_vector<T>;
+	typedef sparse_vector<T> this_t;
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	//  - - - public interface
 		public:
@@ -474,26 +482,31 @@ class sparse_vector {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	//  - - - public methods
 	/// Default constructor: an empty vector
-	sparse_vector() {}
+	sparse_vector(): nominal_size(0), ranges() {}
 	
 	/// Constructor: a vector with new_size elements in the void
-	sparse_vector(size_type new_size) { resize(new_size); }
+	sparse_vector(size_type new_size): nominal_size(0), ranges()
+		{ resize(new_size); }
 	
 	/**
 	 * @brief Constructor: a solid vector from an existing STL vector
 	 * @param from vector to copy data from
 	 * @param offset (default: 0) index the data starts from (preceeded by void)
 	 */
-	sparse_vector(const vector_t& from, size_type offset = 0)
-	  { add_range(offset, from.begin(), from.end()); }
+	sparse_vector(const vector_t& from, size_type offset = 0):
+		nominal_size(0), ranges()
+		{ add_range(offset, from.begin(), from.end()); }
 	
+#ifndef __GCCXML__
 	/**
 	 * @brief Constructor: a solid vector from an existing STL vector
 	 * @param from vector to move data from
 	 * @param offset (default: 0) index the data starts from (preceeded by void)
 	 */
-	sparse_vector(vector_t&& from, size_type offset = 0)
-	  { add_range(offset, std::move(from)); }
+	sparse_vector(vector_t&& from, size_type offset = 0):
+		nominal_size(0), ranges()
+		{ add_range(offset, std::move(from)); }
+#endif // __GCCXML__
 	
 	
 	//  - - - STL-like interface
@@ -550,7 +563,7 @@ class sparse_vector {
 	 * @throw out_of_range if index is not in the vector
 	 * @see is_back_void()
 	 */
-	void is_void(size_type index) const
+	bool is_void(size_type index) const
 		{
 			if (ranges.empty() || (index >= size()))
 				throw std::out_of_range("empty sparse vector");
@@ -564,6 +577,10 @@ class sparse_vector {
 	/// @see is_void()
 	bool back_is_void() const
 		{ return ranges.empty() || (ranges.back().end_index() < size()); }
+	
+	
+	/// Returns the number of non-void cells
+	size_type count() const;
 	///@}
 	
 	
@@ -627,6 +644,7 @@ class sparse_vector {
 	template <typename CONT>
 	void assign(const CONT& new_data) { clear(); append(new_data); }
 	
+#ifndef __GCCXML__
 	/**
 	 * @brief Moves data from a vector
 	 * @param new_data vector with the data to be moved
@@ -635,6 +653,7 @@ class sparse_vector {
 	 */
 	void assign(vector_t&& new_data) { clear(); append(std::move(new_data)); }
 	//@}
+#endif // __GCCXML__
 	///@}
 	
 	
@@ -647,6 +666,15 @@ class sparse_vector {
 	
 	/// Returns the internal list of non-void ranges
 	const range_list_t& get_ranges() const { return ranges; }
+	
+	/// Returns the internal list of non-void ranges
+	size_type n_ranges() const { return ranges.size(); }
+	
+	/// Returns a constant iterator to the first data range
+	range_const_iterator begin_range() const { return ranges.begin(); }
+	
+	/// Returns a constant iterator to after the last data range
+	range_const_iterator end_range() const { return ranges.end(); }
 	
 	
 	//@{
@@ -751,6 +779,7 @@ class sparse_vector {
 	const datarange_t& add_range(size_type offset, const CONT& new_data)
 		{ return add_range(offset, new_data.begin(), new_data.end()); }
 	
+#ifndef __GCCXML__
 	/**
 	 * @brief Adds a sequence of elements as a range with specified offset
 	 * @param offset where to add the elements
@@ -765,6 +794,7 @@ class sparse_vector {
 	 * added; otherwise, it is just copied.
 	 */
 	const datarange_t& add_range(size_type offset, vector_t&& new_data);
+#endif // __GCCXML__
 	//@}
 	
 	//@{
@@ -788,9 +818,11 @@ class sparse_vector {
 	const datarange_t& append(const CONT& new_data)
 		{ return add_range(size(), new_data); }
 	
+#ifndef __GCCXML__
 	const datarange_t& append(vector_t&& new_data)
 		{ return add_range(size(), std::move(new_data)); }
 	//@}
+#endif // __GCCXML__
 	
 	
 	//@{
@@ -833,7 +865,11 @@ class sparse_vector {
 	
 	///@{ @name Static members for dealing with this type of value
 	
+#ifndef __GCCXML__
 	static constexpr value_type value_zero{0}; ///< a representation of 0
+#else
+	static const value_type value_zero;
+#endif // __GCCXML__
 	
 	/// Returns the module of the specified value
 	static value_type abs(value_type v) { return (v < value_zero)? -v: v; }
@@ -857,37 +893,16 @@ class sparse_vector {
 	///@{ @name Static members related to data size and optimization
 	
 	/// Returns the expected size taken by a vector of specified size
-	static constexpr size_t expected_vector_size(size_t size)
-		{
-			// apparently, a chunk of heap memory takes at least 32 bytes;
-			// that means that a vector of 1 or 5 32-bit integers takes the same
-			// space; the overhead appears to be 8 bytes, which can be allocated
-			return sizeof(vector_t)
-				+ std::max(size_t(32), (alignof(datarange_t)*size + 8));
-		} // expected_vector_size()
+	static size_t expected_vector_size(size_t size);
 	
 	/// Minimum optimal gap between ranges (a guess)
-	static constexpr size_t min_gap()
-		{
-			// we assume here that there is no additional overhead by alignment;
-			// the gap adds the space of another datarange_t, including the vector,
-			// its data and overhead from heap (apparently, 8 bytes);
-			// 
-			return (sizeof(datarange_t) + 8) / sizeof(value_type) + 1; // round up
-		}
+	static size_t min_gap();
 	
 	/// Returns if merging the two specified ranges would save memory
 	static bool should_merge(
 		const typename datarange_t::base_t& a,
 		const typename datarange_t::base_t& b
-		)
-		{
-			size_type gap_size = (a < b)?
-				b.begin_index() - a.begin_index() - a.size():
-				a.begin_index() - b.begin_index() - b.size();
-			return expected_vector_size(a.size() + b.size() + gap_size)
-				<= expected_vector_size(a.size()) + expected_vector_size(b.size());
-		} // should_merge()
+		);
 	///@}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -896,12 +911,15 @@ class sparse_vector {
 	/// Special little box to allow void elements to be treated as references.
 	class const_reference {
 			protected:
-		const value_type* ptr{nullptr};
+		const value_type* ptr;
 			public:
 		const_reference(const value_type* pValue = 0): ptr(pValue) {}
 		const_reference(const value_type& value): const_reference(&value) {}
 		
-		explicit operator value_type() const { return ptr? *ptr: value_zero; }
+#ifndef __GCCXML__
+		explicit 
+#endif // __GCCXML__
+		operator value_type() const { return ptr? *ptr: value_zero; }
 		operator const value_type&() const
 			{ return ptr? *ptr: value_zero; }
 	}; // const_reference
@@ -914,7 +932,7 @@ class sparse_vector {
 	 * dereferencing or assigning will provoke a segmentation fault.
 	 */
 	class reference: public const_reference {
-		friend iterator;
+		friend class iterator;
 		
 		// This object "disappears" when assigned to: either the assignment is not
 		// possible, and then a segmentation fault will occur, or the return value
@@ -924,12 +942,18 @@ class sparse_vector {
 		reference(value_type* pValue = 0): const_reference(pValue) {}
 		reference(value_type& value): reference(&value) {}
 		
+#ifndef __GCCXML__
 		reference& operator=(const reference&) = default;
+#endif // __GCCXML__
 		value_type& operator=(value_type v)
 			{ return const_cast<value_type&>(*const_reference::ptr) = v; }
 		
-		operator const_reference() const { return {const_reference::ptr}; }
-		explicit operator value_type&() const
+		operator const_reference() const
+			{ return const_reference(const_reference::ptr); }
+#ifndef __GCCXML__
+		explicit
+#endif // __GCCXML__
+		operator value_type&() const
 			{ return const_cast<value_type&>(*const_reference::ptr); }
 		
 			protected:
@@ -941,13 +965,16 @@ class sparse_vector {
 	/// Iterator to the sparse vector values
 	class const_iterator {
 		//
-		// This iterator respects the traits of an immutable forward iterator.
+		// This iterator fulfills the traits of an immutable forward iterator.
 		//
 		
 			protected:
-		typedef sparse_vector<T> container_t;
+		friend class container_t;
 		
-		friend container_t;
+		typedef sparse_vector<T> container_t;
+		typedef typename container_t::size_type size_type;
+		typedef typename container_t::range_list_t::const_iterator ranges_const_iterator;
+		
 		
 			public:
 		// so far, only forward interface is implemented;
@@ -971,11 +998,12 @@ class sparse_vector {
 		
 		
 		/// Default constructor, does not iterate anywhere
-		const_iterator() = default;
+		const_iterator(): cont(nullptr), index(0), currentRange() {}
 		
 		/// Constructor from a container and a offset
 		const_iterator(const container_t& c, size_type offset):
-			cont(&c), index(std::min(offset, c.size())) { refresh_state(); }
+			cont(&c), index(std::min(offset, c.size())), currentRange()
+			{ refresh_state(); }
 		
 		/// Special constructor: initializes at the beginning of the container
 		const_iterator(const container_t& c, const typename special::begin):
@@ -1005,7 +1033,7 @@ class sparse_vector {
 			{
 				if (delta == 1) return this->operator++();
 				index += delta;
-				if ((currentRange == ranges.end())
+				if ((currentRange == cont->ranges.end())
 				   || !currentRange->includes(index)
 				   )
 					refresh_state();
@@ -1060,9 +1088,6 @@ class sparse_vector {
 		range_const_iterator get_current_range() const { return currentRange; }
 		
 			protected:
-		typedef typename container_t::size_type size_type;
-		typedef typename container_t::range_list_t::const_iterator ranges_const_iterator;
-		
 		//
 		// Logic of the internals:
 		// - cont provides the list of ranges
@@ -1093,9 +1118,9 @@ class sparse_vector {
 		// When currentRange points to the past-to-last range, the iterator is
 		// pointing to the void (past the last range).
 		//
-		const container_t* cont{nullptr}; ///< pointer to the container
-		size_type index{0}; ///< pointer to the current value, as absolute index
-		ranges_const_iterator currentRange{}; ///< pointer to the current (or next) range
+		const container_t* cont; ///< pointer to the container
+		size_type index; ///< pointer to the current value, as absolute index
+		ranges_const_iterator currentRange; ///< pointer to the current (or next) range
 		
 		/// Reassigns the internal state according to the index
 		void refresh_state();
@@ -1113,8 +1138,8 @@ class sparse_vector {
 		// to a cell which is not in a range already is not supported yet
 		// (it can be done with some complicate mechanism).
 		//
-		using typename const_iterator::container_t;
-		friend container_t;
+		typedef typename const_iterator::container_t container_t;
+		friend class const_iterator::container_t;
 		
 			public:
 		typedef typename const_iterator::reference reference;
@@ -1122,7 +1147,7 @@ class sparse_vector {
 		typedef typename const_iterator::special special;
 		
 		/// Default constructor, does not iterate anywhere
-		iterator() = default;
+		iterator(): const_iterator() {}
 		
 		/// Constructor from a container and an offset
 		iterator(container_t& c, size_type offset = 0):
@@ -1185,7 +1210,7 @@ class sparse_vector {
 		typedef typename vector_t::const_iterator const_iterator;
 		
 		/// Default constructor: an empty range
-		datarange_t() = default;
+		datarange_t(): base_t(), values() {}
 		
 		/// Constructor: range initialized with 0
 		datarange_t(const base_t& range): base_t(range), values(range.size()) {}
@@ -1196,11 +1221,13 @@ class sparse_vector {
 			base_t(offset, offset + std::distance(first, last)),
 			values(first, last)
 			{}
-		
+	
+	#ifndef __GCCXML__
 		/// Constructor: offset and data as a vector (which will be used directly)
 		datarange_t(size_type offset, vector_t&& data):
 			base_t(offset, offset + data.size()), values(data)
 			{}
+	#endif // __GCCXML__
 		
 		
 		//@{
@@ -1277,7 +1304,7 @@ class sparse_vector {
 	
 		protected:
 	
-	size_type nominal_size = {}; ///< current size
+	size_type nominal_size; ///< current size
 	range_list_t ranges; ///< list of ranges
 	
 	//@{
@@ -1317,8 +1344,10 @@ class sparse_vector {
 	/// Plug a new data range in the specified position; no check performed
 	range_iterator insert_range(range_iterator iInsert, const datarange_t& data)
 		{ return data.empty()? iInsert: ranges.insert(iInsert, data); }
+#ifndef __GCCXML__
 	range_iterator insert_range(range_iterator iInsert, datarange_t&& data)
 		{ return data.empty()? iInsert: ranges.insert(iInsert, std::move(data)); }
+#endif // __GCCXML__
 	//@}
 	
 	/// Voids the starting elements up to index (excluded) of a given range
@@ -1358,14 +1387,20 @@ std::ostream& operator<< (std::ostream& out, const sparse_vector<T>& v) {
 	
 	out << "Sparse vector of size " << v.size() << " with "
 		<< v.get_ranges().size() << " ranges:";
-	for (auto range: v.get_ranges()) {
-		out << "\n  [" << range.begin_index() << " - " << range.end_index()
-			<< "] (" << range.size() << "):";
-		for (auto value: range.data()) out << " " << value;
+	typename sparse_vector<T>::range_const_iterator iRange = v.begin_range(),
+		rend = v.end_range();
+	while (iRange != rend) {
+		out << "\n  [" << iRange->begin_index() << " - " << iRange->end_index()
+			<< "] (" << iRange->size() << "):";
+		typename sparse_vector<T>::datarange_t::const_iterator
+			iValue = iRange->begin(), vend = iRange->end();
+		while (iValue != vend) out << " " << (*(iValue++));
+		++iRange;
 	} // for
 	return out << std::endl;
 } // operator<< (ostream, sparse_vector<T>)
 
+#ifndef __GCCXML__
 
 //------------------------------------------------------------------------------
 //--- sparse_vector implementation
@@ -1411,6 +1446,16 @@ typename lar::sparse_vector<T>::reference lar::sparse_vector<T>::operator[]
 	datarange_t& range(*--iNextRange);
 	return (index < range.end_index())? reference(range[index]): reference();
 } // lar::sparse_vector<T>::operator[]
+
+
+template <typename T>
+inline typename lar::sparse_vector<T>::size_type lar::sparse_vector<T>::count()
+	const
+{
+	return std::accumulate(begin_range(), end_range(), size_type(0),
+		[](size_type s, const datarange_t& rng) { return s + rng.size(); }
+		);
+} // count()
 
 
 template <typename T>
@@ -1664,6 +1709,41 @@ typename lar::sparse_vector<T>::range_iterator lar::sparse_vector<T>::eat_range_
 } // lar::sparse_vector<T>::eat_range_head()
 
 
+
+template <typename T>
+inline size_t lar::sparse_vector<T>::expected_vector_size(size_t size) {
+	// apparently, a chunk of heap memory takes at least 32 bytes;
+	// that means that a vector of 1 or 5 32-bit integers takes the same
+	// space; the overhead appears to be 8 bytes, which can be allocated
+	return sizeof(vector_t)
+		+ std::max(size_t(32), (alignof(datarange_t)*size + 8));
+} // lar::sparse_vector<T>::expected_vector_size()
+
+
+template <typename T>
+inline size_t lar::sparse_vector<T>::min_gap() {
+	// we assume here that there is no additional overhead by alignment;
+	// the gap adds the space of another datarange_t, including the vector,
+	// its data and overhead from heap (apparently, 8 bytes);
+	// 
+	return (sizeof(datarange_t) + 8) / sizeof(value_type) + 1; // round up
+} // lar::sparse_vector<T>::min_gap()
+
+
+template <typename T>
+inline bool lar::sparse_vector<T>::should_merge(
+	const typename datarange_t::base_t& a,
+	const typename datarange_t::base_t& b
+	)
+{
+	size_type gap_size = (a < b)?
+		b.begin_index() - a.begin_index() - a.size():
+		a.begin_index() - b.begin_index() - b.size();
+	return expected_vector_size(a.size() + b.size() + gap_size)
+		<= expected_vector_size(a.size()) + expected_vector_size(b.size());
+} // lar::sparse_vector<T>::should_merge()
+
+
 //------------------------------------------------------------------------------
 //--- lar::sparse_vector<T>::datarange_t implementation
 //---
@@ -1764,6 +1844,9 @@ void lar::sparse_vector<T>::const_iterator::refresh_state() {
 //
 // nothing new so far
 //
+
+#endif // __GCCXML__
+
 
 } // namespace lar
 

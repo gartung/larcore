@@ -379,6 +379,35 @@ namespace actions {
 		
 	}; // PrintRange<>
 	
+	template <typename T>
+	class PrintNonVoid: public BaseAction<T> {
+			public:
+		using Base_t = BaseAction<T>;
+		using typename Base_t::TestClass_t;
+		using typename Base_t::Data_t;
+		using typename Base_t::Vector_t;
+		using typename Base_t::SparseVector_t;
+		
+		virtual void describe(TestClass_t& tc, std::ostream& out) const
+			{ out << "print the elements which are not in the void"; }
+		
+		virtual void operator() (Vector_t& v) const
+			{
+				typedef typename Base_t::SparseVector_t::value_type (*cmp_t)
+					(typename Base_t::SparseVector_t::value_type);
+				std::cout << "Non-zero elements in vector:        "
+					<< (v.size() - std::count_if
+						(v.begin(), v.end(), cmp_t(&Base_t::SparseVector_t::is_zero)))
+					<< std::endl;
+			}
+		virtual void operator() (SparseVector_t& v) const
+			{
+				std::cout << "Non-void elements in sparse vector: "
+					<< v.count() << std::endl;
+			}
+		
+	}; // PrintNonVoid<>
+	
 	
 	template <typename T>
 	class Clear: public BaseAction<T> {
@@ -882,6 +911,8 @@ int main() {
 	Test(actions::UnsetElement<Data_t>(26));
 	
 	Test(actions::UnsetElement<Data_t>(25));
+	
+	Test(actions::PrintNonVoid<Data_t>());
 	
 	Test(actions::Optimize<Data_t>(-1));
 	
