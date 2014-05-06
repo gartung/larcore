@@ -26,15 +26,22 @@
 #	include <type_traits> // std::is_integral
 #endif // __GCCXML__
 
+
 /// Namespace for generic larsoft
 namespace lar {
 
-/// @brief Little class storing a value.
-/// @param T type of the stored value
-/// 
-/// This class stores a constant value and returns it as conversion to type T.
-/// It also acts as a left-value of type T, except that the assigned value
-/// is ignored.
+// -----------------------------------------------------------------------------
+// ---  utility classes for sparse_vector
+// ---
+
+/**
+ * @brief Little class storing a value.
+ * @param T type of the stored value
+ * 
+ * This class stores a constant value and returns it as conversion to type T.
+ * It also acts as a left-value of type T, except that the assigned value
+ * is ignored.
+ */
 template <typename T>
 class const_value_box {
 	typedef const_value_box<T> this_t;
@@ -171,6 +178,10 @@ class value_iterator: public value_const_iterator<T> {
 #endif // __GCCXML__
 
 
+
+//------------------------------------------------------------------------------
+//---  lar::range_t<SIZE>
+//---
 /**
  * @brief A range (interval) of integers
  * @param SIZE type of the indices (expected integral)
@@ -277,10 +288,16 @@ class range_t {
 }; // class range_t
 
 
+
+// -----------------------------------------------------------------------------
+// ---  lar::sparse_vector<T>
+// ---
+
 /** ****************************************************************************
  * @brief A sparse vector
  * @param T type of data stored in the vector
- * @todo backward iteration; reverse iterators
+ * @todo backward iteration; reverse iterators; iterator on non-void elements
+ * only; iterator on non-void elements only, returning a pair (index;value)
  * 
  * A sparse_vector is a container of items marked by consecutive indices
  * (that is, a vector like std::vector), where only non-zero elements are
@@ -529,18 +546,12 @@ class sparse_vector {
 	
 	//@{
 	/// Standard iterators interface
-	iterator begin()
-		{ return iterator(*this, typename iterator::special::begin()); }
-	iterator end()
-		{ return iterator(*this, typename iterator::special::end()); }
-	const_iterator begin() const
-		{ return const_iterator(*this, typename const_iterator::special::begin()); }
-	const_iterator end() const
-		{ return const_iterator(*this, typename const_iterator::special::end()); }
-	const_iterator cbegin()
-		{ return const_iterator(*this, typename const_iterator::special::begin()); }
-	const_iterator cend()
-		{ return const_iterator(*this, typename const_iterator::special::end()); }
+	iterator begin();
+	iterator end();
+	const_iterator begin() const;
+	const_iterator end() const;
+	const_iterator cbegin();
+	const_iterator cend();
 	//@}
 	
 	/// Access to an element (read only)
@@ -563,15 +574,8 @@ class sparse_vector {
 	 * @throw out_of_range if index is not in the vector
 	 * @see is_back_void()
 	 */
-	bool is_void(size_type index) const
-		{
-			if (ranges.empty() || (index >= size()))
-				throw std::out_of_range("empty sparse vector");
-			// range after the index:
-			range_const_iterator iNextRange = find_next_range_iter(index);
-			return ((iNextRange == ranges.begin()) 
-				|| ((--iNextRange)->end_index() <= index));
-		} // is_void()
+	bool is_void(size_type index) const;
+	
 	
 	/// @brief Returns whether the sparse vector ends with void
 	/// @see is_void()
@@ -685,21 +689,8 @@ class sparse_vector {
 	 * @throw std::out_of_range if index is not in the vector
 	 * @see is_void()
 	 */
-	range_const_iterator find_range_iterator(size_type index) const
-		{
-			if (ranges.empty()) throw std::out_of_range("empty sparse vector");
-			// range after the index:
-			range_const_iterator iNextRange = find_next_range_iter(index);
-			return ((iNextRange == ranges.begin()) 
-				|| (index >= (--iNextRange)->end_index()))?
-				ranges.end(): iNextRange;
-		} // find_range_iterator()
-	range_iterator find_range_iterator(size_type index)
-		{
-			return ranges.begin() + (
-				(const_cast<const this_t*>(this)->find_range_iterator(index))
-				- ranges.begin());
-		} // find_range_iterator()
+	range_const_iterator find_range_iterator(size_type index) const;
+	range_iterator find_range_iterator(size_type index);
 	//@}
 	
 	//@{
@@ -710,20 +701,8 @@ class sparse_vector {
 	 * @throw std::out_of_range if index is in no range (how appropriate!)
 	 * @see is_void()
 	 */
-	const datarange_t& find_range(size_type index) const
-		{
-			if (ranges.empty()) throw std::out_of_range("empty sparse vector");
-			// range on the index:
-			range_const_iterator iNextRange = find_range_iterator(index);
-			if (iNextRange == ranges.end())
-				throw std::out_of_range("index in no range of the sparse vector");
-			return *iNextRange;
-		} // find_range()
-	datarange_t& find_range(size_type index)
-		{
-			return const_cast<datarange_t&>
-				(const_cast<const this_t*>(this)->find_range(index));
-		}
+	const datarange_t& find_range(size_type index) const;
+	datarange_t& find_range(size_type index);
 	//@}
 	
 	/**
@@ -732,19 +711,7 @@ class sparse_vector {
 	 * @throw std::out_of_range if index is not in the vector
 	 * @see unset(), make_void()
 	 */
-	void make_void_around(size_type index)
-		{
-			if (ranges.empty() || (index >= size()))
-				throw std::out_of_range("empty sparse vector");
-			// range after the index:
-			range_iterator iNextRange = find_next_range_iter(index);
-			if ((iNextRange == ranges.begin()) 
-				|| ((--iNextRange)->end_index() <= index))
-			{
-				return;
-			}
-			ranges.erase(iNextRange);
-		} // make_void_around()
+	void make_void_around(size_type index);
 	
 	//@{
 	/**
@@ -905,403 +872,7 @@ class sparse_vector {
 		);
 	///@}
 	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-		public:
-	
-	/// Special little box to allow void elements to be treated as references.
-	class const_reference {
-			protected:
-		const value_type* ptr;
-			public:
-		const_reference(const value_type* pValue = 0): ptr(pValue) {}
-		const_reference(const value_type& value): const_reference(&value) {}
-		
-#ifndef __GCCXML__
-		explicit 
-#endif // __GCCXML__
-		operator value_type() const { return ptr? *ptr: value_zero; }
-		operator const value_type&() const
-			{ return ptr? *ptr: value_zero; }
-	}; // const_reference
-	
-	/**
-	 * @brief A class representing a cell in a sparse vector.
-	 * 
-	 * This class is a little box allowing assignment of values into it;
-	 * if the internal pointer is invalid (as in case of void cell),
-	 * dereferencing or assigning will provoke a segmentation fault.
-	 */
-	class reference: public const_reference {
-		friend class iterator;
-		
-		// This object "disappears" when assigned to: either the assignment is not
-		// possible, and then a segmentation fault will occur, or the return value
-		// is an actual C++ reference to the assigned value.
-		// The same is true when explicitly converting it to a reference.
-			public:
-		reference(value_type* pValue = 0): const_reference(pValue) {}
-		reference(value_type& value): reference(&value) {}
-		
-#ifndef __GCCXML__
-		reference& operator=(const reference&) = default;
-#endif // __GCCXML__
-		value_type& operator=(value_type v)
-			{ return const_cast<value_type&>(*const_reference::ptr) = v; }
-		
-		operator const_reference() const
-			{ return const_reference(const_reference::ptr); }
-#ifndef __GCCXML__
-		explicit
-#endif // __GCCXML__
-		operator value_type&() const
-			{ return const_cast<value_type&>(*const_reference::ptr); }
-		
-			protected:
-		explicit reference(const const_reference& from): const_reference(from) {}
-		
-	}; // reference
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	/// Iterator to the sparse vector values
-	class const_iterator {
-		//
-		// This iterator fulfills the traits of an immutable forward iterator.
-		//
-		
-			protected:
-		friend class container_t;
-		
-		typedef sparse_vector<T> container_t;
-		typedef typename container_t::size_type size_type;
-		typedef typename container_t::range_list_t::const_iterator ranges_const_iterator;
-		
-		
-			public:
-		// so far, only forward interface is implemented;
-		// backward is tricky...
-		typedef std::forward_iterator_tag iterator_category;
-		
-		/// Namespace for special initialization
-		struct special {
-			class begin {};
-			class end {};
-		};
-		
-		// types
-		typedef typename container_t::value_type value_type;
-		typedef typename container_t::difference_type difference_type;
-		typedef typename container_t::pointer pointer;
-		typedef typename container_t::reference reference;
-		// note that this is not out little box, it's the normal C++ constant
-		// reference from the underlying vector
-		typedef typename vector_t::const_reference const_reference;
-		
-		
-		/// Default constructor, does not iterate anywhere
-		const_iterator(): cont(nullptr), index(0), currentRange() {}
-		
-		/// Constructor from a container and a offset
-		const_iterator(const container_t& c, size_type offset):
-			cont(&c), index(std::min(offset, c.size())), currentRange()
-			{ refresh_state(); }
-		
-		/// Special constructor: initializes at the beginning of the container
-		const_iterator(const container_t& c, const typename special::begin):
-			cont(&c), index(0), currentRange(c.get_ranges().begin())
-			{}
-		
-		/// Special constructor: initializes at the end of the container
-		const_iterator(const container_t& c, const typename special::end):
-			cont(&c), index(c.size()), currentRange(c.get_ranges().end())
-			{}
-		
-		/// Random access
-		const_reference operator[] (size_type offset) const
-			{ return (*cont)[index + offset]; }
-		
-		//@{
-		/// Increment and decrement operators
-		const_iterator& operator++();
-		const_iterator operator++(int)
-			{ const_iterator copy(*this); const_iterator::operator++(); return copy; }
-		//@}
-		
-		
-		//@{
-		/// Increment and decrement operators
-		const_iterator& operator+= (difference_type delta)
-			{
-				if (delta == 1) return this->operator++();
-				index += delta;
-				if ((currentRange == cont->ranges.end())
-				   || !currentRange->includes(index)
-				   )
-					refresh_state();
-				return *this;
-			} // operator+
-		const_iterator& operator-= (difference_type delta)
-			{ return this->operator+= (-delta); }
-		const_iterator operator+ (difference_type delta) const
-			{
-				if ((currentRange == cont->ranges.end())
-					|| !currentRange->includes(index + delta)
-					)
-					return const_iterator(*cont, index + delta);
-				const_iterator iter(*this);
-				iter.index += delta;
-				return iter;
-			} // operator+
-		const_iterator operator- (difference_type delta) const
-			{ return this->operator+ (-delta); }
-		//@}
-		
-		/// distance operator
-		difference_type operator- (const const_iterator& iter) const
-			{
-				if (cont != iter.cont) {
-					throw std::runtime_error("lar::sparse_vector::const_iterator:"
-						" difference with alien iterator");
-				}
-				return index -iter.index;
-			} // operator-(const_iterator)
-		
-		/// Constant dereferenciation operator
-		const_reference operator*() const;
-		
-		//@{
-		/// Iterator comparisons
-		bool operator== (const const_iterator& as) const
-			{ return (cont == as.cont) && (index == as.index); }
-		bool operator!= (const const_iterator& as) const
-			{ return (cont != as.cont) || (index != as.index); }
-		bool operator< (const const_iterator& than) const
-			{ return (cont == than.cont) && (index < than.index); }
-		bool operator> (const const_iterator& than) const
-			{ return (cont == than.cont) && (index > than.index); }
-		bool operator<= (const const_iterator& than) const
-			{ return (cont == than.cont) && (index <= than.index); }
-		bool operator>= (const const_iterator& than) const
-			{ return (cont == than.cont) && (index >= than.index); }
-		//@}
-		
-		/// Returns the current range internal value; use it at your own risk!!
-		range_const_iterator get_current_range() const { return currentRange; }
-		
-			protected:
-		//
-		// Logic of the internals:
-		// - cont provides the list of ranges
-		// - index is the absolute index in the container
-		// - currentRange is a pointer to the "current" range, cached for speed
-		// 
-		// An iterator past-the-end has the index equal to the size of the
-		// container it points to. Operations on it are undefined, except that
-		// going backward by one decrement goes back to the container
-		// (if not empty) TODO currently backward iteration is not supported
-		// 
-		// When the iterator is pointing to an element within a range,
-		// currentRange points to that range.
-		// When the iterator is pointing into the void of the vector, currentRange
-		// points to the range next to that void area, or end() if there is none.
-		// When the iterator is past-the-end, currentRange is not defined.
-		// 
-		// Conversely, when the index is equal (or greater) to the size of the
-		// container, the iterator is not dereferenciable, the iterator points
-		// past-the-end of the container.
-		// When currentRange points to a valid range and the index
-		// is before that range, the iterator is pointing to the void.
-		// When currentRange points to a valid range and the index
-		// is inside that range, the iterator is pointing to an item in that
-		// range.
-		// When currentRange points to a valid range, the index can't point beyond
-		// that range.
-		// When currentRange points to the past-to-last range, the iterator is
-		// pointing to the void (past the last range).
-		//
-		const container_t* cont; ///< pointer to the container
-		size_type index; ///< pointer to the current value, as absolute index
-		ranges_const_iterator currentRange; ///< pointer to the current (or next) range
-		
-		/// Reassigns the internal state according to the index
-		void refresh_state();
-		
-	}; // class const_iterator
-	
-	
-	/// Iterator to the sparse vector values
-	class iterator: public const_iterator {
-		//
-		// This iterator respects the traits of an immutable forward iterator,
-		// EXCEPT that the iterator can be non-dereferenciable even when it's a
-		// "past the end" iterator.
-		// That is due to the fact that currently dereferencing (and assigning)
-		// to a cell which is not in a range already is not supported yet
-		// (it can be done with some complicate mechanism).
-		//
-		typedef typename const_iterator::container_t container_t;
-		friend class const_iterator::container_t;
-		
-			public:
-		typedef typename const_iterator::reference reference;
-		typedef typename const_iterator::const_reference const_reference;
-		typedef typename const_iterator::special special;
-		
-		/// Default constructor, does not iterate anywhere
-		iterator(): const_iterator() {}
-		
-		/// Constructor from a container and an offset
-		iterator(container_t& c, size_type offset = 0):
-			const_iterator(c, offset) {}
-		
-		/// Special constructor: initializes at the beginning of the container
-		iterator(const container_t& c, const typename special::begin _):
-			const_iterator(c, _) {}
-		
-		/// Special constructor: initializes at the end of the container
-		iterator(const container_t& c, const typename special::end _):
-			const_iterator(c, _) {}
-		
-		/// Random access
-		reference operator[] (size_type offset) const
-			{ return (*const_iterator::cont)[const_iterator::index + offset]; }
-		
-		//@{
-		/// Increment and decrement operators
-		iterator& operator++() { const_iterator::operator++(); return *this; }
-		iterator operator++(int _) { return const_iterator::operator++(_); }
-		//@}
-		
-		//@{
-		/// Increment and decrement operators
-		iterator& operator+= (difference_type delta)
-			{ const_iterator::operator+=(delta); return *this; }
-		iterator& operator-= (difference_type delta)
-			{ const_iterator::operator+=(delta); return *this; }
-		iterator operator+ (difference_type delta) const
-			{ return const_iterator::operator+(delta); }
-		iterator operator- (difference_type delta) const
-			{ return const_iterator::operator-(delta); }
-		//@}
-		
-		
-		/// Dereferenciation operator (can't write non-empty elements!)
-		reference operator*() const
-			{ return reference(const_iterator::operator*()); }
-		
-	//	/// Returns the current range internal value; use it at your own risk!!
-	//	range_iterator get_current_range() const
-	//		{ return const_iterator::currentRange; }
-		
-			protected:
-		
-		// also worth conversion
-		iterator(const_iterator from): const_iterator(from) {}
-		
-	}; // class iterator
-	
-	
-	//---------------------------------------------------------------------------
-	/// Range class, with range and data
-	class datarange_t: public range_t<size_type> {
-			public:
-		typedef range_t<size_type> base_t; ///< base class
-		
-		typedef typename vector_t::iterator iterator;
-		typedef typename vector_t::const_iterator const_iterator;
-		
-		/// Default constructor: an empty range
-		datarange_t(): base_t(), values() {}
-		
-		/// Constructor: range initialized with 0
-		datarange_t(const base_t& range): base_t(range), values(range.size()) {}
-		
-		/// Constructor: offset and data
-		template <typename ITER>
-		datarange_t(size_type offset, ITER first, ITER last):
-			base_t(offset, offset + std::distance(first, last)),
-			values(first, last)
-			{}
-	
-	#ifndef __GCCXML__
-		/// Constructor: offset and data as a vector (which will be used directly)
-		datarange_t(size_type offset, vector_t&& data):
-			base_t(offset, offset + data.size()), values(data)
-			{}
-	#endif // __GCCXML__
-		
-		
-		//@{
-		/// Returns an iterator to the specified absolute value (no check!)
-		iterator get_iterator(size_type index)
-			{ return values.begin() + index - base_t::begin_index(); }
-		const_iterator get_iterator(size_type index) const
-			{ return values.begin() + index - base_t::begin_index(); }
-		//@}
-		
-		//@{
-		/// begin and end iterators
-		iterator begin() { return values.begin(); }
-		iterator end() { return values.end(); }
-		const_iterator begin() const { return values.begin(); }
-		const_iterator end() const { return values.end(); }
-		const_iterator cbegin() { return values.begin(); }
-		const_iterator cend() { return values.end(); }
-		//@}
-		
-		//@{
-		/// Resizes the range (optionally filling the new elements with def_value)
-		void resize(size_t new_size)
-			{ values.resize(new_size); fit_size_from_data(); }
-		void resize(size_t new_size, value_type def_value)
-			{ values.resize(new_size, def_value); fit_size_from_data(); }
-		//@}
-		
-		//@{
-		/// Returns the value at the specified absolute index
-		value_type& operator[] (size_type index)
-			{ return values[base_t::relative_index(index)]; }
-		const value_type& operator[] (size_type index) const
-			{ return values[base_t::relative_index(index)]; }
-		//@}
-		
-		//@{
-		/// Return the vector of data values
-		const vector_t& data() const { return values; }
-	//	vector_t& data() { return values; }
-		//@}
-		
-		/// Adds copies of the specified elements to this range
-		/// @param index the starting point
-		/// @param first iterator to the first object to copy
-		/// @param last iterator after the last object to copy
-		template <typename ITER>
-		datarange_t& extend(size_type index, ITER first, ITER last);
-		
-		
-		/**
-		 * @brief Moves the begin of this range
-		 * @param index absolute index to move the head to
-		 * @param def_value value to be inserted in case of expansion of the range
-		 */
-		void move_head(size_type to_index, value_type def_value = value_zero);
-		
-		/**
-		 * @brief Moves the end of this range
-		 * @param index absolute index to move the tail to
-		 * @param def_value value to be inserted in case of expansion of the range
-		 */
-		void move_tail(size_type to_index, value_type def_value = value_zero)
-			{ resize(base_t::relative_index(to_index), def_value); }
-		
-		
-			protected:
-		vector_t values; ///< data in the range
-		
-		void fit_size_from_data() { base_t::resize(values.size()); }
-		
-	}; // class datarange_t
-	
-	
+	// --------------------------------------------------------------------------
 		protected:
 	
 	size_type nominal_size; ///< current size
@@ -1317,23 +888,9 @@ class sparse_vector {
 		{ return find_next_range_iter(index, ranges.begin()); }
 	range_const_iterator find_next_range_iter(size_type index) const
 		{ return find_next_range_iter(index, ranges.begin()); }
-	range_iterator find_next_range_iter(size_type index, range_iterator rbegin)
-		{
-			// this range has the offset (first index) above the index argument:
-			return std::upper_bound(
-				rbegin, ranges.end(), index,
-				typename datarange_t::less_int_range(datarange_t::less)
-				);
-		} // find_next_range_iter()
+	range_iterator find_next_range_iter(size_type index, range_iterator rbegin);
 	range_const_iterator find_next_range_iter
-		(size_type index, range_const_iterator rbegin) const
-		{
-			// this range has the offset (first index) above the index argument:
-			return std::upper_bound(
-				rbegin, ranges.end(), index,
-				typename datarange_t::less_int_range(datarange_t::less)
-				);
-		} // find_next_range_iter() const
+		(size_type index, range_const_iterator rbegin) const;
 	//@}
 	
 	/// Returns the size determined by the ranges already present
@@ -1357,12 +914,7 @@ class sparse_vector {
 	datarange_t& merge_ranges(range_iterator iRange);
 	
 	/// Extends the vector size according to the last range
-	size_type fix_size()
-		{
-			if (!ranges.empty())
-				nominal_size = std::max(nominal_size, ranges.back().end_index());
-			return nominal_size;
-		} // fix_size()
+	size_type fix_size();
 	
 }; // class sparse_vector<>
 
@@ -1383,31 +935,477 @@ class sparse_vector {
  * </pre>
  */
 template <typename T>
-std::ostream& operator<< (std::ostream& out, const sparse_vector<T>& v) {
+std::ostream& operator<< (std::ostream& out, const sparse_vector<T>& v);
+
+
+
+// -----------------------------------------------------------------------------
+// --- sparse_vector::datarange_t definition
+// ---
+
+/// Range class, with range and data
+template <typename T>
+class lar::sparse_vector<T>::datarange_t: public range_t<size_type> {
+		public:
+	typedef range_t<size_type> base_t; ///< base class
 	
-	out << "Sparse vector of size " << v.size() << " with "
-		<< v.get_ranges().size() << " ranges:";
-	typename sparse_vector<T>::range_const_iterator iRange = v.begin_range(),
-		rend = v.end_range();
-	while (iRange != rend) {
-		out << "\n  [" << iRange->begin_index() << " - " << iRange->end_index()
-			<< "] (" << iRange->size() << "):";
-		typename sparse_vector<T>::datarange_t::const_iterator
-			iValue = iRange->begin(), vend = iRange->end();
-		while (iValue != vend) out << " " << (*(iValue++));
-		++iRange;
-	} // for
-	return out << std::endl;
-} // operator<< (ostream, sparse_vector<T>)
+	typedef typename vector_t::iterator iterator;
+	typedef typename vector_t::const_iterator const_iterator;
+	
+	/// Default constructor: an empty range
+	datarange_t(): base_t(), values() {}
+	
+	/// Constructor: range initialized with 0
+	datarange_t(const base_t& range): base_t(range), values(range.size()) {}
+	
+	/// Constructor: offset and data
+	template <typename ITER>
+	datarange_t(size_type offset, ITER first, ITER last):
+		base_t(offset, offset + std::distance(first, last)),
+		values(first, last)
+		{}
 
 #ifndef __GCCXML__
+	/// Constructor: offset and data as a vector (which will be used directly)
+	datarange_t(size_type offset, vector_t&& data):
+		base_t(offset, offset + data.size()), values(data)
+		{}
+#endif // __GCCXML__
+	
+	
+	//@{
+	/// Returns an iterator to the specified absolute value (no check!)
+	iterator get_iterator(size_type index)
+		{ return values.begin() + index - base_t::begin_index(); }
+	const_iterator get_iterator(size_type index) const
+		{ return values.begin() + index - base_t::begin_index(); }
+	//@}
+	
+	//@{
+	/// begin and end iterators
+	iterator begin() { return values.begin(); }
+	iterator end() { return values.end(); }
+	const_iterator begin() const { return values.begin(); }
+	const_iterator end() const { return values.end(); }
+	const_iterator cbegin() { return values.begin(); }
+	const_iterator cend() { return values.end(); }
+	//@}
+	
+	//@{
+	/// Resizes the range (optionally filling the new elements with def_value)
+	void resize(size_t new_size)
+		{ values.resize(new_size); fit_size_from_data(); }
+	void resize(size_t new_size, value_type def_value)
+		{ values.resize(new_size, def_value); fit_size_from_data(); }
+	//@}
+	
+	//@{
+	/// Returns the value at the specified absolute index
+	value_type& operator[] (size_type index)
+		{ return values[base_t::relative_index(index)]; }
+	const value_type& operator[] (size_type index) const
+		{ return values[base_t::relative_index(index)]; }
+	//@}
+	
+	//@{
+	/// Return the vector of data values
+	const vector_t& data() const { return values; }
+//	vector_t& data() { return values; }
+	//@}
+	
+	/// Adds copies of the specified elements to this range
+	/// @param index the starting point
+	/// @param first iterator to the first object to copy
+	/// @param last iterator after the last object to copy
+	template <typename ITER>
+	datarange_t& extend(size_type index, ITER first, ITER last);
+	
+	
+	/**
+		* @brief Moves the begin of this range
+		* @param index absolute index to move the head to
+		* @param def_value value to be inserted in case of expansion of the range
+		*/
+	void move_head(size_type to_index, value_type def_value = value_zero);
+	
+	/**
+		* @brief Moves the end of this range
+		* @param index absolute index to move the tail to
+		* @param def_value value to be inserted in case of expansion of the range
+		*/
+	void move_tail(size_type to_index, value_type def_value = value_zero)
+		{ resize(base_t::relative_index(to_index), def_value); }
+	
+	
+		protected:
+	vector_t values; ///< data in the range
+	
+	void fit_size_from_data() { base_t::resize(values.size()); }
+	
+}; // class datarange_t
+
+
+
+#ifndef __GCCXML__ // the rest is not needed by ROOT Reflex
+
+
+// -----------------------------------------------------------------------------
+// --- sparse_vector iterators definition
+// ---
+
+/// Special little box to allow void elements to be treated as references.
+template <typename T>
+class lar::sparse_vector<T>::const_reference {
+		protected:
+	const value_type* ptr;
+		public:
+	const_reference(const value_type* pValue = 0): ptr(pValue) {}
+	const_reference(const value_type& value): const_reference(&value) {}
+	
+#ifndef __GCCXML__
+	explicit 
+#endif // __GCCXML__
+	operator value_type() const { return ptr? *ptr: value_zero; }
+	operator const value_type&() const
+		{ return ptr? *ptr: value_zero; }
+}; // lar::sparse_vector<T>::const_reference
+
+
+/**
+	* @brief A class representing a cell in a sparse vector.
+	* 
+	* This class is a little box allowing assignment of values into it;
+	* if the internal pointer is invalid (as in case of void cell),
+	* dereferencing or assigning will provoke a segmentation fault.
+	*/
+template <typename T>
+class lar::sparse_vector<T>::reference: public const_reference {
+	friend class iterator;
+	
+	// This object "disappears" when assigned to: either the assignment is not
+	// possible, and then a segmentation fault will occur, or the return value
+	// is an actual C++ reference to the assigned value.
+	// The same is true when explicitly converting it to a reference.
+		public:
+	reference(value_type* pValue = 0): const_reference(pValue) {}
+	reference(value_type& value): reference(&value) {}
+	
+#ifndef __GCCXML__
+	reference& operator=(const reference&) = default;
+#endif // __GCCXML__
+	value_type& operator=(value_type v)
+		{ return const_cast<value_type&>(*const_reference::ptr) = v; }
+	
+	operator const_reference() const
+		{ return const_reference(const_reference::ptr); }
+#ifndef __GCCXML__
+	explicit
+#endif // __GCCXML__
+	operator value_type&() const
+		{ return const_cast<value_type&>(*const_reference::ptr); }
+	
+		protected:
+	explicit reference(const const_reference& from): const_reference(from) {}
+	
+}; // lar::sparse_vector<T>::reference
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+/// Iterator to the sparse vector values
+template <typename T>
+class lar::sparse_vector<T>::const_iterator {
+	//
+	// This iterator fulfills the traits of an immutable forward iterator.
+	//
+	
+		protected:
+	friend class container_t;
+	
+	typedef sparse_vector<T> container_t;
+	typedef typename container_t::size_type size_type;
+	typedef typename container_t::range_list_t::const_iterator ranges_const_iterator;
+	
+	
+		public:
+	// so far, only forward interface is implemented;
+	// backward is tricky...
+	typedef std::forward_iterator_tag iterator_category;
+	
+	/// Namespace for special initialization
+	struct special {
+		class begin {};
+		class end {};
+	};
+	
+	// types
+	typedef typename container_t::value_type value_type;
+	typedef typename container_t::difference_type difference_type;
+	typedef typename container_t::pointer pointer;
+	typedef typename container_t::reference reference;
+	// note that this is not out little box, it's the normal C++ constant
+	// reference from the underlying vector
+	typedef typename vector_t::const_reference const_reference;
+	
+	
+	/// Default constructor, does not iterate anywhere
+	const_iterator(): cont(nullptr), index(0), currentRange() {}
+	
+	/// Constructor from a container and a offset
+	const_iterator(const container_t& c, size_type offset):
+		cont(&c), index(std::min(offset, c.size())), currentRange()
+		{ refresh_state(); }
+	
+	/// Special constructor: initializes at the beginning of the container
+	const_iterator(const container_t& c, const typename special::begin):
+		cont(&c), index(0), currentRange(c.get_ranges().begin())
+		{}
+	
+	/// Special constructor: initializes at the end of the container
+	const_iterator(const container_t& c, const typename special::end):
+		cont(&c), index(c.size()), currentRange(c.get_ranges().end())
+		{}
+	
+	/// Random access
+	const_reference operator[] (size_type offset) const
+		{ return (*cont)[index + offset]; }
+	
+	/// Constant dereferenciation operator
+	const_reference operator*() const;
+	
+	//@{
+	/// Increment and decrement operators
+	const_iterator& operator++();
+	const_iterator operator++(int)
+		{ const_iterator copy(*this); const_iterator::operator++(); return copy; }
+	//@}
+	
+	
+	//@{
+	/// Increment and decrement operators
+	const_iterator& operator+= (difference_type delta);
+	const_iterator& operator-= (difference_type delta);
+	const_iterator operator+ (difference_type delta) const;
+	const_iterator operator- (difference_type delta) const;
+	//@}
+	
+	/// Distance operator
+	difference_type operator- (const const_iterator& iter) const;
+	
+	//@{
+	/// Iterator comparisons
+	bool operator== (const const_iterator& as) const
+		{ return (cont == as.cont) && (index == as.index); }
+	bool operator!= (const const_iterator& as) const
+		{ return (cont != as.cont) || (index != as.index); }
+	bool operator< (const const_iterator& than) const
+		{ return (cont == than.cont) && (index < than.index); }
+	bool operator> (const const_iterator& than) const
+		{ return (cont == than.cont) && (index > than.index); }
+	bool operator<= (const const_iterator& than) const
+		{ return (cont == than.cont) && (index <= than.index); }
+	bool operator>= (const const_iterator& than) const
+		{ return (cont == than.cont) && (index >= than.index); }
+	//@}
+	
+	/// Returns the current range internal value; use it at your own risk!!
+	range_const_iterator get_current_range() const { return currentRange; }
+	
+		protected:
+	//
+	// Logic of the internals:
+	// - cont provides the list of ranges
+	// - index is the absolute index in the container
+	// - currentRange is a pointer to the "current" range, cached for speed
+	// 
+	// An iterator past-the-end has the index equal to the size of the
+	// container it points to. Operations on it are undefined, except that
+	// going backward by one decrement goes back to the container
+	// (if not empty) TODO currently backward iteration is not supported
+	// 
+	// When the iterator is pointing to an element within a range,
+	// currentRange points to that range.
+	// When the iterator is pointing into the void of the vector, currentRange
+	// points to the range next to that void area, or end() if there is none.
+	// When the iterator is past-the-end, currentRange is not defined.
+	// 
+	// Conversely, when the index is equal (or greater) to the size of the
+	// container, the iterator is not dereferenciable, the iterator points
+	// past-the-end of the container.
+	// When currentRange points to a valid range and the index
+	// is before that range, the iterator is pointing to the void.
+	// When currentRange points to a valid range and the index
+	// is inside that range, the iterator is pointing to an item in that
+	// range.
+	// When currentRange points to a valid range, the index can't point beyond
+	// that range.
+	// When currentRange points to the past-to-last range, the iterator is
+	// pointing to the void (past the last range).
+	//
+	const container_t* cont; ///< pointer to the container
+	size_type index; ///< pointer to the current value, as absolute index
+	ranges_const_iterator currentRange; ///< pointer to the current (or next) range
+	
+	/// Reassigns the internal state according to the index
+	void refresh_state();
+	
+}; // class lar::sparse_vector<T>::const_iterator
+
+
+/**
+ * @brief Iterator to the sparse vector values
+ * 
+ * This iterator respects the traits of an immutable forward iterator,
+ * EXCEPT that the iterator can be non-dereferenciable even when it's a
+ * "past the end" iterator.
+ * That is due to the fact that currently dereferencing (and assigning)
+ * to a cell which is not in a range already is not supported yet
+ * (it can be done with some complicate mechanism).
+ */
+template <typename T>
+class lar::sparse_vector<T>::iterator: public const_iterator {
+	typedef typename const_iterator::container_t container_t;
+	friend class const_iterator::container_t;
+	
+		public:
+	typedef typename const_iterator::reference reference;
+	typedef typename const_iterator::const_reference const_reference;
+	typedef typename const_iterator::special special;
+	
+	/// Default constructor, does not iterate anywhere
+	iterator(): const_iterator() {}
+	
+	/// Constructor from a container and an offset
+	iterator(container_t& c, size_type offset = 0):
+		const_iterator(c, offset) {}
+	
+	/// Special constructor: initializes at the beginning of the container
+	iterator(const container_t& c, const typename special::begin _):
+		const_iterator(c, _) {}
+	
+	/// Special constructor: initializes at the end of the container
+	iterator(const container_t& c, const typename special::end _):
+		const_iterator(c, _) {}
+	
+	/// Random access
+	reference operator[] (size_type offset) const
+		{ return (*const_iterator::cont)[const_iterator::index + offset]; }
+	
+	//@{
+	/// Increment and decrement operators
+	iterator& operator++() { const_iterator::operator++(); return *this; }
+	iterator operator++(int _) { return const_iterator::operator++(_); }
+	//@}
+	
+	//@{
+	/// Increment and decrement operators
+	iterator& operator+= (difference_type delta)
+		{ const_iterator::operator+=(delta); return *this; }
+	iterator& operator-= (difference_type delta)
+		{ const_iterator::operator+=(delta); return *this; }
+	iterator operator+ (difference_type delta) const
+		{ return const_iterator::operator+(delta); }
+	iterator operator- (difference_type delta) const
+		{ return const_iterator::operator-(delta); }
+	//@}
+	
+	
+	/// Dereferenciation operator (can't write non-empty elements!)
+	reference operator*() const
+		{ return reference(const_iterator::operator*()); }
+	
+//	/// Returns the current range internal value; use it at your own risk!!
+//	range_iterator get_current_range() const
+//		{ return const_iterator::currentRange; }
+	
+		protected:
+	
+	// also worth conversion
+	iterator(const_iterator from): const_iterator(from) {}
+	
+}; // class lar::sparse_vector<T>::iterator
+
+
+
+// -----------------------------------------------------------------------------
+// ---  implemetation  ---------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 //--- sparse_vector implementation
 
 template <typename T>
-constexpr typename lar::sparse_vector<T>::value_type lar::sparse_vector<T>::value_zero;
+constexpr typename lar::sparse_vector<T>::value_type
+	lar::sparse_vector<T>::value_zero;
 
+
+template <typename T> 
+void lar::sparse_vector<T>::resize(size_type new_size) {
+	if (new_size >= size()) {
+		nominal_size = new_size;
+		return;
+	}
+	
+	// truncating...
+	range_iterator iLastRange = find_next_range_iter(new_size);
+	ranges.erase(iLastRange, ranges.end());
+	if (!ranges.empty()) {
+		range_iterator iLastRange = ranges.end() - 1;
+		if (new_size == iLastRange->begin_index())
+			ranges.erase(iLastRange);
+		else if (new_size < iLastRange->end_index())
+			iLastRange->resize(new_size - iLastRange->begin_index());
+	} // if we have ranges
+	
+	// formally resize
+	nominal_size = new_size;
+} // lar::sparse_vector<T>::resize()
+
+
+template <typename T> 
+void lar::sparse_vector<T>::resize(size_type new_size, value_type def_value) {
+	if (new_size == size()) return;
+	if (new_size > size()) {
+		
+		if (back_is_void()) // add a new range
+			append(vector_t(new_size - size(), def_value));
+		else // extend the last range
+			ranges.back().resize(new_size - ranges.back().begin_index(), def_value);
+		
+		nominal_size = new_size;
+		return;
+	}
+	// truncating is the same whether there is a default value or not
+	resize(new_size);
+} // lar::sparse_vector<T>::resize()
+
+
+template <typename T>
+inline typename lar::sparse_vector<T>::iterator lar::sparse_vector<T>::begin()
+	{ return iterator(*this, typename iterator::special::begin()); }
+
+template <typename T>
+inline typename lar::sparse_vector<T>::iterator lar::sparse_vector<T>::end()
+	{ return iterator(*this, typename iterator::special::end()); }
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::begin() const
+	{ return const_iterator(*this, typename const_iterator::special::begin()); }
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::end() const
+	{ return const_iterator(*this, typename const_iterator::special::end()); }
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::cbegin()
+	{ return const_iterator(*this, typename const_iterator::special::begin()); }
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::cend()
+	{ return const_iterator(*this, typename const_iterator::special::end()); }
 
 
 template <typename T>
@@ -1446,6 +1444,17 @@ typename lar::sparse_vector<T>::reference lar::sparse_vector<T>::operator[]
 	datarange_t& range(*--iNextRange);
 	return (index < range.end_index())? reference(range[index]): reference();
 } // lar::sparse_vector<T>::operator[]
+
+
+template <typename T>
+bool lar::sparse_vector<T>::is_void(size_type index) const {
+	if (ranges.empty() || (index >= size()))
+		throw std::out_of_range("empty sparse vector");
+	// range after the index:
+	range_const_iterator iNextRange = find_next_range_iter(index);
+	return ((iNextRange == ranges.begin()) 
+		|| ((--iNextRange)->end_index() <= index));
+} // lar::sparse_vector<T>::is_void()
 
 
 template <typename T>
@@ -1518,22 +1527,62 @@ void lar::sparse_vector<T>::unset_at(size_type index) {
 
 
 template <typename T>
-bool lar::sparse_vector<T>::is_valid() const {
-	// a sparse vector with no non-null elements can't be detected invalid
-	if (ranges.empty()) return true;
-	
-	range_const_iterator iNext = ranges.begin(), rend = ranges.end();
-	while (iNext != rend) {
-		range_const_iterator iRange = iNext++;
-		if (iRange->empty()) return false;
-		if (iNext != rend) {
-			if (!(*iRange < *iNext)) return false;
-			if (!iRange->separate(*iNext)) return false;
-		}
-	} // while
-	if (nominal_size < ranges.back().end_index()) return false;
-	return true;
-} // lar::sparse_vector<T>::is_valid()
+typename lar::sparse_vector<T>::range_const_iterator
+	lar::sparse_vector<T>::find_range_iterator(size_type index) const
+{
+	if (ranges.empty()) throw std::out_of_range("empty sparse vector");
+	// range after the index:
+	range_const_iterator iNextRange = find_next_range_iter(index);
+	return ((iNextRange == ranges.begin()) 
+		|| (index >= (--iNextRange)->end_index()))?
+		ranges.end(): iNextRange;
+} // lar::sparse_vector<T>::find_range_iterator() const
+
+
+template <typename T>
+inline typename lar::sparse_vector<T>::range_iterator 
+	lar::sparse_vector<T>::find_range_iterator(size_type index)
+{
+	return ranges.begin() + (
+		(const_cast<const this_t*>(this)->find_range_iterator(index))
+		- ranges.begin());
+} // lar::sparse_vector<T>::find_range_iterator()
+
+
+template <typename T>
+const typename lar::sparse_vector<T>::datarange_t&
+	lar::sparse_vector<T>::find_range(size_type index) const
+{
+	if (ranges.empty()) throw std::out_of_range("empty sparse vector");
+	// range on the index:
+	range_const_iterator iNextRange = find_range_iterator(index);
+	if (iNextRange == ranges.end())
+		throw std::out_of_range("index in no range of the sparse vector");
+	return *iNextRange;
+} // lar::sparse_vector<T>::find_range() const
+
+template <typename T>
+inline typename lar::sparse_vector<T>::datarange_t&
+	lar::sparse_vector<T>::find_range(size_type index)
+{
+	return const_cast<datarange_t&>
+		(const_cast<const this_t*>(this)->find_range(index));
+} // lar::sparse_vector<T>::find_range()
+
+
+template <typename T>
+void lar::sparse_vector<T>::make_void_around(size_type index) {
+	if (ranges.empty() || (index >= size()))
+		throw std::out_of_range("empty sparse vector");
+	// range after the index:
+	range_iterator iNextRange = find_next_range_iter(index);
+	if ((iNextRange == ranges.begin()) 
+		|| ((--iNextRange)->end_index() <= index))
+	{
+		return;
+	}
+	ranges.erase(iNextRange);
+} // lar::sparse_vector<T>::make_void_around()
 
 
 template <typename T> template <typename ITER>
@@ -1587,27 +1636,6 @@ const typename lar::sparse_vector<T>::datarange_t& lar::sparse_vector<T>::add_ra
 } // lar::sparse_vector<T>::add_range(vector)
 
 
-
-template <typename T> 
-typename lar::sparse_vector<T>::datarange_t& lar::sparse_vector<T>::merge_ranges
-  (range_iterator iRange)
-{
-	range_iterator iNext = iRange + 1;
-	while (iNext != ranges.end()) {
-		if (!iRange->borders(iNext->begin_index())) break;
-		// iRange content dominates, but if iNext has data beyond it,
-		// then we copy it
-		if (iNext->end_index() > iRange->end_index()) {
-			iRange->extend
-				(iRange->end_index(), iNext->get_iterator(iRange->end_index()), iNext->end());
-		}
-		iNext = ranges.erase(iNext);
-	} // while
-	fix_size();
-	return *iRange;
-} // lar::sparse_vector<T>::merge_ranges()
-
-
 template <typename T> 
 void lar::sparse_vector<T>::make_void(iterator first, iterator last) {
 	// iterators have in "currentRange" either the range they point into, 
@@ -1657,45 +1685,71 @@ void lar::sparse_vector<T>::make_void(iterator first, iterator last) {
 } // lar::sparse_vector<T>::make_void()
 
 
+template <typename T>
+bool lar::sparse_vector<T>::is_valid() const {
+	// a sparse vector with no non-null elements can't be detected invalid
+	if (ranges.empty()) return true;
+	
+	range_const_iterator iNext = ranges.begin(), rend = ranges.end();
+	while (iNext != rend) {
+		range_const_iterator iRange = iNext++;
+		if (iRange->empty()) return false;
+		if (iNext != rend) {
+			if (!(*iRange < *iNext)) return false;
+			if (!iRange->separate(*iNext)) return false;
+		}
+	} // while
+	if (nominal_size < ranges.back().end_index()) return false;
+	return true;
+} // lar::sparse_vector<T>::is_valid()
+
+
+
+// --- private methods
+
 template <typename T> 
-void lar::sparse_vector<T>::resize(size_type new_size) {
-	if (new_size >= size()) {
-		nominal_size = new_size;
-		return;
-	}
-	
-	// truncating...
-	range_iterator iLastRange = find_next_range_iter(new_size);
-	ranges.erase(iLastRange, ranges.end());
-	if (!ranges.empty()) {
-		range_iterator iLastRange = ranges.end() - 1;
-		if (new_size == iLastRange->begin_index())
-			ranges.erase(iLastRange);
-		else if (new_size < iLastRange->end_index())
-			iLastRange->resize(new_size - iLastRange->begin_index());
-	} // if we have ranges
-	
-	// formally resize
-	nominal_size = new_size;
-} // lar::sparse_vector<T>::resize()
+typename lar::sparse_vector<T>::range_iterator
+	lar::sparse_vector<T>::find_next_range_iter
+	(size_type index, range_iterator rbegin)
+{
+	// this range has the offset (first index) above the index argument:
+	return std::upper_bound(
+		rbegin, ranges.end(), index,
+		typename datarange_t::less_int_range(datarange_t::less)
+		);
+} // lar::sparse_vector<T>::find_next_range_iter()
+
+template <typename T> 
+typename lar::sparse_vector<T>::range_const_iterator
+	lar::sparse_vector<T>::find_next_range_iter
+	(size_type index, range_const_iterator rbegin) const
+{
+	// this range has the offset (first index) above the index argument:
+	return std::upper_bound(
+		rbegin, ranges.end(), index,
+		typename datarange_t::less_int_range(datarange_t::less)
+		);
+} // lar::sparse_vector<T>::find_next_range_iter() const
 
 
 template <typename T> 
-void lar::sparse_vector<T>::resize(size_type new_size, value_type def_value) {
-	if (new_size == size()) return;
-	if (new_size > size()) {
-		
-		if (back_is_void()) // add a new range
-			append(vector_t(new_size - size(), def_value));
-		else // extend the last range
-			ranges.back().resize(new_size - ranges.back().begin_index(), def_value);
-		
-		nominal_size = new_size;
-		return;
-	}
-	// truncating is the same whether there is a default value or not
-	resize(new_size);
-} // lar::sparse_vector<T>::resize()
+typename lar::sparse_vector<T>::datarange_t& lar::sparse_vector<T>::merge_ranges
+  (range_iterator iRange)
+{
+	range_iterator iNext = iRange + 1;
+	while (iNext != ranges.end()) {
+		if (!iRange->borders(iNext->begin_index())) break;
+		// iRange content dominates, but if iNext has data beyond it,
+		// then we copy it
+		if (iNext->end_index() > iRange->end_index()) {
+			iRange->extend
+				(iRange->end_index(), iNext->get_iterator(iRange->end_index()), iNext->end());
+		}
+		iNext = ranges.erase(iNext);
+	} // while
+	fix_size();
+	return *iRange;
+} // lar::sparse_vector<T>::merge_ranges()
 
 
 template <typename T> 
@@ -1709,6 +1763,15 @@ typename lar::sparse_vector<T>::range_iterator lar::sparse_vector<T>::eat_range_
 } // lar::sparse_vector<T>::eat_range_head()
 
 
+template <typename T>
+typename lar::sparse_vector<T>::size_type lar::sparse_vector<T>::fix_size() {
+	if (!ranges.empty())
+		nominal_size = std::max(nominal_size, ranges.back().end_index());
+	return nominal_size;
+} // lar::sparse_vector<T>::fix_size()
+
+
+// --- static methods
 
 template <typename T>
 inline size_t lar::sparse_vector<T>::expected_vector_size(size_t size) {
@@ -1744,9 +1807,31 @@ inline bool lar::sparse_vector<T>::should_merge(
 } // lar::sparse_vector<T>::should_merge()
 
 
-//------------------------------------------------------------------------------
-//--- lar::sparse_vector<T>::datarange_t implementation
-//---
+
+// --- non-member functions
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const sparse_vector<T>& v) {
+	
+	out << "Sparse vector of size " << v.size() << " with "
+		<< v.get_ranges().size() << " ranges:";
+	typename sparse_vector<T>::range_const_iterator iRange = v.begin_range(),
+		rend = v.end_range();
+	while (iRange != rend) {
+		out << "\n  [" << iRange->begin_index() << " - " << iRange->end_index()
+			<< "] (" << iRange->size() << "):";
+		typename sparse_vector<T>::datarange_t::const_iterator
+			iValue = iRange->begin(), vend = iRange->end();
+		while (iValue != vend) out << " " << (*(iValue++));
+		++iRange;
+	} // for
+	return out << std::endl;
+} // operator<< (ostream, sparse_vector<T>)
+
+
+
+// -----------------------------------------------------------------------------
+// --- lar::sparse_vector<T>::datarange_t implementation
+// ---
 template <typename T> template <typename ITER>
 typename lar::sparse_vector<T>::datarange_t& lar::sparse_vector<T>::datarange_t::extend
   (size_type index, ITER first, ITER last)
@@ -1779,9 +1864,9 @@ void lar::sparse_vector<T>::datarange_t::move_head
 } // lar::sparse_vector<T>::datarange_t::move_head()
 
 
-//------------------------------------------------------------------------------
-//--- lar::sparse_vector<T>::const_iterator implementation
-//---
+// -----------------------------------------------------------------------------
+// --- lar::sparse_vector<T>::const_iterator implementation
+// ---
 template <typename T>
 typename lar::sparse_vector<T>::const_iterator&
 lar::sparse_vector<T>::const_iterator::operator++() {
@@ -1822,6 +1907,58 @@ lar::sparse_vector<T>::const_iterator::operator*() const {
 
 
 template <typename T>
+typename lar::sparse_vector<T>::const_iterator&
+	lar::sparse_vector<T>::const_iterator::operator+= (difference_type delta)
+{
+	if (delta == 1) return this->operator++();
+	index += delta;
+	if ((currentRange == cont->ranges.end())
+		|| !currentRange->includes(index)
+		)
+		refresh_state();
+	return *this;
+} // lar::sparse_vector<T>::const_iterator::operator+=()
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator&
+	lar::sparse_vector<T>::const_iterator::operator-= (difference_type delta)
+	{ return this->operator+= (-delta); }
+
+
+template <typename T>
+typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::const_iterator::operator+ (difference_type delta) const
+{
+	if ((currentRange == cont->ranges.end())
+		|| !currentRange->includes(index + delta)
+		)
+		return const_iterator(*cont, index + delta);
+	const_iterator iter(*this);
+	iter.index += delta;
+	return iter;
+} // lar::sparse_vector<T>::const_iterator::operator+()
+
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator
+	lar::sparse_vector<T>::const_iterator::operator- (difference_type delta) const
+	{ return this->operator+ (-delta); }
+
+
+/// distance operator
+template <typename T>
+inline typename lar::sparse_vector<T>::const_iterator::difference_type
+	lar::sparse_vector<T>::const_iterator::operator-
+	(const const_iterator& iter) const
+{
+	if (cont != iter.cont) {
+		throw std::runtime_error("lar::sparse_vector::const_iterator:"
+			" difference with alien iterator");
+	}
+	return index -iter.index;
+} // lar::sparse_vector<T>::const_iterator::operator-(const_iterator)
+
+
+template <typename T>
 void lar::sparse_vector<T>::const_iterator::refresh_state() {
 	// update the currentRange
 	// currentRange is the range including the current item, or next to it
@@ -1839,8 +1976,9 @@ void lar::sparse_vector<T>::const_iterator::refresh_state() {
 } // lar::sparse_vector<T>::const_iterator::refresh_state()
 
 
-//------------------------------------------------------------------------------
-//--- lar::sparse_vector<T>::iterator implementation
+// -----------------------------------------------------------------------------
+// --- lar::sparse_vector<T>::iterator implementation
+// ---
 //
 // nothing new so far
 //
