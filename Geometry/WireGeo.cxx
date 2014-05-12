@@ -6,19 +6,31 @@
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <cmath>
-
 #include "Geometry/WireGeo.h"
 
+// C/C++ libraries
+#include <cmath>
+#include <iostream>
+#include <algorithm> // std::copy()
+
+// ROOT
 #include "TGeoManager.h"
 #include "TGeoTube.h"
 #include "TGeoMatrix.h"
 #include "TGeoNode.h"
 #include "TMath.h"
 
+// CLHEP
+#include "CLHEP/Vector/RotationInterfaces.h" // HepGeom::HepRep3x3
+#include "CLHEP/Vector/Rotation.h" // CLHEP::HepRotation
+#include "CLHEP/Vector/ThreeVector.h" // CLHEP::Hep3Vector
+#include "CLHEP/Geometry/Vector3D.h"
+#include "CLHEP/Geometry/Transform3D.h"
+
+// framework
 #include "cetlib/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+
 
 namespace geo{
 
@@ -31,8 +43,6 @@ namespace geo{
   {
     fWireNode = path[depth];
     fHalfL    = ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetDZ();
-    fRMax     = ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetRmax(); 
-    fRMin     = ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetRmin(); 
 
     /// uncomment the following to check the paths to the wires
     ///   std::string p(base);
@@ -47,34 +57,29 @@ namespace geo{
     TGeoHMatrix mat(*path[0]->GetMatrix());
     for(int i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
 
-    fGeoMatrix = new TGeoHMatrix(mat);
+    const Double_t* translation = mat.GetTranslation();
+    // there are not many ways to set a HepGeom::Transform3D...
+    fGeoMatrix = HepGeom::Transform3D(
+      CLHEP::HepRotation(CLHEP::HepRep3x3(mat.GetRotationMatrix())),
+      CLHEP::Hep3Vector(translation[0], translation[1], translation[2])
+      );
 
     // determine the orientation of the wire
-    double local[3]    = {0.};
-    double xyzCenter[3] = {0.};
-    double xyzEnd[3] = {0.};
-    double xyzStart[3] = {0.};
+    double local[3] = { 0., 0., 0. };
+    LocalToWorld(local, fCenter);
 
-    this->LocalToWorld(local, xyzCenter);
-    fCenter = TVector3(xyzCenter);
+    double xyzEnd[3];
     local[2] = fHalfL;
-    this->LocalToWorld(local, xyzEnd);
-    local[2] *= -1.;
-    this->LocalToWorld(local, xyzStart);
+    LocalToWorld(local, xyzEnd);
 
-    // get the cosines in each direction, ie dx/dS, etc
-    fDirection = TVector3((xyzEnd[0]-xyzStart[0])/(2.*fHalfL),
-			  (xyzEnd[1]-xyzStart[1])/(2.*fHalfL),
-			  (xyzEnd[2]-xyzStart[2])/(2.*fHalfL));
-
-    fThetaZ = std::acos((xyzEnd[2] - xyzCenter[2])/fHalfL);
+    fThetaZ = std::acos((xyzEnd[2] - fCenter[2])/fHalfL);
     
     // check to see if it runs "forward" or "backwards" in z
     // check is made looking at the y position of the end point
     // relative to the center point because you want to know if
     // the end point is above or below the center of the wire in 
     // the yz plane
-    if(xyzEnd[1] < xyzCenter[1]) fThetaZ *= -1.;
+    if(xyzEnd[1] < fCenter[1]) fThetaZ *= -1.;
 
     //This ensures we are looking at the angle between 0 and Pi
     //as if the wire runs at one angle it also runs at that angle +-Pi
@@ -84,52 +89,52 @@ namespace geo{
   }
 
   //......................................................................
-  WireGeo::~WireGeo()
-  {
-    //if(fGeoMatrix) delete fGeoMatrix;
-  
-    return;
-  }  
-
-  //......................................................................
 
   /// Transform a position from local frame to world frame
   /// \param local : 3D array. Position in the local frame  Input.
   /// \param world : 3D array. Position in the world frame. Returned.
   void WireGeo::LocalToWorld(const double* local, double* world) const
   {
-    fGeoMatrix->LocalToMaster(local,world);
+    HepGeom::Point3D<double> worldPoint
+      = fGeoMatrix * HepGeom::Point3D<double>(local);
+    std::copy((const double*) worldPoint, (const double*) worldPoint + 3, world);
   }
 
   //......................................................................    
 
-  /// Transform a 3-vector from local frame to world frame
+  /// Transform a 3-vector from local frame to world frame (rotation only)
   /// \param local : 3D array. Position in the local frame  Input.
   /// \param world : 3D array. Position in the world frame. Returned.
   void WireGeo::LocalToWorldVect(const double* local, double* world) const
   {
-    fGeoMatrix->LocalToMasterVect(local,world);
+    HepGeom::Vector3D<double> worldVect
+      = fGeoMatrix * HepGeom::Vector3D<double>(local);
+    std::copy((const double*) worldVect, (const double*) worldVect + 3, world);
   }
-    
+  
   //......................................................................
 
   /// Transform a position from world frame to local frame
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
-  void WireGeo::WorldToLocal(const double* local, double* world) const
+  void WireGeo::WorldToLocal(const double* world, double* local) const
   {
-    fGeoMatrix->MasterToLocal(local,world);
+    HepGeom::Point3D<double> localPoint
+      = fGeoMatrix.inverse() * HepGeom::Point3D<double>(world);
+    std::copy((const double*) localPoint, (const double*) localPoint + 3, local);
   }
 
   //......................................................................
 
-  /// Transform a 3-vector from world frame to local frame
+  /// Transform a 3-vector from world frame to local frame (rotation only)
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
-  void WireGeo::WorldToLocalVect(const double* local, double* world) const
+  void WireGeo::WorldToLocalVect(const double* world, double* local) const
   {
-    fGeoMatrix->MasterToLocalVect(local,world);
-  }
+    HepGeom::Vector3D<double> localVect
+      = fGeoMatrix.inverse() * HepGeom::Vector3D<double>(world);
+    std::copy((const double*) localVect, (const double*) localVect + 3, local);
+  } // WireGeo::WorldToLocalVect()
 
   //......................................................................
 
@@ -139,42 +144,53 @@ namespace geo{
   /// (cm). Default is center of wire
   void WireGeo::GetCenter(double* xyz, double localz) const
   {
-    double locz = localz;
-    if(std::abs(locz) > fHalfL){
-      mf::LogWarning("WireGeo") << "asked for z position along wire that "
-				<< "extends beyond the wire, returning position "
-				<< "at end point";
-      if(locz < 0) locz = -fHalfL;
-      else         locz =  fHalfL;
+    if (localz == 0.) { // if no dislocation is requested, we alrady have it
+      std::copy(fCenter, fCenter + 3, xyz);
+      return;
     }
-
-    TVector3 point(fCenter);
-    point += fDirection*locz;
-
-    xyz[0] = point.X();
-    xyz[1] = point.Y();
-    xyz[2] = point.Z();
-  }
-
-  //......................................................................
-
-  double WireGeo::RMax() const 
-  {
-    return fRMax;
-  }
     
-  //......................................................................
+    double locz = localz;
+    if (std::abs(locz) > fHalfL) {
+      mf::LogWarning("WireGeo") << "asked for z position along wire that"
+        " extends beyond the wire, returning position"
+        " at end point";
+      locz = (locz < 0)? -fHalfL: fHalfL;
+    }
+    // this thing goes through some temporary TVector3's
+    (Direction() * locz + fCenter).GetXYZ(xyz);
+  }
 
+  //......................................................................
+  TVector3 geo::WireGeo::Direction() const {
+    // determine the orientation of the wire
+    double xyzEnd[3], xyzStart[3];
+    
+    double local[3] = { 0., 0., fHalfL };
+    LocalToWorld(local, xyzEnd);
+    local[2] = -fHalfL;
+    LocalToWorld(local, xyzStart);
+    
+    // get the cosines in each direction, ie dx/dS, etc
+    return TVector3(
+      (xyzEnd[0]-xyzStart[0])/(2.*fHalfL),
+      (xyzEnd[1]-xyzStart[1])/(2.*fHalfL),
+      (xyzEnd[2]-xyzStart[2])/(2.*fHalfL)
+      );
+  } // geo::WireGeo::Direction()
+  
+  //......................................................................
+  double geo::WireGeo::RMax() const
+    { return ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetRmax(); }
+  
+  //......................................................................
+  double geo::WireGeo::RMin() const
+    { return ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetRmin(); }
+  
+  //......................................................................
+  
   double WireGeo::HalfL() const 
   {
     return fHalfL;
-  }
-
-  //......................................................................
-
-  double WireGeo::RMin() const 
-  {
-    return fRMin;
   }
 
   //......................................................................
