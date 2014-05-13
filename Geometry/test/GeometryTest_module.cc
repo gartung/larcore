@@ -55,14 +55,17 @@ namespace geo {
     explicit GeometryTest(fhicl::ParameterSet const& pset);
     virtual ~GeometryTest();
 
-    void analyze(art::Event const& evt);
-    
+    virtual void analyze(art::Event const&) {}
+    virtual void beginJob();
+
   private:
 
     void printChannelSummary();
     void printVolBounds();
     void printDetDim();
     void printWirePos();
+    void printWiresInTPC(const TPCGeo& tpc, std::string indent = "") const;
+    void printAllGeometry() const;
     void testCryostat();
     void testTPC(unsigned int const& c);
     void testChannelToWire();
@@ -76,6 +79,7 @@ namespace geo {
     void testStepping();
 
     bool fCheckOverlaps;  ///< do the overlap check or not
+    bool fPrintWires;  ///< print all the wires in geometry (really: all!)
   };
 }
 
@@ -85,6 +89,7 @@ namespace geo{
   GeometryTest::GeometryTest(fhicl::ParameterSet const& pset) 
     : EDAnalyzer(pset)
     , fCheckOverlaps( pset.get<bool>("CheckForOverlaps", false) )
+    , fPrintWires( pset.get<bool>("PrintWires", false) )
   {
   }
 
@@ -94,10 +99,13 @@ namespace geo{
   }
 
   //......................................................................
-  void GeometryTest::analyze(art::Event const& /* evt */)
+  void GeometryTest::beginJob()
   {
     art::ServiceHandle<geo::Geometry> geom;
 
+    // change the printed version number when changing the output
+    mf::LogVerbatim("GeometryTest") << "GeometryTest version 1.0";
+    
     try{
       mf::LogVerbatim("GeometryTest") << "Wire Rmax  "         << geom->Plane(1).Wire(10).RMax()    ;
       mf::LogVerbatim("GeometryTest") << "Wire length "        << 2.*geom->Plane(1).Wire(10).HalfL();
@@ -106,9 +114,9 @@ namespace geo{
       mf::LogVerbatim("GeometryTest") << "Number of views "    << geom->Nviews()                    ;
       mf::LogVerbatim("GeometryTest") << "Number of channels " << geom->Nchannels()                 ;
 
-      mf::LogVerbatim("GeometryTest") << "print channel information ...";
+      LOG_DEBUG("GeometryTest") << "print channel information ...";
       printChannelSummary();
-      mf::LogVerbatim("GeometryTest") << "done printing.";
+      LOG_DEBUG("GeometryTest") << "done printing.";
       //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
       //printVolBounds();
       //mf::LogVerbatim("GeometryTest") << "done printing.";
@@ -120,53 +128,58 @@ namespace geo{
       //mf::LogVerbatim("GeometryTest") << "done printing.";
 
       if(fCheckOverlaps){
-	mf::LogVerbatim("GeometryTest") << "test for overlaps ...";
-	gGeoManager->CheckOverlaps(1e-5);
-	gGeoManager->PrintOverlaps();
-	mf::LogVerbatim("GeometryTest") << "complete.";
+        LOG_DEBUG("GeometryTest") << "test for overlaps ...";
+        gGeoManager->CheckOverlaps(1e-5);
+        gGeoManager->PrintOverlaps();
+        LOG_DEBUG("GeometryTest") << "complete.";
       }
 
-      mf::LogVerbatim("GeometryTest") << "test Cryostat methods ...";
+      LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
       testCryostat();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "test channel to plane wire and back ...";
+      LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
       testChannelToWire();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "test find plane centers...";
+      LOG_DEBUG("GeometryTest") << "test find plane centers...";
       testFindPlaneCenters();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "testProject...";
+      LOG_DEBUG("GeometryTest") << "testProject...";
       testProject();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      //mf::LogVerbatim("GeometryTest") << "testWirePos...";
+      //LOG_DEBUG("GeometryTest") << "testWirePos...";
       // There is a contradiction here, and these must be tested differently
       // Testing based on detector ID should NOT become common practice
       //if( geom->DetId()==geo::kLBNE10kt 
       //         || geom->DetId()==geo::kLBNE35t 
       //	   || geom->DetId()==geo::kLBNE34kt) testAPAWirePos();
       //else testStandardWirePos();
-      //mf::LogVerbatim("GeometryTest") << "complete.";
+      //LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "testNearestWire...";
+      LOG_DEBUG("GeometryTest") << "testNearestWire...";
       testNearestWire();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
       
-      mf::LogVerbatim("GeometryTest") << "testWirePitch...";
+      LOG_DEBUG("GeometryTest") << "testWirePitch...";
       testWirePitch();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "testPlanePitch...";
+      LOG_DEBUG("GeometryTest") << "testPlanePitch...";
       testPlanePitch();
-      mf::LogVerbatim("GeometryTest") << "complete.";
+      LOG_DEBUG("GeometryTest") << "complete.";
 
-      mf::LogVerbatim("GeometryTest") << "testStepping...";
+      LOG_DEBUG("GeometryTest") << "testStepping...";
       testStepping();
-      mf::LogVerbatim("GeometryTest") << "complete.";
-
+      LOG_DEBUG("GeometryTest") << "complete.";
+      
+      if (fPrintWires) {
+        LOG_DEBUG("GeometryTest") << "printAllGeometry...";
+        printAllGeometry();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
     }
     catch (cet::exception &e) {
       mf::LogWarning("GeometryTest") << "exception caught: \n" << e;
@@ -292,6 +305,90 @@ namespace geo{
   }
 
   //......................................................................
+  // great insanity: print all wires in a TPC
+  void GeometryTest::printWiresInTPC
+    (const geo::TPCGeo& tpc, std::string indent /* = "" */) const
+  {
+    const unsigned int nPlanes = tpc.Nplanes();
+    const double Origin[3] = { 0., 0., 0. };
+    double TPCpos[3];
+    tpc.LocalToWorld(Origin, TPCpos);
+    mf::LogVerbatim("GeometryTest") << indent << "TPC at ("
+      << TPCpos[0] << ", " << TPCpos[1] << ", " << TPCpos[2]
+      << ") cm has " << nPlanes << " wire planes:";
+    for(unsigned int p = 0; p < nPlanes; ++p) {
+      const geo::PlaneGeo& plane = tpc.Plane(p);
+      const unsigned int nWires = plane.Nwires();
+      double PlanePos[3];
+      plane.LocalToWorld(Origin, PlanePos);
+      std::string coord, orientation;
+      switch (plane.View()) {
+        case geo::kU:       coord = "U direction"; break;
+        case geo::kV:       coord = "V direction"; break;
+        case geo::kZ:       coord = "Z direction"; break;
+        case geo::k3D:      coord = "3D coordinate"; break;
+        case geo::kUnknown: coord = "an unknown direction"; break;
+        default:            coord = "unexpected direction"; break;
+      } // switch
+      switch (plane.Orientation()) {
+        case geo::kHorizontal: orientation = "horizontal"; break;
+        case geo::kVertical:   orientation = "vertical"; break;
+        default:               orientation = "unexpected"; break;
+      }
+      mf::LogVerbatim("GeometryTest") << indent << "  plane #" << p << " at ("
+        << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2] << ") cm"
+        " has " << orientation << " orientation and "
+        << nWires << " wires measuring " << coord << ":";
+      for(unsigned int w = 0;  w < nWires; ++w) {
+        const geo::WireGeo& wire = plane.Wire(w);
+        double xyz[3] = { 0. };
+        double WireS[3],  WireM[3], WireE[3]; // start, middle point and end
+        wire.GetCenter(xyz);
+        // the wire should be aligned on z axis, half on each side of 0,
+        // in its local frame
+        double WirePoint[3] = { 0., 0., 0. };
+        wire.LocalToWorld(WirePoint, WireM);
+        WirePoint[2] = wire.HalfL();
+        wire.LocalToWorld(WirePoint, WireE);
+        WirePoint[2] = -wire.HalfL();
+        wire.LocalToWorld(WirePoint, WireS);
+        mf::LogVerbatim("GeometryTest") << indent
+          << "    wire #" << w
+          << " at (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")"
+          << "\n" << indent << "       start at (" << WireS[0] << ", " << WireS[1] << ", " << WireS[2] << ")"
+          << "\n" << indent << "      middle at (" << WireM[0] << ", " << WireM[1] << ", " << WireM[2] << ")"
+          << "\n" << indent << "         end at (" << WireE[0] << ", " << WireE[1] << ", " << WireE[2] << ")"
+          ;
+      } // for wire
+    } // for plane
+  } // GeometryTest::printWiresInTPC()
+
+  
+  void GeometryTest::printAllGeometry() const {
+    art::ServiceHandle<geo::Geometry> geom;
+    const unsigned int nCryostats = geom->Ncryostats();
+    const double Origin[3] = { 0., 0., 0. };
+    mf::LogVerbatim("GeometryTest") << "Detector " << geom->GetDetectorName()
+      << " has " << nCryostats << " cryostats:";
+    for(unsigned int c = 0; c < nCryostats; ++c) {
+      const geo::CryostatGeo& cryostat = geom->Cryostat(c);
+      const unsigned int nTPCs = cryostat.NTPC();
+      double CryoPos[3];
+      cryostat.LocalToWorld(Origin, CryoPos);
+      mf::LogVerbatim("GeometryTest") << "  cryostat #" << c << " at ("
+        << CryoPos[0] << ", " << CryoPos[1] << ", " << CryoPos[2] << ") cm has "
+        << nTPCs << " TPC(s):";
+      for(unsigned int t = 0;  t < nTPCs; ++t) {
+        const geo::TPCGeo& tpc = cryostat.TPC(t);
+        if (nTPCs > 1) mf::LogVerbatim("GeometryTest") << "    TPC #" << t;
+        printWiresInTPC(tpc, "    ");
+      } // for TPC
+    } // for cryostat
+    mf::LogVerbatim("GeometryTest") << "End of detector "
+      << geom->GetDetectorName() << " geometry.";
+  } // GeometryTest::printAllGeometry()
+
+  //......................................................................
   void GeometryTest::testCryostat()
   {
     art::ServiceHandle<geo::Geometry> geom;
@@ -319,7 +416,7 @@ namespace geo{
 			    0.5*(cryobound[3] - cryobound[2]) + cryobound[2],
 			    0.5*(cryobound[5] - cryobound[4]) + cryobound[4]};
 		
-      mf::LogVerbatim("GeometryTest") << "\t testing Geometry::PositionToCryostat....";
+      LOG_DEBUG("GeometryTest") << "\t testing Geometry::PoitionToCryostat....";
       try{
 	unsigned int cstat = 0;
 	geom->PositionToCryostat(worldLoc, cstat);
@@ -327,9 +424,9 @@ namespace geo{
       catch(cet::exception &e){
 	mf::LogWarning("FailedToLocateCryostat") << "\n exception caught:" << e;
       }
-      mf::LogVerbatim("GeometryTest") << "done";
+      LOG_DEBUG("GeometryTest") << "done";
 
-      mf::LogVerbatim("GeometryTest") << "\t Now test the TPCs associated with this cryostat";
+      LOG_DEBUG("GeometryTest") << "\t Now test the TPCs associated with this cryostat";
       this->testTPC(c);
     }
 
@@ -381,7 +478,7 @@ namespace geo{
 	throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
       }
 
-      mf::LogVerbatim("GeometryTest") << "\t testing PositionToTPC...";
+      LOG_DEBUG("GeometryTest") << "\t testing PositionToTPC...";
       // pick a position in the middle of the cryostat in the world coordinates
       double worldLoc[3] = {0.};
       double localLoc[3] = {0.};
@@ -394,7 +491,7 @@ namespace geo{
 	throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
 							 << tpc << " should be " << t << "\n";
 
-      mf::LogVerbatim("GeometryTest") << "done.";
+      LOG_DEBUG("GeometryTest") << "done.";
     }
     
     return;
@@ -665,7 +762,7 @@ namespace geo{
     }// end loop over cryostats
 
     stopWatch.Stop();
-    mf::LogVerbatim("GeometryTest") << "\tdone testing closest channel";
+    LOG_DEBUG("GeometryTest") << "\tdone testing closest channel";
     stopWatch.Print();
     
     // trigger an exception with NearestChannel
