@@ -48,8 +48,6 @@ find_ups_product( messagefacility v1_10_00 )
 find_ups_product( cetbuildtools v3_05_00 )
 find_ups_root( root v5_34_00 )
 
-cet_check_gcc()
-
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
 include(ArtMake)
