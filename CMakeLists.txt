@@ -43,9 +43,9 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
 cet_report_compiler_flags()
 
 # these are minimum required versions, not the actual product versions
-find_ups_product( art v1_06_00 )
+find_ups_product( art v1_09_00 )
 find_ups_product( messagefacility v1_10_00 )
-find_ups_product( cetbuildtools v3_05_00 )
+find_ups_product( cetbuildtools v3_10_00 )
 find_ups_root( root v5_34_00 )
 
 # macros for artdaq_dictionary and simple_plugin
