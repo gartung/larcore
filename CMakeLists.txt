@@ -57,6 +57,7 @@ include(BuildPlugins)
 add_subdirectory(Geometry)
 add_subdirectory(SimpleTypesAndConstants)
 add_subdirectory(SummaryData)
+add_subdirectory(Utilities)
 
 # ups - table and config files
 add_subdirectory(ups)
