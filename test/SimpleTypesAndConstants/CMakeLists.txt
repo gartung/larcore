@@ -4,9 +4,5 @@
 #
 # ======================================================================
 
-include(CetTest)
-cet_enable_asserts()
-
-
-cet_test( phyical_constants_test )
+cet_test( testPhysicalConstants )
 

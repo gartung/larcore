@@ -58,6 +58,9 @@ add_subdirectory(Geometry)
 add_subdirectory(SimpleTypesAndConstants)
 add_subdirectory(SummaryData)
 
+# tests 
+add_subdirectory(test)
+
 # ups - table and config files
 add_subdirectory(ups)
 
