@@ -5,7 +5,7 @@
 #include "geometry_jp250L.fcl"
 #include "geometry_lbne.fcl"
 #include "geometry_microboone.fcl"
-
+#include "geometry_lariattest.fcl"
 
 BEGIN_PROLOG
 
