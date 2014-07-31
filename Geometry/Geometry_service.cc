@@ -1236,16 +1236,46 @@ namespace geo {
     bool overlapZ_reverse = this->ValueInRange( w2_Start[2], w1_Start[2], w1_End[2] ) ||
                             this->ValueInRange( w2_End[2],   w1_Start[2], w1_End[2] );
 
-    if( overlapY && overlapZ && overlapY_reverse && overlapZ_reverse ){
-
-      this->IntersectionPoint( wid1.Wire,  wid2.Wire, 
+    //
+    // Copied over from ChannelsIntersect() above
+    // 
+    //
+    //
+    // override y overlap checks if a vertical plane exists:
+    if( this->Cryostat(wid1.Cryostat).TPC(wid1.TPC).Plane(wid1.Plane).Wire(wid1.Wire).ThetaZ() == M_PI/2 || 
+	this->Cryostat(wid2.Cryostat).TPC(wid2.TPC).Plane(wid2.Plane).Wire(wid2.Wire).ThetaZ() == M_PI/2){
+      overlapY         = true;	
+      overlapY_reverse = true;
+    }
+    //Same for this
+    if(std::abs(w2_Start[2] - w2_End[2]) < 0.01) overlapZ = overlapZ_reverse;
+if(overlapY && overlapZ){
+      this->IntersectionPoint(
+			       wid1.Wire,  wid2.Wire, 
 			       wid1.Plane, wid2.Plane,
 			       wid1.Cryostat,   wid1.TPC,
-			       widIntersect.y,  widIntersect.z      );
-      widIntersect.TPC = wid1.TPC;
-      
+			       w1_Start, w1_End, 
+			       w2_Start, w2_End, 
+			       widIntersect.y,  widIntersect.z );
+            mf::LogVerbatim("output") << " widIntersect Y:  "<<widIntersect.y
+      << " widIntersect Z:   "<<widIntersect.z;
       return true;
-    }
+      }
+    else if(overlapY_reverse && overlapZ_reverse){
+
+      this->IntersectionPoint(
+			      wid2.Wire,  wid1.Wire, 
+			      wid2.Plane, wid1.Plane,
+			      wid1.Cryostat,   wid1.TPC,
+			      w2_Start, w2_End, 
+			      w1_Start, w1_End, 
+			      widIntersect.y,  widIntersect.z );
+             mf::LogVerbatim("output") << " RVRS widIntersect Y:  "<<widIntersect.y
+      				<< " RVRS widIntersect Z:   "<<widIntersect.z;
+    
+      return true;
+      }
+ 
 
     // an intersection was not found, return false
     return false;
