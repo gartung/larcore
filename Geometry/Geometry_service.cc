@@ -1257,7 +1257,7 @@ if(overlapY && overlapZ){
 			       w1_Start, w1_End, 
 			       w2_Start, w2_End, 
 			       widIntersect.y,  widIntersect.z );
-            mf::LogVerbatim("output") << " widIntersect Y:  "<<widIntersect.y
+            LOG_DEBUG("Geometry") << " widIntersect Y:  "<<widIntersect.y
       << " widIntersect Z:   "<<widIntersect.z;
       return true;
       }
@@ -1270,7 +1270,7 @@ if(overlapY && overlapZ){
 			      w2_Start, w2_End, 
 			      w1_Start, w1_End, 
 			      widIntersect.y,  widIntersect.z );
-             mf::LogVerbatim("output") << " RVRS widIntersect Y:  "<<widIntersect.y
+             LOG_DEBUG("Geometry") << " RVRS widIntersect Y:  "<<widIntersect.y
       				<< " RVRS widIntersect Z:   "<<widIntersect.z;
     
       return true;
