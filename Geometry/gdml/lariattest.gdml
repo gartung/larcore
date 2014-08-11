@@ -27,10 +27,10 @@
  <position name="SipmCutPosition" unit="cm" x="0.0" y="-4.0" z="13.1"/>
  <position name="SipmCutPosition2" unit="cm" x="0.0" y="4.0" z="13.1"/>
 
- <position name="tpb1pos" unit="cm" x="0.0" y="-(7.5-(0.02844/2))" z="-3.125"/>
- <position name="tpb2pos" unit="cm" x="0.0" y="(7.5-(0.02844/2))" z="-3.125"/>
- <position name="tpb3pos" unit="cm" x="-(7.5-(0.02844/2))" y="0.0" z="-3.125"/>
- <position name="tpb4pos" unit="cm" x="(7.5-(0.02844/2))" y="0.0" z="-3.125"/>
+ <position name="tpb1pos" unit="cm" x="0.0" y="-(7.0-(0.02844/2))" z="-3.125"/>
+ <position name="tpb2pos" unit="cm" x="0.0" y="(7.0-(0.02844/2))" z="-3.125"/>
+ <position name="tpb3pos" unit="cm" x="-(7.0-(0.02844/2))" y="0.0" z="-3.125"/>
+ <position name="tpb4pos" unit="cm" x="(7.0-(0.02844/2))" y="0.0" z="-3.125"/>
  <position name="tpb5pos" unit="cm" x="0.0" y="0.0" z="-(12.5-(0.02844/2))"/>
  <position name="tpb6pos" unit="cm" x="0.0" y="0.0" z="(12.5-(0.02844/2))"/>
 <position name="PMTEtlPos" unit="cm" x="4.32" y="0.0" z="18.75"/>
