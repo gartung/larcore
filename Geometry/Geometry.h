@@ -233,7 +233,7 @@ namespace geo {
 
     // There are some issues that require detector-specific queries.
     // This method returns an enumerated type that can be tested in those cases
-    geo::DetId_t DetId()                                          const {return fDetId; }
+    //geo::DetId_t DetId()                                          const {return fDetId; }
 
 
     // The Geant4 simulation needs to know the name of the world volume.

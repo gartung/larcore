@@ -10,6 +10,7 @@
 #define SD_RUNDATA_H
 
 #include "SimpleTypesAndConstants/geo_types.h"
+#include <string>
 
 namespace sumdata {
 
@@ -18,16 +19,18 @@ namespace sumdata {
   public:
 
     RunData(); // Default constructor
-    explicit RunData(geo::DetId_t detid);
 
   private:
 
-    geo::DetId_t fDetId;  ///< detector id
-
+    geo::DetId_t fDetId;   ///< detector id
+    std::string  fDetName; ///< detector name
 #ifndef __GCCXML__
 
   public:
-    geo::DetId_t DetId() const;
+    explicit           RunData(geo::DetId_t detid);
+    explicit           RunData(std::string detectorName);
+    geo::DetId_t       DetId() const;
+    std::string const& DetName() const;
 
 #endif
 
@@ -36,7 +39,8 @@ namespace sumdata {
 
 #ifndef __GCCXML__
 
-inline geo::DetId_t sumdata::RunData::DetId() const { return fDetId; }
+inline geo::DetId_t       sumdata::RunData::DetId()   const { return fDetId; }
+inline std::string const& sumdata::RunData::DetName() const { return fDetName; }
 
 #endif
 
