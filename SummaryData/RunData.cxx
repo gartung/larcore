@@ -13,13 +13,22 @@ namespace sumdata {
 
   //---------------------------------------------------------
   RunData::RunData() 
-    : fDetId(geo::kArgoNeuT)
+    : fDetId(geo::kUnknownDetId)
+    , fDetName("nodetectorname")
   {
   }
 
   //---------------------------------------------------------
   RunData::RunData(geo::DetId_t detid) 
     : fDetId(detid)
+    , fDetName("nodetectorname")
+  {
+  }
+
+  //---------------------------------------------------------
+  RunData::RunData(std::string detectorName) 
+    : fDetId(geo::kUnknownDetId)
+    , fDetName(detectorName)
   {
   }
 
