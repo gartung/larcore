@@ -342,16 +342,14 @@ namespace geo{
       for(unsigned int w = 0;  w < nWires; ++w) {
         const geo::WireGeo& wire = plane.Wire(w);
         double xyz[3] = { 0. };
+        wire.LocalToWorld(xyz, xyz); // LocalToWorld() supports in place transf.
         double WireS[3],  WireM[3], WireE[3]; // start, middle point and end
-        wire.GetCenter(xyz);
+        
         // the wire should be aligned on z axis, half on each side of 0,
         // in its local frame
-        double WirePoint[3] = { 0., 0., 0. };
-        wire.LocalToWorld(WirePoint, WireM);
-        WirePoint[2] = wire.HalfL();
-        wire.LocalToWorld(WirePoint, WireE);
-        WirePoint[2] = -wire.HalfL();
-        wire.LocalToWorld(WirePoint, WireS);
+        wire.GetStart(WireS);
+        wire.GetCenter(WireM);
+        wire.GetEnd(WireE);
         mf::LogVerbatim("GeometryTest") << indent
           << "    wire #" << w
           << " at (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")"

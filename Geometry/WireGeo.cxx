@@ -156,8 +156,8 @@ namespace geo{
         " at end point";
       locz = (locz < 0)? -fHalfL: fHalfL;
     }
-    // this thing goes through some temporary TVector3's
-    (Direction() * locz + fCenter).GetXYZ(xyz);
+    const double local[3] = { 0., 0., locz };
+    LocalToWorld(local, xyz);
   }
 
   //......................................................................

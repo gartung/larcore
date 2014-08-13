@@ -36,6 +36,8 @@ namespace geo {
     WireGeo(std::vector<const TGeoNode*>& path, int depth);
 
     void   GetCenter(double* xyz, double localz=0.0) const;
+    void   GetStart(double* xyz) const { GetCenter(xyz, -fHalfL); }
+    void   GetEnd(double* xyz) const { GetCenter(xyz, +fHalfL); }
     double RMax() const;
     double HalfL() const;
     double RMin() const;
