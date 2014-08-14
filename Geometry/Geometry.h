@@ -219,12 +219,10 @@ namespace geo {
 
     // The full directory path to the GDML file that was the source
     // of the detector geometry.
-    std::string         GetGDMLPath()                             const { return fGDMLfile; }
-    std::string         GetROOTPath()                             const { return fROOTfile; }
     std::string         ROOTFile()                                const { return fROOTfile; }
     std::string         GDMLFile()                                const { return fGDMLfile; }
     // The name of the detector.
-    const TString       GetDetectorName()                         const { return fDetectorName; }
+    std::string         DetectorName()                            const { return std::string(fDetectorName); }
 
     // There are some issues that require detector-specific queries.
     // This method returns an enumerated type that can be tested in those cases

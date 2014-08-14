@@ -130,7 +130,8 @@ namespace geo {
       // check to see if the detector name in the RunData
       // object has not been set.  If that is the case, 
       // try the old DetId_t code
-      if(rdcol[0]->DetName().compare("nodetectorname", 0)){
+      std::string const nodetname("nodetectorname");
+      if(rdcol[0]->DetName().compare(nodetname) == 0){
 	fDetId = rdcol[0]->DetId();
       
 	switch(fDetId){

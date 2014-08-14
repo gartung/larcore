@@ -4,7 +4,8 @@
 <!--  lines and for all objects that are data members of those objects.-->
  
 <lcgdict>
-  <class name="sumdata::RunData"    ClassVersion="10">
+  <class name="sumdata::RunData"    ClassVersion="11">
+   <version ClassVersion="11" checksum="2747058960"/>
    <version ClassVersion="10" checksum="1710245499"/>
   </class>
   <class name="sumdata::POTSummary" ClassVersion="10">
