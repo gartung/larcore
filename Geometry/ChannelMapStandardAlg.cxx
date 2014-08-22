@@ -194,6 +194,21 @@ namespace geo{
   {
     return fNchannels;
   }
+
+  //----------------------------------------------------------------------------
+  float ChannelMapStandardAlg::WireCoordinate(const float& YPos, const float& ZPos,
+                                              unsigned int PlaneNo,
+                                              unsigned int TPCNo,
+                                              unsigned int cstat) const
+  {
+    // Returns the wire number corresponding to a (Y,Z) position in PlaneNo 
+    // with float precision.
+    // B. Baller August 2014
+    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
+	 + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
+	 - fFirstWireProj[cstat][TPCNo][PlaneNo];
+  }
+
   
   //----------------------------------------------------------------------------
   WireID ChannelMapStandardAlg::NearestWireID(const TVector3& worldPos,
@@ -205,10 +220,9 @@ namespace geo{
     // This part is the actual calculation of the nearest wire number, where we assume
     //  uniform wire pitch and angle within a wireplane
     
-    int NearestWireNumber = int(std::nearbyint(worldPos[1]*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
-					       + worldPos[2]*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
-					       - fFirstWireProj[cstat][TPCNo][PlaneNo]));
-    
+    int NearestWireNumber = 
+      int(std::nearbyint(WireCoordinate(worldPos.Y(), worldPos.Z(), PlaneNo, TPCNo, cstat)));
+
     unsigned int wireNumber = (unsigned int) NearestWireNumber;
     
     // If we are outside of the wireplane range, throw an exception

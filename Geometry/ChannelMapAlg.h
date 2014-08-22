@@ -30,6 +30,12 @@ namespace geo{
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(uint32_t channel)           const = 0;
    virtual uint32_t            	    Nchannels()                               const = 0;
+
+   virtual float WireCoordinate(const float& YPos, const float& ZPos,
+		                unsigned int    PlaneNo,
+		                unsigned int    TPCNo,
+		                unsigned int    cstat) const = 0;
+
    virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
 			       	    		     unsigned int    PlaneNo,		   
 			       	    		     unsigned int    TPCNo,		   

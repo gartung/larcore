@@ -942,6 +942,15 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
+  float Geometry::WireCoordinate(const float& YPos, const float& ZPos,
+                                        unsigned int PlaneNo,
+                                        unsigned int TPCNo,
+                                        unsigned int cstat) const
+  {
+    return fChannelMapAlg->WireCoordinate(YPos, ZPos, PlaneNo, TPCNo, cstat);
+  }
+
+  //----------------------------------------------------------------------------
   // The NearestWire and PlaneWireToChannel are attempts to speed
   // up the simulation by memoizing the computationally intensive
   // setup steps for some geometry calculations.  The results are
@@ -1281,6 +1290,78 @@ if(overlapY && overlapZ){
     return false;
 
   }
+
+  // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
+  // B. Baller August 2014
+  double Geometry::ThirdPlaneSlope(unsigned int plane1, double slope1, 
+                                   unsigned int plane2, double slope2, 
+                                   unsigned int tpc, unsigned int cstat)
+  
+  {
+
+    if(Nplanes(tpc,cstat) != 3) return 999;
+    if(plane1 > 2 || plane2 > 2) return 999;
+    
+    // Can't resolve very small slopes
+    if(fabs(slope1) < 0.001 && fabs(slope2) < 0.001) return 0.001;
+
+    // Calculate static variables on the first call
+    // Cosines are needed for later calls. Sines are not.
+    static bool first = true;
+    static double c0, c1, c2;
+    static double d01, d12, d20;
+    if(first) {
+      first = false;
+      double angle0 = this->Cryostat(cstat).TPC(tpc).Plane(0).Wire(0).ThetaZ();
+      double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(1).Wire(0).ThetaZ();
+      double angle2 = this->Cryostat(cstat).TPC(tpc).Plane(2).Wire(0).ThetaZ();
+      // We need the "wire coordinate direction" for each plane. This is perpendicular
+      // to the wire orientation. 
+              c0 = TMath::Cos(angle0 - M_PI/2);
+      double  s0 = TMath::Sin(angle0 - M_PI/2);
+              c1 = TMath::Cos(angle1 - M_PI/2);
+      double  s1 = TMath::Sin(angle1 - M_PI/2);
+              c2 = TMath::Cos(angle2 - M_PI/2);
+      double  s2 = TMath::Sin(angle2 - M_PI/2);
+      // "Denominator" variables
+      d01 = 1 / (s0 * c1 - s1 * c0);
+      d12 = 1 / (s1 * c2 - s2 * c1);
+      d20 = 1 / (s2 * c0 - s0 * c2);
+    } // first
+    
+    unsigned int lopln = plane1;
+    unsigned int hipln = plane2;
+    double loplnslp = slope1;
+    double hiplnslp = slope2;
+    // re-order if the user didn't pass it in the expected order
+    if(plane1 > plane2) {
+      lopln = plane2;
+      hipln = plane1;
+      loplnslp = slope2;
+      hiplnslp = slope1;
+    }
+
+    double slope3 = 0;
+    double rfact = 0;
+
+    // Three cases
+    if(lopln == 0 && hipln == 1) {
+      double r01 = hiplnslp / loplnslp;
+      rfact = (d12 * c2 + d01 * c0 - d01 * r01 * c1) / (d12 * c1);
+      slope3 = hiplnslp / rfact;
+    } else if(lopln == 1 && hipln == 2) {
+      double r12 = hiplnslp / loplnslp;
+      rfact = (d20 * c0 + d12 * c1 - d12 * r12 * c2) / (d20 * c2);
+      slope3 = hiplnslp / rfact;
+    } else {
+      double r20 = loplnslp / hiplnslp;
+      rfact = (d01 * c1 + d20 * c2 - d20 * r20 * c0) / (d01 * c0);
+      slope3 = loplnslp / rfact;
+    }
+
+    return slope3;
+
+  } // ThirdPlaneSlope
 
    
   //......................................................................

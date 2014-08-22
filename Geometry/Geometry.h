@@ -151,6 +151,10 @@ namespace geo {
 				      unsigned int const TPCNo = 0,
 				      unsigned int const cstat = 0)  const; // nearest wire to input
                                                                             // world coordinates
+    float WireCoordinate(const float& YPos, const float& ZPos,
+		         unsigned int PlaneNo,
+		         unsigned int TPCNo,
+		         unsigned int cstat) const;
 
     unsigned int       NearestWire(const double worldLoc[3],
 				   unsigned int const PlaneNo,
@@ -299,6 +303,11 @@ namespace geo {
 			   unsigned int tpc,
                            double &y,
 			   double &z);
+
+    // Given a slope dTime/dWire in two planes, return with the slope in the 3rd plane
+    double ThirdPlaneSlope(unsigned int plane1, double slope1, 
+                           unsigned int plane2, double slope2,
+                           unsigned int tpc, unsigned int cstat);
 
     // Return gdml string which gives sensitive opdet name
     std::string            OpDetGeoName(unsigned int c=0) const;
