@@ -132,6 +132,9 @@ namespace geo {
       // try the old DetId_t code
       std::string const nodetname("nodetectorname");
       if(rdcol[0]->DetName().compare(nodetname) == 0){
+	LOG_VERBATIM("Geometry") << "detector name not set: " << rdcol[0]->DetName()
+				 << " use detector id: " << rdcol[0]->DetId();
+
 	fDetId = rdcol[0]->DetId();
       
 	switch(fDetId){
