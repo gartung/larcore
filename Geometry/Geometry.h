@@ -152,10 +152,10 @@ namespace geo {
 				      unsigned int const TPCNo = 0,
 				      unsigned int const cstat = 0)  const; // nearest wire to input
                                                                             // world coordinates
-    float WireCoordinate(const float& YPos, const float& ZPos,
-		         unsigned int PlaneNo,
-		         unsigned int TPCNo,
-		         unsigned int cstat) const;
+    float WireCoordinate(float YPos, float ZPos,
+                         unsigned int PlaneNo,
+                         unsigned int TPCNo,
+                         unsigned int cstat) const;
 
     unsigned int       NearestWire(const double worldLoc[3],
 				   unsigned int const PlaneNo,

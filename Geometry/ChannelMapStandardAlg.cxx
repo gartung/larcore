@@ -196,7 +196,7 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  float ChannelMapStandardAlg::WireCoordinate(const float& YPos, const float& ZPos,
+  float ChannelMapStandardAlg::WireCoordinate(float YPos, float ZPos,
                                               unsigned int PlaneNo,
                                               unsigned int TPCNo,
                                               unsigned int cstat) const
@@ -204,9 +204,9 @@ namespace geo{
     // Returns the wire number corresponding to a (Y,Z) position in PlaneNo 
     // with float precision.
     // B. Baller August 2014
-    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
-	 + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
-	 - fFirstWireProj[cstat][TPCNo][PlaneNo];
+    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo]
+      + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]
+      - fFirstWireProj[cstat][TPCNo][PlaneNo];
   }
 
   

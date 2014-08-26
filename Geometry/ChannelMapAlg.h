@@ -38,17 +38,17 @@ namespace geo{
     * @param ZPos z coordinate on the wire plane
     * @param TPCNo number of TPC
     * @param cstat number of cryostat
-    * @return an index interpolation of the two nearest wires
+    * @return an index interpolation between the two nearest wires
     * @see NearestWireID()
     *
     * Respect to NearestWireID(), this method returns a real number,
-    * representing an interpolation between the indices of the two wires closest
-    * to the specified point.
+    * representing a continuous coordinate in the wire axis, with the round
+    * values corresponding to the actual wires.
     */
-   virtual float WireCoordinate(const float& YPos, const float& ZPos,
-		                unsigned int    PlaneNo,
-		                unsigned int    TPCNo,
-		                unsigned int    cstat) const = 0;
+   virtual float WireCoordinate(float YPos, float ZPos,
+                                unsigned int    PlaneNo,
+                                unsigned int    TPCNo,
+                                unsigned int    cstat) const = 0;
 
    virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
 			       	    		     unsigned int    PlaneNo,		   

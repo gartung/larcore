@@ -8,8 +8,6 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef GEO_GEOMETRYTEST_H
-#define GEO_GEOMETRYTEST_H
 #include <cmath>
 #include <vector>
 #include <iterator> // std::inserter()
@@ -1063,5 +1061,3 @@ namespace geo{
   DEFINE_ART_MODULE(GeometryTest)
 
 }
-
-#endif

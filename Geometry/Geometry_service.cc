@@ -942,10 +942,10 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
-  float Geometry::WireCoordinate(const float& YPos, const float& ZPos,
-                                        unsigned int PlaneNo,
-                                        unsigned int TPCNo,
-                                        unsigned int cstat) const
+  float Geometry::WireCoordinate(float YPos, float ZPos,
+                                 unsigned int PlaneNo,
+                                 unsigned int TPCNo,
+                                 unsigned int cstat) const
   {
     return fChannelMapAlg->WireCoordinate(YPos, ZPos, PlaneNo, TPCNo, cstat);
   }
