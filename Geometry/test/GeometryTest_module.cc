@@ -771,22 +771,31 @@ namespace geo{
       
       // nearest wire, floating point
       try {
-        
+        // The test consists in sampling NStep (=10) points on each direction
+        // along y and z axes between the current wire and the previous/next.
+        // We expect WireCoordinate() to reflect the same shift.
         const geo::WireGeo& wire = *(iWire.get());
         const double pos[3] = {0., 0.0, 0.};
         double posWorld[3] = {0.};
         
         wire.LocalToWorld(pos, posWorld);
+        // using absolute value just in case (what happens if w1 > w2?)
         const double pitch
           = std::abs(geom->WirePitch((w > 0)? w - 1: 1, w, p, t, cs));
+        // assuming that moving of dy = pitchY or dz = pitchZ from the wire w,
+        // I'll meet wire w+1 next (as opposed to w - 1);
+        // that requires to flip the sign of the pitch projection on y
+        // (for wires with theta(z) > 0, moving on dy > 0 I meet w - 1)
+        const double pitchY = - pitch / std::cos(wire.ThetaZ());
         const double pitchZ = pitch / std::sin(wire.ThetaZ());
-        const double pitchY = pitch / std::cos(wire.ThetaZ());
         const int NSteps = 10;
         for (int i = -NSteps; i <= +NSteps; ++i) {
+          // we move away by this fraction of wire:
           const double f = double(i) / NSteps;
-          // we expect this pitch
+          // we expect this wire number
           const float expected_wire = w + f;
           
+          // these are the actual shifts on the positive directions y and z
           const double delta_y = f * pitchY;
           const double delta_z = f * pitchZ;
           
@@ -801,11 +810,11 @@ namespace geo{
             << wire_center[1] << "; " << wire_center[2] << ")] on step of "
             << i << "x" << pitch << " along y (" << pitchY
             << ") shows " << wire_from_y;
-          if (std::abs(wire_from_y - expected_wire) > 1e-4) {
+          if (std::abs(wire_from_y - expected_wire) > 1e-3) {
             std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
           }
           std::cout << std::endl;
-          if (false && std::abs(wire_from_y - expected_wire) > 1e-4) {
+          if (false && std::abs(wire_from_y - expected_wire) > 1e-3) {
             throw cet::exception("GeoTestErrorWireCoordinate")
               << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
               << " [center: (" << wire_center[0] << "; "
@@ -821,11 +830,11 @@ namespace geo{
             << wire_center[1] << "; " << wire_center[2] << ")] on step of "
             << i << "x" << pitch << " along z (" << pitchZ
             << ") shows " << wire_from_z;
-          if (std::abs(wire_from_z - expected_wire) > 1e-4) {
+          if (std::abs(wire_from_z - expected_wire) > 1e-3) {
             std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
           }
           std::cout << std::endl;
-          if (false && std::abs(wire_from_z - expected_wire) > 1e-4) {
+          if (false && std::abs(wire_from_z - expected_wire) > 1e-3) {
             throw cet::exception("GeoTestErrorWireCoordinate")
               << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
               << " [center: (" << wire_center[0] << "; "
