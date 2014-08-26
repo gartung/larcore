@@ -12,6 +12,9 @@
 #define GEO_GEOMETRYTEST_H
 #include <cmath>
 #include <vector>
+#include <iterator> // std::inserter()
+#include <algorithm> // std::copy()
+#include <set>
 #include <string>
 #include <iostream>
 
@@ -79,6 +82,7 @@ namespace geo {
 
     bool fCheckOverlaps;  ///< do the overlap check or not
     bool fPrintWires;  ///< print all the wires in geometry (really: all!)
+    std::set<std::string> fNonFatalExceptions;
   };
 }
 
@@ -90,6 +94,11 @@ namespace geo{
     , fCheckOverlaps( pset.get<bool>("CheckForOverlaps", false) )
     , fPrintWires( pset.get<bool>("PrintWires", false) )
   {
+    std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
+      ("ForgiveExceptions", std::vector<std::string>()));
+    std::set<std::string> fNonFatalExceptions;
+    std::copy(NonFatalErrors.begin(), NonFatalErrors.end(),
+      std::inserter(fNonFatalExceptions, fNonFatalExceptions.end()));
   }
 
   //......................................................................
@@ -182,6 +191,7 @@ namespace geo{
     }
     catch (cet::exception &e) {
       mf::LogWarning("GeometryTest") << "exception caught: \n" << e;
+      if (fNonFatalExceptions.count(e.category()) == 0) throw;
     }
     
     return;
@@ -420,6 +430,7 @@ namespace geo{
       }
       catch(cet::exception &e){
 	mf::LogWarning("FailedToLocateCryostat") << "\n exception caught:" << e;
+	if (fNonFatalExceptions.count(e.category()) == 0) throw;
       }
       LOG_DEBUG("GeometryTest") << "done";
 
@@ -683,85 +694,157 @@ namespace geo{
     stopWatch.Start();
 
     // get a wire and find its center
-    geo::Geometry::TPC_iterator iTPC;
-    while (iTPC) {
-      unsigned int cs = iTPC->Cryostat;
-      unsigned int t = iTPC->TPC;
-//    for(unsigned int cs = 0; cs < geom->Ncryostats(); ++cs){
-//      for(unsigned int t = 0; t < geom->Cryostat(cs).NTPC(); ++t){
-        for(unsigned int p = 0; p < geom->Cryostat(cs).TPC(t).Nplanes(); ++p){
-          for(unsigned int w = 0; w < geom->Cryostat(cs).TPC(t).Plane(p).Nwires(); ++w){
+    geo::Geometry::wire_iterator iWire;
+    while (iWire) {
+      unsigned int cs = iWire->Cryostat;
+      unsigned int t = iWire->TPC;
+      unsigned int p = iWire->Plane;
+      unsigned int w = iWire->Wire;
+      
+      const geo::WireGeo& wire = *(iWire.get());
+      const double pos[3] = {0., 0.0, 0.};
+      double posWorld[3] = {0.};
+      wire.LocalToWorld(pos, posWorld);
+      std::array<double, 3> wire_center;
+      std::copy(posWorld, posWorld + 3, wire_center.begin());
+
+      uint32_t nearest = 0;
+      std::vector< geo::WireID > wireIDs;
+
+      try{
+        // The double[] version tested here falls back on the
+        // TVector3 version, so this test both.
+        nearest = geom->NearestChannel(posWorld, p, t, cs);
+
+        // We also want to test the std::vector<duoble> version
+        std::vector<double> posWorldV(3);
+        for (int i=0; i<3; ++i) {
+          posWorldV[i] = posWorld[i] + 0.001;
+        }
+        nearest = geom->NearestChannel(posWorldV, p, t, cs);
+      }
+      catch(cet::exception &e){
+        mf::LogWarning("GeoTestCaughtException") << e;
+        if (fNonFatalExceptions.count(e.category()) == 0) throw;
+      }
+
+      try{
+        wireIDs = geom->ChannelToWire(nearest);
+
+        if ( wireIDs.empty() ) {
+          throw cet::exception("BadPositionToChannel") << "test point is at " 
+                                                       << posWorld[0] << " " 
+                                                       << posWorld[1] << " " 
+                                                       << posWorld[2] << "\n"
+                                                       << "nearest channel is " 
+                                                       << nearest << " for " 
+                                                       << cs << " " << t << " "
+                                                       << p << " " << w << "\n";
+        }
+      }
+      catch(cet::exception &e){
+        mf::LogWarning("GeoTestCaughtException") << e;
+        if (fNonFatalExceptions.count(e.category()) == 0) throw;
+      }
+
+      bool goodLookup = false;
+      for(const geo::WireID& wid : wireIDs){
+        if(wid == *iWire) goodLookup = true;
+      }
+
+      if(!goodLookup){
+        throw cet::exception("BadPositionToChannel") << "Current WireID ("
+                                                     << cs << "," << t << "," << p << "," << w << ") "
+                                                     << "has a world position at "
+                                                     << posWorld[0] << " " 
+                                                     << posWorld[1] << " " 
+                                                     << posWorld[2] << "\n"
+                                                     << "NearestWire for this position is "
+                                                     << geom->NearestWire(posWorld,p,t,cs) << "\n"
+                                                     << "NearestChannel is " 
+                                                     << nearest << " for " 
+                                                     << cs << " " << t << " " << p << " " << w << "\n"
+                                                     << "Should be channel "
+                                                     << geom->PlaneWireToChannel(p,w,t,cs);
+      } // if good lookup fails
+      
+      
+      // nearest wire, floating point
+      try {
         
-            const geo::WireGeo& wire = geom->Cryostat(cs).TPC(t).Plane(p).Wire(w);
-            const double pos[3] = {0., 0.0, 0.};
-            double posWorld[3] = {0.};
-            wire.LocalToWorld(pos, posWorld);
-
-            uint32_t nearest = 0;
-            std::vector< geo::WireID > wireIDs;
-
-            try{
-              // The double[] version tested here falls back on the
-              // TVector3 version, so this test both.
-              nearest = geom->NearestChannel(posWorld, p, t, cs);
-
-              // We also want to test the std::vector<duoble> version
-              std::vector<double> posWorldV(3);
-              for (int i=0; i<3; ++i) {
-                posWorldV[i] = posWorld[i] + 0.001;
-              }
-              nearest = geom->NearestChannel(posWorldV, p, t, cs);
-            }
-            catch(cet::exception &e){
-              mf::LogWarning("GeoTestCaughtException") << e;
-            }
-
-            try{
-              wireIDs = geom->ChannelToWire(nearest);
-
-              if ( wireIDs.size() == 0 ) {
-                throw cet::exception("BadPositionToChannel") << "test point is at " 
-                                                             << posWorld[0] << " " 
-                                                             << posWorld[1] << " " 
-                                                             << posWorld[2] << "\n"
-                                                             << "nearest channel is " 
-                                                             << nearest << " for " 
-                                                             << cs << " " << t << " "
-                                                             << p << " " << w << "\n";
-              }
-            }
-            catch(cet::exception &e){
-              mf::LogWarning("GeoTestCaughtException") << e;
-            }
-
-            bool goodLookup = false;
-            for( auto const& wid : wireIDs){
-              if(wid.Cryostat == cs    &&
-                 wid.TPC      == t     &&
-                 wid.Plane    == p     &&
-                 wid.Wire     == w   ) goodLookup = true;
-            }
-
-            if(!goodLookup){
-              throw cet::exception("BadPositionToChannel") << "Current WireID ("
-                                                           << cs << "," << t << "," << p << "," << w << ") "
-                                                           << "has a world position at "
-                                                           << posWorld[0] << " " 
-                                                           << posWorld[1] << " " 
-                                                           << posWorld[2] << "\n"
-                                                           << "NearestWire for this position is "
-                                                           << geom->NearestWire(posWorld,p,t,cs) << "\n"
-                                                           << "NearestChannel is " 
-                                                           << nearest << " for " 
-                                                           << cs << " " << t << " " << p << " " << w << "\n"
-                                                           << "Should be channel "
-                                                           << geom->PlaneWireToChannel(p,w,t,cs);
-            } // if good lookup fails
-          } // end loop over wires
-        } // end loop over planes
-//      }// end loop over tpcs
-//    }// end loop over cryostats
-      ++iTPC;
+        const geo::WireGeo& wire = *(iWire.get());
+        const double pos[3] = {0., 0.0, 0.};
+        double posWorld[3] = {0.};
+        
+        wire.LocalToWorld(pos, posWorld);
+        const double pitch
+          = std::abs(geom->WirePitch((w > 0)? w - 1: 1, w, p, t, cs));
+        const double pitchZ = pitch / std::sin(wire.ThetaZ());
+        const double pitchY = pitch / std::cos(wire.ThetaZ());
+        const int NSteps = 10;
+        for (int i = -NSteps; i <= +NSteps; ++i) {
+          const double f = double(i) / NSteps;
+          // we expect this pitch
+          const float expected_wire = w + f;
+          
+          const double delta_y = f * pitchY;
+          const double delta_z = f * pitchZ;
+          
+          const float wire_from_y = geom->WireCoordinate
+            (wire_center[1] + delta_y, wire_center[2], p, t, cs);
+          const float wire_from_z = geom->WireCoordinate
+            (wire_center[1], wire_center[2] + delta_z, p, t, cs);
+          
+          std::cout
+            << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+            << " [center: (" << wire_center[0] << "; "
+            << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+            << i << "x" << pitch << " along y (" << pitchY
+            << ") shows " << wire_from_y;
+          if (std::abs(wire_from_y - expected_wire) > 1e-4) {
+            std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
+          }
+          std::cout << std::endl;
+          if (false && std::abs(wire_from_y - expected_wire) > 1e-4) {
+            throw cet::exception("GeoTestErrorWireCoordinate")
+              << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+              << " [center: (" << wire_center[0] << "; "
+              << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+              << i << "x" << pitch << " along y (" << pitchY
+              << ") shows " << wire_from_y << ", " << expected_wire
+              << " expected.";
+          } // if mismatch on y
+          
+          std::cout
+            << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+            << " [center: (" << wire_center[0] << "; "
+            << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+            << i << "x" << pitch << " along z (" << pitchZ
+            << ") shows " << wire_from_z;
+          if (std::abs(wire_from_z - expected_wire) > 1e-4) {
+            std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
+          }
+          std::cout << std::endl;
+          if (false && std::abs(wire_from_z - expected_wire) > 1e-4) {
+            throw cet::exception("GeoTestErrorWireCoordinate")
+              << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+              << " [center: (" << wire_center[0] << "; "
+              << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+              << i << "x" << pitch << " along z (" << pitchZ
+              << ") shows " << wire_from_z << ", " << expected_wire
+              << " expected.";
+          } // if mismatch on z
+          
+        } // for i
+        
+      } // try
+      catch(cet::exception &e) {
+        mf::LogWarning("GeoTestCaughtException") << e;
+        if (fNonFatalExceptions.count(e.category()) == 0) throw;
+      }
+      
+      
+      ++iWire;
     } // end loop over tpcs
 
     stopWatch.Stop();
@@ -781,6 +864,7 @@ namespace geo{
     }
     catch(cet::exception &e){
       mf::LogWarning("GeoTestCaughtException") << e;
+      if (fNonFatalExceptions.count(e.category()) == 0) throw;
     }
 
   }
