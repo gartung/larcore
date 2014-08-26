@@ -68,16 +68,6 @@ namespace geo {
     reg.sPreBeginRun.watch(this, &Geometry::preBeginRun);
 
     fDetectorName.ToLower();
-    if     (fDetectorName.Contains("argoneut")  ) fDetId = geo::kArgoNeuT;
-    else if(fDetectorName.Contains("microboone")) fDetId = geo::kMicroBooNE;
-    else if(fDetectorName.Contains("lbne35t")   ) fDetId = geo::kLBNE35t;
-    else if(fDetectorName.Contains("lbne10kt")  ) fDetId = geo::kLBNE10kt;
-    else if(fDetectorName.Contains("lbne34kt")  ) fDetId = geo::kLBNE34kt;
-    else if(fDetectorName.Contains("bo")        ) fDetId = geo::kBo;
-    else if(fDetectorName.Contains("jp250l")    ) fDetId = geo::kJP250L;
-    else if(fDetectorName.Contains("csu40l")    ) fDetId = geo::kCSU40L;
-    else if(fDetectorName.Contains("lariat")    ) fDetId = geo::kLArIAT;
-    else if(fDetectorName.Contains("icarus")    ) fDetId = geo::kICARUS;
     
     // Search all reasonable locations for the GDML file that contains
     // the detector geometry.
@@ -132,41 +122,57 @@ namespace geo {
     std::vector< art::Handle<sumdata::RunData> > rdcol;
     run.getManyByType(rdcol);
     if(rdcol.size() > 0 && !fForceUseFCLOnly){ 
-      if(rdcol[0]->DetId() == fDetId) return;
+      if(fDetectorName == rdcol[0]->DetName().c_str() ) return;
       
-      fDetId = rdcol[0]->DetId();
       std::string relpathgdml(fRelPath);
       std::string relpathroot(fRelPath);
+
+      // check to see if the detector name in the RunData
+      // object has not been set.  If that is the case, 
+      // try the old DetId_t code
+      std::string const nodetname("nodetectorname");
+      if(rdcol[0]->DetName().compare(nodetname) == 0){
+	LOG_WARNING("Geometry") << "Detector name not set: " << rdcol[0]->DetName()
+				<< " use detector id: " << rdcol[0]->DetId()
+				<< " This is expected behavior for legacy files" ;
+
+	fDetId = rdcol[0]->DetId();
       
-      switch(fDetId){
-      case geo::kBo         : 
-	relpathgdml += "bo";         relpathroot += "bo.gdml";    fDetectorName = "bo";     break;
-      case geo::kArgoNeuT   : 
-	relpathgdml += "argoneut";   relpathroot += "argoneut.gdml";  fDetectorName = "argoneut";  break;
-      case geo::kLArIAT   : 
-	relpathgdml += "lariat";   relpathroot += "lariat.gdml";  fDetectorName = "lariat"; break;	
-      case geo::kMicroBooNE : 
-	relpathgdml += "microboone"; relpathroot += "microboone.gdml"; fDetectorName = "microboone"; break;
-      case geo::kLBNE10kt   : 
-	relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt"; break;
-      case geo::kLBNE34kt   : 
-	relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   fDetectorName = "lbne34kt"; break;
-      case geo::kLBNE35t    : 
-	relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    fDetectorName = "lbne35t"; break;
-      case geo::kJP250L     : 
-	relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     fDetectorName = "jp250L"; break;
-      case geo::kCSU40L     : 
-	relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     fDetectorName = "csu40l"; break;
-      case geo::kICARUS     : 
-	relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus"; break;
-      default               : 
-	throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up\n";
+	switch(fDetId){
+	case geo::kBo         : 
+	  relpathgdml += "bo";         relpathroot += "bo.gdml";         fDetectorName = "bo";         break;
+	case geo::kArgoNeuT   : 
+	  relpathgdml += "argoneut";   relpathroot += "argoneut.gdml";   fDetectorName = "argoneut";   break;
+	case geo::kLArIAT   : 
+	  relpathgdml += "lariat";     relpathroot += "lariat.gdml";     fDetectorName = "lariat";     break;	
+	case geo::kMicroBooNE : 
+	  relpathgdml += "microboone"; relpathroot += "microboone.gdml"; fDetectorName = "microboone"; break;
+	case geo::kLBNE10kt   : 
+	  relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt";   break;
+	case geo::kLBNE34kt   : 
+	  relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   fDetectorName = "lbne34kt";   break;
+	case geo::kLBNE35t    : 
+	  relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    fDetectorName = "lbne35t";    break;
+	case geo::kJP250L     : 
+	  relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     fDetectorName = "jp250L";     break;
+	case geo::kCSU40L     : 
+	  relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     fDetectorName = "csu40l";     break;
+	case geo::kICARUS     : 
+	  relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus";     break;
+	default               : 
+	  throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up\n";
+	}
       }
-      
+      else{
+	// the detector name is specified in the RunData object
+	fDetectorName = rdcol[0]->DetName();
+	relpathgdml += fDetectorName;
+	relpathroot += fDetectorName;
+      }
+    
       if(fDisableWiresInG4) relpathgdml+="_nowires.gdml";
       else                  relpathgdml+=".gdml";
-
-      
+            
       // constructor decides if initialized value is a path or an environment variable
       cet::search_path sp("FW_SEARCH_PATH");
       
@@ -174,7 +180,7 @@ namespace geo {
 	throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
 					 << relpathgdml
 					 << "\n bail ungracefully.\n";
-
+      
       if( !sp.find_file(relpathroot, fROOTfile) )
 	throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
 					 << relpathroot
@@ -183,7 +189,7 @@ namespace geo {
       this->LoadGeometryFile(fGDMLfile, fROOTfile);
     }
     else 
-      mf::LogWarning("LoadNewGeometry") << "cannot find sumdata::RunData object to grab detid\n" 
+      mf::LogWarning("LoadNewGeometry") << "cannot find sumdata::RunData object to grab detector name\n" 
 					<< "this is expected if generating MC files\n"
 					<< "using default geometry from configuration file\n";
     return;
@@ -199,35 +205,8 @@ namespace geo {
     
     fChannelMapAlg = fExptGeoHelper->GetChannelMapAlg();
     if ( ! fChannelMapAlg ) {
-      throw cet::exception("ChannelMapLoadFail") << "detid invalid, " << fDetId
-                                                 << " failed to load new channel map";
+      throw cet::exception("ChannelMapLoadFail") << " failed to load new channel map";
     }
-
-//     // set the channel map algorithm if it isn't already
-//     switch(fDetId){
-//     case geo::kBo         :
-//     case geo::kArgoNeuT   :
-//     case geo::kLArIAT	  :
-//     case geo::kMicroBooNE : 
-//     case geo::kJP250L     :
-//     case geo::kCSU40L     : 
-//     case geo::kICARUS     :
-//       fChannelMapAlg = new geo::ChannelMapStandardAlg(fSortingParameters);
-//       break;
-//     case geo::kLBNE10kt   : 
-//     case geo::kLBNE34kt   : 
-//       fChannelMapAlg = new geo::ChannelMapAPAAlg(fSortingParameters);
-//       break;
-//     case geo::kLBNE35t    : 
-//       fChannelMapAlg = new geo::ChannelMap35Alg(fSortingParameters);
-//       break;
-//     default               : 
-//       throw cet::exception("ChannelMapLoadFail") << "detid invalid, " << fDetId
-// 						 << " failed to load new channel map";
-//     }
-// 
-// 
-//     fChannelMapAlg->Initialize(fCryostats);
 
     return;
   }
