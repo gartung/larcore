@@ -52,6 +52,36 @@ namespace geo {
     kNegX 	   ///< drift towards negative X values			
   } DriftDirection_t;
 
+  // The data type to uniquely identify a TPC
+  struct TPCID { 
+    TPCID()
+    : Cryostat(UINT_MAX)
+    , TPC(UINT_MAX)
+    , isValid(false)
+    {}
+
+    TPCID(unsigned int c, unsigned int t)
+      : Cryostat(c), TPC(t), isValid(true)
+      {}
+
+    unsigned int Cryostat;
+    unsigned int TPC;
+    bool         isValid;
+
+    bool operator==(const TPCID& tpcid) const
+      { return (Cryostat == tpcid.Cryostat) && (TPC == tpcid.TPC); }
+
+    bool operator!=(const TPCID& tpcid) const
+      { return (Cryostat != tpcid.Cryostat) || (TPC != tpcid.TPC); }
+
+    // Order TPCID in increasing Cryo and TPC
+    bool operator<(const TPCID& tpcid) const
+      {
+        if (Cryostat != tpcid.Cryostat) return Cryostat < tpcid.Cryostat;
+        else return TPC < tpcid.TPC;
+      }
+  }; // class TPCID
+
   // The data type to uniquely identify a Plane
   struct PlaneID { 
     PlaneID()

@@ -12,6 +12,7 @@
 #include <set>
 #include <stdint.h>
 
+#include "cetlib/exception.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/CryostatGeo.h"
 
@@ -31,6 +32,19 @@ namespace geo{
    virtual std::vector<WireID> 	    ChannelToWire(uint32_t channel)           const = 0;
    virtual uint32_t            	    Nchannels()                               const = 0;
 
+   /**
+    * @brief Returns the index of the wire nearset to the specified position
+    * @param YPos y coordinate on the wire plane
+    * @param ZPos z coordinate on the wire plane
+    * @param TPCNo number of TPC
+    * @param cstat number of cryostat
+    * @return an index interpolation of the two nearest wires
+    * @see NearestWireID()
+    *
+    * Respect to NearestWireID(), this method returns a real number,
+    * representing an interpolation between the indices of the two wires closest
+    * to the specified point.
+    */
    virtual float WireCoordinate(const float& YPos, const float& ZPos,
 		                unsigned int    PlaneNo,
 		                unsigned int    TPCNo,

@@ -27,6 +27,7 @@
 #include <set>
 #include <cstring>
 #include <memory>
+#include <iterator> // std::forward_iterator_tag
 #include <stdint.h>
 
 #include "fhiclcpp/ParameterSet.h"
@@ -326,7 +327,264 @@ namespace geo {
 
     const WireGeo& WireIDToWireGeo(WireID CodeWire) const;
 
-
+    
+    
+    /** ************************************************************************
+     * @brief Forward iterator browsing all cryostats in the detector
+     * 
+     * Usage example:
+     * @code
+     * geo::Geometry::cryostat_iterator iCryostat;
+     * while (iCryostat) {
+     *   std::cout << "Cryo: " << iCryostat->Cryostat << std::endl;
+     *   const geo::CryostatGeo* pCryo = iCryostat.get();
+     *   // ...
+     *   ++iCryostat;
+     * } // while
+     * @endcode
+     */
+    class cryostat_iterator: public std::forward_iterator_tag {
+        public:
+      typedef unsigned int CryoID; /// type of cryostat ID
+      
+      /// Default constructor: points to the first cryostat
+      cryostat_iterator() { init_geometry(); set_limits_and_validity(); }
+      
+      /// Constructor: points to the specified cryostat
+      cryostat_iterator(CryoID start_from): cryoid(start_from)
+        { init_geometry(); set_limits_and_validity(); }
+      
+      bool operator== (const cryostat_iterator& as) const
+        { return cryoid == as.cryoid; }
+      bool operator!= (const cryostat_iterator& as) const
+        { return cryoid != as.cryoid; }
+      
+      /// Returns a copy of the TPCID the iterator points to
+      CryoID operator* () const { return cryoid; }
+      
+      /// Prefix increment: returns this iterator pointing to the next cryostat
+      cryostat_iterator& operator++ ();
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      cryostat_iterator operator++ (int)
+        { cryostat_iterator old(*this); this->operator++(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid cryostat
+      operator bool() const { return isValid; }
+      
+      /// Skips to the next cryostat
+      cryostat_iterator& next() { return this->operator++(); }
+      
+      /// Returns a pointer to cryostat, or nullptr if the iterator is not valid
+      const CryostatGeo* get() const;
+      
+        protected:
+      const Geometry* pGeo; ///< pointer to the geometry
+      
+      bool isValid = false;  ///< whether the current iterator position is valid
+      CryoID cryoid = { 0 }; ///< current cryostat
+      CryoID limits = { 0 }; ///< maxima of the indices
+      
+      void init_geometry();
+      void set_limits_and_validity();
+    }; // class cryostat_iterator
+    
+    
+    
+    /** ************************************************************************
+     * @brief Forward iterator browsing all TPCs in the detector
+     * 
+     * Usage example:
+     * @code
+     * geo::Geometry::TPC_iterator iTPC;
+     * while (iTPC) {
+     *   std::cout << "Cryo: " << iTPC->Cryostat << " TPC: " << iTPC->TPC
+     *     << std::endl;
+     *   const geo::TPCGeo* pTPC = iTPC.get();
+     *   // ...
+     *   ++iTPC;
+     * } // while
+     * @endcode
+     */
+    class TPC_iterator: public std::forward_iterator_tag {
+        public:
+      /// Default constructor: points to the first TPC
+      TPC_iterator() { init_geometry(); set_limits_and_validity(); }
+      
+      /// Constructor: points to the specified TPC
+      TPC_iterator(TPCID start_from): tpcid(start_from)
+        { init_geometry(); set_limits_and_validity(); }
+      
+      bool operator== (const TPC_iterator& as) const
+        { return tpcid == as.tpcid; }
+      bool operator!= (const TPC_iterator& as) const
+        { return tpcid != as.tpcid; }
+      
+      /// Returns a copy of the TPCID the iterator points to
+      const TPCID& operator* () const { return tpcid; }
+      
+      /// Returns a constant pointer to the TPCID the iterator points to
+      const TPCID* operator-> () const { return &tpcid; }
+      
+      /// Prefix increment: returns this iterator pointing to the next TPC
+      TPC_iterator& operator++ ();
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      TPC_iterator operator++ (int)
+        { TPC_iterator old(*this); this->operator++(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid TPC
+      operator bool() const { return tpcid.isValid; }
+      
+      /// Skips to the next TPC
+      TPC_iterator& next() { return this->operator++(); }
+      
+      /// Returns a pointer to the TPC, or nullptr if the iterator is not valid
+      const TPCGeo* get() const;
+      
+        protected:
+      const Geometry* pGeo; ///< pointer to the geometry
+      
+      TPCID tpcid = { 0, 0 }; ///< current TPC
+      TPCID limits = { 0, 0 }; ///< maxima of the indices
+      
+      void init_geometry();
+      void set_limits_and_validity();
+      void new_cryostat();
+    }; // class TPC_iterator
+  
+  
+    /** ************************************************************************
+     * @brief Forward iterator browsing all planes in the detector
+     * 
+     * Usage example:
+     * @code
+     * geo::Geometry::plane_iterator iPlane;
+     * while (iPlane) {
+     *   std::cout << "Cryo: " << iPlane->Cryostat << " TPC: " << iPlane->TPC
+     *     << " plane: " << iPlane->Plane << std::endl;
+	  *   const geo::PlaneGeo* Plane = iPlane.get();
+     *   // ...
+     *   ++iPlane;
+     * } // while
+     * @endcode
+     */
+    class plane_iterator: public std::forward_iterator_tag {
+        public:
+      /// Default constructor: points to the first plane
+      plane_iterator() { init_geometry(); set_limits_and_validity(); }
+      
+      /// Constructor: points to the specified plane
+      plane_iterator(PlaneID start_from): planeid(start_from)
+        { init_geometry(); set_limits_and_validity(); }
+      
+      bool operator== (const plane_iterator& as) const
+        { return planeid == as.planeid; }
+      bool operator!= (const plane_iterator& as) const
+        { return planeid != as.planeid; }
+      
+      /// Returns a copy of the PlaneID the iterator points to
+      const PlaneID& operator* () const { return planeid; }
+      
+      /// Returns a constant pointer to the PlaneID the iterator points to
+      const PlaneID* operator-> () const { return &planeid; }
+      
+      /// Prefix increment: returns this iterator pointing to the next plane
+      plane_iterator& operator++ ();
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      plane_iterator operator++ (int)
+        { plane_iterator old(*this); this->operator++(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid plane
+      operator bool() const { return planeid.isValid; }
+      
+      /// Skips to the next plane
+      plane_iterator& next() { return this->operator++(); }
+      
+      /// Returns a pointer to plane, or nullptr if the iterator is not valid
+      const PlaneGeo* get() const;
+      
+        protected:
+      const Geometry* pGeo; ///< pointer to the geometry
+      
+      PlaneID planeid = { 0, 0, 0 }; ///< current plane
+      PlaneID limits = { 0, 0, 0 }; ///< maxima of the indices
+      
+      void init_geometry();
+      void set_limits_and_validity();
+      void new_cryostat();
+      void new_tpc();
+    }; // class plane_iterator
+    
+    
+    /** ************************************************************************
+     * @brief Forward iterator browsing all wires in the detector
+     * 
+     * Usage example:
+     * @code
+     * geo::Geometry::wire_iterator iWire;
+     * while (iWire) {
+     *   std::cout << "Cryo: " << iWire->Cryostat << " TPC: " << iWire->TPC
+     *     << " plane: " << iWire->Plane << " << " wire: " << iWire->Wire
+     *     << std::endl;
+	  *   const geo::WireGeo* Wire = iWire.get();
+     *   // ...
+     *   ++iWire;
+     * } // while
+     * @endcode
+     */
+    class wire_iterator: public std::forward_iterator_tag {
+        public:
+      /// Default constructor: points to the first wire
+      wire_iterator() { init_geometry(); set_limits_and_validity(); }
+      
+      /// Constructor: points to the specified wire
+      wire_iterator(WireID start_from): wireid(start_from)
+        { init_geometry(); set_limits_and_validity(); }
+      
+      bool operator== (const wire_iterator& as) const
+        { return wireid == as.wireid; }
+      bool operator!= (const wire_iterator& as) const
+        { return wireid != as.wireid; }
+      
+      /// Returns a copy of the WireID the iterator points to
+      const WireID& operator* () const { return wireid; }
+      
+      /// Returns a constant pointer to the WireID the iterator points to
+      const WireID* operator-> () const { return &wireid ; }
+      
+      /// Prefix increment: returns this iterator pointing to the next wire
+      wire_iterator& operator++ ();
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      wire_iterator operator++ (int)
+        { wire_iterator old(*this); this->operator++(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid wire
+      operator bool() const { return wireid.isValid; }
+      
+      /// Skips to the next wire
+      wire_iterator& next() { return this->operator++(); }
+      
+      /// Returns a pointer to wire, or nullptr if the iterator is not valid
+      const WireGeo* get() const;
+      
+        protected:
+      const Geometry* pGeo; ///< pointer to the geometry
+      
+      WireID wireid = { 0, 0, 0, 0 }; ///< current wire
+      WireID limits = { 0, 0, 0, 0 }; ///< maxima of the indices
+      
+      void init_geometry();
+      void set_limits_and_validity();
+      void new_cryostat();
+      void new_tpc();
+      void new_plane();
+    }; // class wire_iterator
+    
+    
+    
   private:
 
     void LoadGeometryFile(std::string gdmlfile,
