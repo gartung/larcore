@@ -17,15 +17,11 @@
 #include <iostream>
 
 // ROOT includes
-#include "TH1D.h"
-#include "TH2D.h"
-#include "TVector3.h"
-#include "TNtuple.h"
 #include "TGeoManager.h"
 #include "TStopwatch.h"
-#include "TMath.h"
 
 // LArSoft includes
+#include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/Geometry.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
@@ -33,20 +29,16 @@
 #include "Geometry/WireGeo.h"
 #include "Geometry/OpDetGeo.h"
 #include "Geometry/geo.h"
-#include "SimpleTypesAndConstants/geo_types.h"
 
 // Framework includes
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Principal/Event.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-
+#include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 
+
+namespace art { class Event; } // art::Event declaration
 
 ///tracking algorithms
 namespace geo {
@@ -780,65 +772,54 @@ namespace geo{
         // using absolute value just in case (what happens if w1 > w2?)
         const double pitch
           = std::abs(geom->WirePitch((w > 0)? w - 1: 1, w, p, t, cs));
+        
         // assuming that moving of dy = pitchY or dz = pitchZ from the wire w,
         // I'll meet wire w+1 next (as opposed to w - 1);
         // that requires to flip the sign of the pitch projection on y
         // (for wires with theta(z) > 0, moving on dy > 0 I meet w - 1)
-        const double pitchY = - pitch / std::cos(wire.ThetaZ());
-        const double pitchZ = pitch / std::sin(wire.ThetaZ());
+        const bool isAlignedY = std::abs(wire.ThetaZ() - M_PI/2) < 1e-3;
+        const bool isAlignedZ = std::abs(wire.ThetaZ()) < 1e-3;
+        // define the translation for the positive shift along the two
+        // directions: if the wires are aligned with the axis, we use a nominal
+        // excursion of 5 mm (that is what the pitch is used for here)
+        const double dy = isAlignedY? 5.0: - pitch / std::cos(wire.ThetaZ());
+        const double dz = isAlignedZ? 5.0: pitch / std::sin(wire.ThetaZ());
+        
         const int NSteps = 10;
         for (int i = -NSteps; i <= +NSteps; ++i) {
           // we move away by this fraction of wire:
           const double f = double(i) / NSteps;
-          // we expect this wire number
-          const float expected_wire = w + f;
           
           // these are the actual shifts on the positive directions y and z
-          const double delta_y = f * pitchY;
-          const double delta_z = f * pitchZ;
+          const double delta_y = f * dy;
+          const double delta_z = f * dz;
+          
+          // we expect this wire number
+          const float expected_wire_y = w + (isAlignedY? 0.0: f);
+          const float expected_wire_z = w + (isAlignedZ? 0.0: f);
           
           const float wire_from_y = geom->WireCoordinate
             (wire_center[1] + delta_y, wire_center[2], p, t, cs);
           const float wire_from_z = geom->WireCoordinate
             (wire_center[1], wire_center[2] + delta_z, p, t, cs);
           
-          std::cout
-            << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
-            << " [center: (" << wire_center[0] << "; "
-            << wire_center[1] << "; " << wire_center[2] << ")] on step of "
-            << i << "x" << pitch << " along y (" << pitchY
-            << ") shows " << wire_from_y;
-          if (std::abs(wire_from_y - expected_wire) > 1e-3) {
-            std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
-          }
-          std::cout << std::endl;
-          if (false && std::abs(wire_from_y - expected_wire) > 1e-3) {
+          if (std::abs(wire_from_y - expected_wire_y) > 1e-3) {
             throw cet::exception("GeoTestErrorWireCoordinate")
               << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
               << " [center: (" << wire_center[0] << "; "
               << wire_center[1] << "; " << wire_center[2] << ")] on step of "
-              << i << "x" << pitch << " along y (" << pitchY
-              << ") shows " << wire_from_y << ", " << expected_wire
+              << i << "x" << pitch << " along y (" << dy
+              << ") shows " << wire_from_y << ", " << expected_wire_y
               << " expected.";
           } // if mismatch on y
           
-          std::cout
-            << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
-            << " [center: (" << wire_center[0] << "; "
-            << wire_center[1] << "; " << wire_center[2] << ")] on step of "
-            << i << "x" << pitch << " along z (" << pitchZ
-            << ") shows " << wire_from_z;
-          if (std::abs(wire_from_z - expected_wire) > 1e-3) {
-            std::cout << ", " << expected_wire << " expected => MISMATCH!!!";
-          }
-          std::cout << std::endl;
-          if (false && std::abs(wire_from_z - expected_wire) > 1e-3) {
+          if (std::abs(wire_from_z - expected_wire_z) > 1e-3) {
             throw cet::exception("GeoTestErrorWireCoordinate")
               << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
               << " [center: (" << wire_center[0] << "; "
               << wire_center[1] << "; " << wire_center[2] << ")] on step of "
-              << i << "x" << pitch << " along z (" << pitchZ
-              << ") shows " << wire_from_z << ", " << expected_wire
+              << i << "x" << pitch << " along z (" << dz
+              << ") shows " << wire_from_z << ", " << expected_wire_z
               << " expected.";
           } // if mismatch on z
           
@@ -866,12 +847,19 @@ namespace geo{
                           geom->CryostatHalfHeight()*2,
                           geom->CryostatLength()*2};
 
+    bool hasThrown = false;
     try{
       geom->NearestChannel(posWorld, 0, 0, 0);
     }
-    catch(cet::exception &e){
+    catch(cet::exception& e){
       mf::LogWarning("GeoTestCaughtException") << e;
-      if (fNonFatalExceptions.count(e.category()) == 0) throw;
+      hasThrown = true;
+    }
+    if (!hasThrown) {
+      throw cet::exception("GeoTestErrorNearestChannel")
+        << "Geometry::NearestChannel() did not raise an exception"
+        " on invalid position (" << posWorld[0] << "; "
+        << posWorld[1] << "; " << posWorld[2] << ")\n";
     }
 
   }

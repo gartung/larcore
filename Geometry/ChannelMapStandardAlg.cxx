@@ -195,7 +195,7 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  float ChannelMapStandardAlg::WireCoordinate(const float& YPos, const float& ZPos,
+  float ChannelMapStandardAlg::WireCoordinate(float YPos, float ZPos,
                                               unsigned int PlaneNo,
                                               unsigned int TPCNo,
                                               unsigned int cstat) const
@@ -237,7 +237,7 @@ namespace geo{
       throw cet::exception("Geometry") << "Can't Find Nearest Wire for position (" 
         << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")"
         << " approx wire number # " << wireNumber
-        << "(capped from " << NearestWireNumber < ")\n";
+        << "(capped from " << NearestWireNumber << ")\n";
     }
 
     WireID wid(cstat, PlaneNo, TPCNo, (unsigned int)NearestWireNumber);
