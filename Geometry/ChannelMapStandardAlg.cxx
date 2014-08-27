@@ -118,7 +118,6 @@ namespace geo{
 	  
 	  fFirstWireProj[cs][TPCCount][PlaneCount]  = WireCentre1[1]*OrthY + WireCentre1[2]*OrthZ;
 	  fFirstWireProj[cs][TPCCount][PlaneCount] /= ThisWirePitch;
-	  fFirstWireProj[cs][TPCCount][PlaneCount] -= 0.5;
 	  
 	  // now to count up wires in each plane and get first channel in each plane
 	  int WiresThisPlane = cgeo[cs]->TPC(TPCCount).Plane(PlaneCount).Nwires();	
@@ -196,7 +195,7 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  float ChannelMapStandardAlg::WireCoordinate(float YPos, float ZPos,
+  float ChannelMapStandardAlg::WireCoordinate(const float& YPos, const float& ZPos,
                                               unsigned int PlaneNo,
                                               unsigned int TPCNo,
                                               unsigned int cstat) const
@@ -204,9 +203,9 @@ namespace geo{
     // Returns the wire number corresponding to a (Y,Z) position in PlaneNo 
     // with float precision.
     // B. Baller August 2014
-    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo]
-      + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]
-      - fFirstWireProj[cstat][TPCNo][PlaneNo];
+    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
+	 + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
+	 - fFirstWireProj[cstat][TPCNo][PlaneNo];
   }
 
   
@@ -220,28 +219,28 @@ namespace geo{
     // This part is the actual calculation of the nearest wire number, where we assume
     //  uniform wire pitch and angle within a wireplane
     
-    int NearestWireNumber = 
-      int(std::nearbyint(WireCoordinate(worldPos.Y(), worldPos.Z(), PlaneNo, TPCNo, cstat)));
-
-    unsigned int wireNumber = (unsigned int) NearestWireNumber;
+    // add 0.5 to have the correct rounding
+    int NearestWireNumber = int
+      (0.5 + WireCoordinate(worldPos.Y(), worldPos.Z(), PlaneNo, TPCNo, cstat));
     
     // If we are outside of the wireplane range, throw an exception
     // (this response maintains consistency with the previous
     // implementation based on geometry lookup)
     if(NearestWireNumber < 0 ||
-       NearestWireNumber >= fWireCounts[cstat][TPCNo][PlaneNo]){
-      if(NearestWireNumber < 0 ) wireNumber = 0;
-      else                       wireNumber = fWireCounts[cstat][TPCNo][PlaneNo] - 1;
+       NearestWireNumber >= fWireCounts[cstat][TPCNo][PlaneNo])
+    {
+      int wireNumber = NearestWireNumber; // save for the output
+      
+      if(NearestWireNumber < 0 ) NearestWireNumber = 0;
+      else                       NearestWireNumber = fWireCounts[cstat][TPCNo][PlaneNo] - 1;
       
       throw cet::exception("Geometry") << "Can't Find Nearest Wire for position (" 
-				       << worldPos[0] << ","
-				       << worldPos[1] << "," 
-				       << worldPos[2] << ")"
-				       << " approx wire number # " 
-				       << wireNumber << "\n";
+        << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")"
+        << " approx wire number # " << wireNumber
+        << "(capped from " << NearestWireNumber < ")\n";
     }
-    
-    WireID wid(cstat, PlaneNo, TPCNo, wireNumber);
+
+    WireID wid(cstat, PlaneNo, TPCNo, (unsigned int)NearestWireNumber);
     return wid;
 
   }
