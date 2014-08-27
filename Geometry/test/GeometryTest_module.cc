@@ -697,6 +697,8 @@ namespace geo{
       uint32_t nearest = 0;
       std::vector< geo::WireID > wireIDs;
 
+      const unsigned int NWires = geom->Nwires(p, t, cs);
+      
       try{
         // The double[] version tested here falls back on the
         // TVector3 version, so this test both.
@@ -769,6 +771,9 @@ namespace geo{
         const double pitch
           = std::abs(geom->WirePitch((w > 0)? w - 1: 1, w, p, t, cs));
         
+        std::array<double, 3> wire_shifted_y(wire_center),
+          wire_shifted_z(wire_center);
+        
         // assuming that moving of dy = pitchY or dz = pitchZ from the wire w,
         // I'll meet wire w+1 next (as opposed to w - 1);
         // that requires to flip the sign of the pitch projection on y
@@ -781,7 +786,7 @@ namespace geo{
         const double dy = isAlignedY? 5.0: - pitch / std::cos(wire.ThetaZ());
         const double dz = isAlignedZ? 5.0: pitch / std::sin(wire.ThetaZ());
         
-        const int NSteps = 10;
+        constexpr int NSteps = 5;
         for (int i = -NSteps; i <= +NSteps; ++i) {
           // we move away by this fraction of wire:
           const double f = double(i) / NSteps;
@@ -789,6 +794,9 @@ namespace geo{
           // these are the actual shifts on the positive directions y and z
           const double delta_y = f * dy;
           const double delta_z = f * dz;
+          
+          wire_shifted_y[1] = wire_center[1] + delta_y;
+          wire_shifted_z[2] = wire_center[2] + delta_z;
           
           // we expect this wire number
           const float expected_wire_y = w + (isAlignedY? 0.0: f);
@@ -806,7 +814,7 @@ namespace geo{
               << wire_center[1] << "; " << wire_center[2] << ")] on step of "
               << i << "x" << pitch << " along y (" << dy
               << ") shows " << wire_from_y << ", " << expected_wire_y
-              << " expected.";
+              << " expected.\n";
           } // if mismatch on y
           
           if (std::abs(wire_from_z - expected_wire_z) > 1e-3) {
@@ -816,8 +824,68 @@ namespace geo{
               << wire_center[1] << "; " << wire_center[2] << ")] on step of "
               << i << "x" << pitch << " along z (" << dz
               << ") shows " << wire_from_z << ", " << expected_wire_z
-              << " expected.";
+              << " expected.\n";
           } // if mismatch on z
+          
+          if ((expected_wire_y > -0.5) && (expected_wire_y < NWires - 0.5)) {
+            const unsigned int expected_wire_number_y
+              = std::round(expected_wire_y);
+            unsigned int wire_number_from_y;
+            try {
+              wire_number_from_y
+                = geom->NearestWire(wire_shifted_y.data(), p, t, cs);
+            }
+            catch (cet::exception& e) {
+              throw cet::exception("GeoTestErrorWireCoordinate", "", e)
+                << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                << " [center: (" << wire_center[0] << "; "
+                << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                << i << "x" << pitch << " along y (" << dy
+                << ") failed NearestWire(), " << expected_wire_number_y
+                << " expected (more precisely, " << expected_wire_y << ").\n";
+            }
+            
+            if (wire_number_from_y != expected_wire_number_y) {
+              throw cet::exception("GeoTestErrorWireCoordinate")
+                << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                << " [center: (" << wire_center[0] << "; "
+                << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                << i << "x" << pitch << " along y (" << dy
+                << ") near to " << wire_number_from_y << ", "
+                << expected_wire_number_y
+                << " expected (more precisely, " << expected_wire_y << ").\n";
+            } // if mismatch on y
+          } // if y-shifted wire not outside boundaries
+          
+          if ((expected_wire_z > -0.5) && (expected_wire_z < NWires - 0.5)) {
+            const unsigned int expected_wire_number_z
+              = std::round(expected_wire_z);
+            unsigned int wire_number_from_z;
+            try {
+              wire_number_from_z
+                = geom->NearestWire(wire_shifted_z.data(), p, t, cs);
+            }
+            catch (cet::exception& e) {
+              throw cet::exception("GeoTestErrorWireCoordinate", "", e)
+                << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                << " [center: (" << wire_center[0] << "; "
+                << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                << i << "x" << pitch << " along z (" << dz
+                << ") failed NearestWire(), " << expected_wire_number_z
+                << " expected (more precisely, " << expected_wire_z << ").\n";
+            }
+            
+            if (wire_number_from_z != expected_wire_number_z) {
+              throw cet::exception("GeoTestErrorWireCoordinate")
+                << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                << " [center: (" << wire_center[0] << "; "
+                << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                << i << "x" << pitch << " along z (" << dz
+                << ") near to " << wire_number_from_z << ", "
+                << expected_wire_number_z
+                << " expected (more precisely, " << expected_wire_z << ").\n";
+            } // if mismatch on y
+          } // if z-shifted wire not outside boundaries
           
         } // for i
         
