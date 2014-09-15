@@ -86,10 +86,24 @@ namespace geo {
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,
 			    unsigned int const cstat = 0)         const;
+    /**
+     * @brief Returns the ID of the TPC at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the TPC ID, or an invalid one if no TPC is there
+     */
+    geo::TPCID FindTPCAtPosition(double const worldLoc[3]) const;
+    
     const TPCGeo&       PositionToTPC(double const  worldLoc[3],
 				      unsigned int &tpc,
 				      unsigned int &cstat)        const; // return the TPCGeo object containing
                                                                          // the world position worldLoc
+    /**
+     * @brief Returns the index of the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the index of the cryostat, or UINT_MAX if no cryostat is there
+     */
+    unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
+    
     const CryostatGeo&  PositionToCryostat(double const  worldLoc[3],
 					   unsigned int &cstat)   const; // return the CryostatGeo object containing
                                                                          // the world position worldLoc
@@ -98,6 +112,14 @@ namespace geo {
 			      unsigned int const cstat = 0)       const;
 
     const AuxDetGeo&    AuxDet(unsigned int const ad = 0)         const;
+    
+    /**
+     * @brief Returns the index of the auxiliary detector at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the index of the detector, or UINT_MAX if no detector is there
+     */
+    unsigned int FindAuxDetAtPosition(double const worldLoc[3]) const;
+    
     const AuxDetGeo&    PositionToAuxDet(double const  worldLoc[3],
                                             unsigned int &ad)     const;    // return the AuxDetGeo object containing
                                                                                 // the world position worldLoc

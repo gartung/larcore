@@ -367,6 +367,25 @@ namespace geo {
     return this->Cryostat(cstat).TPC(tpc);
   }
 
+  
+  //......................................................................
+  geo::TPCID Geometry::FindTPCAtPosition(double const worldLoc[3]) const {
+    geo::TPCID tpcid; // invalid by default
+    
+    // first find the cryostat
+    tpcid.Cryostat = FindCryostatAtPosition(worldLoc);
+    if (tpcid.Cryostat == UINT_MAX) return tpcid;
+    
+    // then ask it about the TPC
+    tpcid.TPC = Cryostat(tpcid.Cryostat).FindTPCAtPosition(worldLoc, 1. + fPositionWiggle);
+    if (tpcid.TPC == UINT_MAX) return tpcid;
+    
+    // finally declare the result valid and return it
+    tpcid.isValid = true;
+    return tpcid;
+  } // Geometry::FindTPCAtPosition()
+  
+  
   //......................................................................
   const TPCGeo& Geometry::PositionToTPC(double const  worldLoc[3],
 					unsigned int &tpc,
@@ -376,8 +395,7 @@ namespace geo {
   }
 
   //......................................................................
-  const CryostatGeo& Geometry::PositionToCryostat(double const  worldLoc[3],
-						  unsigned int &cstat) const
+  unsigned int Geometry::FindCryostatAtPosition(double const worldLoc[3]) const
   {
     // boundaries of the TPC in the world volume are organized as
     // [0] = -x
@@ -395,32 +413,38 @@ namespace geo {
       double origin[3] = {0.};
       double world[3] = {0.};
       for(unsigned int c = 0; c < this->Ncryostats(); ++c){
-	this->Cryostat(c).LocalToWorld(origin, world);
-	// y and z values are easy and can be figured out using the TPC origin
-	// the x values are a bit trickier, at least the -x value seems to be
-	cstatBoundaries[0+c*6] =  world[0] - this->Cryostat(c).HalfWidth();
-	cstatBoundaries[1+c*6] =  world[0] + this->Cryostat(c).HalfWidth();
-	cstatBoundaries[2+c*6] =  world[1] - this->Cryostat(c).HalfHeight();
-	cstatBoundaries[3+c*6] =  world[1] + this->Cryostat(c).HalfHeight();
-	cstatBoundaries[4+c*6] =  world[2] - 0.5*this->Cryostat(c).Length();
-	cstatBoundaries[5+c*6] =  world[2] + 0.5*this->Cryostat(c).Length();
+        this->Cryostat(c).LocalToWorld(origin, world);
+        // y and z values are easy and can be figured out using the TPC origin
+        // the x values are a bit trickier, at least the -x value seems to be
+        cstatBoundaries[0+c*6] =  world[0] - this->Cryostat(c).HalfWidth();
+        cstatBoundaries[1+c*6] =  world[0] + this->Cryostat(c).HalfWidth();
+        cstatBoundaries[2+c*6] =  world[1] - this->Cryostat(c).HalfHeight();
+        cstatBoundaries[3+c*6] =  world[1] + this->Cryostat(c).HalfHeight();
+        cstatBoundaries[4+c*6] =  world[2] - 0.5*this->Cryostat(c).Length();
+        cstatBoundaries[5+c*6] =  world[2] + 0.5*this->Cryostat(c).Length();
       }
     }// end if this is the first calculation
 
     // locate the desired Cryostat
-    cstat = UINT_MAX;
     for(unsigned int c = 0; c < this->Ncryostats(); ++c){
       if(worldLoc[0] >= cstatBoundaries[0+c*6] * (1. + fPositionWiggle) &&
-	 worldLoc[0] <= cstatBoundaries[1+c*6] * (1. + fPositionWiggle) && 
-	 worldLoc[1] >= cstatBoundaries[2+c*6] * (1. + fPositionWiggle) && 
-	 worldLoc[1] <= cstatBoundaries[3+c*6] * (1. + fPositionWiggle) && 
-	 worldLoc[2] >= cstatBoundaries[4+c*6] * (1. + fPositionWiggle) && 
-	 worldLoc[2] <= cstatBoundaries[5+c*6] * (1. + fPositionWiggle) ){
-	cstat = c;
-	break;
+         worldLoc[0] <= cstatBoundaries[1+c*6] * (1. + fPositionWiggle) && 
+         worldLoc[1] >= cstatBoundaries[2+c*6] * (1. + fPositionWiggle) && 
+         worldLoc[1] <= cstatBoundaries[3+c*6] * (1. + fPositionWiggle) && 
+         worldLoc[2] >= cstatBoundaries[4+c*6] * (1. + fPositionWiggle) && 
+         worldLoc[2] <= cstatBoundaries[5+c*6] * (1. + fPositionWiggle) ){
+        return c;
       }
     }
+    return UINT_MAX;
+  } // Geometry::FindCryostatAtPosition()
 
+  //......................................................................
+  const CryostatGeo& Geometry::PositionToCryostat(double const  worldLoc[3],
+						  unsigned int &cstat) const
+  {
+    cstat = FindCryostatAtPosition(worldLoc);
+    
     if(cstat == UINT_MAX)
       throw cet::exception("Geometry") << "Can't find Cryostat for position (" 
 				       << worldLoc[0] << ","
@@ -431,8 +455,7 @@ namespace geo {
   }
 
   //......................................................................
-  const AuxDetGeo& Geometry::PositionToAuxDet(double const  worldLoc[3],
-                                              unsigned int &ad) const
+  unsigned int Geometry::FindAuxDetAtPosition(double const  worldLoc[3]) const
   {
     // boundaries of the AuxDet in the world volume are organized as
     // [0] = -x
@@ -465,7 +488,6 @@ namespace geo {
     }// end if this is the first calculation
     
     // locate the desired Auxiliary Detector
-    ad = UINT_MAX;
     for(unsigned int a = 0; a < this->NAuxDets(); ++a){
       
       if(worldLoc[0] >= adBoundaries[0+a*6] &&
@@ -474,16 +496,25 @@ namespace geo {
          worldLoc[1] <= adBoundaries[3+a*6] &&
          worldLoc[2] >= adBoundaries[4+a*6] &&
          worldLoc[2] <= adBoundaries[5+a*6] ){
-         ad = a;
+         return a;
          break;
       }// end if
     }// for loop over AudDet a
+    return UINT_MAX;
+  } // Geometry::FindAuxDetAtPosition()
+  
+  //......................................................................
+  const AuxDetGeo& Geometry::PositionToAuxDet(double const  worldLoc[3],
+                                              unsigned int &ad) const
+  {
     
+    // locate the desired Auxiliary Detector
+    ad = FindAuxDetAtPosition(worldLoc);
     if(ad == UINT_MAX)
     throw cet::exception("Geometry") << "Can't find AuxDet for position ("
-    << worldLoc[0] << ","
-    << worldLoc[1] << ","
-    << worldLoc[2] << ")\n";
+      << worldLoc[0] << ","
+      << worldLoc[1] << ","
+      << worldLoc[2] << ")\n";
     
     return this->AuxDet(ad);
   }
