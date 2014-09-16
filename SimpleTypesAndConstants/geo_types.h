@@ -55,33 +55,35 @@ namespace geo {
 
   // The data type to uniquely identify a TPC
   struct TPCID { 
-    TPCID()
-    : Cryostat(UINT_MAX)
-    , TPC(UINT_MAX)
-    , isValid(false)
-    {}
+    TPCID(): isValid(false), Cryostat(UINT_MAX), TPC(UINT_MAX) {}
 
-    TPCID(unsigned int c, unsigned int t)
-      : Cryostat(c), TPC(t), isValid(true)
-      {}
+    TPCID(unsigned int c, unsigned int t): isValid(true), Cryostat(c), TPC(t) {}
 
-    unsigned int Cryostat;
-    unsigned int TPC;
-    bool         isValid;
+    bool         isValid;  ///< whether this ID points to a valid TPC
+    unsigned int Cryostat; ///< index of cryostat the TPC belongs
+    unsigned int TPC;      ///< index of the TPC within its cryostat
 
-    bool operator==(const TPCID& tpcid) const
-      { return (Cryostat == tpcid.Cryostat) && (TPC == tpcid.TPC); }
+    /// Returns true if the ID is valid
+    operator bool() const { return isValid; }
+    
+    /// Returns true if the ID is not valid
+    bool operator! () const { return !isValid; }
+    
+    bool operator== (const TPCID& pid) const
+      { return ((Cryostat == pid.Cryostat) && (TPC == pid.TPC)); }
 
-    bool operator!=(const TPCID& tpcid) const
-      { return (Cryostat != tpcid.Cryostat) || (TPC != tpcid.TPC); }
+    bool operator!= (const TPCID& pid) const
+      { return ((Cryostat != pid.Cryostat) || (TPC != pid.TPC)); }
 
-    // Order TPCID in increasing Cryo and TPC
-    bool operator<(const TPCID& tpcid) const
+    // Order TPCID in increasing Cryo, then TPC
+    bool operator<( const TPCID& tpcid ) const
       {
-        if (Cryostat != tpcid.Cryostat) return Cryostat < tpcid.Cryostat;
-        else return TPC < tpcid.TPC;
-      }
-  }; // class TPCID
+        if(      Cryostat != tpcid.Cryostat ) return Cryostat < tpcid.Cryostat;
+        else if(      TPC != tpcid.TPC      ) return TPC      < tpcid.TPC;
+        else return false;
+      } // operator<
+
+  }; // struct TPCID
 
   // The data type to uniquely identify a Plane
   struct PlaneID { 
