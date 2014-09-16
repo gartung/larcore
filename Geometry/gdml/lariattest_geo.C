@@ -8,7 +8,7 @@ void lariattest_geo(TString volName="volCryostat"){
 gSystem->Load("libGeom");
 gSystem->Load("libGdml");
 
-TGeoManager::Import("lariattest.gdml");
+TGeoManager::Import("lariattest_flat_pmt_w.gdml");
 
 drawopt optlariattest[] = {
    {"volWorld",                 0},
@@ -18,7 +18,7 @@ drawopt optlariattest[] = {
 //   {"volTPCWirePlaneWidthSide", kRed},
   {"voltpb1", kGreen},
   {"volBeamBoxpp", kBlue},
-  {"volBeamBox", kOrange},
+
 
   
 //{"volTPCShieldPlane", kBlue},

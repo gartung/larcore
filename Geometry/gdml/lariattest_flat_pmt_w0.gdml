@@ -2,7 +2,7 @@
 <gdml xmlns:gdml="http://cern.ch/2001/Schemas/GDML"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="GDMLSchema/gdml.xsd">
-<!--WARNING - THIS FILE NO LONGER CONTAINS CSU40L geometry and will be renamed. Test chamber for LArIAT implemented by Pawel Kryczynski, pkryczyn@fnal.gov, fall 2013 - spring 2014-->
+<!--Test chamber for LArIAT implemented by Pawel Kryczynski, pkryczyn@fnal.gov, fall 2013 - spring 2014-->
 <define>
 	<position name="center" x="0" y="0" z="0"/>
 	<position name="MountBar1" x="63.5" y="0" z="-74.034"/>
@@ -19,13 +19,13 @@
 
  <position name="HmmBottomPosition" unit="cm" x="0.0" y="0.0" z="-5.25"/>
  <position name="EtlRimPosition" unit="cm" x="0.0" y="0.0" z="-2.75"/>
- <position name="WindowHmmPosition" unit="cm" x="0.0" y="0.0" z="-6.25"/>
- <position name="WindowEtlPosition" unit="cm" x="0.0" y="0.0" z="-6.25"/>
+ <position name="WindowHmmPosition" unit="cm" x="0.0" y="0.0" z="-6.5"/>
+ <position name="WindowEtlPosition" unit="cm" x="0.0" y="0.0" z="-6.5"/>
  <position name="WindowSipmPosition" unit="cm" x="0.0" y="0.0" z="-0.6"/>
- <position name="HmmCutPosition" unit="cm" x="-2.88" y="0.0" z="20.75"/>
- <position name="EtlCutPosition" unit="cm" x="4.32" y="0.0" z="20.75"/>
- <position name="SipmCutPosition" unit="cm" x="0.0" y="-4.0" z="13.1"/>
- <position name="SipmCutPosition2" unit="cm" x="0.0" y="4.0" z="13.1"/>
+ <position name="HmmCutPosition" unit="cm" x="-2.88" y="0.0" z="19.25"/>
+ <position name="EtlCutPosition" unit="cm" x="4.32" y="0.0" z="19.25"/>
+ <position name="SipmCutPosition" unit="cm" x="0.0" y="-4.0" z="13.2"/>
+ <position name="SipmCutPosition2" unit="cm" x="0.0" y="4.0" z="13.2"/>
 
  <position name="tpb1pos" unit="cm" x="0.0" y="-(7.0-(0.02844/2))" z="-3.125"/>
  <position name="tpb2pos" unit="cm" x="0.0" y="(7.0-(0.02844/2))" z="-3.125"/>
@@ -33,16 +33,17 @@
  <position name="tpb4pos" unit="cm" x="(7.0-(0.02844/2))" y="0.0" z="-3.125"/>
  <position name="tpb5pos" unit="cm" x="0.0" y="0.0" z="-(12.5-(0.02844/2))"/>
  <position name="tpb6pos" unit="cm" x="0.0" y="0.0" z="(12.5-(0.02844/2))"/>
-<position name="PMTEtlPos" unit="cm" x="4.32" y="0.0" z="20.75"/>
-<position name="PMTHmmPos" unit="cm" x="-2.88" y="0.0" z="20.75"/>
+<position name="PMTEtlPos" unit="cm" x="4.32" y="0.0" z="20.25"/>
+<position name="PMTHmmPos" unit="cm" x="-2.88" y="0.0" z="20.25"/>
 
- <position name="SipmPos" unit="cm" x="0.0" y="-4.0" z="13.1"/>
- <position name="SipmPos2" unit="cm" x="0.0" y="4.0" z="13.1"/>
-<position name="EtlWPos" unit="cm" x="4.32" y="0.0" z="12.5"/>
-<position name="HmmWPos" unit="cm" x="-2.88" y="0.0" z="12.5"/>
-
-<position name="SipmWPos" unit="cm" x="0.0" y="-4.0" z="12.5"/>
-<position name="SipmWPos2" unit="cm" x="0.0" y="4.0" z="12.5"/>
+ <position name="SipmPos" unit="cm" x="0.0" y="-4.0" z="13.2"/>
+ <position name="SipmPos2" unit="cm" x="0.0" y="4.0" z="13.2"/>
+<position name="EtlHPos" unit="cm" x="4.32" y="0.0" z="13.0"/>
+<position name="HmmHPos" unit="cm" x="-2.88" y="0.0" z="13.0"/>
+<!--<position name="EtlWPos" unit="cm" x="4.32" y="0.0" z="12.5"/>
+<position name="HmmWPos" unit="cm" x="-2.88" y="0.0" z="12.5"/> 
+<position name="SipmWPos" unit="cm" x="0.0" y="-4.0" z="13.1"/>
+<position name="SipmWPos2" unit="cm" x="0.0" y="4.0" z="13.1"/>-->
 
 	<rotation name="identity" x="0" y="0" z="0"/>
 
@@ -237,7 +238,7 @@
 
 
 <box name="BeamBox0"     x="14.00"  y="14.00" z="25.0"  lunit="cm"/>
-<box name="BeamBox20"     x="14.00+(2.)"  y="14.00+(2.)" z="25.0+(4.)"  lunit="cm"/>
+<box name="BeamBox20"     x="14.00+(2.)"  y="14.00+(2.)" z="29.0"  lunit="cm"/>
 <box name="sipm"     x="1.3"  y="1.3" z="1.0"  lunit="cm"/>
 <box name="sipms"     x="1.3"  y="1.3" z="0.2"  lunit="cm"/>
 <box name="refl1"     x="14.00"  y="0.025" z="18.75"  lunit="cm"/>
@@ -253,14 +254,14 @@
 
 <box name="cath5"     x="13.8"  y="13.8" z="0.02844"  lunit="cm"/>
  <tube name="PMTEtlBase"
-   rmax="(2.56)"
+   rmax="2.56"
    rmin="0.0"
    z="12.5"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/>
   <tube name="PMTEtlC"
-   rmax="(2.56)"
+   rmax="2.56"
    rmin="0.0"
    z="0.8"
    deltaphi="360"
@@ -269,7 +270,7 @@
 
 
   <tube name="PMTEtlRim"
-   rmax="(2.56)"
+   rmax="2.56"
    rmin="2.46"
    z="0.3"
    deltaphi="360"
@@ -277,25 +278,27 @@
    lunit="cm"/> 
 
   <tube name="PMTEtlWindow"
-   rmax="(2.56)"
+   rmax="2.56"
+   rmin="0.0"
+   z="0.5"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/> 
+
+  <tube name="PMTEtlHole"
+   rmax="2.56"
    rmin="0.0"
    z="1.0"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/> 
 
-  <tube name="PMTEtlHole"
-   rmax="(2.56)"
-   rmin="2.46"
-   z="2.0"
-   deltaphi="360"
-   aunit="deg"
-   lunit="cm"/> 
+
 
 
 
   <tube name="PMTHmmBase"
-   rmax="(2.56)"
+   rmax="2.56"
    rmin="0.0"
    z="12.5"
    deltaphi="360"
@@ -303,31 +306,31 @@
    lunit="cm"/> 
 
   <tube name="PMTHmmBottom"
-   rmax="(3.84)"
+   rmax="3.84"
    rmin="0.0"
    z="2.0"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/> 
   <tube name="PMTHmmC"
-   rmax="(3.84)"
+   rmax="3.84"
    rmin="0.0"
    z="0.8"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/> 
   <tube name="PMTHmmHole"
-   rmax="(3.84)"
+   rmax="3.84"
    rmin="0.0"
-   z="2.0"
+   z="1.0"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/> 
 
   <tube name="PMTHmmWindow"
-   rmax="(3.84)"
+   rmax="3.84"
    rmin="0.0"
-   z="1.0"
+   z="0.5"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/> 
@@ -360,8 +363,6 @@
    ax="(2.56)"
    by="(2.56)"
    cz="1.0"
-  
-
    lunit="cm"/>
 
 
@@ -376,12 +377,12 @@
 </subtraction>
 
 <union name="PMTHmmBrutto">
-   <first ref="PMTHmmBrutto_ph1"/><second ref="PMTHmmWindow_e2"/>
+   <first ref="PMTHmmBrutto_ph1"/><second ref="PMTHmmWindow"/>
    <positionref  ref="WindowHmmPosition" />
 </union>
 
 <union name="PMTEtlBrutto">
-   <first ref="PMTEtlBrutto_ph1"/><second ref="PMTEtlWindow_e2"/>
+   <first ref="PMTEtlBrutto_ph1"/><second ref="PMTEtlWindow"/>
    <positionref  ref="WindowEtlPosition" />
 </union>
 
@@ -390,7 +391,7 @@
    <positionref  ref="WindowSipmPosition" />
 </union>
 
-
+<!-- g10 box -->
 <subtraction name="BeamBox_ph1">
    <first ref="BeamBox20"/><second ref="PMTEtlBrutto"/>
    <positionref  ref="EtlCutPosition" />
@@ -405,9 +406,18 @@
    <first ref="BeamBox_ph2"/><second ref="SipmBrutto"/>
    <positionref  ref="SipmCutPosition2" />
 </subtraction>
+<!-- -->
+<subtraction name="BeamBox_ph4">
+   <first ref="BeamBox_ph3"/><second ref="PMTEtlHole"/>
+   <positionref  ref="EtlHPos" />
+</subtraction>
 
+<subtraction name="BeamBox_ph5">
+   <first ref="BeamBox_ph4"/><second ref="PMTHmmHole"/>
+   <positionref  ref="HmmHPos" />
+</subtraction> 
 <subtraction name="BeamBox2">
-   <first ref="BeamBox_ph3"/><second ref="PMTHmmBrutto"/>
+   <first ref="BeamBox_ph5"/><second ref="PMTHmmBrutto"/>
    <positionref  ref="HmmCutPosition" />
 </subtraction>
 
@@ -437,29 +447,43 @@
    <first ref="Dewar_inLAr12"/><second ref="SipmBrutto"/>
    <positionref  ref="SipmPos2" />
 </subtraction>
+<!-- lar box -->
+<union name="BeamBox00">
+   <first ref="BeamBox0"/><second ref="PMTEtlHole"/>
+   <positionref  ref="EtlHPos" />
+</union>
 
-<subtraction name="BeamBox01">
-   <first ref="BeamBox0"/><second ref="PMTHmmWindow_e2"/>
-   <positionref  ref="HmmWPos" />
-</subtraction>
+<union name="BeamBox">
+   <first ref="BeamBox00"/><second ref="PMTHmmHole"/>
+   <positionref  ref="HmmHPos" />
+</union>
 
+<!-- 
 <subtraction name="BeamBox02">
-   <first ref="BeamBox01"/><second ref="sipms"/>
+   <first ref="BeamBox00"/><second ref="sipms"/>
    <positionref  ref="SipmWPos" />
 </subtraction>
 
-<subtraction name="BeamBox03">
+<subtraction name="BeamBox">
    <first ref="BeamBox02"/><second ref="sipms"/>
    <positionref  ref="SipmWPos2" />
 </subtraction>
+-->
 
+<!--
+<subtraction name="BeamBox01">
+   <first ref="BeamBox001"/><second ref="PMTHmmWindow"/>
+   <positionref  ref="HmmWPos" />
+</subtraction>
+-->
+<!--
 <subtraction name="BeamBox">
-   <first ref="BeamBox03"/><second ref="PMTEtlWindow_e2"/>
+   <first ref="BeamBox03"/><second ref="PMTEtlWindow"/>
    <positionref  ref="EtlWPos" />
 </subtraction>
 
 <subtraction name="refl60">
-   <first ref="refl5"/><second ref="PMTEtlWindow_e2"/>
+   <first ref="refl5"/><second ref="PMTEtlWindow"/>
    <positionref  ref="EtlWPos" />
 </subtraction>
 <subtraction name="refl61">
@@ -472,13 +496,13 @@
 </subtraction>
 
 <subtraction name="refl6">
-   <first ref="refl62"/><second ref="PMTHmmWindow_e2"/>
+   <first ref="refl62"/><second ref="PMTHmmWindow"/>
    <positionref  ref="HmmWPos" />
 </subtraction>
 
 
 <subtraction name="tpb60">
-   <first ref="tpb5"/><second ref="PMTEtlWindow_e2"/>
+   <first ref="tpb5"/><second ref="PMTEtlWindow"/>
    <positionref  ref="EtlWPos" />
 </subtraction>
 
@@ -490,10 +514,12 @@
    <first ref="tpb61"/><second ref="sipms"/>
    <positionref  ref="SipmWPos2" />
 </subtraction>
+
 <subtraction name="tpb6">
-   <first ref="tpb62"/><second ref="PMTHmmWindow_e2"/>
+   <first ref="tpb62"/><second ref="PMTHmmWindow"/>
    <positionref  ref="HmmWPos" />
 </subtraction>
+-->
 
 
 </solids>
@@ -555,12 +581,12 @@
   <materialref ref="vm2000"/>
   <solidref ref="refl5"/>
  </volume>
-
+<!--
 <volume name="volrefl6">
   <materialref ref="vm2000"/>
   <solidref ref="refl6"/>
  </volume>
-
+-->
 <volume name="voltpb1">
   <materialref ref="TPB"/>
   <solidref ref="tpb1"/>
@@ -605,7 +631,7 @@
    <positionref  ref="center" />
  </physvol>
  </volume>
-
+<!--
 <volume name="voltpb6">
   <materialref ref="TPB"/>
   <solidref ref="tpb6"/>
@@ -614,7 +640,7 @@
    <positionref  ref="center" />
  </physvol>
  </volume>
-
+-->
 <volume name="volcath5">
   <materialref ref="Copper"/>
   <solidref ref="cath5"/>
@@ -628,7 +654,14 @@
   <materialref ref="Glass"/>
   <solidref ref="PMTHmmBrutto_ph1"/>
  </volume>
-
+ <volume name="volHmmHole">
+  <materialref ref="G10"/>
+  <solidref ref="PMTHmmHole"/>
+ </volume>
+ <volume name="volEtlHole">
+  <materialref ref="G10"/>
+  <solidref ref="PMTEtlHole"/>
+ </volume>
  <volume name="PMTVolume">
   <materialref ref="LAr"/>
   <solidref ref="PMTHmmBrutto"/>
@@ -651,12 +684,12 @@
 
  <volume name="volOpDetSensitive">
   <materialref ref="LAr"/>
-  <solidref ref="PMTHmmWindow_e"/>
+  <solidref ref="PMTHmmWindow"/>
  </volume>
 
  <volume name="volOpDetSensitive_1">
   <materialref ref="LAr"/>
-  <solidref ref="PMTEtlWindow_e"/>
+  <solidref ref="PMTEtlWindow"/>
  </volume>
 
  <volume name="volOpDetSensitive_2">
@@ -725,6 +758,11 @@
 	<volume name="volBeamBox">
 	<materialref ref="LAr"/>
 	<solidref ref="BeamBox"/>
+<!-- blind pmt for testing purpose -->
+		<!-- <physvol>
+			<volumeref ref="volEtlHole"/>
+			<positionref  ref="EtlHPos" />
+		</physvol> -->
 		<physvol>
 			<volumeref ref="voltpb1"/>
 			<positionref  ref="tpb1pos" />
@@ -747,15 +785,7 @@
 			<volumeref ref="volcath5"/>
 			<positionref  ref="tpb5pos" />
 		</physvol>
-		<!--<physvol>
-			<volumeref ref="voltpb5"/>
-			<positionref  ref="tpb5pos" />
-		</physvol>
 
-		<physvol>
-			<volumeref ref="voltpb6"/>
-			<positionref  ref="tpb6pos" />
-		</physvol>-->
 
 	</volume>
 
@@ -818,10 +848,12 @@
 			<volumeref ref="volPMT_2"/>
 			<positionref  ref="SipmPos" />
 		</physvol>
+
 		<physvol>
 			<volumeref ref="volPMT_3"/>
 			<positionref  ref="SipmPos2" />
 		</physvol>
+
 
 		<physvol>
 			<volumeref ref="volBeamBoxpp"/>
@@ -831,6 +863,7 @@
 			<volumeref ref="volDewar_outLAr"/>
 			<positionref  ref="center" />
 		</physvol>
+
 
 
 		
@@ -854,20 +887,7 @@
 		</physvol>
 		
 	</volume>
-<!--
- <skinsurface name="surf_r1" surfaceproperty="surfrefl" >
-    <volumeref ref="volrefl1"/>
-  </skinsurface> 
- <skinsurface name="surf_r2" surfaceproperty="surfrefl" >
-    <volumeref ref="volrefl2"/>
-  </skinsurface> 
- <skinsurface name="surf_r3" surfaceproperty="surfrefl" >
-    <volumeref ref="volrefl3"/>
-  </skinsurface> 
- <skinsurface name="surf_r4" surfaceproperty="surfrefl" >
-    <volumeref ref="volrefl4"/>
-  </skinsurface> 
-	-->	
+
 </structure>
 
 

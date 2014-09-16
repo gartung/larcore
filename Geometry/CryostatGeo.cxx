@@ -199,6 +199,7 @@ namespace geo{
     const char* nm = path[depth]->GetName();
     if( (strncmp(nm, OpDetGeoName().c_str(), 6) == 0) ){
       this->MakeOpDet(path,depth);
+std::cout<<" making opdet CryostatGeo 202 "<<path[depth]->GetName()<<std::endl;
       return;
     }
 
@@ -221,6 +222,7 @@ namespace geo{
   void CryostatGeo::MakeOpDet(std::vector<const TGeoNode*>& path, int depth) 
   {
     fOpDets.push_back(new OpDetGeo(path, depth));
+std::cout<<" adding Optical detectors in CryostatGeo 225 container size "<<fOpDets.size()<<std::endl;
   }
 
   //......................................................................
