@@ -87,6 +87,11 @@ namespace geo {
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,
 			    unsigned int const cstat = 0)         const;
+
+    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const
+      { return TPC(tpcid.TPC, tpcid.Cryostat); }
+
+
     const TPCGeo&       PositionToTPC(double const  worldLoc[3],
 				      unsigned int &tpc,
 				      unsigned int &cstat)        const; // return the TPCGeo object containing
@@ -97,6 +102,9 @@ namespace geo {
     const PlaneGeo&     Plane(unsigned int const p,
 			      unsigned int const tpc   = 0,
 			      unsigned int const cstat = 0)       const;
+    
+    const PlaneGeo&     Plane(const geo::PlaneID& pid)            const
+      { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
 
     const AuxDetGeo&    AuxDet(unsigned int const ad = 0)         const;
     const AuxDetGeo&    PositionToAuxDet(double const  worldLoc[3],
@@ -363,9 +371,16 @@ namespace geo {
       /// Prefix increment: returns this iterator pointing to the next cryostat
       cryostat_iterator& operator++ ();
       
+      /// Prefix decrement: returns this iterator pointing to the previous cryostat
+      cryostat_iterator& operator-- ();
+      
       /// Postfix increment: returns the current iterator, then increments it
       cryostat_iterator operator++ (int)
         { cryostat_iterator old(*this); this->operator++(); return old; }
+      
+      /// Postfix decrement: returns the current iterator, then decrements it
+      cryostat_iterator operator-- (int)
+        { cryostat_iterator old(*this); this->operator--(); return old; }
       
       /// Returns whether the iterator is pointing to a valid cryostat
       operator bool() const { return isValid; }
@@ -440,6 +455,9 @@ namespace geo {
       /// Returns a pointer to the TPC, or nullptr if the iterator is not valid
       const TPCGeo* get() const;
       
+      /// Returns a pointer to the cryostat the plane belongs to
+      const CryostatGeo* getCryostat() const;
+      
         protected:
       const Geometry* pGeo; ///< pointer to the geometry
       
@@ -502,6 +520,12 @@ namespace geo {
       
       /// Returns a pointer to plane, or nullptr if the iterator is not valid
       const PlaneGeo* get() const;
+      
+      /// Returns a pointer to the TPC the plane belongs to
+      const TPCGeo* getTPC() const;
+      
+      /// Returns a pointer to the cryostat the plane belongs to
+      const CryostatGeo* getCryostat() const;
       
         protected:
       const Geometry* pGeo; ///< pointer to the geometry
@@ -567,6 +591,15 @@ namespace geo {
       
       /// Returns a pointer to wire, or nullptr if the iterator is not valid
       const WireGeo* get() const;
+      
+      /// Returns a pointer to the plane the wire belongs to
+      const PlaneGeo* getPlane() const;
+      
+      /// Returns a pointer to the TPC the wire belongs to
+      const TPCGeo* getTPC() const;
+      
+      /// Returns a pointer to the cryostat the wire belongs to
+      const CryostatGeo* getCryostat() const;
       
         protected:
       const Geometry* pGeo; ///< pointer to the geometry

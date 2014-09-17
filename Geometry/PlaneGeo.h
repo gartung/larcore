@@ -50,7 +50,28 @@ namespace geo {
     void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
     void SetView(geo::View_t view)                                  { fView = view; }
 
-    const double& WirePitch()                                 const { return fWirePitch; }
+    double WirePitch()                                        const { return fWirePitch; }
+    
+    /**
+     * @brief Returns the direction normal to the plane
+     * @return a TVector3 versor with a direction normal to the plane
+     *
+     * The versor is orthogonal to the plane.
+     * Its direction is defined so that the cross product of it and the wires
+     * direction points to wires of larger ID.
+     * The wire direction is as returned by geo::WireGeo::Direction(),
+     * and defined by the geometry.
+     */
+    TVector3 GetNormalDirection() const;
+
+    /**
+     * @brief Returns the direction of increasing wires
+     * @return a TVector3 versor with the direction of increasing wires
+     *
+     * The versor is orthogonal to the wires (assumed parallel),
+     * lies on the plane and its direction goes toward increasing wire IDs.
+     */
+    TVector3 GetIncreasingWireDirection() const;
 
     /// Transform point from local plane frame to world frame
     void LocalToWorld(const double* plane, double* world)     const;

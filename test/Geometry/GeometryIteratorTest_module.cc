@@ -249,6 +249,22 @@ namespace geo{
       ++nErrors;
     }
     
+    if (iPlane) {
+      LOG_ERROR("GeometryIteratorTest")
+        << "plane iterator thinks it's still at C=" << iPlane->Cryostat
+        << " T=" << iPlane->TPC << " P=" << iPlane->Plane
+        << ", but we are already over";
+      ++nErrors;
+    }
+    
+    if (iWire) {
+      LOG_ERROR("GeometryIteratorTest")
+        << "wire iterator thinks it's still at C=" << iWire->Cryostat
+        << " T=" << iWire->TPC << " P=" << iWire->Plane << " W=" << iWire->Wire
+        << ", but we are already over";
+      ++nErrors;
+    }
+    
     return nErrors;
   } // GeometryIteratorTest::testTPCiterator()
 

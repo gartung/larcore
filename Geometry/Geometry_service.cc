@@ -1574,6 +1574,14 @@ if(overlapY && overlapZ){
   } // Geometry::cryostat_iterator::operator++()
   
   
+  Geometry::cryostat_iterator& Geometry::cryostat_iterator::operator--() {
+    if (!isValid) return *this;
+    if (cryoid-- >= 0) return *this;
+    isValid = false;
+    return *this;
+  } // Geometry::cryostat_iterator::operator--()
+  
+  
   const CryostatGeo* Geometry::cryostat_iterator::get() const
     { return isValid? &(pGeo->Cryostat(cryoid)): nullptr; }
   
@@ -1605,6 +1613,11 @@ if(overlapY && overlapZ){
   
   const TPCGeo* Geometry::TPC_iterator::get() const
     { return tpcid.isValid? &(pGeo->TPC(tpcid.TPC, tpcid.Cryostat)): nullptr; }
+  
+  
+  const CryostatGeo* Geometry::TPC_iterator::getCryostat() const {
+    return tpcid.isValid? &(pGeo->Cryostat(tpcid.Cryostat)): nullptr;
+  } // Geometry::TPC_iterator::getCryostat()
   
   
   void Geometry::TPC_iterator::init_geometry()
@@ -1649,6 +1662,17 @@ if(overlapY && overlapZ){
     return planeid.isValid?
       &(pGeo->Plane(planeid.Plane, planeid.TPC, planeid.Cryostat)): nullptr;
   } // Geometry::plane_iterator::get()
+  
+  
+  const TPCGeo* Geometry::plane_iterator::getTPC() const {
+    return planeid.isValid?
+      &(pGeo->TPC(planeid.TPC, planeid.Cryostat)): nullptr;
+  } // Geometry::plane_iterator::getTPC()
+  
+  
+  const CryostatGeo* Geometry::plane_iterator::getCryostat() const {
+    return planeid.isValid? &(pGeo->Cryostat(planeid.Cryostat)): nullptr;
+  } // Geometry::plane_iterator::getCryostat()
   
   
   void Geometry::plane_iterator::init_geometry()
@@ -1703,10 +1727,24 @@ if(overlapY && overlapZ){
   
   
   const WireGeo* Geometry::wire_iterator::get() const {
-    return wireid.isValid?
-      &(pGeo->Plane(wireid.Plane, wireid.TPC, wireid.Cryostat).Wire(wireid.Wire)):
-      nullptr;
+    return wireid.isValid? &(getPlane()->Wire(wireid.Wire)): nullptr;
   } // Geometry::wire_iterator::get()
+  
+  
+  const PlaneGeo* Geometry::wire_iterator::getPlane() const {
+    return wireid.isValid?
+      &(pGeo->Plane(wireid.Plane, wireid.TPC, wireid.Cryostat)): nullptr;
+  } // Geometry::wire_iterator::get()
+  
+  
+  const TPCGeo* Geometry::wire_iterator::getTPC() const {
+    return wireid.isValid? &(pGeo->TPC(wireid.TPC, wireid.Cryostat)): nullptr;
+  } // Geometry::wire_iterator::getTPC()
+  
+  
+  const CryostatGeo* Geometry::wire_iterator::getCryostat() const {
+    return wireid.isValid? &(pGeo->Cryostat(wireid.Cryostat)): nullptr;
+  } // Geometry::wire_iterator::getCryostat()
   
   
   void Geometry::wire_iterator::init_geometry()
