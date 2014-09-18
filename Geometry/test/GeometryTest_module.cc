@@ -717,7 +717,7 @@ namespace geo{
       const std::array<double, 3> IncreasingWireDir
         = GetIncreasingWireDirection(plane);
       
-      mf::LogInfo("GeoTestWireCoordinate")
+      LOG_DEBUG("GeoTestWireCoordinate")
         << "The direction of increasing wires for plane C=" << cs << " T=" << t
         << " P=" << p << " (theta=" << plane.Wire(0).ThetaZ() << " pitch="
         << plane.WirePitch() << " orientation="
@@ -972,7 +972,7 @@ namespace geo{
           << "Geometry::NearestChannel() did not raise an exception"
           " on out-of-world position (" << posWorld[0] << "; "
           << posWorld[1] << "; " << posWorld[2] << "), and returned "
-          << nearest_to_what << " instead\n"
+          << nearest_to_what << " instead.\n"
           "This is normally considered a failure.";
       }
       else {
