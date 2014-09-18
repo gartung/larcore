@@ -720,6 +720,7 @@ namespace geo{
         << " P=" << p << " (theta=" << plane.Wire(0).ThetaZ() << " pitch="
         << plane.WirePitch() << " orientation="
         << (plane.Orientation() == geo::kHorizontal? "H": "V")
+        << (plane.WireIDincreasesWithZ()? "+": "-")
         << ") is ( " << IncreasingWireDir[0] << " ; "
         << IncreasingWireDir[1] << " ; " << IncreasingWireDir[2] << ")";
       
@@ -790,8 +791,8 @@ namespace geo{
         
         // nearest wire, integral and floating point
         try {
-          // The test consists in sampling NStep (=5) points on each direction
-          // along y and z axes between the current wire and the previous/next.
+          // The test consists in sampling NStep (=5) points between the current
+          // wire and the previous/next, following the normal to the wire.
           // We expect WireCoordinate() to reflect the same shift.
           
           // using absolute value just in case (what happens if w1 > w2?)

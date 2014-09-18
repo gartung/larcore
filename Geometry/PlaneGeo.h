@@ -53,6 +53,17 @@ namespace geo {
     double WirePitch()                                        const { return fWirePitch; }
     
     /**
+     * @brief Returns whether the higher z wires have higher wire ID
+     * @return whether the higher z wires have higher wire ID
+     * @see GetIncreasingWireDirection()
+     * 
+     * This method is related to GetIncreasingWireDirection()
+     * (it might be expressed as "GetIncreasingWireDirection()[2] > 0"),
+     * but it is implemented in a faster and independent way.
+     */
+    bool WireIDincreasesWithZ() const;
+    
+    /**
      * @brief Returns the direction normal to the plane
      * @return a TVector3 versor with a direction normal to the plane
      *

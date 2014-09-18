@@ -146,6 +146,22 @@ namespace geo{
   } // GeometryTest::GetNormalDirection()
   
   
+  bool PlaneGeo::WireIDincreasesWithZ() const {
+    // If the first wire is shorter than the next one (they are in a corner),
+    // the ordering of z exactly matches the order of wire IDs:
+    // if the second wire has larger z than the first one, it has larger
+    // intercept with the z axis, and we want to see if it has also larger
+    // wire number.
+    // In the middle of a plane narrow in z, wires may have the same z,
+    // spoiling this shortcut.
+    double FirstWireCenter[3], SecondWireCenter[3];
+    Wire(0).GetCenter(FirstWireCenter);
+    Wire(1).GetCenter(SecondWireCenter);
+    
+    return SecondWireCenter[2] > FirstWireCenter[2];
+  } // PlaneGeo::WireIDincreasesWithZ()
+  
+  
   //......................................................................
   TVector3 PlaneGeo::GetIncreasingWireDirection() const {
     const unsigned int NWires = Nwires();
@@ -168,7 +184,7 @@ namespace geo{
     // 4) finally, get the direction perpendicular to the wire,
     //    lying on the plane, toward increasing wire numbers
     TVector3 IncreasingWireDir = PlaneNorm.Cross(WireDir);
-
+    
     // 5) round it
     for (int i = 0; i < 3; ++i)
       if (std::abs(IncreasingWireDir[i]) < 1e-4) IncreasingWireDir[i] = 0.;
