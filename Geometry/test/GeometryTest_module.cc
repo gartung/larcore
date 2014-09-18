@@ -78,6 +78,7 @@ namespace geo {
     void testStepping();
 
     bool fCheckOverlaps;  ///< do the overlap check or not
+    bool fDisableValidWireIDcheck;  ///< disable test on out-of-world NearestWire()
     bool fPrintWires;  ///< print all the wires in geometry (really: all!)
     std::set<std::string> fNonFatalExceptions;
   };
@@ -89,6 +90,7 @@ namespace geo{
   GeometryTest::GeometryTest(fhicl::ParameterSet const& pset) 
     : EDAnalyzer(pset)
     , fCheckOverlaps( pset.get<bool>("CheckForOverlaps", false) )
+    , fDisableValidWireIDcheck( pset.get<bool>("DisableWireBoundaryCheck", false) )
     , fPrintWires( pset.get<bool>("PrintWires", false) )
   {
     std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
@@ -951,16 +953,35 @@ namespace geo{
     try{
       nearest_to_what = geom->NearestChannel(posWorld, 0, 0, 0);
     }
+    catch(const geo::InvalidWireIDError& e){
+      mf::LogWarning("GeoTestCaughtException") << e
+        << "\nReturned wire would be: " << e.wire_number
+        << ", suggested: " << e.better_wire_number;
+      hasThrown = true;
+    }
     catch(cet::exception& e){
       mf::LogWarning("GeoTestCaughtException") << e;
       hasThrown = true;
     }
     if (!hasThrown) {
-      throw cet::exception("GeoTestErrorNearestChannel")
-        << "Geometry::NearestChannel() did not raise an exception"
-        " on out-of-world position (" << posWorld[0] << "; "
-        << posWorld[1] << "; " << posWorld[2] << "), and returned "
-        << nearest_to_what << " instead\n";
+      if (fDisableValidWireIDcheck) {
+        // ok, then why do we disable it?
+        // an implementation might prefer to cap the wire number and go on
+        // instead of throwing.
+        LOG_WARNING("GeoTestErrorNearestChannel")
+          << "Geometry::NearestChannel() did not raise an exception"
+          " on out-of-world position (" << posWorld[0] << "; "
+          << posWorld[1] << "; " << posWorld[2] << "), and returned "
+          << nearest_to_what << " instead\n"
+          "This is normally considered a failure.";
+      }
+      else {
+        throw cet::exception("GeoTestErrorNearestChannel")
+          << "Geometry::NearestChannel() did not raise an exception"
+          " on out-of-world position (" << posWorld[0] << "; "
+          << posWorld[1] << "; " << posWorld[2] << "), and returned "
+          << nearest_to_what << " instead\n";
+      }
     }
 
   }

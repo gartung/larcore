@@ -234,7 +234,8 @@ namespace geo{
       if(NearestWireNumber < 0 ) NearestWireNumber = 0;
       else                       NearestWireNumber = fWireCounts[cstat][TPCNo][PlaneNo] - 1;
       
-      throw cet::exception("Geometry") << "Can't Find Nearest Wire for position (" 
+      throw InvalidWireIDError("Geometry", wireNumber, NearestWireNumber)
+        << "Can't Find Nearest Wire for position (" 
         << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")"
         << " approx wire number # " << wireNumber
         << " (capped from " << NearestWireNumber << ")\n";
