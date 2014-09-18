@@ -885,7 +885,7 @@ namespace geo{
                   << " expected (more precisely, " << expected_wire << ").\n";
               }
               
-              if (mf::isDebugEnabled() || true) {
+              if (mf::isDebugEnabled()) {
                 // In debug mode, we print a lot and we don't (fatally) complain
                 std::stringstream e;
                 e << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
