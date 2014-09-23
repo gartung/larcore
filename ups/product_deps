@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v02_06_02
-defaultqual	e5
+parent	larcore	v03_00_00
+defaultqual	e6
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -23,19 +23,20 @@ gdmldir product_dir
 # because we are going to set GDML_SCHEMA_DIR 
 # Defining GDML_SCHEMA_DIR here is a temporary hack
 product         version
-art		v1_10_00b
-geant4		v4_9_6_p03b
-gcc		v4_8_2
+art		v1_12_00
+geant4		v4_9_6_p03e
+gcc		v4_9_1
 
-# list products required ONLY for the build
-# any products here must NOT have qualifiers
-only_for_build  cetbuildtools   v3_13_01
+cetbuildtools	v4_02_02	-	only_for_build
+end_product_list
+
   
-# e5  - with gcc 4.8.2 and -std=c++11
+# e6  - with gcc 4.9.1 and -std=c++1y
 qualifier	art		geant4		gcc	notes
-e5:debug	nu:e5:debug	e5:debug	-nq-
-e5:opt		nu:e5:opt	e5:opt		-nq-
-e5:prof		nu:e5:prof	e5:prof		-nq-
+e6:debug	nu:e6:debug	e6:debug	-nq-
+e6:opt		nu:e6:opt	e6:opt		-nq-
+e6:prof		nu:e6:prof	e6:prof		-nq-
+end_qualifier_list
 
 # table fragment to set FW_SEARCH_PATH needed 
 # to find gdml files:
