@@ -65,9 +65,9 @@ namespace geo{
   /// Transform a position from world frame to local frame
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
-  void OpDetGeo::WorldToLocal(const double* local, double* world) const
+  void OpDetGeo::WorldToLocal(const double* world, double* local) const
   {
-    fGeoMatrix->MasterToLocal(local,world);
+    fGeoMatrix->MasterToLocal(world,local);
   }
 
   //......................................................................
@@ -75,9 +75,9 @@ namespace geo{
   /// Transform a 3-vector from world frame to local frame
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
-  void OpDetGeo::WorldToLocalVect(const double* local, double* world) const
+  void OpDetGeo::WorldToLocalVect(const double* world, double* local) const
   {
-    fGeoMatrix->MasterToLocalVect(local,world);
+    fGeoMatrix->MasterToLocalVect(world,local);
   }
 
   //......................................................................

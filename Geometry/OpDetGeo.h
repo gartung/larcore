@@ -34,8 +34,8 @@ namespace geo {
 
     void LocalToWorld(const double* local, double* world)     const;
     void LocalToWorldVect(const double* local, double* world) const;
-    void WorldToLocal(const double* local, double* world)     const;
-    void WorldToLocalVect(const double* local, double* world) const;
+    void WorldToLocal(const double* world, double* local)     const;
+    void WorldToLocalVect(const double* world, double* local) const;
 
     const TGeoNode*     Node() const { return fOpDetNode; }
 
