@@ -114,9 +114,9 @@ namespace geo{
       mf::LogVerbatim("GeometryTest") << "Number of views "    << geom->Nviews()                    ;
       mf::LogVerbatim("GeometryTest") << "Number of channels " << geom->Nchannels()                 ;
 
-      LOG_DEBUG("GeometryTest") << "print channel information ...";
-      printChannelSummary();
-      LOG_DEBUG("GeometryTest") << "done printing.";
+      //LOG_DEBUG("GeometryTest") << "print channel information ...";
+      //printChannelSummary();
+      //LOG_DEBUG("GeometryTest") << "done printing.";
       //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
       //printVolBounds();
       //mf::LogVerbatim("GeometryTest") << "done printing.";
@@ -785,23 +785,23 @@ namespace geo{
 
     // hard code the value we think it should be for each detector
     double shouldbe[3];
-    if(geom->DetectorName().find("argoneut")){
+    if(geom->DetectorName().find("argoneut")!=std::string::npos){
       shouldbe[0] = 0.4;
       shouldbe[1] = 0.4;
       shouldbe[2] = 0.4; 
     }
-    else if(geom->DetectorName().find("microboone")
-	    || geom->DetectorName().find("icarus")){	
+    else if(geom->DetectorName().find("microboone")!=std::string::npos
+	    || geom->DetectorName().find("icarus")!=std::string::npos){	
       shouldbe[0] = 0.3;
       shouldbe[1] = 0.3;
       shouldbe[2] = 0.3; 
     }
-    else if(geom->DetectorName().find("lbne")){
+    else if(geom->DetectorName().find("lbne")!=std::string::npos){
       shouldbe[0] = 0.49;
       shouldbe[1] = 0.5;
       shouldbe[2] = 0.45;  
     }
-    else if(geom->DetectorName().find("bo")){	
+    else if(geom->DetectorName().find("bo")!=std::string::npos){	
       shouldbe[0] = 0.46977;
       shouldbe[1] = 0.46977;
       shouldbe[2] = 0.46977; 
@@ -837,10 +837,10 @@ namespace geo{
 
     // hard code the value we think it should be for each detector
     double shouldbe = 0.4; // true for ArgoNeuT
-    if(geom->DetectorName().find("microboone"))  shouldbe = 0.3;
-    else if(geom->DetectorName().find("lbne"))   shouldbe = 0.5;
-    else if(geom->DetectorName().find("bo"))     shouldbe = 0.65;
-    else if(geom->DetectorName().find("icarus")) shouldbe = 0.476;
+    if(geom->DetectorName().find("microboone")!=std::string::npos)  shouldbe = 0.3;
+    else if(geom->DetectorName().find("lbne")!=std::string::npos)   shouldbe = 0.5;
+    else if(geom->DetectorName().find("bo")!=std::string::npos)     shouldbe = 0.65;
+    else if(geom->DetectorName().find("icarus")!=std::string::npos) shouldbe = 0.476;
 
     for(size_t t = 0; t < geom->NTPC(); ++t){
       for(size_t p = 0; p < geom->TPC(t).Nplanes()-1; ++p){
