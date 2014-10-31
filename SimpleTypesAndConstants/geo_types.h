@@ -103,6 +103,11 @@ namespace geo {
     , isValid(true)
     {}
 
+    PlaneID(const TPCID& tpcid, unsigned int p)
+      : Cryostat(tpcid.Cryostat), TPC(tpcid.TPC), Plane(p)
+      , isValid(tpcid.isValid)
+      {}
+
     unsigned int Cryostat;
     unsigned int TPC;
     unsigned int Plane;
@@ -151,6 +156,12 @@ namespace geo {
     , Wire(w)
     , isValid(true)
     {}
+
+    WireID(const PlaneID& planeid, unsigned int w)
+      : Cryostat(planeid.Cryostat), TPC(planeid.TPC), Plane(planeid.Plane)
+      , Wire(w)
+      , isValid(planeid.isValid)
+      {}
 
     unsigned int Cryostat;
     unsigned int TPC;

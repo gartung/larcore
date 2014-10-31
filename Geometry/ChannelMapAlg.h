@@ -12,6 +12,7 @@
 #include <set>
 #include <stdint.h>
 
+#include "cetlib/exception.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/CryostatGeo.h"
 
@@ -19,6 +20,21 @@
 
 namespace geo{
 
+  /// Exception thrown on invalid wire number (e.g. NearestWireID())
+  class InvalidWireIDError: public cet::exception {
+      public:
+    InvalidWireIDError(std::string cat): cet::exception(cat) {}
+    
+    InvalidWireIDError(std::string cat, int bad_wire, int better_wire = -1):
+      cet::exception(cat),
+      wire_number(bad_wire), better_wire_number(better_wire)
+      {}
+    
+    int wire_number = -1; ///< the invalid wire number
+    int better_wire_number = -1; ///< a suggestion for a good wire number
+  }; // class InvalidWireIDError
+  
+  
  class ChannelMapAlg{
 
  public:
@@ -30,6 +46,25 @@ namespace geo{
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(uint32_t channel)           const = 0;
    virtual uint32_t            	    Nchannels()                               const = 0;
+
+   /**
+    * @brief Returns the index of the wire nearset to the specified position
+    * @param YPos y coordinate on the wire plane
+    * @param ZPos z coordinate on the wire plane
+    * @param TPCNo number of TPC
+    * @param cstat number of cryostat
+    * @return an index interpolation between the two nearest wires
+    * @see NearestWireID()
+    *
+    * Respect to NearestWireID(), this method returns a real number,
+    * representing a continuous coordinate in the wire axis, with the round
+    * values corresponding to the actual wires.
+    */
+   virtual float WireCoordinate(float YPos, float ZPos,
+                                unsigned int    PlaneNo,
+                                unsigned int    TPCNo,
+                                unsigned int    cstat) const = 0;
+
    virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
 			       	    		     unsigned int    PlaneNo,		   
 			       	    		     unsigned int    TPCNo,		   

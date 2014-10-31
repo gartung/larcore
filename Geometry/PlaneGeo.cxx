@@ -117,7 +117,82 @@ namespace geo{
     sorter.SortWires(fWire);
     return;
   }
-
+  
+  
+  //......................................................................
+  TVector3 PlaneGeo::GetNormalDirection() const {
+    const unsigned int NWires = Nwires();
+    if (NWires < 2) return TVector3(); // why are we even here?
+    
+    // 1) get the direction of the middle wire
+    TVector3 WireDir = Wire(NWires / 2).Direction();
+    
+    // 2) get the direction between the middle wire and the next one
+    double MiddleWireCenter[3], NextToMiddleWireCenter[3];
+    Wire(NWires / 2).GetCenter(MiddleWireCenter);
+    Wire(NWires / 2 + 1).GetCenter(NextToMiddleWireCenter);
+    TVector3 ToNextWire(NextToMiddleWireCenter);
+    ToNextWire -= TVector3(MiddleWireCenter);
+    
+    // 3) get the direction perpendicular to the plane
+    TVector3 PlaneNorm = WireDir.Cross(ToNextWire);
+    
+    // 4) round it
+    for (int i = 0; i < 3; ++i)
+      if (std::abs(PlaneNorm[i]) < 1e-4) PlaneNorm[i] = 0.;
+    
+    // 5) return its norm
+    return PlaneNorm.Unit();
+  } // GeometryTest::GetNormalDirection()
+  
+  
+  bool PlaneGeo::WireIDincreasesWithZ() const {
+    // If the first wire is shorter than the next one (they are in a corner),
+    // the ordering of z exactly matches the order of wire IDs:
+    // if the second wire has larger z than the first one, it has larger
+    // intercept with the z axis, and we want to see if it has also larger
+    // wire number.
+    // In the middle of a plane narrow in z, wires may have the same z,
+    // spoiling this shortcut.
+    double FirstWireCenter[3], SecondWireCenter[3];
+    Wire(0).GetCenter(FirstWireCenter);
+    Wire(1).GetCenter(SecondWireCenter);
+    
+    return SecondWireCenter[2] > FirstWireCenter[2];
+  } // PlaneGeo::WireIDincreasesWithZ()
+  
+  
+  //......................................................................
+  TVector3 PlaneGeo::GetIncreasingWireDirection() const {
+    const unsigned int NWires = Nwires();
+    if (NWires < 2) return TVector3(); // why are we even here?
+    
+    // 1) get the direction of the middle wire
+    TVector3 WireDir = Wire(NWires / 2).Direction();
+    
+    // 2) get the direction between the middle wire and the next one
+    double MiddleWireCenter[3], NextToMiddleWireCenter[3];
+    Wire(NWires / 2).GetCenter(MiddleWireCenter);
+    Wire(NWires / 2 + 1).GetCenter(NextToMiddleWireCenter);
+    TVector3 ToNextWire(NextToMiddleWireCenter);
+    ToNextWire -= TVector3(MiddleWireCenter);
+    
+    // 3) get the direction perpendicular to the plane
+    TVector3 PlaneNorm = WireDir.Cross(ToNextWire);
+    PlaneNorm = PlaneNorm.Unit();
+    
+    // 4) finally, get the direction perpendicular to the wire,
+    //    lying on the plane, toward increasing wire numbers
+    TVector3 IncreasingWireDir = PlaneNorm.Cross(WireDir);
+    
+    // 5) round it
+    for (int i = 0; i < 3; ++i)
+      if (std::abs(IncreasingWireDir[i]) < 1e-4) IncreasingWireDir[i] = 0.;
+    
+    return IncreasingWireDir;
+  } // GeometryTest::GetIncreasingWireDirection()
+  
+  
   //......................................................................
 
   void PlaneGeo::LocalToWorld(const double* plane, double* world) const
