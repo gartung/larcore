@@ -239,9 +239,8 @@ namespace geo{
   //......................................................................
   // wiggle is 1+a small number to allow for rounding errors on the 
   // passed in world loc relative to the boundaries.
-  const TPCGeo& CryostatGeo::PositionToTPC(double const  worldLoc[3],
-					   unsigned int &tpc, 
-					   double const &wiggle) const
+  unsigned int CryostatGeo::FindTPCAtPosition(double const worldLoc[3], 
+                                              double const wiggle) const
   {
     // boundaries of the TPC in the world volume are organized as
     // [0] = -x
@@ -259,34 +258,43 @@ namespace geo{
       double origin[3] = {0.};
       double world[3] = {0.};
       for(unsigned int t = 0; t < this->NTPC(); ++t){
-	this->TPC(t).LocalToWorld(origin, world);
-	// y and z values are easy and can be figured out using the TPC origin
-	// the x values are a bit trickier, at least the -x value seems to be
-	tpcBoundaries[0+t*6] =  world[0] - this->TPC(t).HalfWidth();
-	tpcBoundaries[1+t*6] =  world[0] + this->TPC(t).HalfWidth();
-	tpcBoundaries[2+t*6] =  world[1] - this->TPC(t).HalfHeight();
-	tpcBoundaries[3+t*6] =  world[1] + this->TPC(t).HalfHeight();
-	tpcBoundaries[4+t*6] =  world[2] - 0.5*this->TPC(t).Length();
-	tpcBoundaries[5+t*6] =  world[2] + 0.5*this->TPC(t).Length();
+        this->TPC(t).LocalToWorld(origin, world);
+        // y and z values are easy and can be figured out using the TPC origin
+        // the x values are a bit trickier, at least the -x value seems to be
+        tpcBoundaries[0+t*6] =  world[0] - this->TPC(t).HalfWidth();
+        tpcBoundaries[1+t*6] =  world[0] + this->TPC(t).HalfWidth();
+        tpcBoundaries[2+t*6] =  world[1] - this->TPC(t).HalfHeight();
+        tpcBoundaries[3+t*6] =  world[1] + this->TPC(t).HalfHeight();
+        tpcBoundaries[4+t*6] =  world[2] - 0.5*this->TPC(t).Length();
+        tpcBoundaries[5+t*6] =  world[2] + 0.5*this->TPC(t).Length();
       }
     }// end if this is the first calculation
 
     // locate the desired TPC
     // allow the position to be a little off of the boundary
     // to account for rounding errors
-    tpc = UINT_MAX;
     for(unsigned int t = 0; t < this->NTPC(); ++t){
       if(worldLoc[0] >= tpcBoundaries[0+t*6] * wiggle &&
-	 worldLoc[0] <= tpcBoundaries[1+t*6] * wiggle && 
-	 worldLoc[1] >= tpcBoundaries[2+t*6] * wiggle && 
-	 worldLoc[1] <= tpcBoundaries[3+t*6] * wiggle && 
-	 worldLoc[2] >= tpcBoundaries[4+t*6] * wiggle && 
-	 worldLoc[2] <= tpcBoundaries[5+t*6] * wiggle ){
-	tpc = t;
-	break;
+         worldLoc[0] <= tpcBoundaries[1+t*6] * wiggle && 
+         worldLoc[1] >= tpcBoundaries[2+t*6] * wiggle && 
+         worldLoc[1] <= tpcBoundaries[3+t*6] * wiggle && 
+         worldLoc[2] >= tpcBoundaries[4+t*6] * wiggle && 
+         worldLoc[2] <= tpcBoundaries[5+t*6] * wiggle ){
+        return t;
+        break;
       }
     }
+    return UINT_MAX;
+  } // CryostatGeo::FindTPCAtPosition()
 
+  //......................................................................
+  // wiggle is 1+a small number to allow for rounding errors on the 
+  // passed in world loc relative to the boundaries.
+  const TPCGeo& CryostatGeo::PositionToTPC(double const  worldLoc[3],
+					   unsigned int &tpc, 
+					   double const &wiggle) const
+  {
+    tpc = FindTPCAtPosition(worldLoc, wiggle);
     if(tpc == UINT_MAX)
       throw cet::exception("Geometry") << "Can't find TPC for position (" 
 				       << worldLoc[0] << ","

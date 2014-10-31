@@ -53,6 +53,15 @@ namespace geo {
     double            Mass()                                    const { return fVolume->Weight(); }
     const TGeoVolume* Volume()                                  const { return fVolume;           }
 
+    /**
+     * @brief Returns the index of the TPC at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param wiggle a small factor (like 1+epsilon) to avoid rounding errors
+     * @return the TPC index, or UINT_MAX if no TPC is there
+     */
+    unsigned int FindTPCAtPosition(double const worldLoc[3],
+                                   double const wiggle) const;
+    
     const TPCGeo&     PositionToTPC(double const  worldLoc[3],
 				    unsigned int &tpc,
 				    double const &wiggle)       const; // return the TPCGeo object 

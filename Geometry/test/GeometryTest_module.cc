@@ -125,9 +125,9 @@ namespace geo{
       mf::LogVerbatim("GeometryTest") << "Number of views "    << geom->Nviews()                    ;
       mf::LogVerbatim("GeometryTest") << "Number of channels " << geom->Nchannels()                 ;
 
-      LOG_DEBUG("GeometryTest") << "print channel information ...";
-      printChannelSummary();
-      LOG_DEBUG("GeometryTest") << "done printing.";
+      //LOG_DEBUG("GeometryTest") << "print channel information ...";
+      //printChannelSummary();
+      //LOG_DEBUG("GeometryTest") << "done printing.";
       //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
       //printVolBounds();
       //mf::LogVerbatim("GeometryTest") << "done printing.";
