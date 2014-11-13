@@ -1187,8 +1187,8 @@ namespace geo {
       this->ValueInRange(wire2_End[2], wire1_Start[2], wire1_End[2]);
  
     // override y overlap checks if a vertical plane exists:
-    if( this->Cryostat(cs1).TPC(tpc1).Plane(plane1).Wire(wire1).ThetaZ() == M_PI/2 || 
-	this->Cryostat(cs2).TPC(tpc1).Plane(plane2).Wire(wire2).ThetaZ() == M_PI/2){
+    if( this->Cryostat(cs1).TPC(tpc1).Plane(plane1).Wire(wire1).isVertical() || 
+	this->Cryostat(cs2).TPC(tpc1).Plane(plane2).Wire(wire2).isVertical() ){
       overlapY         = true;	
       overlapY_reverse = true;
     }
@@ -1261,8 +1261,8 @@ namespace geo {
     //
     //
     // override y overlap checks if a vertical plane exists:
-    if( this->Cryostat(wid1.Cryostat).TPC(wid1.TPC).Plane(wid1.Plane).Wire(wid1.Wire).ThetaZ() == M_PI/2 || 
-	this->Cryostat(wid2.Cryostat).TPC(wid2.TPC).Plane(wid2.Plane).Wire(wid2.Wire).ThetaZ() == M_PI/2){
+    if( this->Cryostat(wid1.Cryostat).TPC(wid1.TPC).Plane(wid1.Plane).Wire(wid1.Wire).isVertical() || 
+	this->Cryostat(wid2.Cryostat).TPC(wid2.TPC).Plane(wid2.Plane).Wire(wid2.Wire).isVertical()){
       overlapY         = true;	
       overlapY_reverse = true;
     }

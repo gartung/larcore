@@ -87,10 +87,10 @@ namespace geo{
 	  double  WireCentre1[3] = {0.,0.,0.};
 	  double  WireCentre2[3] = {0.,0.,0.};
 	  
-	  double th = cgeo[cs]->TPC(TPCCount).Plane(PlaneCount).Wire(0).ThetaZ();
-	  double sth = sin(th), cth = cos(th);
+	  const geo::WireGeo& firstWire = cgeo[cs]->TPC(TPCCount).Plane(PlaneCount).Wire(0);
+	  const double sth = firstWire.SinThetaZ(), cth = firstWire.CosThetaZ();
 	  
-	  cgeo[cs]->TPC(TPCCount).Plane(PlaneCount).Wire(0).GetCenter(WireCentre1,0);
+	  firstWire.GetCenter(WireCentre1,0);
 	  cgeo[cs]->TPC(TPCCount).Plane(PlaneCount).Wire(1).GetCenter(WireCentre2,0);
 	  
 	  // figure out if we need to flip the orthogonal vector 

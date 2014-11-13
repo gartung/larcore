@@ -11,6 +11,7 @@
 
 // C/C++ libraries
 #include <vector>
+#include <cmath> // std::sin(), ...
 
 // CLHEP
 #include "CLHEP/Geometry/Transform3D.h"
@@ -41,12 +42,29 @@ namespace geo {
     double RMax() const;
     double HalfL() const;
     double RMin() const;
+    
+    /// Returns angle of wire with respect to z axis in the Y-Z plane in radians
+    double ThetaZ() const { return fThetaZ; }
+    
     /**
      * Returns angle of wire with respect to z axis in the Y-Z plane
-     * @param degrees return the angle in degrees rather than radians,
-     * @return wire angle, in radians by default
+     * @param degrees return the angle in degrees rather than radians
+     * @return wire angle
      */
-    double ThetaZ(bool degrees = false) const;
+    double ThetaZ(bool degrees) const;
+    
+    //@{
+    /// Returns trigonometric operations on ThetaZ()
+    double CosThetaZ() const { return std::cos(ThetaZ()); }
+    double SinThetaZ() const { return std::sin(ThetaZ()); }
+    double TanThetaZ() const { return std::tan(ThetaZ()); }
+    //@}
+    
+    /// Returns if this wire is horizontal (theta_z ~ 0)
+    bool isHorizontal() const { return std::abs(SinThetaZ()) < 1e-5; }
+    
+    /// Returns if this wire is vertical (theta_z ~ pi/2)
+    bool isVertical() const { return std::abs(CosThetaZ()) < 1e-5; }
     
     /// Returns the wire direction as a norm-one vector
     TVector3 Direction() const;

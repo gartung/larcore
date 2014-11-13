@@ -58,9 +58,9 @@ namespace geo{
       this->Wire(1).GetCenter(xyz1, -halfL2);
     }
 
-    double thetaz = this->Wire(1).ThetaZ();
-    fWirePitch    = std::abs((xyz1[2]-xyz[2])*std::sin(thetaz) 
-			     -(xyz1[1]-xyz[1])*std::cos(thetaz));
+    const geo::WireGeo& wire = Wire(1);
+    fWirePitch    = std::abs((xyz1[2]-xyz[2])*wire.SinThetaZ() 
+			     -(xyz1[1]-xyz[1])*wire.CosThetaZ());
 
   }
 

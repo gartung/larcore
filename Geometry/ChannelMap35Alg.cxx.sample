@@ -168,9 +168,10 @@ namespace geo{
     //initialize fWirePitch and fOrientation
     for (unsigned int plane=0; plane<fPlanesPerAPA; plane++){
       fWirePitch[plane]=cgeo[0]->TPC(0).WirePitch(0,1,plane);
-      fOrientation[plane]=cgeo[0]->TPC(0).Plane(plane).Wire(0).ThetaZ();
-      fTanOrientation[plane] = tan(fOrientation[plane]);
-      fCosOrientation[plane] = cos(fOrientation[plane]);
+      const geo::WireGeo& aWire = cgeo[0]->TPC(0).Plane(plane).Wire(0);
+      fOrientation[plane] = aWire.ThetaZ();
+      fTanOrientation[plane] = aWire.TanThetaZ();
+      fCosOrientation[plane] = aWire.CosThetaZ();
     }
 
 
