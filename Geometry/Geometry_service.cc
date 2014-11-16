@@ -1088,6 +1088,7 @@ namespace geo {
   bool Geometry::ValueInRange(double value, double min, double max)
   {
     if(min>max) std::swap(min,max);//protect against funny business due to wire angles
+    if (std::abs(min-max)<1e-6&&std::abs(value-min)<1e6) return true;
     return (value>=min) && (value<=max);
   }
 
@@ -1242,63 +1243,40 @@ namespace geo {
     // get the endpoints to see if i1 and i2 even intersect
     this->WireEndPoints(wid1.Cryostat, wid1.TPC, wid1.Plane, wid1.Wire, w1_Start, w1_End);
     this->WireEndPoints(wid2.Cryostat, wid2.TPC, wid2.Plane, wid2.Wire, w2_Start, w2_End);
-    
-    // If either Y/Z endpoint of one is in the range of the other, overlapY/Z is true
-    // Reverse this test like in ChannelsIntersect
-    bool overlapY         = this->ValueInRange( w1_Start[1], w2_Start[1], w2_End[1] ) ||
-                            this->ValueInRange( w1_End[1],   w2_Start[1], w2_End[1] );
-    bool overlapY_reverse = this->ValueInRange( w2_Start[1], w1_Start[1], w1_End[1] ) ||
-                            this->ValueInRange( w2_End[1],   w1_Start[1], w1_End[1] );
-    
-    bool overlapZ         = this->ValueInRange( w1_Start[2], w2_Start[2], w2_End[2] ) ||
-                            this->ValueInRange( w1_End[2],   w2_Start[2], w2_End[2] );
-    bool overlapZ_reverse = this->ValueInRange( w2_Start[2], w1_Start[2], w1_End[2] ) ||
-                            this->ValueInRange( w2_End[2],   w1_Start[2], w1_End[2] );
 
-    //
-    // Copied over from ChannelsIntersect() above
-    // 
-    //
-    //
-    // override y overlap checks if a vertical plane exists:
-    if( this->Cryostat(wid1.Cryostat).TPC(wid1.TPC).Plane(wid1.Plane).Wire(wid1.Wire).isVertical() || 
-	this->Cryostat(wid2.Cryostat).TPC(wid2.TPC).Plane(wid2.Plane).Wire(wid2.Wire).isVertical()){
-      overlapY         = true;	
-      overlapY_reverse = true;
+    //Equation from http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+    //T.Yang Nov, 2014
+    double x1 = w1_Start[1];
+    double y1 = w1_Start[2];
+    double x2 = w1_End[1];
+    double y2 = w1_End[2];
+    double x3 = w2_Start[1];
+    double y3 = w2_Start[2];
+    double x4 = w2_End[1];
+    double y4 = w2_End[2];
+
+    double denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+    if (!denom) {
+      mf::LogWarning("WireIDsIntersect") << "Two wires are parallel, return false";
+      return false;
     }
-    //Same for this
-    if(std::abs(w2_Start[2] - w2_End[2]) < 0.01) overlapZ = overlapZ_reverse;
-if(overlapY && overlapZ){
-      this->IntersectionPoint(
-			       wid1.Wire,  wid2.Wire, 
-			       wid1.Plane, wid2.Plane,
-			       wid1.Cryostat,   wid1.TPC,
-			       w1_Start, w1_End, 
-			       w2_Start, w2_End, 
-			       widIntersect.y,  widIntersect.z );
-            LOG_DEBUG("Geometry") << " widIntersect Y:  "<<widIntersect.y
-      << " widIntersect Z:   "<<widIntersect.z;
-      return true;
-      }
-    else if(overlapY_reverse && overlapZ_reverse){
+    double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
+    double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
 
-      this->IntersectionPoint(
-			      wid2.Wire,  wid1.Wire, 
-			      wid2.Plane, wid1.Plane,
-			      wid1.Cryostat,   wid1.TPC,
-			      w2_Start, w2_End, 
-			      w1_Start, w1_End, 
-			      widIntersect.y,  widIntersect.z );
-             LOG_DEBUG("Geometry") << " RVRS widIntersect Y:  "<<widIntersect.y
-      				<< " RVRS widIntersect Z:   "<<widIntersect.z;
-    
+    if (this->ValueInRange(x,x1,x2) &&
+	this->ValueInRange(x,x3,x4) &&
+	this->ValueInRange(y,y1,y2) &&
+	this->ValueInRange(y,y3,y4)){
+      widIntersect.y = x;
+      widIntersect.z = y;
+      widIntersect.TPC = wid1.TPC;
       return true;
-      }
- 
+    }
+    else{
+      return false;
+    }
 
-    // an intersection was not found, return false
     return false;
-
   }
 
   // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
