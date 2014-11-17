@@ -44,6 +44,35 @@ namespace art { class Event; } // art::Event declaration
 
 ///tracking algorithms
 namespace geo {
+  /**
+   * @brief Performs tests on the geometry as seen by Geometry service
+   * 
+   * Configuration parameters
+   * =========================
+   * 
+   * - **DisableWireBoundaryCheck** (boolean, default: false): the exceptions
+   *   thrown when checking wire boundaries are not fatal
+   * - **ForgiveExceptions** (list of strings, default: empty): the categories
+   *   of exceptions in this list are "forgiven" (non-fatal)
+   * - **RunTests** (string list): marks which tests to run;
+   *   if the list is empty, all default tests (marked below as such) are run:
+   *   + `CheckOverlaps` perform overlap checks
+   *   + `Cryostat` (default):
+   *   + `ChannelToWire` (default):
+   *   + `FindPlaneCenters` (default):
+   *   + `Projection` (default):
+   *   + `WirePos`: currently disabled
+   *   + `NearestWire` (default): tests `WireCoordinate()` and `NearestWire()`
+   *   + `WireIntersection` (default): tests `WireIntersection()`
+   *   + `WirePitch` (default):
+   *   + `PlanePitch` (default):
+   *   + `Stepping` (default):
+   *   + `PrintWires`: prints *all* the wires in the geometry
+   * - **CheckForOverlaps** (boolean, default: false): equivalent to enabling
+   *   `CheckOverlaps` in `RunTests`
+   * - **PrintWires**: (boolean, default: false): equivalent to enabling
+   *   `PrintWires` in `RunTests`
+   */
   class GeometryTest : public art::EDAnalyzer {
   public:
     explicit GeometryTest(fhicl::ParameterSet const& pset);
@@ -56,6 +85,7 @@ namespace geo {
     static std::array<double, 3> GetIncreasingWireDirection
       (const geo::PlaneGeo& plane);
 
+    static const std::vector<std::string> DefaultTests;
 
   private:
 
@@ -75,30 +105,63 @@ namespace geo {
     void testStandardWirePos();
     void testAPAWirePos();
     void testNearestWire();
+    void testWireIntersection() const;
     void testStepping();
 
-    bool fCheckOverlaps;  ///< do the overlap check or not
     bool fDisableValidWireIDcheck;  ///< disable test on out-of-world NearestWire()
-    bool fPrintWires;  ///< print all the wires in geometry (really: all!)
     std::set<std::string> fNonFatalExceptions;
+    std::set<std::string> fRunTests; ///< which tests to run (empty runs all)
+    
+    bool shouldRunTests(std::string test_name) const;
+    
   };
 }
 
 namespace geo{
 
+  const std::vector<std::string> GeometryTest::DefaultTests = {
+   "Cryostat",
+   "ChannelToWire",
+   "FindPlaneCenters",
+   "Projection",
+   "NearestWire",
+   "WireIntersection",
+   "WirePitch",
+   "PlanePitch",
+   "Stepping"
+  }; // GeometryTest::DefaultTests
+  
   //......................................................................
   GeometryTest::GeometryTest(fhicl::ParameterSet const& pset) 
     : EDAnalyzer(pset)
-    , fCheckOverlaps( pset.get<bool>("CheckForOverlaps", false) )
     , fDisableValidWireIDcheck( pset.get<bool>("DisableWireBoundaryCheck", false) )
-    , fPrintWires( pset.get<bool>("PrintWires", false) )
   {
+    // initialize the list of non-fatal exceptions
     std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
       ("ForgiveExceptions", std::vector<std::string>()));
-    std::set<std::string> fNonFatalExceptions;
     std::copy(NonFatalErrors.begin(), NonFatalErrors.end(),
       std::inserter(fNonFatalExceptions, fNonFatalExceptions.end()));
-  }
+    
+    // initialize the list of tests to be run
+    std::vector<std::string> RunTests(pset.get<std::vector<std::string>>
+      ("RunTests", std::vector<std::string>()));
+    if (RunTests.empty()) RunTests = DefaultTests;
+    std::copy(RunTests.begin(), RunTests.end(),
+      std::inserter(fRunTests, fRunTests.end()));
+    
+    if (pset.get<bool>("CheckForOverlaps", false))
+      fRunTests.insert("CheckOverlaps");
+    
+    if (pset.get<bool>("PrintWires", false))
+      fRunTests.insert("PrintWires");
+    
+    std::ostringstream sstr;
+    std::ostream_iterator<std::string> iOut(sstr, " ");
+    std::copy(fRunTests.begin(), fRunTests.end(), iOut);
+    mf::LogInfo("GeometryTest") << "Will run " << fRunTests.size() << " tests: "
+      << sstr.str();
+    
+  } // GeometryTest::GeometryTest()
 
   //......................................................................
   GeometryTest::~GeometryTest()
@@ -138,51 +201,75 @@ namespace geo{
       //printWirePos();
       //mf::LogVerbatim("GeometryTest") << "done printing.";
 
-      if(fCheckOverlaps){
+      if (shouldRunTests("CheckOverlaps")) {
         LOG_DEBUG("GeometryTest") << "test for overlaps ...";
         gGeoManager->CheckOverlaps(1e-5);
         gGeoManager->PrintOverlaps();
         LOG_DEBUG("GeometryTest") << "complete.";
       }
 
-      LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
-      testCryostat();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("Cryostat")) {
+        LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
+        testCryostat();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
-      testChannelToWire();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("ChannelToWire")) {
+        LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
+        testChannelToWire();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "test find plane centers...";
-      testFindPlaneCenters();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("FindPlaneCenters")) {
+        LOG_DEBUG("GeometryTest") << "test find plane centers...";
+        testFindPlaneCenters();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testProject...";
-      testProject();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("Projection")) {
+        LOG_DEBUG("GeometryTest") << "testProject...";
+        testProject();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      //LOG_DEBUG("GeometryTest") << "testWirePos...";
-      // There is a contradiction here, and these must be tested differently
-      // Testing based on detector ID should NOT become common practice
-      //LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("WirePos")) {
+        LOG_DEBUG("GeometryTest") << "testWirePos...";
+        // There is a contradiction here, and these must be tested differently
+        // Testing based on detector ID should NOT become common practice
+        LOG_DEBUG("GeometryTest") << "disabled.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testNearestWire...";
-      testNearestWire();
-      LOG_DEBUG("GeometryTest") << "complete.";
-      
-      LOG_DEBUG("GeometryTest") << "testWirePitch...";
-      testWirePitch();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("NearestWire")) {
+        LOG_DEBUG("GeometryTest") << "testNearestWire...";
+        testNearestWire();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testPlanePitch...";
-      testPlanePitch();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("WireIntersection")) {
+        LOG_DEBUG("GeometryTest") << "testWireIntersection...";
+        testWireIntersection();
+        LOG_DEBUG("GeometryTest") << "testWireIntersection complete";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testStepping...";
-      testStepping();
-      LOG_DEBUG("GeometryTest") << "complete.";
-      
-      if (fPrintWires) {
+      if (shouldRunTests("WirePitch")) {
+        LOG_DEBUG("GeometryTest") << "testWirePitch...";
+        testWirePitch();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PlanePitch")) {
+        LOG_DEBUG("GeometryTest") << "testPlanePitch...";
+        testPlanePitch();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("Stepping")) {
+        LOG_DEBUG("GeometryTest") << "testStepping...";
+        testStepping();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PrintWires")) {
         LOG_DEBUG("GeometryTest") << "printAllGeometry...";
         printAllGeometry();
         LOG_DEBUG("GeometryTest") << "complete.";
@@ -192,7 +279,7 @@ namespace geo{
       mf::LogWarning("GeometryTest") << "exception caught: \n" << e;
       if (fNonFatalExceptions.count(e.category()) == 0) throw;
     }
-    
+      
     return;
   }
 
@@ -987,6 +1074,22 @@ namespace geo{
   }
 
   //......................................................................
+  void GeometryTest::testWireIntersection() const {
+    
+    for (geo::Geometry::TPC_iterator iTPC; iTPC; ++iTPC) {
+    //  unsigned int cs = iTPC->Cryostat;
+    //  unsigned int t = iTPC->TPC;
+      LOG_DEBUG("GeometryTest") << "Cryostat #" << iTPC->Cryostat
+        << " TPC #" << iTPC->TPC;
+      
+      
+      
+    } // while iTPC
+  } // GeometryTest::testWireIntersection()
+  
+  
+  
+  //......................................................................
   void GeometryTest::testWirePitch()
   {
     art::ServiceHandle<geo::Geometry> geom;
@@ -1169,6 +1272,12 @@ namespace geo{
     if (std::abs(xyzo[2]-zlo)>1.E-6) abort();
   }
 
+  
+  //......................................................................
+  
+  inline bool GeometryTest::shouldRunTests(std::string test_name) const {
+    return fRunTests.empty() || (fRunTests.count(test_name) > 0);
+  } // GeometryTest::shouldRunTests()
 
 }//end namespace
 
