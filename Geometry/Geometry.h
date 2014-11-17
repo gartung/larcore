@@ -297,20 +297,20 @@ namespace geo {
     // Starting point of wire is end with lower z-coordinate.
     bool ValueInRange(double value,
 		      double min,
-		      double max);
+		      double max) const;
     void WireEndPoints(unsigned int cstat,
 		       unsigned int tpc,
 		       unsigned int plane,
 		       unsigned int wire,
 		       double *xyzStart,
-		       double *xyzEnd);
+		       double *xyzEnd) const;
     bool ChannelsIntersect(uint32_t c1,
 			   uint32_t c2,
 			   double &y,
 			   double &z);
-    bool WireIDsIntersect(WireID wid1,
-			  WireID wid2,
-			  WireIDIntersection & widIntersect);
+    bool WireIDsIntersect(const WireID& wid1,
+			  const WireID& wid2,
+			  WireIDIntersection & widIntersect) const;
     void IntersectionPoint(unsigned int wire1,
 			   unsigned int wire2,
 			   unsigned int plane1,

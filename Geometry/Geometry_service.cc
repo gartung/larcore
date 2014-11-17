@@ -1085,7 +1085,7 @@ namespace geo {
   // Functions to allow determination if two wires intersect, and if so where.
   // This is useful information during 3D reconstruction.
   //......................................................................
-  bool Geometry::ValueInRange(double value, double min, double max)
+  bool Geometry::ValueInRange(double value, double min, double max) const
   {
     if(min>max) std::swap(min,max);//protect against funny business due to wire angles
     if (std::abs(value-min)<1e-6||std::abs(value-max)<1e6) return true;
@@ -1098,7 +1098,7 @@ namespace geo {
 			       unsigned int plane, 
 			       unsigned int wire, 
 			       double *xyzStart, 
-			       double *xyzEnd)
+			       double *xyzEnd) const
   {  
     double halfL = this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).HalfL();//half-length of wire
     this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).GetCenter(xyzStart,halfL);
@@ -1221,8 +1221,8 @@ namespace geo {
 
 
   //......................................................................
-  bool Geometry::WireIDsIntersect( geo::WireID wid1, geo::WireID wid2, 
-				   WireIDIntersection & widIntersect   )
+  bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
+				   geo::WireIDIntersection & widIntersect   ) const
   {
 
     double w1_Start[3] = {0.};
