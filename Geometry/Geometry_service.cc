@@ -1088,7 +1088,7 @@ namespace geo {
   bool Geometry::ValueInRange(double value, double min, double max)
   {
     if(min>max) std::swap(min,max);//protect against funny business due to wire angles
-    if (std::abs(value-min)<1e-6||std::abs(value-max)<1e6) return true;
+    if (std::abs(value-min)<1e-6||std::abs(value-max)<1e-6) return true;
     return (value>=min) && (value<=max);
   }
 
