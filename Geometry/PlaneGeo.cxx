@@ -194,6 +194,10 @@ namespace geo{
   
   
   //......................................................................
+  inline double PlaneGeo::ThetaZ() const { return FirstWire().ThetaZ(); }
+  
+  
+  //......................................................................
 
   void PlaneGeo::LocalToWorld(const double* plane, double* world) const
   {

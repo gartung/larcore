@@ -60,10 +60,10 @@ namespace geo{
     * representing a continuous coordinate in the wire axis, with the round
     * values corresponding to the actual wires.
     */
-   virtual float WireCoordinate(float YPos, float ZPos,
-                                unsigned int    PlaneNo,
-                                unsigned int    TPCNo,
-                                unsigned int    cstat) const = 0;
+   virtual double WireCoordinate(double YPos, double ZPos,
+                                 unsigned int    PlaneNo,
+                                 unsigned int    TPCNo,
+                                 unsigned int    cstat) const = 0;
 
    virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
 			       	    		     unsigned int    PlaneNo,		   

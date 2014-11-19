@@ -37,6 +37,15 @@ namespace geo {
     /// Return the iwire'th wire in the plane. 
     const WireGeo& Wire(unsigned int iwire)                   const { return *fWire[iwire];  }
     
+    /// Return the first wire in the plane.
+    const WireGeo& FirstWire()                                const { return Wire(0);        }
+    
+    /// Return the middle wire in the plane.
+    const WireGeo& MiddleWire()                               const { return Wire(Nwires()/2); }
+    
+    /// Return the last wire in the plane.
+    const WireGeo& LastWire()                                 const { return Wire(Nwires()-1); }
+    
     /// Which coordinate does this plane measure
     View_t View()                                             const { return fView;          }
     
@@ -51,6 +60,8 @@ namespace geo {
     void SetView(geo::View_t view)                                  { fView = view; }
 
     double WirePitch()                                        const { return fWirePitch; }
+    
+    double ThetaZ()                                           const;
     
     /**
      * @brief Returns whether the higher z wires have higher wire ID
