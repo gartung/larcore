@@ -210,7 +210,29 @@ namespace geo {
     }
   };
 
+  /// Generic output of TPCID to stream
+  template <typename Stream>
+  inline Stream& operator<< (Stream& out, const TPCID& tid) {
+    out << "C:" << tid.Cryostat << " T:" << tid.TPC;
+    return out;
+  } // operator<< (Stream, TPCID)
 
+
+  /// Generic output of PlaneID to stream
+  template <typename Stream>
+  inline Stream& operator<< (Stream& out, const PlaneID& pid) {
+    out << "C:" << pid.Cryostat << " T:" << pid.TPC << " P:" << pid.Plane;
+    return out;
+  } // operator<< (Stream, PlaneID)
+
+
+  /// Generic output of WireID to stream
+  template <typename Stream>
+  inline Stream& operator<< (Stream& out, const WireID& wid) {
+    out << "C:" << wid.Cryostat << " T:" << wid.TPC
+       << " P:" << wid.Plane << " W:" << wid.Wire;
+    return out;
+  } // operator<< (Stream, WireID)
 
 
 }

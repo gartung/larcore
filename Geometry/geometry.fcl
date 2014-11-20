@@ -3,8 +3,6 @@
 #include "geometry_csu40L.fcl"
 #include "geometry_icarus.fcl"
 #include "geometry_jp250L.fcl"
-#include "geometry_lbne.fcl"
-#include "geometry_microboone.fcl"
 
 
 BEGIN_PROLOG

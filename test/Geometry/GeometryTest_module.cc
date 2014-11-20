@@ -44,6 +44,35 @@ namespace art { class Event; } // art::Event declaration
 
 ///tracking algorithms
 namespace geo {
+  /**
+   * @brief Performs tests on the geometry as seen by Geometry service
+   * 
+   * Configuration parameters
+   * =========================
+   * 
+   * - **DisableWireBoundaryCheck** (boolean, default: false): the exceptions
+   *   thrown when checking wire boundaries are not fatal
+   * - **ForgiveExceptions** (list of strings, default: empty): the categories
+   *   of exceptions in this list are "forgiven" (non-fatal)
+   * - **RunTests** (string list): marks which tests to run;
+   *   if the list is empty, all default tests (marked below as such) are run:
+   *   + `CheckOverlaps` perform overlap checks
+   *   + `Cryostat` (default):
+   *   + `ChannelToWire` (default):
+   *   + `FindPlaneCenters` (default):
+   *   + `Projection` (default):
+   *   + `WirePos`: currently disabled
+   *   + `NearestWire` (default): tests `WireCoordinate()` and `NearestWire()`
+   *   + `WireIntersection` (default): tests `WireIDsIntersect()`
+   *   + `WirePitch` (default):
+   *   + `PlanePitch` (default):
+   *   + `Stepping` (default):
+   *   + `PrintWires`: prints *all* the wires in the geometry
+   * - **CheckForOverlaps** (boolean, default: false): equivalent to enabling
+   *   `CheckOverlaps` in `RunTests`
+   * - **PrintWires**: (boolean, default: false): equivalent to enabling
+   *   `PrintWires` in `RunTests`
+   */
   class GeometryTest : public art::EDAnalyzer {
   public:
     explicit GeometryTest(fhicl::ParameterSet const& pset);
@@ -56,6 +85,7 @@ namespace geo {
     static std::array<double, 3> GetIncreasingWireDirection
       (const geo::PlaneGeo& plane);
 
+    static const std::vector<std::string> DefaultTests;
 
   private:
 
@@ -75,30 +105,80 @@ namespace geo {
     void testStandardWirePos();
     void testAPAWirePos();
     void testNearestWire();
+    void testWireIntersection() const;
     void testStepping();
 
-    bool fCheckOverlaps;  ///< do the overlap check or not
     bool fDisableValidWireIDcheck;  ///< disable test on out-of-world NearestWire()
-    bool fPrintWires;  ///< print all the wires in geometry (really: all!)
     std::set<std::string> fNonFatalExceptions;
+    std::set<std::string> fRunTests; ///< which tests to run (empty runs all)
+    
+    bool shouldRunTests(std::string test_name) const;
+    
+    /// Performs the wire intersection test at a single point
+    unsigned int testWireIntersectionAt
+      (const TPCID& tpcid, double x, double y, double z) const;
   };
 }
 
+
+namespace {
+  template <typename T>
+  inline T sqr(T v) { return v*v; }
+  
+  template <typename T>
+  std::string to_string(const T& v) {
+    std::ostringstream sstr;
+    sstr << v;
+    return sstr.str();
+  } // ::to_string()
+} // local namespace
+
+
 namespace geo{
 
+  const std::vector<std::string> GeometryTest::DefaultTests = {
+   "Cryostat",
+   "ChannelToWire",
+   "FindPlaneCenters",
+   "Projection",
+   "NearestWire",
+   "WireIntersection",
+   "WirePitch",
+   "PlanePitch",
+   "Stepping"
+  }; // GeometryTest::DefaultTests
+  
   //......................................................................
   GeometryTest::GeometryTest(fhicl::ParameterSet const& pset) 
     : EDAnalyzer(pset)
-    , fCheckOverlaps( pset.get<bool>("CheckForOverlaps", false) )
     , fDisableValidWireIDcheck( pset.get<bool>("DisableWireBoundaryCheck", false) )
-    , fPrintWires( pset.get<bool>("PrintWires", false) )
   {
+    // initialize the list of non-fatal exceptions
     std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
       ("ForgiveExceptions", std::vector<std::string>()));
-    std::set<std::string> fNonFatalExceptions;
     std::copy(NonFatalErrors.begin(), NonFatalErrors.end(),
       std::inserter(fNonFatalExceptions, fNonFatalExceptions.end()));
-  }
+    
+    // initialize the list of tests to be run
+    std::vector<std::string> RunTests(pset.get<std::vector<std::string>>
+      ("RunTests", std::vector<std::string>()));
+    if (RunTests.empty()) RunTests = DefaultTests;
+    std::copy(RunTests.begin(), RunTests.end(),
+      std::inserter(fRunTests, fRunTests.end()));
+    
+    if (pset.get<bool>("CheckForOverlaps", false))
+      fRunTests.insert("CheckOverlaps");
+    
+    if (pset.get<bool>("PrintWires", false))
+      fRunTests.insert("PrintWires");
+    
+    std::ostringstream sstr;
+    std::ostream_iterator<std::string> iOut(sstr, " ");
+    std::copy(fRunTests.begin(), fRunTests.end(), iOut);
+    mf::LogInfo("GeometryTest") << "Will run " << fRunTests.size() << " tests: "
+      << sstr.str();
+    
+  } // GeometryTest::GeometryTest()
 
   //......................................................................
   GeometryTest::~GeometryTest()
@@ -138,51 +218,75 @@ namespace geo{
       //printWirePos();
       //mf::LogVerbatim("GeometryTest") << "done printing.";
 
-      if(fCheckOverlaps){
+      if (shouldRunTests("CheckOverlaps")) {
         LOG_DEBUG("GeometryTest") << "test for overlaps ...";
         gGeoManager->CheckOverlaps(1e-5);
         gGeoManager->PrintOverlaps();
         LOG_DEBUG("GeometryTest") << "complete.";
       }
 
-      LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
-      testCryostat();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("Cryostat")) {
+        LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
+        testCryostat();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
-      testChannelToWire();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("ChannelToWire")) {
+        LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
+        testChannelToWire();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "test find plane centers...";
-      testFindPlaneCenters();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("FindPlaneCenters")) {
+        LOG_DEBUG("GeometryTest") << "test find plane centers...";
+        testFindPlaneCenters();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testProject...";
-      testProject();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("Projection")) {
+        LOG_DEBUG("GeometryTest") << "testProject...";
+        testProject();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      //LOG_DEBUG("GeometryTest") << "testWirePos...";
-      // There is a contradiction here, and these must be tested differently
-      // Testing based on detector ID should NOT become common practice
-      //LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("WirePos")) {
+        LOG_DEBUG("GeometryTest") << "testWirePos...";
+        // There is a contradiction here, and these must be tested differently
+        // Testing based on detector ID should NOT become common practice
+        LOG_DEBUG("GeometryTest") << "disabled.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testNearestWire...";
-      testNearestWire();
-      LOG_DEBUG("GeometryTest") << "complete.";
-      
-      LOG_DEBUG("GeometryTest") << "testWirePitch...";
-      testWirePitch();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("NearestWire")) {
+        LOG_DEBUG("GeometryTest") << "testNearestWire...";
+        testNearestWire();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testPlanePitch...";
-      testPlanePitch();
-      LOG_DEBUG("GeometryTest") << "complete.";
+      if (shouldRunTests("WireIntersection")) {
+        LOG_DEBUG("GeometryTest") << "testWireIntersection...";
+        testWireIntersection();
+        LOG_DEBUG("GeometryTest") << "testWireIntersection complete";
+      }
 
-      LOG_DEBUG("GeometryTest") << "testStepping...";
-      testStepping();
-      LOG_DEBUG("GeometryTest") << "complete.";
-      
-      if (fPrintWires) {
+      if (shouldRunTests("WirePitch")) {
+        LOG_DEBUG("GeometryTest") << "testWirePitch...";
+        testWirePitch();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PlanePitch")) {
+        LOG_DEBUG("GeometryTest") << "testPlanePitch...";
+        testPlanePitch();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("Stepping")) {
+        LOG_DEBUG("GeometryTest") << "testStepping...";
+        testStepping();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PrintWires")) {
         LOG_DEBUG("GeometryTest") << "printAllGeometry...";
         printAllGeometry();
         LOG_DEBUG("GeometryTest") << "complete.";
@@ -192,7 +296,7 @@ namespace geo{
       mf::LogWarning("GeometryTest") << "exception caught: \n" << e;
       if (fNonFatalExceptions.count(e.category()) == 0) throw;
     }
-    
+      
     return;
   }
 
@@ -819,9 +923,9 @@ namespace geo{
             } // for
             
             // we expect this wire number
-            const float expected_wire = w + f;
+            const double expected_wire = w + f;
             
-            float wire_from_wc = 0;
+            double wire_from_wc = 0;
             if (bTestWireCoordinate) {
               if (IncreasingWireDir[0] != 0.) {
                 // why? because WireCoordinate() has 2D input
@@ -985,6 +1089,243 @@ namespace geo{
     }
 
   }
+
+  //......................................................................
+  void GeometryTest::testWireIntersection() const {
+    /*
+     * This is a test for WireIDsIntersect() function, that returns whether
+     * two wires intersect, and where.
+     *
+     * The test strategy is to check all the TPC one by one:
+     * - if a query for wires on different cryostats fails
+     * - if a query for wires on different TPCs fails
+     * - if a query for wires on the same plane fails
+     * - for points at the centre of a grid SplitY x SplitZ on the wire planes,
+     *   test these point by testWireIntersectionAt() function (see)
+     * All tests are performed; at the end, the test is considered a failure
+     * if any of the single tests failed.
+     */
+    
+    art::ServiceHandle<geo::Geometry> geom;
+    
+    unsigned int nErrors = 0;
+    for (geo::Geometry::TPC_iterator iTPC; iTPC; ++iTPC) {
+      const geo::TPCGeo& TPC = *(iTPC.get());
+      
+      LOG_DEBUG("GeometryTest") << "Cryostat #" << iTPC->Cryostat
+        << " TPC #" << iTPC->TPC;
+      
+      // sanity: wires on different cryostats
+      if (iTPC->Cryostat < geom->Ncryostats() - 1) {
+        geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, 0, 0 },
+          w2 { iTPC->Cryostat + 1, iTPC->TPC, 1, 1 };
+        geo::WireIDIntersection xing;
+        if (geom->WireIDsIntersect(w1, w2, xing)) {
+          LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
+            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
+            << ") in TPC=" << xing.TPC
+            << ", while should have reported no intersection at all";
+          ++nErrors;
+        } // if intersect
+      } // if not the last cryostat
+      
+      // sanity: wires on different TPC
+      if (iTPC->TPC < geom->NTPC(iTPC->Cryostat) - 1) {
+        geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, 0, 0 },
+          w2 { iTPC->Cryostat, iTPC->TPC + 1, 1, 1 };
+        geo::WireIDIntersection xing;
+        if (geom->WireIDsIntersect(w1, w2, xing)) {
+          LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
+            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
+            << ") in TPC=" << xing.TPC
+            << ", while should have reported no intersection at all";
+          ++nErrors;
+        } // if intersect
+      } // if not the last TPC
+      
+      // sanity: wires on same plane
+      const unsigned int nPlanes = TPC.Nplanes();
+      for (unsigned int plane = 0; plane < nPlanes; ++plane) {
+        geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, plane, 0 },
+          w2 { iTPC->Cryostat, iTPC->TPC, plane, 1 };
+        geo::WireIDIntersection xing;
+        if (geom->WireIDsIntersect(w1, w2, xing)) {
+          LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
+            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
+            << ") in TPC=" << xing.TPC
+            << ", while should have reported no intersection at all";
+          ++nErrors;
+        } // if intersect
+      } // for all planes
+      
+      // detect which plane has wires along z
+      unsigned int planeZindex = 0;
+      while (planeZindex < nPlanes) {
+        if (TPC.Plane(planeZindex).View() == geo::kZ) break;
+        ++planeZindex;
+      } // while
+      if (planeZindex == nPlanes) {
+        throw art::Exception(art::errors::LogicError)
+          << "No plane with wires along z in " << to_string(*iTPC);
+      }
+      const geo::PlaneGeo& planeZ = TPC.Plane(planeZindex);
+      const unsigned int NWiresZ = planeZ.Nwires();
+      
+      // let's pick a point:
+      constexpr unsigned int SplitZ = 19, SplitY = 17;
+      for (unsigned int iZ = 0; iZ < SplitZ; ++iZ) {
+        // pick the wire in the middle of the iZ-th region:
+        unsigned int wireZindex = NWiresZ * (2*iZ + 1) / (2*SplitZ);
+        const geo::WireGeo& wire = planeZ.Wire(wireZindex);
+        double WireCoord[3];
+        wire.GetCenter(WireCoord);
+        
+        const double x = WireCoord[0];
+        const double min_y = WireCoord[1] - wire.HalfL(),
+          max_y = WireCoord[1] + wire.HalfL();
+        const double z = WireCoord[2];
+        
+        for (unsigned int iY = 0; iY < SplitY; ++iY) {
+          // pick the coordinate in the middle of the iY-th region:
+          const double y = min_y + (max_y - min_y) * (2*iY + 1) / (2*SplitY);
+          
+          // finally, let's test this point...
+          nErrors += testWireIntersectionAt(*iTPC, x, y, z);
+        } // for y
+      } // for z
+      
+    } // while iTPC
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeoTestWireIntersection")
+        << "Accumulated " << nErrors << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTest::testWireIntersection()
+  
+  
+  unsigned int GeometryTest::testWireIntersectionAt
+    (const TPCID& tpcid, double x, double y, double z) const
+  {
+    /* Tests WireIDsIntersect() on the specified point on the wire planes of
+     * a given TPC.
+     * 
+     * The test follows this strategy:
+     * - find the ID of the wires closest to the point on each plane
+     * - for all wire plane pairing, ask for the intersection between the wires
+     * - fail if the returned point is farther than half a pitch from the
+     *   original point
+     * 
+     * This function returns the number of accumulated failures.
+     */
+    
+    unsigned int nErrors = 0;
+    
+    art::ServiceHandle<geo::Geometry> geom;
+    const geo::TPCGeo& TPC = geom->TPC(tpcid);
+    const unsigned int NPlanes = TPC.Nplanes();
+    
+    // collect information per plane:
+    std::vector<double> ThetaZ(NPlanes), WirePitch(NPlanes); // for convenience
+    std::vector<geo::WireID> WireIDs; // ID of the closest wire
+    WireIDs.reserve(NPlanes);
+    std::vector<float> WireDistances(NPlanes); // distance from the closest wire
+    for (unsigned int iPlane = 0; iPlane < NPlanes; ++iPlane) {
+      const geo::PlaneGeo& plane = TPC.Plane(iPlane);
+      ThetaZ[iPlane] = plane.FirstWire().ThetaZ();
+      WirePitch[iPlane] = plane.WirePitch();
+      
+      const double WireDistance
+        = geom->WireCoordinate(y, z, iPlane, tpcid.TPC, tpcid.Cryostat);
+      WireIDs.emplace_back(
+        tpcid.Cryostat, tpcid.TPC, iPlane,
+        (unsigned int) std::round(WireDistance)
+        );
+      WireDistances[iPlane]
+        = (WireDistance - std::round(WireDistance)) * WirePitch[iPlane];
+      
+      LOG_DEBUG("GeometryTest") << "Nearest wire to"
+        " (" << x << ", " << y << ", " << z << ") on plane #" << iPlane
+        << " (pitch: " << WirePitch[iPlane] << ", thetaZ=" << ThetaZ[iPlane]
+        << ") is " << WireIDs[iPlane] << " (position: " << WireDistance << ")";
+    } // for planes
+    
+    // test all the combinations
+    for (unsigned int iPlane1 = 0; iPlane1 < NPlanes; ++iPlane1) {
+      
+      const geo::WireID& w1 = WireIDs[iPlane1];
+      
+      for (unsigned int iPlane2 = iPlane1 + 1; iPlane2 < NPlanes; ++iPlane2) {
+        const geo::WireID& w2 = WireIDs[iPlane2];
+        
+        geo::WireIDIntersection xing;
+        if (!geom->WireIDsIntersect(w1, w2, xing)) {
+          LOG_ERROR("GeometryTest") << "Wires " << w1 << " and " << w2
+            << " should intersect around (" << x << ", " << y << ", " << z
+            << ") of TPC " << tpcid
+            << ", but they seem not to intersect at all!";
+          ++nErrors;
+          continue;
+        }
+        
+        if (xing.TPC != tpcid.TPC) {
+          LOG_ERROR("GeometryTest") << "Wires " << w1 << " and " << w2
+            << " should intersect around (" << x << ", " << y << ", " << z
+            << ") of TPC " << tpcid
+            << ", but they seem to intersect in TPC #" << xing.TPC
+            << " at (x, " << xing.y << "; " << xing.z << ")";
+          ++nErrors;
+          continue;
+        }
+        
+        // the expected distance between the probe point (y, z) and the
+        // intersection point is geometrically determined, given the distances
+        // of the probe point from the two wires and the angle between the wires
+        // the formula is a mix between the Carnot theorem and sine definition;
+        // this value is quite sensitive to rounding errors, hence the way it's
+        // coded is not how one would write it in mathematic notation
+        const double dTheta = ThetaZ[iPlane1] - ThetaZ[iPlane2],
+          d1 = std::abs(WireDistances[iPlane1]),
+          d2 = std::abs(WireDistances[iPlane2]);
+        // a bit of trick here: the angle in Carnot formula is the one between
+        // the wires on the quadrant the test point falls in; that can be dTheta
+        // or pi - dTheta (if the point is on the same "z size" for both the
+        // wires), changing the sign of cosine
+        const bool bSupplement
+          = (WireDistances[iPlane1] > 0) == (WireDistances[iPlane2] > 0);
+        const double expected_d = (d1 + d2)
+          * std::sqrt(1. - 2. * 
+            (1. - (bSupplement? -1.: 1.) * std::cos(dTheta))
+            * d1 * d2 / sqr(d1 + d2))
+          / std::abs(std::sin(dTheta));
+        
+        // the actual distance we have found:
+        const double d = std::sqrt(sqr(xing.y - y) + sqr(xing.z - z));
+        LOG_DEBUG("GeometryTest")
+          << " - wires " << w1 << " and " << w2 << " intersect in TPC #"
+          << xing.TPC << " at (x, " << xing.y << "; " << xing.z << "), "
+          << d << " cm far from starting point (expected: " << expected_d << ")";
+        
+        // precision of the test is an issue; the 10^-3 x pitch threshold
+        // is roughly tuned so that we don't get errors
+        if (std::abs(d - expected_d)
+          > std::max(WirePitch[iPlane1], WirePitch[iPlane2]) * 1e-3) // cm
+        {
+          LOG_ERROR("GeometryTest")
+            << "wires " << w1 << " and " << w2 << " intersect in TPC #"
+            << xing.TPC << " at (x, " << xing.y << "; " << xing.z << "), "
+            << d << " cm far from starting point: too far from the expected "
+            << expected_d << " cm!";
+          ++nErrors;
+          continue;
+        } // if too far
+        
+      } // for iPlane2
+    } // for iPlane1
+    
+    return nErrors;
+  } // GeometryTest::testWireIntersectionAt()
+
 
   //......................................................................
   void GeometryTest::testWirePitch()
@@ -1169,6 +1510,12 @@ namespace geo{
     if (std::abs(xyzo[2]-zlo)>1.E-6) abort();
   }
 
+  
+  //......................................................................
+  
+  inline bool GeometryTest::shouldRunTests(std::string test_name) const {
+    return fRunTests.empty() || (fRunTests.count(test_name) > 0);
+  } // GeometryTest::shouldRunTests()
 
 }//end namespace
 
