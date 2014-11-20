@@ -35,6 +35,3 @@ install_fhicl()
 install_source()
 
 add_subdirectory(gdml)
-
-# testing
-add_subdirectory(test)
