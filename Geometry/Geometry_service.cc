@@ -453,55 +453,34 @@ namespace geo {
 			
     return this->Cryostat(cstat);
   }
-
+    
+  
   //......................................................................
-  unsigned int Geometry::FindAuxDetAtPosition(double const  worldLoc[3]) const
+  unsigned int Geometry::FindAuxDetAtPosition(double const  worldPos[3]) const
   {
-    // boundaries of the AuxDet in the world volume are organized as
-    // [0] = -x
-    // [1] = +x
-    // [2] = -y
-    // [3] = +y
-    // [4] = -z
-    // [5] = +z
-    static std::vector<double> adBoundaries(this->NAuxDets()*6);
-    
-    static bool firstCalculation = true;
-    if ( firstCalculation ){
-      firstCalculation = false;
-      double origin[3] = {0.};
-      double world[3] = {0.};
-      for(unsigned int a = 0; a < this->NAuxDets(); ++a){
-        this->AuxDet(a).LocalToWorld(origin, world);
-        
-        // y and z values are easy and can be figured out using the TPC origin
-        // the x values are a bit trickier, at least the -x value seems to be
-        
-        adBoundaries[0+a*6] =  world[0] - this->AuxDet(a).HalfWidth();
-	      adBoundaries[1+a*6] =  world[0] + this->AuxDet(a).HalfWidth();
-	      adBoundaries[2+a*6] =  world[1] - this->AuxDet(a).HalfHeight();
-	      adBoundaries[3+a*6] =  world[1] + this->AuxDet(a).HalfHeight();
-	      adBoundaries[4+a*6] =  world[2] - 0.5*this->AuxDet(a).Length();
-	      adBoundaries[5+a*6] =  world[2] + 0.5*this->AuxDet(a).Length();
-        
-      }//for loop over AuxDet a
-    }// end if this is the first calculation
-    
-    // locate the desired Auxiliary Detector
-    for(unsigned int a = 0; a < this->NAuxDets(); ++a){
-      
-      if(worldLoc[0] >= adBoundaries[0+a*6] &&
-         worldLoc[0] <= adBoundaries[1+a*6] &&
-         worldLoc[1] >= adBoundaries[2+a*6] &&
-         worldLoc[1] <= adBoundaries[3+a*6] &&
-         worldLoc[2] >= adBoundaries[4+a*6] &&
-         worldLoc[2] <= adBoundaries[5+a*6] ){
-         return a;
-         break;
-      }// end if
+
+    double local[3] = {0.};
+    for(unsigned int a = 0; a < this->NAuxDets(); ++a) {
+
+      this->AuxDet(a).WorldToLocal(worldPos, local);      
+      double HalfCenterWidth = (this->AuxDet(a).HalfWidth() + this->AuxDet(a).HalfSmallWidth()) / 2;
+
+      if( local[2] >= - this->AuxDet(a).Length()/2       &&
+	  local[2] <=   this->AuxDet(a).Length()/2       &&
+	  local[1] >= - this->AuxDet(a).HalfHeight()     &&
+	  local[1] <=   this->AuxDet(a).HalfHeight()     &&
+	  // this assumes that the small end of the trapezoid is at +z in local coordinates
+	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
+	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfSmallWidth())/(this->AuxDet(a).Length()/2) &&
+	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfSmallWidth())/(this->AuxDet(a).Length()/2)
+        )  return a;
+
     }// for loop over AudDet a
+
     return UINT_MAX;
   } // Geometry::FindAuxDetAtPosition()
+  
+
   
   //......................................................................
   const AuxDetGeo& Geometry::PositionToAuxDet(double const  worldLoc[3],

@@ -25,9 +25,10 @@ namespace geo {
     void GetNormalVector(double* xyzDir) const;
 
     //box geometry
-    double Length()     const { return fLength;     };
-    double HalfWidth()  const { return fHalfWidth;  };
-    double HalfHeight() const { return fHalfHeight; };
+    double Length()          const { return fLength;     };
+    double HalfWidth()       const { return fHalfWidth;  };
+    double HalfSmallWidth()  const { return fHalfSmallWidth;  };
+    double HalfHeight()      const { return fHalfHeight; };
     const TGeoVolume* TotalVolume()  const { return fTotalVolume;}
     
     double DistanceToPoint(double * xyz) const;
@@ -42,6 +43,7 @@ namespace geo {
     const TGeoVolume*     fTotalVolume;   ///< Total volume of AuxDet, called vol*
     double                fLength;        ///< length of volume
     double                fHalfWidth;     ///< half width of volume
+    double                fHalfSmallWidth;    
     double                fHalfHeight;    ///< half height of volume
   };
 }
