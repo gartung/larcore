@@ -1263,14 +1263,6 @@ namespace geo {
     double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
     double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
 
-    LOG_DEBUG("WireIDsIntersect") << "Wires " << wid1
-      << "[ (" << w1_Start[0] << ", " << w1_Start[1] << ", " << w1_Start[2]
-      << ") -- (" << w1_End[0] << ", " << w1_End[1] << ", " << w1_End[2]
-      << ") ] and " << wid2
-      << "[ (" << w2_Start[0] << ", " << w2_Start[1] << ", " << w2_Start[2]
-      << ") -- (" << w2_End[0] << ", " << w2_End[1] << ", " << w2_End[2]
-      << ") ] cross at ( ?,  " << x << ", " << y << ")";
-    
     if (this->ValueInRange(x,x1,x2) &&
 	this->ValueInRange(x,x3,x4) &&
 	this->ValueInRange(y,y1,y2) &&
