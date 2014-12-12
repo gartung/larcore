@@ -43,7 +43,7 @@ namespace geo {
     const TGeoVolume*     fTotalVolume;   ///< Total volume of AuxDet, called vol*
     double                fLength;        ///< length of volume
     double                fHalfWidth;     ///< half width of volume
-    double                fHalfSmallWidth;    
+    double                fHalfSmallWidth;///< smaller half width of the volume if a trapezoid    
     double                fHalfHeight;    ///< half height of volume
   };
 }
