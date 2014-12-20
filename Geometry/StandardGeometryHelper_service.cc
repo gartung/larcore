@@ -47,6 +47,7 @@ namespace geo
         || detectorName.Contains("csu40l")
         || detectorName.Contains("lariat")
         || detectorName.Contains("icarus")
+        || detectorName.Contains("lartpcdetector")
        )
     {
       fChannelMap = std::shared_ptr<geo::ChannelMapAlg>( new geo::ChannelMapStandardAlg( sortingParam ) );
