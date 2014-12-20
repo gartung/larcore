@@ -1343,7 +1343,8 @@ namespace geo{
       shouldbe[2] = 0.4; 
     }
     else if ((geom->DetectorName().find("microboone") != std::string::npos)
-      || (geom->DetectorName().find("icarus") != std::string::npos))
+      || (geom->DetectorName().find("icarus") != std::string::npos)
+      || (geom->DetectorName() == "lartpcdetector"))
     {
       shouldbe[0] = 0.3;
       shouldbe[1] = 0.3;
@@ -1395,7 +1396,9 @@ namespace geo{
 
     // hard code the value we think it should be for each detector
     double shouldbe = 0.4; // true for ArgoNeuT
-    if(geom->DetectorName().find("microboone") != std::string::npos)  shouldbe = 0.3;
+    if((geom->DetectorName().find("microboone") != std::string::npos)
+      || (geom->DetectorName() == "lartpcdetector"))
+      shouldbe = 0.3;
     else if(geom->DetectorName().find("lbne") != std::string::npos)   shouldbe = 0.5;
     else if(geom->DetectorName().find("bo") != std::string::npos)     shouldbe = 0.65;
     else if(geom->DetectorName().find("icarus") != std::string::npos) shouldbe = 0.476;
