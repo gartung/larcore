@@ -1,8 +1,11 @@
 #ifndef RAW_TYPES_H
 #define RAW_TYPES_H
 
-namespace raw{
+#include <stdint.h> // uint32_t
+#include <limits> // std::numeric_limits<>
 
+namespace raw{
+  
   typedef enum _compress {
     kNone,       ///< no compression 
     kHuffman,    ///< Huffman Encoding
@@ -10,14 +13,24 @@ namespace raw{
     kZeroHuffman,  ///< Zero Suppression followed by Huffman Encoding
     kDynamicDec  ///< Dynamic decimation
   } Compress_t;
-
+  
   typedef enum _auxdettype {
     kUnknownAuxDet, ///< no idea
     kScintillator,  ///< Scintillator paddle
     kTimeOfFlight,  ///< Time of flight
     kCherenkov      ///< Cherenkov counter
   } AuxDetType_t;
-
-}
+  
+  /// Type representing a TDC tick
+  typedef int TDCtick_t;
+  
+  /// Type representing the ID of a readout channel
+  typedef uint32_t ChannelID_t;
+  
+  /// ID of an invalid channel
+  constexpr ChannelID_t InvalidChannelID
+    = std::numeric_limits<ChannelID_t>::max();
+  
+} // namespace raw
 
 #endif
