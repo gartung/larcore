@@ -10,10 +10,10 @@
 
 #include <vector>
 #include <set>
-#include <stdint.h>
 
 #include "cetlib/exception.h"
 #include "SimpleTypesAndConstants/geo_types.h"
+#include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "Geometry/CryostatGeo.h"
 
 #include "TVector3.h"
@@ -44,8 +44,8 @@ namespace geo{
 
    virtual void                     Initialize(std::vector<geo::CryostatGeo*> & cgeo) = 0;
    virtual void                	    Uninitialize() = 0;				   
-   virtual std::vector<WireID> 	    ChannelToWire(uint32_t channel)           const = 0;
-   virtual uint32_t            	    Nchannels()                               const = 0;
+   virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
+   virtual unsigned int        	    Nchannels()                               const = 0;
 
    /**
     * @brief Returns the index of the wire nearset to the specified position
@@ -69,12 +69,12 @@ namespace geo{
 			       	    		     unsigned int    PlaneNo,		   
 			       	    		     unsigned int    TPCNo,		   
 			       	    		     unsigned int    cstat)   const = 0;
-   virtual uint32_t            	    PlaneWireToChannel(unsigned int plane,		   
+   virtual raw::ChannelID_t    	    PlaneWireToChannel(unsigned int plane,		   
                                	                       unsigned int wire,		   
                                	                       unsigned int tpc,		   
                                	                       unsigned int cstat)    const = 0;
-   virtual View_t	       	    View( uint32_t const channel ) 	      const = 0;
-   virtual SigType_t     	    SignalType( uint32_t const channel )      const = 0;
+   virtual View_t	       	    View( raw::ChannelID_t const channel ) 	      const = 0;
+   virtual SigType_t     	    SignalType( raw::ChannelID_t const channel )      const = 0;
    virtual std::set<View_t>  const& Views()                                   const = 0;
    virtual std::set<PlaneID> const& PlaneIDs()                                const = 0;
    unsigned int                     NearestWire(const TVector3& worldPos,
@@ -84,18 +84,18 @@ namespace geo{
 
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.
-   const std::vector<std::vector<std::vector<uint32_t>>> FirstChannelInNextPlane() const
+   const std::vector<std::vector<std::vector<raw::ChannelID_t>>> FirstChannelInNextPlane() const
    { return fFirstChannelInThisPlane; }
 
-   const std::vector<std::vector<std::vector<uint32_t>>> FirstChannelInThisPlane() const
+   const std::vector<std::vector<std::vector<raw::ChannelID_t>>> FirstChannelInThisPlane() const
    { return fFirstChannelInNextPlane; }
 
  protected:
 
    // These 3D vectors are used in initializing the Channel map.
    // Only a 1D vector is really needed so far, but these are more general.
-   std::vector< std::vector<std::vector<uint32_t> > > fFirstChannelInThisPlane;
-   std::vector< std::vector<std::vector<uint32_t> > > fFirstChannelInNextPlane;
+   std::vector< std::vector<std::vector<raw::ChannelID_t> > > fFirstChannelInThisPlane;
+   std::vector< std::vector<std::vector<raw::ChannelID_t> > > fFirstChannelInNextPlane;
 
  };
 }

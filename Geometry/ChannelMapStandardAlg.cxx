@@ -149,7 +149,7 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  std::vector<geo::WireID> ChannelMapStandardAlg::ChannelToWire(uint32_t channel)  const
+  std::vector<geo::WireID> ChannelMapStandardAlg::ChannelToWire(raw::ChannelID_t channel)  const
   {
     std::vector< geo::WireID > AllSegments; 
     unsigned int cstat = 0;
@@ -189,7 +189,7 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  uint32_t ChannelMapStandardAlg::Nchannels() const
+  raw::ChannelID_t ChannelMapStandardAlg::Nchannels() const
   {
     return fNchannels;
   }
@@ -259,7 +259,7 @@ namespace geo{
   //           Plane2 { Wire1     | 6
   //                    Wire2     v 7
   //
-  uint32_t ChannelMapStandardAlg::PlaneWireToChannel(unsigned int plane,
+  raw::ChannelID_t ChannelMapStandardAlg::PlaneWireToChannel(unsigned int plane,
 						     unsigned int wire,
 						     unsigned int tpc,
 						     unsigned int cstat) const
@@ -287,7 +287,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  SigType_t ChannelMapStandardAlg::SignalType(uint32_t const channel) const
+  SigType_t ChannelMapStandardAlg::SignalType(raw::ChannelID_t const channel) const
   {
 
     // still assume one cryostat for now -- faster
@@ -314,7 +314,7 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  View_t ChannelMapStandardAlg::View(uint32_t const channel) const
+  View_t ChannelMapStandardAlg::View(raw::ChannelID_t const channel) const
   {
 
     // still assume one cryostat for now -- faster

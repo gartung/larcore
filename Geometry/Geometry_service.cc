@@ -261,7 +261,7 @@ namespace geo {
   }
   
   //......................................................................
-  uint32_t Geometry::Nchannels() const
+  unsigned int Geometry::Nchannels() const
   {
     return fChannelMapAlg->Nchannels();
   }
@@ -536,7 +536,7 @@ namespace geo {
   }
 
   //......................................................................
-  SigType_t Geometry::SignalType(uint32_t const channel) const
+  SigType_t Geometry::SignalType(raw::ChannelID_t const channel) const
   {
     return fChannelMapAlg->SignalType(channel);
   }
@@ -549,7 +549,7 @@ namespace geo {
 
 
   //......................................................................
-  View_t Geometry::View(uint32_t const channel) const
+  View_t Geometry::View(raw::ChannelID_t const channel) const
   {
     return fChannelMapAlg->View(channel);
   }
@@ -946,7 +946,7 @@ namespace geo {
   }
 
   //......................................................................
-  std::vector< geo::WireID > Geometry::ChannelToWire( uint32_t channel ) const
+  std::vector< geo::WireID > Geometry::ChannelToWire( raw::ChannelID_t channel ) const
   {
     return fChannelMapAlg->ChannelToWire(channel);
   }
@@ -1031,7 +1031,7 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
-  uint32_t Geometry::NearestChannel(const double worldPos[3], 
+  raw::ChannelID_t Geometry::NearestChannel(const double worldPos[3], 
 				    unsigned int const PlaneNo, 
 				    unsigned int const TPCNo,
 				    unsigned int const cstat) const
@@ -1041,7 +1041,7 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
-  uint32_t Geometry::NearestChannel(std::vector<double> const worldPos, 
+  raw::ChannelID_t Geometry::NearestChannel(std::vector<double> const worldPos, 
 				    unsigned int const PlaneNo, 
 				    unsigned int const TPCNo,
 				    unsigned int const cstat) const
@@ -1054,7 +1054,7 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
-  uint32_t Geometry::NearestChannel(const TVector3& worldPos, 
+  raw::ChannelID_t Geometry::NearestChannel(const TVector3& worldPos, 
 				    unsigned int const PlaneNo, 
 				    unsigned int const TPCNo,
 				    unsigned int const cstat) const
@@ -1068,7 +1068,7 @@ namespace geo {
   }
 
   //--------------------------------------
-  uint32_t Geometry::PlaneWireToChannel(unsigned int const plane,
+  raw::ChannelID_t Geometry::PlaneWireToChannel(unsigned int const plane,
 					unsigned int const wire,
 					unsigned int const tpc,
 					unsigned int const cstat) const
@@ -1077,7 +1077,7 @@ namespace geo {
   }
 
   //......................................................................
-  uint32_t Geometry::PlaneWireToChannel(WireID const& wireid) const
+  raw::ChannelID_t Geometry::PlaneWireToChannel(WireID const& wireid) const
   {
     return this->PlaneWireToChannel(wireid.Plane, wireid.Wire, wireid.TPC, wireid.Cryostat);   
   }
@@ -1121,8 +1121,8 @@ namespace geo {
   }
    
   //......................................................................
-  bool Geometry::ChannelsIntersect(uint32_t c1, 
-				   uint32_t c2, 
+  bool Geometry::ChannelsIntersect(raw::ChannelID_t c1, 
+				   raw::ChannelID_t c2, 
 				   double &y, 
 				   double &z)
   {

@@ -15,6 +15,7 @@
 #define GEO_GEOMETRY_H
 
 #include "SimpleTypesAndConstants/geo_types.h"
+#include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "Geometry/ChannelMapAlg.h"
 #include "Geometry/ExptGeoHelperInterface.h"
 
@@ -28,7 +29,6 @@
 #include <cstring>
 #include <memory>
 #include <iterator> // std::forward_iterator_tag
-#include <stdint.h>
 
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Run.h"
@@ -63,7 +63,7 @@ namespace geo {
     void preBeginRun(art::Run const& run);
 
     // Number of readout channels in the detector
-    uint32_t     Nchannels()                                      const;
+    unsigned int Nchannels()                                      const;
     // Number of cryostats in the detector
     unsigned int Ncryostats()                                     const { return fCryostats.size();}
     // Number of TPCs in the detector
@@ -132,36 +132,36 @@ namespace geo {
                                             unsigned int &ad)     const;    // return the AuxDetGeo object containing
                                                                                 // the world position worldLoc
 
-    std::vector< geo::WireID > ChannelToWire(uint32_t const channel) const; // convert channel number to
+    std::vector< geo::WireID > ChannelToWire(raw::ChannelID_t const channel) const; // convert channel number to
                                                                             // list of possible
                                                                             // WireIDs
 
-    SigType_t         SignalType(uint32_t     const channel)    const; // return the signal type for a given channel
+    SigType_t         SignalType(raw::ChannelID_t const channel)    const; // return the signal type for a given channel
     SigType_t         SignalType(geo::PlaneID const pid)        const; // return the signal type for a given channel
-    View_t            View(uint32_t   const channel)            const; // return the view type for a given channel
+    View_t            View(raw::ChannelID_t const channel)            const; // return the view type for a given channel
     View_t            View(geo::PlaneID const pid)              const; // return the view type for a given channel
     std::set<View_t>  const& Views()                              const; // return vector of possible views in the detector
     std::set<PlaneID> const& PlaneIDs()                           const; // return vector of possible PlaneIDs in the detector
 
-    uint32_t            PlaneWireToChannel(unsigned int const plane,
+    raw::ChannelID_t  PlaneWireToChannel(unsigned int const plane,
 					   unsigned int const wire,
 					   unsigned int const tpc = 0,
 					   unsigned int const cstat = 0) const; // convert plane, wire to channel
 
-    uint32_t            PlaneWireToChannel(WireID const& wireid)  const;
+    raw::ChannelID_t  PlaneWireToChannel(WireID const& wireid)  const;
 
     //  assuming heirachical numbering scheme
-    uint32_t            NearestChannel(const double worldLoc[3],
+    raw::ChannelID_t  NearestChannel(const double worldLoc[3],
 				       unsigned int const PlaneNo,
 				       unsigned int const TPCNo = 0,
 				       unsigned int const cstat = 0) const; // find the nearest channel to
                                                                             // input world coordinates
-    uint32_t            NearestChannel(std::vector<double> const worldLoc,
+    raw::ChannelID_t  NearestChannel(std::vector<double> const worldLoc,
 				       unsigned int const PlaneNo,
 				       unsigned int const TPCNo = 0,
 				       unsigned int const cstat = 0) const; // find the nearest channel to
                                                                             // input world coordinates
-    uint32_t            NearestChannel(const TVector3& worldLoc,
+    raw::ChannelID_t  NearestChannel(const TVector3& worldLoc,
 				       unsigned int const PlaneNo,
 				       unsigned int const TPCNo = 0,
 				       unsigned int const cstat = 0) const; // find the nearest channel to
@@ -304,8 +304,8 @@ namespace geo {
 		       unsigned int wire,
 		       double *xyzStart,
 		       double *xyzEnd) const;
-    bool ChannelsIntersect(uint32_t c1,
-			   uint32_t c2,
+    bool ChannelsIntersect(raw::ChannelID_t c1,
+			   raw::ChannelID_t c2,
 			   double &y,
 			   double &z);
     bool WireIDsIntersect(const WireID& wid1,
