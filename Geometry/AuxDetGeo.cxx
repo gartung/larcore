@@ -48,9 +48,6 @@ namespace geo{
     }
 
     
-    // set the width, height using bounding box
-
-
     // set the ends depending on whether the shape is a box or trapezoid
     if( strncmp(fTotalVolume->GetName(), "volAuxDetTrap", 13) == 0 ) {
 
@@ -61,16 +58,16 @@ namespace geo{
       //       /        \   | Length
       //      /__________\  _ 
       //         Width 
-      fHalfWidth       =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx1();
       fHalfHeight      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDy1(); // same as Dy2()
       fLength          = 2.0*((TGeoTrd2*)fTotalVolume->GetShape())->GetDz();
-      fHalfSmallWidth  =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx2();
+      fHalfWidth1      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx1();
+      fHalfWidth2      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx2();
     } 
     else {
-      fHalfWidth       =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+      fHalfWidth1      =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
       fHalfHeight      =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
       fLength          = 2.0*((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
-      fHalfSmallWidth  = fHalfWidth;
+      fHalfWidth2      = fHalfWidth1;
     }
 
   }
