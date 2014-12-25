@@ -463,16 +463,15 @@ namespace geo {
     for(unsigned int a = 0; a < this->NAuxDets(); ++a) {
 
       this->AuxDet(a).WorldToLocal(worldPos, local);      
-      double HalfCenterWidth = (this->AuxDet(a).HalfWidth() + this->AuxDet(a).HalfSmallWidth()) / 2;
+      double HalfCenterWidth = (this->AuxDet(a).HalfWidth1() + this->AuxDet(a).HalfWidth2()) / 2;
 
       if( local[2] >= - this->AuxDet(a).Length()/2       &&
 	  local[2] <=   this->AuxDet(a).Length()/2       &&
 	  local[1] >= - this->AuxDet(a).HalfHeight()     &&
 	  local[1] <=   this->AuxDet(a).HalfHeight()     &&
-	  // this assumes that the small end of the trapezoid is at +z in local coordinates
 	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
-	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfSmallWidth())/(this->AuxDet(a).Length()/2) &&
-	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfSmallWidth())/(this->AuxDet(a).Length()/2)
+	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2) &&
+	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2)
         )  return a;
 
     }// for loop over AudDet a

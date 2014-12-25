@@ -26,8 +26,8 @@ namespace geo {
 
     //box geometry
     double Length()          const { return fLength;     };
-    double HalfWidth()       const { return fHalfWidth;  };
-    double HalfSmallWidth()  const { return fHalfSmallWidth;  };
+    double HalfWidth1()      const { return fHalfWidth1; };
+    double HalfWidth2()      const { return fHalfWidth2; };
     double HalfHeight()      const { return fHalfHeight; };
     const TGeoVolume* TotalVolume()  const { return fTotalVolume;}
     
@@ -42,8 +42,8 @@ namespace geo {
     TGeoHMatrix*          fGeoMatrix;     ///< Transformation matrix to world frame
     const TGeoVolume*     fTotalVolume;   ///< Total volume of AuxDet, called vol*
     double                fLength;        ///< length of volume
-    double                fHalfWidth;     ///< half width of volume
-    double                fHalfSmallWidth;    
+    double                fHalfWidth1;    ///< 1st half width of volume
+    double                fHalfWidth2;    ///< 2nd half width (width1==width2 for boxes)  
     double                fHalfHeight;    ///< half height of volume
   };
 }
