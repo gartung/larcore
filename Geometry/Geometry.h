@@ -500,7 +500,7 @@ namespace geo {
      * while (iPlane) {
      *   std::cout << "Cryo: " << iPlane->Cryostat << " TPC: " << iPlane->TPC
      *     << " plane: " << iPlane->Plane << std::endl;
-	  *   const geo::PlaneGeo* Plane = iPlane.get();
+     *   const geo::PlaneGeo* Plane = iPlane.get();
      *   // ...
      *   ++iPlane;
      * } // while

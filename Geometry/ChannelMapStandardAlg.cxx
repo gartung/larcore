@@ -278,10 +278,10 @@ namespace geo{
 						    << cstat << "," << tpc << "," << plane << "," << wire;
     }
     
-    // made it here, that shouldn't happen, return UINT_MAX
+    // made it here, that shouldn't happen, return raw::InvalidChannelID
     mf::LogWarning("ChannelMapStandardAlg") << "should not be at the point in the function, returning "
-					    << "UINT_MAX";
-    return UINT_MAX;
+					    << "invalid channel";
+    return raw::InvalidChannelID;
 
   }
 

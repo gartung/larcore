@@ -31,6 +31,12 @@ namespace raw{
   constexpr ChannelID_t InvalidChannelID
     = std::numeric_limits<ChannelID_t>::max();
   
+  
+  /// Returns whether the specified channel ID is valid
+  /// @note This does not mean that channel exists in the current geometry.
+  inline constexpr bool isValidChannelID(raw::ChannelID_t channel)
+    { return channel != InvalidChannelID; }
+  
 } // namespace raw
 
 #endif
