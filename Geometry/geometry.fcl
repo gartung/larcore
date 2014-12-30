@@ -3,8 +3,8 @@
 #include "geometry_csu40L.fcl"
 #include "geometry_icarus.fcl"
 #include "geometry_jp250L.fcl"
-
-
+#include "geometry_lariattest.fcl"
+#include "geometry_lariatfull.fcl"
 BEGIN_PROLOG
 
 # Define geometry configurations in detector specific 
