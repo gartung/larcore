@@ -11,6 +11,8 @@
 
 #include "TGeoManager.h"
 #include "TGeoTube.h"
+#include "TGeoTrd1.h"
+#include "TGeoTrd2.h"
 #include "TGeoMatrix.h"
 #include "TGeoNode.h"
 #include "TMath.h"
@@ -44,18 +46,36 @@ namespace geo{
     for(int i = 1; i <= depth; ++i){
       fGeoMatrix->Multiply(path[i]->GetMatrix());
     }
+
     
-    // set the width, height, and length
-    fHalfWidth  =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
-    fHalfHeight =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
-    fLength     = 2.0*((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+    // set the ends depending on whether the shape is a box or trapezoid
+    if( strncmp(fTotalVolume->GetName(), "volAuxDetTrap", 13) == 0 ) {
+
+      //       Small Width
+      //          ____          Height is the thickness
+      //         /    \     T     of the trapezoid
+      //        /      \    |
+      //       /        \   | Length
+      //      /__________\  _ 
+      //         Width 
+      fHalfHeight      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDy1(); // same as Dy2()
+      fLength          = 2.0*((TGeoTrd2*)fTotalVolume->GetShape())->GetDz();
+      fHalfWidth1      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx1();
+      fHalfWidth2      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx2();
+    } 
+    else {
+      fHalfWidth1      =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+      fHalfHeight      =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
+      fLength          = 2.0*((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+      fHalfWidth2      = fHalfWidth1;
+    }
+
   }
   
   //......................................................................
   AuxDetGeo::~AuxDetGeo()
   {
-    if(fGeoMatrix) delete fGeoMatrix;
-    
+    if(fGeoMatrix)  delete fGeoMatrix;
     return;
   }
   

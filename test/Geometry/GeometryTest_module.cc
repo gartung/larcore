@@ -30,6 +30,7 @@
 #include "Geometry/PlaneGeo.h"
 #include "Geometry/WireGeo.h"
 #include "Geometry/OpDetGeo.h"
+#include "Geometry/AuxDetGeo.h"
 #include "Geometry/geo.h"
 
 // Framework includes
@@ -42,7 +43,6 @@
 
 namespace art { class Event; } // art::Event declaration
 
-///tracking algorithms
 namespace geo {
   /**
    * @brief Performs tests on the geometry as seen by Geometry service
@@ -299,6 +299,7 @@ namespace geo{
       
     return;
   }
+
 
 
   //......................................................................
