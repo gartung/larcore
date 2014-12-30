@@ -1,12 +1,13 @@
 ////////////////////////////////////////////////////////////////////////
 /// \file  ChannelMapStandardAlg.cxx
-/// \brief Interface to algorithm class for a specific detector channel mapping
+/// \brief Interface to algorithm class for the standar, simplest detector channel mapping
 ///
 /// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/ChannelMapStandardAlg.h"
+#include "Geometry/AuxDetGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
 #include "Geometry/PlaneGeo.h"
@@ -29,13 +30,15 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  void ChannelMapStandardAlg::Initialize(std::vector<geo::CryostatGeo*> & cgeo)
+  void ChannelMapStandardAlg::Initialize( std::vector<geo::CryostatGeo*> & cgeo, 
+					  std::vector<geo::AuxDetGeo*>   & adgeo )
   {
     fNcryostat = cgeo.size();
     
-    mf::LogInfo("ChannelMapStandardAlg") << "Initializing...";
+    mf::LogInfo("ChannelMapStandardAlg") << "Initializing Standard ChannelMap...";
 
     fSorter.SortCryostats(cgeo);
+    fSorter.SortAuxDets(adgeo);
     for(size_t c = 0; c < cgeo.size(); ++c) 
       cgeo[c]->SortSubVolumes(fSorter);
     

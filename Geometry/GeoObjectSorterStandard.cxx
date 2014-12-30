@@ -7,12 +7,32 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/GeoObjectSorterStandard.h"
+#include "Geometry/AuxDetGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
 #include "Geometry/PlaneGeo.h"
 #include "Geometry/WireGeo.h"
 
 namespace geo{
+
+  //----------------------------------------------------------------------------
+  // Define sort order for cryostats in standard configuration
+  static bool sortAuxDetStandard(const AuxDetGeo* ad1, const AuxDetGeo* ad2)
+  {
+
+    // sort based off of GDML name, assuming ordering is encoded
+    std::string ad1name = (ad1->TotalVolume())->GetName();
+    std::string ad2name = (ad2->TotalVolume())->GetName();
+
+    // assume volume name is "volAuxDet##"
+    int ad1Num = atoi( ad1name.substr( 9, ad1name.size()).c_str() );
+    int ad2Num = atoi( ad2name.substr( 9, ad2name.size()).c_str() );
+    
+    return ad1Num < ad2Num;
+   
+  }
+
+
 
   //----------------------------------------------------------------------------
   // Define sort order for cryostats in standard configuration
@@ -79,6 +99,14 @@ namespace geo{
   //----------------------------------------------------------------------------
   GeoObjectSorterStandard::~GeoObjectSorterStandard()
   {
+  }
+
+  //----------------------------------------------------------------------------
+  void GeoObjectSorterStandard::SortAuxDets(std::vector<geo::AuxDetGeo*> & adgeo) const
+  {
+    std::sort(adgeo.begin(), adgeo.end(), sortAuxDetStandard);
+    
+    return;
   }
 
   //----------------------------------------------------------------------------
