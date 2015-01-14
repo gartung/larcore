@@ -60,8 +60,8 @@ namespace geo{
       //         Width 
       fHalfHeight      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDy1(); // same as Dy2()
       fLength          = 2.0*((TGeoTrd2*)fTotalVolume->GetShape())->GetDz();
-      fHalfWidth1      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx1();
-      fHalfWidth2      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx2();
+      fHalfWidth1      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx1(); // at -Dz
+      fHalfWidth2      =     ((TGeoTrd2*)fTotalVolume->GetShape())->GetDx2(); // at +Dz
     } 
     else {
       fHalfWidth1      =     ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
