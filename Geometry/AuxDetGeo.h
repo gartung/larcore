@@ -41,9 +41,9 @@ namespace geo {
   private:
     TGeoHMatrix*          fGeoMatrix;     ///< Transformation matrix to world frame
     const TGeoVolume*     fTotalVolume;   ///< Total volume of AuxDet, called vol*
-    double                fLength;        ///< length of volume
-    double                fHalfWidth1;    ///< 1st half width of volume
-    double                fHalfWidth2;    ///< 2nd half width (width1==width2 for boxes)  
+    double                fLength;        ///< length of volume, along z direction in local
+    double                fHalfWidth1;    ///< 1st half width of volume, at -z/2 in local coordinates
+    double                fHalfWidth2;    ///< 2nd half width (width1==width2 for boxes), at +z/2
     double                fHalfHeight;    ///< half height of volume
   };
 }

@@ -201,7 +201,7 @@ namespace geo {
     // if(fChannelMapAlg) delete fChannelMapAlg;
     // fChannelMapAlg = 0;
 
-    fExptGeoHelper->ConfigureChannelMapAlg( fDetectorName, fSortingParameters, fCryostats );
+    fExptGeoHelper->ConfigureChannelMapAlg( fDetectorName, fSortingParameters, fCryostats, fAuxDets );
     
     fChannelMapAlg = fExptGeoHelper->GetChannelMapAlg();
     if ( ! fChannelMapAlg ) {

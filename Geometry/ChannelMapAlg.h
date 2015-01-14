@@ -14,6 +14,7 @@
 #include "cetlib/exception.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "Geometry/AuxDetGeo.h"
 #include "Geometry/CryostatGeo.h"
 
 #include "TVector3.h"
@@ -42,7 +43,8 @@ namespace geo{
    ChannelMapAlg();
    virtual ~ChannelMapAlg();
 
-   virtual void                     Initialize(std::vector<geo::CryostatGeo*> & cgeo) = 0;
+   virtual void                     Initialize( std::vector<geo::CryostatGeo*> & cgeo,
+						std::vector<geo::AuxDetGeo*>   & adgeo ) = 0;
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int        	    Nchannels()                               const = 0;
