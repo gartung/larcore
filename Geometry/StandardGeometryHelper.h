@@ -35,7 +35,8 @@ namespace fhicl
 namespace geo
 {
   class ChannelMapAlg;
-  class CryostaGeo;
+  class AuxDetGeo;
+  class CryostatGeo;
 }
 
 namespace geo
@@ -60,7 +61,8 @@ namespace geo
     //
     // void  ConfigureChannelMapAlg( const TString & detectorName, 
     //                               fhicl::ParameterSet const & sortingParam,
-    //                               std::vector<geo::CryostatGeo*> & c );
+    //                               std::vector<geo::CryostatGeo*> & c,
+    //				     std::vector<geo::AuxDetGeo*>   & ad );
     //
     // Returns null pointer if the initialization failed
     // NOTE:  the sub-class owns the ChannelMapAlg object
@@ -71,7 +73,8 @@ namespace geo
     
     void  doConfigureChannelMapAlg( const TString & detectorName,
                                     fhicl::ParameterSet const & sortingParam,
-                                    std::vector<geo::CryostatGeo*> & c ) override;
+                                    std::vector<geo::CryostatGeo*> & c,
+				    std::vector<geo::AuxDetGeo*>   & ad ) override;
     std::shared_ptr<const geo::ChannelMapAlg> doGetChannelMapAlg() const override;
     
     fhicl::ParameterSet const & fPset;

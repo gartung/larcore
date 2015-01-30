@@ -16,10 +16,11 @@
 
 namespace geo{
   
+  class AuxDetGeo;
+  class CryostatGeo;
   class TPCGeo;
   class PlaneGeo;
   class WireGeo;
-  class CryostatGeo;
   
   class GeoObjectSorter {
 
@@ -28,6 +29,7 @@ namespace geo{
     GeoObjectSorter();
     ~GeoObjectSorter();
 
+    virtual void SortAuxDets  (std::vector<geo::AuxDetGeo*>   & adgeo)    const = 0;
     virtual void SortCryostats(std::vector<geo::CryostatGeo*> & cgeo)     const = 0;
     virtual void SortTPCs     (std::vector<geo::TPCGeo*>      & tgeo)     const = 0;
     virtual void SortPlanes   (std::vector<geo::PlaneGeo*>    & pgeo, 
