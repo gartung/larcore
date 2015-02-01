@@ -1184,6 +1184,7 @@ lunit="cm"/>
   lunit="cm"/>
 -->
 
+<!-- addapted "fake shifter" approach proposed by F. di Pompeo in his PhD Thesis "Optical characterization and GEANT4 simulation of the light collection system for the WArP 100 liters detector: analysis of the event reconstruction capability" -->
 <box name="refl1"     x="43.18"  y="0.025" z="84.24"  lunit="cm"/>
 <box name="refl2"     x="43.18"  y="0.025" z="84.24"  lunit="cm"/>
 <box name="refl3"     x="0.025"  y="40.0" z="45.0"  lunit="cm"/>
