@@ -78,8 +78,8 @@
  <position name="EtlRimPosition" unit="cm" x="0.0" y="0.0" z="-2.75"/>
  <position name="WindowHmmPosition" unit="cm" x="0.0" y="0.0" z="-6.5"/>
  <position name="WindowEtlPosition" unit="cm" x="0.0" y="0.0" z="-6.5"/>
- <position name="HmmCutPosition" unit="cm" x="-2.88" y="0.0" z="0.0"/>
- <position name="EtlCutPosition" unit="cm" x="4.32" y="0.0" z="0.0"/>
+ <position name="HmmCutPosition" unit="cm" x="2.88" y="0.0" z="0.0"/>
+ <position name="EtlCutPosition" unit="cm" x="-4.32" y="0.0" z="0.0"/>
  <position name="WindowSipmPosition" unit="cm" x="0.0" y="0.0" z="-0.6"/>
 
  <position name="HolderCutPosition1" unit="cm" x="0.0" y="11.5" z="0.0"/>
@@ -94,18 +94,18 @@
  <position name="PMTHoldPos2" unit="cm" x="-29.94" y="0.0" z="-12.00"/>
 
  <position name="InnerFlangeFillPos" unit="cm" x="-40.38" y="0.0" z="0.0"/>
-<position name="PMTEtlPos" unit="cm" x="-36.34" y="0.0" z="4.32"/><!--was 36.44-->
-<position name="PMTHmmPos" unit="cm" x="-36.340" y="0.0" z="-2.88"/>
-<position name="PMTEtlWPos" unit="cm" x="-36.34+6.5" y="0.0" z="4.32"/>
-<position name="PMTHmmWPos" unit="cm" x="-36.34+6.5" y="0.0" z="-2.88"/>
+<position name="PMTEtlPos" unit="cm" x="-36.34" y="0.0" z="-4.32"/><!--was 36.44-->
+<position name="PMTHmmPos" unit="cm" x="-36.340" y="0.0" z="2.88"/>
+<position name="PMTEtlWPos" unit="cm" x="-36.34+6.5" y="0.0" z="-4.32"/>
+<position name="PMTHmmWPos" unit="cm" x="-36.34+6.5" y="0.0" z="2.88"/>
 <position name="MinusPosMND" unit="cm" x="(93.07-0.5*47.5)" y="-190.5+173.228" z="-151.68"/>
 
- <position name="SipmPos" unit="cm" x="-30.16" y="4.0" z="3.32"/>
- <position name="SipmPos2" unit="cm" x="-30.16" y="4.5" z="-0.18"/>
-<position name="SipmWPos" unit="cm" x="-30.16+0.6" y="4.0" z="3.32"/><!--was 0.0-->
-<position name="SipmWPos2" unit="cm" x="-30.16+0.6" y="4.5" z="-0.18"/><!-- was 0.0-->
- <position name="SipmPos3" unit="cm" x="-30.16" y="-4.0" z="1.82"/><!-- was -30.69 -->
-<position name="SipmWPos3" unit="cm" x="-30.16+0.6" y="-4.0" z="1.82"/>
+ <position name="SipmPos" unit="cm" x="-30.16" y="4.0" z="-3.32"/>
+ <position name="SipmPos2" unit="cm" x="-30.16" y="4.5" z="0.18"/>
+<position name="SipmWPos" unit="cm" x="-30.16+0.6" y="4.0" z="-3.32"/><!--was 0.0-->
+<position name="SipmWPos2" unit="cm" x="-30.16+0.6" y="4.5" z="0.18"/><!-- was 0.0-->
+ <position name="SipmPos3" unit="cm" x="-30.16" y="-4.0" z="-1.82"/><!-- was -30.69 -->
+<position name="SipmWPos3" unit="cm" x="-30.16+0.6" y="-4.0" z="-1.82"/>
 
 <!--cuts in holder for sipms -->
 
