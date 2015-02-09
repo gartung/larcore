@@ -13,10 +13,11 @@ extern "C" {
 #include <vector>
 #include <algorithm>
 #include <cstring>
-#include <iostream>
+#include <ostream> // std::endl
 #include <iomanip>
 #include <sstream>
 #include <cstdlib> // for std::abort()
+#include <limits> // std::numeric_limits<>
 
 // lar includes
 #include "SimpleTypesAndConstants/geo_types.h"
@@ -374,7 +375,7 @@ namespace geo {
     
     // first find the cryostat
     tpcid.Cryostat = FindCryostatAtPosition(worldLoc);
-    if (tpcid.Cryostat == UINT_MAX) return tpcid;
+    if (tpcid.Cryostat == std::numeric_limits<unsigned int>::max()) return tpcid;
     
     // then ask it about the TPC
     tpcid.TPC = Cryostat(tpcid.Cryostat).FindTPCAtPosition(worldLoc, 1. + fPositionWiggle);

@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <cmath>
+#include <limits> // std::numeric_limits<>
 
 
 // ROOT includes
@@ -237,9 +238,9 @@ namespace geo{
 
     return *fOpDets[iopdet];
   }
-
-
-
+  
+  
+  
   //......................................................................
   // wiggle is 1+a small number to allow for rounding errors on the 
   // passed in world loc relative to the boundaries.
@@ -253,42 +254,40 @@ namespace geo{
     // [3] = +y
     // [4] = -z
     // [5] = +z
-    static std::vector<double> tpcBoundaries(this->NTPC()*6);
+    static std::vector<double> tpcBoundaries(NTPC()*6);
+    static bool bBoundariesCached = false;
 
-    bool firstCalculation = true;
-
-    if ( firstCalculation ){
-      firstCalculation = false;
-      double origin[3] = {0.};
-      double world[3] = {0.};
-      for(unsigned int t = 0; t < this->NTPC(); ++t){
-        this->TPC(t).LocalToWorld(origin, world);
+    const unsigned int nTPC = NTPC();
+    
+    if ( !bBoundariesCached ){
+      std::array<double, 3> origin, world;
+      origin.fill(0.);
+      for(unsigned int t = 0; t < nTPC; ++t){
+        geo::TPCGeo const& tpc = TPC(t);
+        tpc.LocalToWorld(origin.data(), world.data());
         // y and z values are easy and can be figured out using the TPC origin
         // the x values are a bit trickier, at least the -x value seems to be
-        tpcBoundaries[0+t*6] =  world[0] - this->TPC(t).HalfWidth();
-        tpcBoundaries[1+t*6] =  world[0] + this->TPC(t).HalfWidth();
-        tpcBoundaries[2+t*6] =  world[1] - this->TPC(t).HalfHeight();
-        tpcBoundaries[3+t*6] =  world[1] + this->TPC(t).HalfHeight();
-        tpcBoundaries[4+t*6] =  world[2] - 0.5*this->TPC(t).Length();
-        tpcBoundaries[5+t*6] =  world[2] + 0.5*this->TPC(t).Length();
+        tpcBoundaries[0+t*6] =  world[0] - tpc.HalfWidth();
+        tpcBoundaries[1+t*6] =  world[0] + tpc.HalfWidth();
+        tpcBoundaries[2+t*6] =  world[1] - tpc.HalfHeight();
+        tpcBoundaries[3+t*6] =  world[1] + tpc.HalfHeight();
+        tpcBoundaries[4+t*6] =  world[2] - 0.5*tpc.Length();
+        tpcBoundaries[5+t*6] =  world[2] + 0.5*tpc.Length();
       }
+      bBoundariesCached = true;
     }// end if this is the first calculation
 
     // locate the desired TPC
     // allow the position to be a little off of the boundary
     // to account for rounding errors
-    for(unsigned int t = 0; t < this->NTPC(); ++t){
-      if(worldLoc[0] >= tpcBoundaries[0+t*6] * wiggle &&
-         worldLoc[0] <= tpcBoundaries[1+t*6] * wiggle && 
-         worldLoc[1] >= tpcBoundaries[2+t*6] * wiggle && 
-         worldLoc[1] <= tpcBoundaries[3+t*6] * wiggle && 
-         worldLoc[2] >= tpcBoundaries[4+t*6] * wiggle && 
-         worldLoc[2] <= tpcBoundaries[5+t*6] * wiggle ){
+    for(unsigned int t = 0; t < nTPC; ++t){
+      if ( CoordinateContained(worldLoc[0], tpcBoundaries[0+t*6], tpcBoundaries[1+t*6], wiggle)
+        && CoordinateContained(worldLoc[1], tpcBoundaries[2+t*6], tpcBoundaries[3+t*6], wiggle)
+        && CoordinateContained(worldLoc[2], tpcBoundaries[4+t*6], tpcBoundaries[5+t*6], wiggle)
+        )
         return t;
-        break;
-      }
     }
-    return UINT_MAX;
+    return std::numeric_limits<unsigned int>::max();
   } // CryostatGeo::FindTPCAtPosition()
 
   //......................................................................
@@ -299,13 +298,13 @@ namespace geo{
 					   double const &wiggle) const
   {
     tpc = FindTPCAtPosition(worldLoc, wiggle);
-    if(tpc == UINT_MAX)
+    if(tpc == std::numeric_limits<unsigned int>::max())
       throw cet::exception("Geometry") << "Can't find TPC for position (" 
 				       << worldLoc[0] << ","
 				       << worldLoc[1] << "," 
 				       << worldLoc[2] << ")\n";
 			
-    return this->TPC(tpc);
+    return TPC(tpc);
   }
 
   //......................................................................
