@@ -551,60 +551,77 @@ namespace geo{
     art::ServiceHandle<geo::Geometry> geom;
 
     mf::LogVerbatim("GeometryTest") << "\tThere are " << geom->Cryostat(c).NTPC() 
-				    << " TPCs in the detector";
+                                    << " TPCs in the detector";
     
     for(size_t t = 0; t < geom->Cryostat(c).NTPC(); ++t){
-      mf::LogVerbatim("GeometryTest") << std::endl << "\t\tTPC " << t 
-				      << " " << geom->GetLArTPCVolumeName(t, c) 
-				      << " has " 
-				      << geom->Cryostat(c).TPC(t).Nplanes() << " planes.";
-      for(size_t p = 0; p < geom->Cryostat(c).TPC(t).Nplanes(); ++p)
-	mf::LogVerbatim("GeometryTest") << std::endl << "\t\tPlane " << p << " has " 
-					<< geom->Cryostat(c).TPC(t).Plane(p).Nwires() 
-					<< " wires and is at (x,y,z) = (" 
-					<< geom->Cryostat(c).TPC(t).PlaneLocation(p)[0] << "," 
-					<< geom->Cryostat(c).TPC(t).PlaneLocation(p)[1] << "," 
-					<< geom->Cryostat(c).TPC(t).PlaneLocation(p)[2] 
-					<< "); \n\t\tpitch from plane 0 is "
-					<< geom->Cryostat(c).TPC(t).Plane0Pitch(p) << "; \n\t\tOrientation "
-					<< geom->Cryostat(c).TPC(t).Plane(p).Orientation() << ", View "
-					<< geom->Cryostat(c).TPC(t).Plane(p).View() << ", Wire angle "
-					<< geom->Cryostat(c).TPC(t).Plane(p).Wire(0).ThetaZ()
-					<< "\n\t\tTPC Dimensions: " << 2.*geom->TPC(t).HalfWidth()
-					<< " x " << 2.*geom->Cryostat(c).TPC(t).HalfHeight() 
-					<< " x " << geom->Cryostat(c).TPC(t).Length()
-					<< "\n\t\tTPC Active Dimensions: " 
-					<< 2.*geom->Cryostat(c).TPC(t).ActiveHalfWidth()
-					<< " x " << 2.*geom->Cryostat(c).TPC(t).ActiveHalfHeight() 
-					<< " x " << geom->Cryostat(c).TPC(t).ActiveLength()
-					<< "\n\t\tTPC mass: " << geom->Cryostat(c).TPC(t).ActiveMass()
-					<< "\n\t\tTPC drift distance: " 
-					<< geom->Cryostat(c).TPC(t).DriftDistance();
-
-      geo::DriftDirection_t dir = geom->Cryostat(c).TPC(t).DriftDirection();
+      geo::TPCGeo const& tpc = geom->Cryostat(c).TPC(t);
+      
+      // figure out the TPC coordinates
+      
+      std::array<double, 3> TPClocalTemp, TPCstart, TPCstop;
+      TPClocalTemp[0] = -tpc.HalfWidth(); // x
+      TPClocalTemp[1] = -tpc.HalfHeight(); // y
+      TPClocalTemp[2] = -tpc.Length() / 2.; // z
+      tpc.LocalToWorld(TPClocalTemp.data(), TPCstart.data());
+      for (size_t i = 0; i < TPClocalTemp.size(); ++i) TPClocalTemp[i] = -TPClocalTemp[i];
+      tpc.LocalToWorld(TPClocalTemp.data(), TPCstop.data());
+      
+      mf::LogVerbatim("GeometryTest") << "\n\t\tTPC " << t 
+                                      << " " << geom->GetLArTPCVolumeName(t, c) 
+                                      << " has " 
+                                      << tpc.Nplanes() << " planes."
+                                      << "\n\t\tTPC location:"
+                                      << " ( " << TPCstart[0] << " ; " << TPCstart[1] << " ; "<< TPCstart[2] << " ) => "
+                                      << " ( " << TPCstop[0] << " ; " << TPCstop[1] << " ; "<< TPCstop[2] << " ) [cm]"
+                                      << "\n\t\tTPC Dimensions: " << 2.*tpc.HalfWidth()
+                                      << " x " << 2.*tpc.HalfHeight() 
+                                      << " x " << tpc.Length()
+                                      << "\n\t\tTPC Active Dimensions: " 
+                                      << 2.*tpc.ActiveHalfWidth()
+                                      << " x " << 2.*tpc.ActiveHalfHeight() 
+                                      << " x " << tpc.ActiveLength()
+                                      << "\n\t\tTPC mass: " << tpc.ActiveMass()
+                                      << "\n\t\tTPC drift distance: " 
+                                      << tpc.DriftDistance();
+      
+      for(size_t p = 0; p < tpc.Nplanes(); ++p) {
+        geo::PlaneGeo const& plane = tpc.Plane(p);
+        mf::LogVerbatim("GeometryTest") << "\t\tPlane " << p << " has " 
+                                        << plane.Nwires() 
+                                        << " wires and is at (x,y,z) = (" 
+                                        << tpc.PlaneLocation(p)[0] << "," 
+                                        << tpc.PlaneLocation(p)[1] << "," 
+                                        << tpc.PlaneLocation(p)[2] 
+                                        << "); \n\t\tpitch from plane 0 is "
+                                        << tpc.Plane0Pitch(p) << "; \n\t\tOrientation "
+                                        << plane.Orientation() << ", View "
+                                        << plane.View() << ", Wire angle "
+                                        << plane.Wire(0).ThetaZ();
+      } // for plane
+      geo::DriftDirection_t dir = tpc.DriftDirection();
       if     (dir == geo::kNegX) 
-	mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards negative x values";
+        mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards negative x values";
       else if(dir == geo::kPosX) 
-	mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards positive x values";
+        mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards positive x values";
       else{
-	throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
+        throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
       }
 
       LOG_DEBUG("GeometryTest") << "\t testing PositionToTPC...";
       // pick a position in the middle of the cryostat in the world coordinates
       double worldLoc[3] = {0.};
       double localLoc[3] = {0.};
-      geom->Cryostat(c).TPC(t).LocalToWorld(localLoc, worldLoc);
+      tpc.LocalToWorld(localLoc, worldLoc);
 
-      unsigned int tpc   = UINT_MAX;
-      geom->Cryostat(c).PositionToTPC(worldLoc,tpc,1+1.e-4);
+      unsigned int tpcNo   = UINT_MAX;
+      geom->Cryostat(c).PositionToTPC(worldLoc,tpcNo,1+1.e-4);
 
-      if(tpc != t)
-	throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
-							 << tpc << " should be " << t << "\n";
+      if(tpcNo != t)
+        throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
+                                                         << tpcNo << " should be " << t << "\n";
 
       LOG_DEBUG("GeometryTest") << "done.";
-    }
+    } // for TPC
     
     return;
   }
