@@ -247,45 +247,10 @@ namespace geo{
   unsigned int CryostatGeo::FindTPCAtPosition(double const worldLoc[3], 
                                               double const wiggle) const
   {
-    // boundaries of the TPC in the world volume are organized as
-    // [0] = -x
-    // [1] = +x
-    // [2] = -y
-    // [3] = +y
-    // [4] = -z
-    // [5] = +z
-    static std::vector<double> tpcBoundaries(NTPC()*6);
-    static bool bBoundariesCached = false;
-
     const unsigned int nTPC = NTPC();
-    
-    if ( !bBoundariesCached ){
-      std::array<double, 3> origin, world;
-      origin.fill(0.);
-      for(unsigned int t = 0; t < nTPC; ++t){
-        geo::TPCGeo const& tpc = TPC(t);
-        tpc.LocalToWorld(origin.data(), world.data());
-        // y and z values are easy and can be figured out using the TPC origin
-        // the x values are a bit trickier, at least the -x value seems to be
-        tpcBoundaries[0+t*6] =  world[0] - tpc.HalfWidth();
-        tpcBoundaries[1+t*6] =  world[0] + tpc.HalfWidth();
-        tpcBoundaries[2+t*6] =  world[1] - tpc.HalfHeight();
-        tpcBoundaries[3+t*6] =  world[1] + tpc.HalfHeight();
-        tpcBoundaries[4+t*6] =  world[2] - 0.5*tpc.Length();
-        tpcBoundaries[5+t*6] =  world[2] + 0.5*tpc.Length();
-      }
-      bBoundariesCached = true;
-    }// end if this is the first calculation
-
-    // locate the desired TPC
-    // allow the position to be a little off of the boundary
-    // to account for rounding errors
     for(unsigned int t = 0; t < nTPC; ++t){
-      if ( CoordinateContained(worldLoc[0], tpcBoundaries[0+t*6], tpcBoundaries[1+t*6], wiggle)
-        && CoordinateContained(worldLoc[1], tpcBoundaries[2+t*6], tpcBoundaries[3+t*6], wiggle)
-        && CoordinateContained(worldLoc[2], tpcBoundaries[4+t*6], tpcBoundaries[5+t*6], wiggle)
-        )
-        return t;
+      geo::TPCGeo const& tpc = TPC(t);
+      if (tpc.ContainsPosition(worldLoc, wiggle)) return t;
     }
     return std::numeric_limits<unsigned int>::max();
   } // CryostatGeo::FindTPCAtPosition()

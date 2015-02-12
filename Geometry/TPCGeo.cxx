@@ -86,37 +86,38 @@ namespace geo{
     double* rotMatrix = fGeoMatrix->GetRotationMatrix();
     if(rotMatrix[0] != 1){
       if(std::abs(rotMatrix[2]) == 1){
-	fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
-	fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+        fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
+        fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
       }
       if(std::abs(rotMatrix[1]) == 1){
-	fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
-	fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
+        fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
+        fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
       }
     }
     if(rotMatrix[4] != 1){
       if(std::abs(rotMatrix[3]) == 1){
-	fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
-	fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+        fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
+        fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
       }
       if(std::abs(rotMatrix[5]) == 1){
-	fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
-	fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+        fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
+        fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
       }
     }
     if(rotMatrix[8] != 1){
       if(std::abs(rotMatrix[6]) == 1){
-	fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
-	fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+        fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
+        fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
       }
       if(std::abs(rotMatrix[7]) == 1){
-	fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
-	fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
+        fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
+        fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
       }
     }
-
-    return;
-  }
+    
+    BuildTPCBoundaries();
+    
+  } // TPCGeo::TPCGeo()
 
   //......................................................................
   TPCGeo::~TPCGeo()
@@ -313,6 +314,39 @@ namespace geo{
   {
     fGeoMatrix->MasterToLocalVect(world,plane);
   }
+
+  //......................................................................
+  bool TPCGeo::ContainsPosition
+    (double const worldLoc[3], double const wiggle) const
+  {
+    return 
+         CoordinateContained(worldLoc[0], tpcBoundaries[0], tpcBoundaries[1], wiggle)
+      && CoordinateContained(worldLoc[1], tpcBoundaries[2], tpcBoundaries[3], wiggle)
+      && CoordinateContained(worldLoc[2], tpcBoundaries[4], tpcBoundaries[5], wiggle)
+      ;
+  } // TPCGeo::ContainsPosition()
+  
+  //......................................................................
+  void TPCGeo::BuildTPCBoundaries() {
+    // note that this assumes no rotations of the TPC
+    // (except for rotations of a flat angle around one of the three main axes);
+    // to avoid this, we should transform the six vertices
+    // rather than just the centre
+    
+    std::array<double, 3> origin, world;
+    origin.fill(0.);
+    LocalToWorld(origin.data(), world.data());
+    
+    // y and z values are easy and can be figured out using the TPC origin
+    // the x values are a bit trickier, at least the -x value seems to be
+    tpcBoundaries[0] =  world[0] - HalfWidth();
+    tpcBoundaries[1] =  world[0] + HalfWidth();
+    tpcBoundaries[2] =  world[1] - HalfHeight();
+    tpcBoundaries[3] =  world[1] + HalfHeight();
+    tpcBoundaries[4] =  world[2] - 0.5*Length();
+    tpcBoundaries[5] =  world[2] + 0.5*Length();
+    
+  } // CryostatGeo::BuildTPCBoundariesCache()
 
 }
 ////////////////////////////////////////////////////////////////////////

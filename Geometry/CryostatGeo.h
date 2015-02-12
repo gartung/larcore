@@ -93,29 +93,6 @@ namespace geo {
     unsigned int GetClosestOpDet(double * xyz)                  const;
     
     
-    /**
-     * @brief Returns whether the specified coordinate is in a range
-     * @param c the coordinate
-     * @param min lower boundary of the range
-     * @param max upper boundary of the range
-     * @param wiggle expansion factor for the range
-     * @return whether the specified coordinate is in a range
-     *
-     * If the wiggle is larger than 1, the range is expanded by the wiggle factor.
-     * If the wiggle is less than 1, the range is shrinked.
-     */
-    static bool CoordinateContained
-      (double c, double min, double max, double wiggle = 1.)
-      {
-        return (c >= (min > 0? min / wiggle: min * wiggle))
-          && (c <= (max < 0? max / wiggle: max * wiggle));
-      } // CoordinateContained()
-    
-    static bool CoordinateContained
-      (double c, double const* range, double wiggle = 1.)
-      { return CoordinateContained(c, range[0], range[1], wiggle); }
-    
-    
   private:
 
     void FindTPC(std::vector<const TGeoNode*>& path,

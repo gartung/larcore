@@ -17,6 +17,7 @@
 #include <sstream>
 #include <iostream>
 #include <cassert>
+#include <limits> // std::numeric_limits<>
 
 // ROOT includes
 #include "TGeoManager.h"
@@ -549,12 +550,13 @@ namespace geo{
   void GeometryTest::testTPC(unsigned int const& c)
   {
     art::ServiceHandle<geo::Geometry> geom;
+    geo::CryostatGeo const& cryo = geom->Cryostat(c);
 
-    mf::LogVerbatim("GeometryTest") << "\tThere are " << geom->Cryostat(c).NTPC() 
+    mf::LogVerbatim("GeometryTest") << "\tThere are " << cryo.NTPC() 
                                     << " TPCs in the detector";
     
-    for(size_t t = 0; t < geom->Cryostat(c).NTPC(); ++t){
-      geo::TPCGeo const& tpc = geom->Cryostat(c).TPC(t);
+    for(size_t t = 0; t < cryo.NTPC(); ++t){
+      geo::TPCGeo const& tpc = cryo.TPC(t);
       
       // figure out the TPC coordinates
       
@@ -613,8 +615,7 @@ namespace geo{
       double localLoc[3] = {0.};
       tpc.LocalToWorld(localLoc, worldLoc);
 
-      unsigned int tpcNo   = UINT_MAX;
-      geom->Cryostat(c).PositionToTPC(worldLoc,tpcNo,1+1.e-4);
+      const unsigned int tpcNo = cryo.FindTPCAtPosition(worldLoc, 1+1.e-4);
 
       if(tpcNo != t)
         throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
