@@ -686,15 +686,15 @@ namespace geo {
   //......................................................................
   // This method returns the distance between wires in the specified view
   // it assumes all planes of a given view have the same pitch
-  double Geometry::WireAngleToVertical(geo::View_t view) const
+  double Geometry::WireAngleToVertical(geo::View_t view, int TPC, int Cryo) const
   { 
     // loop over the planes in cryostat 0, tpc 0 to find the plane with the 
     // specified view
     unsigned int p = 0;
-    for(p = 0; p < this->Cryostat(0).TPC(0).Nplanes(); ++p)
-      if( this->Cryostat(0).TPC(0).Plane(p).View() == view ) break;
+    for(p = 0; p < this->Cryostat(Cryo).TPC(TPC).Nplanes(); ++p)
+      if( this->Cryostat(Cryo).TPC(TPC).Plane(p).View() == view ) break;
 
-    return this->Cryostat(0).TPC(0).Plane(p).Wire(0).ThetaZ(false);
+    return this->Cryostat(Cryo).TPC(TPC).Plane(p).Wire(0).ThetaZ(false);
   }
 
   //......................................................................

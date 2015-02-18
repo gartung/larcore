@@ -227,7 +227,7 @@ namespace geo {
 				  unsigned int cstat = 0)         const; // w1 < w2
     double              WirePitch(geo::View_t view)               const; // assumes all planes in
                                                                          // a view have the same pitch
-    double              WireAngleToVertical(geo::View_t view)     const; // assumes all wires in the
+    double              WireAngleToVertical(geo::View_t view, int TPC=0, int Cryo=0)     const; // assumes all wires in the
                                                                          // view have the same angle
 
     void                WorldBox(double* xlo,
