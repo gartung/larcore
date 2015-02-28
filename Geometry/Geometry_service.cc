@@ -171,8 +171,15 @@ namespace geo {
 	relpathroot += fDetectorName;
       }
     
-      if(fDisableWiresInG4) relpathgdml+="_nowires.gdml";
-      else                  relpathgdml+=".gdml";
+      if(fDisableWiresInG4) {
+	relpathgdml+="_nowires.gdml";
+	relpathroot+="_nowires.gdml";
+      }
+      else {
+	relpathgdml+=".gdml";
+	relpathroot+=".gdml";
+      }
+
             
       // constructor decides if initialized value is a path or an environment variable
       cet::search_path sp("FW_SEARCH_PATH");
