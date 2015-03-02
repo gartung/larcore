@@ -173,7 +173,7 @@ namespace geo {
     
       if(fDisableWiresInG4) {
 	relpathgdml+="_nowires.gdml";
-	relpathroot+="_nowires.gdml";
+	relpathroot+=".gdml";
       }
       else {
 	relpathgdml+=".gdml";
