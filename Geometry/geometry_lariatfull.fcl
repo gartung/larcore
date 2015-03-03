@@ -1,0 +1,18 @@
+BEGIN_PROLOG
+
+lariatfull_geo:
+{
+ SurfaceY: 130.0e2                      #in cm, vertical distance to the surface
+ Name:     "lariat"
+ GDML:     "lariatfull.gdml"
+ ROOT:     "lariatfull.gdml"
+#GDML:     "lariat_wdisk.gdml"
+#ROOT:     "lariat_wdisk.gdml"
+}
+
+lariat_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
+END_PROLOG
