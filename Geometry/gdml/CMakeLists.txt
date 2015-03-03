@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 set( gdml_install_dir "${product}/${version}/gdml" )
 
@@ -12,3 +15,4 @@ install_gdml( SUBDIRS GDMLSchema )
 file(GLOB gdml_bin *.pl genmake )
 install( PROGRAMS ${gdml_bin} DESTINATION ${gdml_install_dir} )
 
+ENDIF()

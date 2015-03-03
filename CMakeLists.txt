@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 # ======================================================================
 #  larcore main build file
 #
@@ -65,3 +68,4 @@ add_subdirectory(ups)
 
 # packaging utility
 include(UseCPack)
+ENDIF()

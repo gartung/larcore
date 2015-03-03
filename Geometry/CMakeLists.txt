@@ -1,3 +1,6 @@
+IF(ALT_CMAKE)
+INCLUDE(altCMakeLists.cmake)
+ELSE()
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  Geometry
@@ -35,3 +38,4 @@ install_fhicl()
 install_source()
 
 add_subdirectory(gdml)
+ENDIF()
