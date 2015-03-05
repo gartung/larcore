@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v04_00_01
+parent	larcore	v04_00_02
 defaultqual	e6
 
 # These optional lines define the installed directories where
@@ -26,7 +26,7 @@ art		v1_12_05
 geant4		v4_9_6_p03e
 gcc		v4_9_1
 
-cetbuildtools	v4_04_03	-	only_for_build
+cetbuildtools	v4_07_03	-	only_for_build
 end_product_list
 
   
