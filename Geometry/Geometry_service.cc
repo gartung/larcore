@@ -147,7 +147,10 @@ namespace geo {
 	case geo::kLArIAT   : 
 	  relpathgdml += "lariat";     relpathroot += "lariat.gdml";     fDetectorName = "lariat";     break;	
 	case geo::kMicroBooNE : 
-	  relpathgdml += "microboone"; relpathroot += "microboone.gdml"; fDetectorName = "microboone"; break;
+	  // We're going to tack on the suffix gdml later. Don't do it here too. Don't presume
+	  // yet to do this for anyone but MicroBooNE, as falling back to the read-in geometry
+	  // is a use case not everyone intends to perform, as we are doing now with CI tests.
+	  relpathgdml += "microboone"; relpathroot += "microboone"; fDetectorName = "microboone"; break;
 	case geo::kLBNE10kt   : 
 	  relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt";   break;
 	case geo::kLBNE34kt   : 
