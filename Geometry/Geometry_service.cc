@@ -141,9 +141,9 @@ namespace geo {
       
 	switch(fDetId){
 	case geo::kBo         : 
-	  relpathgdml += "bo";         relpathroot += "bo.gdml";         fDetectorName = "bo";         break;
+	  relpathgdml += "bo";         relpathroot += "bo";         fDetectorName = "bo";         break;
 	case geo::kArgoNeuT   : 
-	  relpathgdml += "argoneut";   relpathroot += "argoneut.gdml";   fDetectorName = "argoneut";   break;
+	  relpathgdml += "argoneut";   relpathroot += "argoneut";   fDetectorName = "argoneut";   break;
 	case geo::kLArIAT   : 
 	  relpathgdml += "lariat";     relpathroot += "lariat.gdml";     fDetectorName = "lariat";     break;	
 	case geo::kMicroBooNE : 
