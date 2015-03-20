@@ -213,12 +213,20 @@ namespace geo {
     const TGeoMaterial* Material(double x,
 				 double y,
 				 double z)                        const;
-    double              DetHalfWidth(unsigned int tpc = 0,
-				     unsigned int cstat = 0)      const; // half width of the TPC
-    double              DetHalfHeight(unsigned int tpc = 0,
-				      unsigned int cstat = 0)     const; // half height of the TPC
-    double              DetLength(unsigned int tpc = 0,
-				  unsigned int cstat = 0)         const; // length of the TPC
+    
+    /// half width of the TPC
+    double DetHalfWidth(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetHalfWidth(geo::TPCID const& tpcid) const
+      { return DetHalfWidth(tpcid.TPC, tpcid.Cryostat); }
+    /// half height of the TPC
+    double DetHalfHeight(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetHalfHeight(geo::TPCID const& tpcid) const
+      { return DetHalfHeight(tpcid.TPC, tpcid.Cryostat); }
+     /// length of the TPC
+    double DetLength(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetLength(geo::TPCID const& tpcid) const
+      { return DetLength(tpcid.TPC, tpcid.Cryostat); }
+    
     double              CryostatHalfWidth(unsigned int cstat = 0) const; // half width of the cryostat
     double              CryostatHalfHeight(unsigned int cstat = 0)const; // half height of the cryostat
     double              CryostatLength(unsigned int cstat = 0)    const; // length of the cryostat
@@ -233,6 +241,15 @@ namespace geo {
 				  unsigned int plane = 0,
 				  unsigned int tpc = 0,
 				  unsigned int cstat = 0)         const; // w1 < w2
+    // distance between wires on the same plane (w1 < w2)
+    double              WirePitch(unsigned int w1,
+                                  unsigned int w2,
+                                  geo::PlaneID const& plane
+                                  ) const
+      { return WirePitch(w1, w2, plane.Plane, plane.TPC, plane.Cryostat); }
+    double              WirePitch(geo::PlaneID const& planeid) const
+      { return WirePitch(0, 1, planeid); }
+
     double              WirePitch(geo::View_t view)               const; // assumes all planes in
                                                                          // a view have the same pitch
     double              WireAngleToVertical(geo::View_t view, int TPC=0, int Cryo=0)     const; // assumes all wires in the
