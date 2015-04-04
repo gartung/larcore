@@ -48,6 +48,7 @@ namespace geo{
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int        	    Nchannels()                               const = 0;
+   //virtual unsigned int             NOpChans()                                const = 0;
 
    /**
     * @brief Returns the index of the wire nearset to the specified position
@@ -62,15 +63,16 @@ namespace geo{
     * representing a continuous coordinate in the wire axis, with the round
     * values corresponding to the actual wires.
     */
-   virtual double WireCoordinate(double YPos, double ZPos,
-                                 unsigned int    PlaneNo,
-                                 unsigned int    TPCNo,
-                                 unsigned int    cstat) const = 0;
+   virtual double WireCoordinate(double YPos,
+				 double ZPos,
+                                 unsigned int PlaneNo,
+                                 unsigned int TPCNo,
+                                 unsigned int cstat) const = 0;
 
    virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
-			       	    		     unsigned int    PlaneNo,		   
-			       	    		     unsigned int    TPCNo,		   
-			       	    		     unsigned int    cstat)   const = 0;
+						  unsigned int    PlaneNo,
+						  unsigned int    TPCNo,
+						  unsigned int    cstat)   const = 0;
    virtual raw::ChannelID_t    	    PlaneWireToChannel(unsigned int plane,		   
                                	                       unsigned int wire,		   
                                	                       unsigned int tpc,		   
@@ -83,6 +85,10 @@ namespace geo{
 					   unsigned int    PlaneNo,
 					   unsigned int    TPCNo,
 					   unsigned int    cstat)        const;
+
+   virtual unsigned int OpChanUniqueID(int detNum, int channel) const = 0;
+   virtual unsigned int OpDetFromUniqueChanID(int uniqueChannel) const = 0;
+   virtual unsigned int OpDetChannelFromUniqueChanID(int uniqueChannel) const = 0;
 
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.

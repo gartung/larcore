@@ -73,6 +73,9 @@ namespace geo {
     // Number of OpChannels in the detector
     unsigned int NOpChannels()                                    const;
     // Number of views (different wire orientations) in the detector
+    unsigned int OpChanUniqueID(int detNum, int channel)          const;
+    unsigned int OpDetFromUniqueChanID(int uniqueChannel)         const;
+    unsigned int OpDetChannelFromUniqueChanID(int uniqueChannel)  const;
     unsigned int Nviews()                                         const;
     // Number of wire planes in TPC "tpc" of cryostat "cstat".
     unsigned int Nplanes(unsigned int tpc   = 0,
