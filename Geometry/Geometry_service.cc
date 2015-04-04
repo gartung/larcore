@@ -298,6 +298,29 @@ namespace geo {
     return N;
   }
 
+  unsigned int Geometry::NUniqueOpChannels() const
+  {
+    return fChannelMapAlg->NUniqueOpChannels();
+  }
+
+  //......................................................................
+  unsigned int Geometry::OpChanUniqueID(int detNum, int channel) const
+  {
+    return fChannelMapAlg->OpChanUniqueID(detNum, channel);
+  }
+
+  //......................................................................
+  unsigned int Geometry::OpDetFromUniqueChanID(int uniqueChannel) const
+  {
+    return fChannelMapAlg->OpDetFromUniqueChanID(uniqueChannel);
+  }
+
+  //......................................................................
+  unsigned int Geometry::OpDetChannelFromUniqueChanID(int uniqueChannel) const
+  {
+    return fChannelMapAlg->OpDetChannelFromUniqueChanID(uniqueChannel);
+  }
+
   //......................................................................
   unsigned int Geometry::Nplanes(unsigned int tpc,
 				 unsigned int cstat) const

@@ -48,7 +48,7 @@ namespace geo{
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int        	    Nchannels()                               const = 0;
-   //virtual unsigned int             NOpChans()                                const = 0;
+   virtual unsigned int             NUniqueOpChannels()                       const;
 
    /**
     * @brief Returns the index of the wire nearset to the specified position
@@ -85,6 +85,10 @@ namespace geo{
 					   unsigned int    PlaneNo,
 					   unsigned int    TPCNo,
 					   unsigned int    cstat)        const;
+
+   virtual unsigned int OpChanUniqueID(int detNum, int channel) const;
+   virtual unsigned int OpDetFromUniqueChanID(int uniqueChannel) const;
+   virtual unsigned int OpDetChannelFromUniqueChanID(int uniqueChannel) const;
 
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.

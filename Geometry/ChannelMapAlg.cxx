@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/ChannelMapAlg.h"
+#include "Geometry/Geometry.h"
 
 namespace geo{
 
@@ -32,5 +33,31 @@ namespace geo{
 
   }
 
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::NUniqueOpChannels() const
+  {
+    // By default return NOpChannels
+    // Geometry tmp_geo(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
+    // return tmp_geo->NOpChannels;
+    return 12;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::OpChanUniqueID(int detNum, int channel) const
+  {
+    return channel;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::OpDetFromUniqueChanID(int uniqueChannel) const
+  {
+    return 0;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::OpDetChannelFromUniqueChanID(int uniqueChannel) const
+  {
+    return uniqueChannel;
+  }
 
 }
