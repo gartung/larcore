@@ -347,29 +347,4 @@ namespace geo{
     return fViews;
   }
 
-  //----------------------------------------------------------------------------
-  std::set<PlaneID> const& ChannelMapStandardAlg::PlaneIDs() const
-  {
-    return fPlaneIDs;
-  }
-
-  //----------------------------------------------------------------------------
-  unsigned int ChannelMapStandardAlg::OpChanUniqueID(int detNum, int channel) const
-  {
-    return channel;
-  }
-
-  //----------------------------------------------------------------------------
-  unsigned int ChannelMapStandardAlg::OpDetFromUniqueChanID(int uniqueChannel) const
-  {
-    return 0;
-  }
-
-  //----------------------------------------------------------------------------
-  unsigned int ChannelMapStandardAlg::OpDetChannelFromUniqueChanID(int uniqueChannel) const
-  {
-    return uniqueChannel;
-  }
-
-
 } // namespace

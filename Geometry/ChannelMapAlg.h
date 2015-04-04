@@ -86,10 +86,6 @@ namespace geo{
 					   unsigned int    TPCNo,
 					   unsigned int    cstat)        const;
 
-   virtual unsigned int OpChanUniqueID(int detNum, int channel) const = 0;
-   virtual unsigned int OpDetFromUniqueChanID(int uniqueChannel) const = 0;
-   virtual unsigned int OpDetChannelFromUniqueChanID(int uniqueChannel) const = 0;
-
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.
    const std::vector<std::vector<std::vector<raw::ChannelID_t>>> FirstChannelInNextPlane() const
