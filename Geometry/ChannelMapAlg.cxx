@@ -45,19 +45,19 @@ namespace geo{
   //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::OpChanUniqueID(int detNum, int channel) const
   {
-    return channel;
+    return detNum;
   }
 
   //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::OpDetFromUniqueChanID(int uniqueChannel) const
   {
-    return 0;
+    return opChannel;
   }
 
   //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::OpDetChannelFromUniqueChanID(int uniqueChannel) const
   {
-    return uniqueChannel;
+    return 0;
   }
 
 }
