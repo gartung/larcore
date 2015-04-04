@@ -347,4 +347,10 @@ namespace geo{
     return fViews;
   }
 
+  //----------------------------------------------------------------------------
+  std::set<PlaneID> const& ChannelMapStandardAlg::PlaneIDs() const
+  {
+    return fPlaneIDs;
+  }
+
 } // namespace
