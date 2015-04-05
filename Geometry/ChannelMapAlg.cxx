@@ -41,6 +41,15 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::NHardwareChannels(int /*opDet*/) const
+  {
+    // By defualt, 1 channel per optical detector
+    return 1;
+  }
+
+
+
+  //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::OpChannel(int detNum, int channel) const
   {
     return detNum;

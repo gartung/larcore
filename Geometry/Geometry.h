@@ -72,8 +72,10 @@ namespace geo {
     unsigned int NOpDet(unsigned int cstat = 0)                   const;
     // Number of OpDets in the whole detector
     unsigned int NOpDets()                                        const;
-    // Number of electronics channels fro the optical detectors
+    // Number of electronics channels for all the optical detectors
     unsigned int NOpChannels()                                    const;
+    // Number of hardware channels for a given optical detector
+    unsigned int NHardwareChannels(int opDet)                     const;
     // Convert detector number and hardware channel to unique channel
     // and vice versa
     unsigned int OpChannel(int detNum, int hardwareChannel)       const;

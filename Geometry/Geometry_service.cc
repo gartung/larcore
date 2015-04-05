@@ -305,6 +305,12 @@ namespace geo {
   }
 
   //......................................................................
+  unsigned int Geometry::NHardwareChannels(int opDet) const
+  {
+    return fChannelMapAlg->NHardwareChannels(opDet);
+  }
+
+  //......................................................................
   unsigned int Geometry::OpChannel(int detNum, int hardwareChannel) const
   {
     return fChannelMapAlg->OpChannel(detNum, hardwareChannel);

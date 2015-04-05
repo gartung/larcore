@@ -49,7 +49,8 @@ namespace geo{
    virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int        	    Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(int NOpDets)                  const;
-
+   virtual unsigned int             NHardwareChannels(int opDet)              const;
+   
    /**
     * @brief Returns the index of the wire nearset to the specified position
     * @param YPos y coordinate on the wire plane
