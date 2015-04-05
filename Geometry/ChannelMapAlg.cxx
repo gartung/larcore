@@ -34,28 +34,26 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::NUniqueOpChannels() const
+  unsigned int ChannelMapAlg::NOpChannels(int NOpDets) const
   {
-    // By default return NOpChannels
-    // Geometry tmp_geo(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
-    // return tmp_geo->NOpChannels;
-    return 12;
+    // By default just return the number of optical detectos
+    return NOpDets;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::OpChanUniqueID(int detNum, int channel) const
+  unsigned int ChannelMapAlg::OpChannel(int detNum, int channel) const
   {
     return detNum;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::OpDetFromUniqueChanID(int uniqueChannel) const
+  unsigned int ChannelMapAlg::OpDetFromOpChannel(int opChannel) const
   {
     return opChannel;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::OpDetChannelFromUniqueChanID(int uniqueChannel) const
+  unsigned int ChannelMapAlg::HardwareChannelFromOpChannel(int opChannel) const
   {
     return 0;
   }

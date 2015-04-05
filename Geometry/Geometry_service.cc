@@ -290,7 +290,7 @@ namespace geo {
   }
 
   //......................................................................
-  unsigned int Geometry::NOpChannels() const
+  unsigned int Geometry::NOpDets() const
   {
     int N=0;
     for(size_t cstat=0; cstat!=Ncryostats(); cstat++)
@@ -298,27 +298,28 @@ namespace geo {
     return N;
   }
 
-  unsigned int Geometry::NUniqueOpChannels() const
+  //......................................................................
+  unsigned int Geometry::NOpChannels() const
   {
-    return fChannelMapAlg->NUniqueOpChannels();
+    return fChannelMapAlg->NOpChannels(this->NOpDets());
   }
 
   //......................................................................
-  unsigned int Geometry::OpChanUniqueID(int detNum, int channel) const
+  unsigned int Geometry::OpChannel(int detNum, int hardwareChannel) const
   {
-    return fChannelMapAlg->OpChanUniqueID(detNum, channel);
+    return fChannelMapAlg->OpChannel(detNum, hardwareChannel);
   }
 
   //......................................................................
-  unsigned int Geometry::OpDetFromUniqueChanID(int uniqueChannel) const
+  unsigned int Geometry::OpDetFromOpChannel(int opChannel) const
   {
-    return fChannelMapAlg->OpDetFromUniqueChanID(uniqueChannel);
+    return fChannelMapAlg->OpDetFromOpChannel(opChannel);
   }
 
   //......................................................................
-  unsigned int Geometry::OpDetChannelFromUniqueChanID(int uniqueChannel) const
+  unsigned int Geometry::HardwareChannelFromOpChannel(int opChannel) const
   {
-    return fChannelMapAlg->OpDetChannelFromUniqueChanID(uniqueChannel);
+    return fChannelMapAlg->HardwareChannelFromOpChannel(opChannel);
   }
 
   //......................................................................

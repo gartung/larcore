@@ -70,13 +70,16 @@ namespace geo {
     unsigned int NTPC(unsigned int cstat = 0)                     const;
     // Number of OpDet in the detector (for particular cryostat)
     unsigned int NOpDet(unsigned int cstat = 0)                   const;
-    // Number of OpChannels in the detector
+    // Number of OpDets in the whole detector
+    unsigned int NOpDets()                                        const;
+    // Number of electronics channels fro the optical detectors
     unsigned int NOpChannels()                                    const;
+    // Convert detector number and hardware channel to unique channel
+    // and vice versa
+    unsigned int OpChannel(int detNum, int hardwareChannel)       const;
+    unsigned int OpDetFromOpChannel(int opChannel)                const;
+    unsigned int HardwareChannelFromOpChannel(int opChannel)      const;
     // Number of views (different wire orientations) in the detector
-    unsigned int NUniqueOpChannels()                              const;
-    unsigned int OpChanUniqueID(int detNum, int channel)          const;
-    unsigned int OpDetFromUniqueChanID(int uniqueChannel)         const;
-    unsigned int OpDetChannelFromUniqueChanID(int uniqueChannel)  const;
     unsigned int Nviews()                                         const;
     // Number of wire planes in TPC "tpc" of cryostat "cstat".
     unsigned int Nplanes(unsigned int tpc   = 0,
