@@ -1315,6 +1315,7 @@ namespace geo {
     if (plane3>2) return 999;
     double slope3 = 0.001;
     if (fabs(slope1) > 0.001 && fabs(slope2) > 0.001) slope3 = ((1./slope1)*TMath::Sin(angle[plane3]-angle[plane2])-(1./slope2)*TMath::Sin(angle[plane3]-angle[plane1]))/TMath::Sin(angle[plane1]-angle[plane2]);
+    if (slope3) slope3 = 1./slope3;
     return slope3;
 
   } // ThirdPlaneSlope
