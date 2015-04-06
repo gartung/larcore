@@ -48,6 +48,7 @@ namespace geo{
    SigType_t                 SignalType( raw::ChannelID_t const channel )      const;
    std::set<View_t>  const&  Views()                                   const;
    std::set<PlaneID> const&  PlaneIDs()                                const;
+
   private:
     
     unsigned int                                         fNcryostat;      ///< number of cryostats in the detector
