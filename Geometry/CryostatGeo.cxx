@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cmath>
 #include <limits> // std::numeric_limits<>
+#include <algorithm> // std::for_each()
+#include <memory> // std::default_delete<>
 
 
 // ROOT includes
@@ -114,6 +116,8 @@ namespace geo{
       if(fTPCs[i]) delete fTPCs[i];
   
     fTPCs.clear();
+    std::for_each
+      (fOpDets.begin(), fOpDets.end(), std::default_delete<OpDetGeo>());
     fOpDets.clear();
 
     if(fGeoMatrix)    delete fGeoMatrix;
