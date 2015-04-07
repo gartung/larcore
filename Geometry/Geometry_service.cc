@@ -284,12 +284,6 @@ namespace geo {
   }
 
   //......................................................................
-  unsigned int Geometry::NOpDet(unsigned int cstat) const
-  {
-    return this->Cryostat(cstat).NOpDet();
-  }
-
-  //......................................................................
   unsigned int Geometry::NOpDets() const
   {
     int N=0;
@@ -1500,8 +1494,8 @@ namespace geo {
   }
 
   //--------------------------------------------------------------------
-  // Convert OpDet, Cryo into OpChannel
-  int Geometry::OpDetCryoToOpChannel(unsigned int o, unsigned int c ) const
+  // Convert OpDet, Cryo into unique OpDet number
+  unsigned int Geometry::OpDetFromCryo(unsigned int o, unsigned int c ) const
   {
     static bool Loaded=false;
     static std::vector<unsigned int> LowestID;
@@ -1535,11 +1529,15 @@ namespace geo {
 
     return INT_MAX;  
   }
-  
+
   //--------------------------------------------------------------------
-  void  Geometry::OpChannelToCryoOpDet(unsigned int OpChannel, 
-				       unsigned int& o, 
-				       unsigned int& c) const
+  const OpDetGeo& Geometry::OpDetGeoFromOpChannel(unsigned int OpChannel) const
+  {
+    return this->OpDetGeoFromOpDet(this->OpDetFromOpChannel(OpChannel));
+  }
+
+  //--------------------------------------------------------------------
+  const OpDetGeo& Geometry::OpDetGeoFromOpDet(unsigned int OpDet) const
   {
     static bool Loaded=false;
     static std::vector<unsigned int> LowestID;
@@ -1552,33 +1550,36 @@ namespace geo {
       // Store the lowest ID for each cryostat
       NCryo=Ncryostats();
       LowestID.resize(NCryo + 1);
-      LowestID.at(0) = 0;	
+      LowestID[0] = 0;	
       for(size_t cryo = 0; cryo != NCryo; ++cryo){
-	LowestID.at(cryo+1)=LowestID.at(cryo)+Cryostat(c).NOpDet();
+	LowestID[cryo+1] = LowestID[cryo] + Cryostat(cryo).NOpDet();
       }
 	
     }
 
     for(size_t i=0; i!=NCryo; ++i){
-      if( ( OpChannel >= LowestID.at(i) ) && (OpChannel < LowestID.at(i+1))){
-	c = i; o = OpChannel-LowestID.at(i); 
-	return;
+      if( (OpDet >= LowestID[i]) && (OpDet < LowestID[i+1]) ){
+	int c = i;
+        int o = OpDet-LowestID[i]; 
+        return this->Cryostat(c).OpDet(o);
       }
     }
     // If we made it here, we didn't find the right combination. abort
-    throw cet::exception("OpID To OpDetCryo error")<<"OpID out of range, "<< OpChannel << "\n";
+    throw cet::exception("OpID To OpDetCryo error")<<"OpID out of range, "<< OpDet << "\n";
 
-    return;
+    // Will not reach due to exception
+    return this->Cryostat(0).OpDet(0);
   }
   
   
   //--------------------------------------------------------------------
   // Find the closest OpChannel to this point, in the appropriate cryostat  
-  unsigned int Geometry::GetClosestOpChannel(double * xyz) const
+  unsigned int Geometry::GetClosestOpDet(double * xyz) const
   {	
     unsigned int c;
     PositionToCryostat(xyz, c);
-    return OpDetCryoToOpChannel(Cryostat(c).GetClosestOpDet(xyz), c);    
+    int o = Cryostat(c).GetClosestOpDet(xyz);
+    return OpDetFromCryo(o, c);
   }
   
   //--------------------------------------------------------------------
