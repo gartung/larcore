@@ -90,6 +90,47 @@ namespace geo {
     
     
     /**
+     * @brief Returns whether this TPC contains the specified world x coordinate
+     * @param x the absolute ("world") coordinate x
+     * @param wiggle expansion factor for the range (see ContainsPosition())
+     * @return whether the specified coordinate is in this TPC
+     * @see ContainsPosition()
+     * 
+     * Note that x is by definition the drift direction, and a reconstructed x
+     * typically depends on an assumption respect to the event time.
+     */
+    bool ContainsX(double x, double const wiggle) const;
+    
+    /**
+     * @brief Returns whether this TPC contains the specified world y coordinate
+     * @param y the absolute ("world") coordinate y
+     * @param wiggle expansion factor for the range (see ContainsPosition())
+     * @return whether the specified coordinate is in this TPC
+     * @see ContainsPosition()
+     */
+    bool ContainsY(double y, double const wiggle) const;
+    
+    /**
+     * @brief Returns whether this TPC contains the specified world z coordinate
+     * @param z the absolute ("world") coordinate z
+     * @param wiggle expansion factor for the range (see ContainsPosition())
+     * @return whether the specified coordinate is in this TPC
+     * @see ContainsPosition()
+     */
+    bool ContainsZ(double z, double const wiggle) const;
+    
+    /**
+     * @brief Returns if TPC contains the specified world y and z coordinates
+     * @param y the absolute ("world") coordinate y
+     * @param z the absolute ("world") coordinate z
+     * @param wiggle expansion factor for the range (see ContainsPosition())
+     * @return whether the specified coordinate is in this TPC
+     * @see ContainsPosition()
+     */
+    bool ContainsYZ(double y, double z, double const wiggle) const
+      { return ContainsY(y, wiggle) && ContainsZ(z, wiggle); }
+    
+    /**
      * @brief Returns whether this TPC contains the specified world coordinate
      * @param worldLoc the absolute ("world") coordinate (x, y, z)
      * @param wiggle expansion factor for the range
@@ -99,7 +140,12 @@ namespace geo {
      * wiggle factor.
      * If the wiggle is less than 1, each size is shrinked.
      */
-    bool ContainsPosition(double const worldLoc[3], double const wiggle) const;
+    bool ContainsPosition(double const worldLoc[3], double const wiggle) const
+      {
+        return ContainsX(worldLoc[0], wiggle)
+          && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
+      } // ContainsPosition()
+    
     
     /**
      * @brief Returns whether the specified coordinate is in a range

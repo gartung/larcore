@@ -316,15 +316,20 @@ namespace geo{
   }
 
   //......................................................................
-  bool TPCGeo::ContainsPosition
-    (double const worldLoc[3], double const wiggle) const
+  bool TPCGeo::ContainsX(double x, double const wiggle) const
   {
-    return 
-         CoordinateContained(worldLoc[0], tpcBoundaries[0], tpcBoundaries[1], wiggle)
-      && CoordinateContained(worldLoc[1], tpcBoundaries[2], tpcBoundaries[3], wiggle)
-      && CoordinateContained(worldLoc[2], tpcBoundaries[4], tpcBoundaries[5], wiggle)
-      ;
-  } // TPCGeo::ContainsPosition()
+    return CoordinateContained(x, tpcBoundaries[0], tpcBoundaries[1], wiggle);
+  } // TPCGeo::ContainsX()
+  
+  bool TPCGeo::ContainsY(double y, double const wiggle) const
+  {
+    return CoordinateContained(y, tpcBoundaries[2], tpcBoundaries[3], wiggle);
+  } // TPCGeo::ContainsY()
+  
+  bool TPCGeo::ContainsZ(double z, double const wiggle) const 
+  {
+    return CoordinateContained(z, tpcBoundaries[4], tpcBoundaries[5], wiggle);
+  } // TPCGeo::ContainsZ()
   
   //......................................................................
   void TPCGeo::BuildTPCBoundaries() {
