@@ -1135,7 +1135,19 @@ namespace geo {
 					  << "channel 2 " << c2 << std::endl;
       return false;
     }
-
+    
+    geo::WireIDIntersection widIntersect;
+    if (this->WireIDsIntersect(chan1wires[0],chan2wires[0],widIntersect)){
+      y = widIntersect.y;
+      z = widIntersect.z;
+      return true;
+    }
+    else{
+      y = -9999;
+      z = -9999;
+      return false;
+    }
+    /*
     unsigned int cs1, tpc1, plane1, wire1;
     unsigned int cs2, tpc2, plane2, wire2;
 
@@ -1214,6 +1226,7 @@ namespace geo {
     }
     
     return false;    
+    */
   }
 
 
@@ -1221,6 +1234,9 @@ namespace geo {
   bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
 				   geo::WireIDIntersection & widIntersect   ) const
   {
+    widIntersect.y = -9999;
+    widIntersect.z = -9999;
+    widIntersect.TPC = 9999;
 
     double w1_Start[3] = {0.};
     double w1_End[3]   = {0.};
@@ -1316,6 +1332,8 @@ namespace geo {
     double slope3 = 0.001;
     if (fabs(slope1) > 0.001 && fabs(slope2) > 0.001) slope3 = ((1./slope1)*TMath::Sin(angle[plane3]-angle[plane2])-(1./slope2)*TMath::Sin(angle[plane3]-angle[plane1]))/TMath::Sin(angle[plane1]-angle[plane2]);
     if (slope3) slope3 = 1./slope3;
+    else slope3 = 999;
+
     return slope3;
 
   } // ThirdPlaneSlope
@@ -1340,7 +1358,17 @@ namespace geo {
 				   double end_w2[3], 
                                    double &y, double &z)
   {
-
+    y = -9999;
+    z = -9999;
+    geo::WireID wid1(cstat,tpc,plane1,wire1);
+    geo::WireID wid2(cstat,tpc,plane2,wire2);
+    geo::WireIDIntersection widIntersect;
+    if (this->WireIDsIntersect(wid1,wid2,widIntersect)){
+      y = widIntersect.y;
+      z = widIntersect.z;
+    }
+    return;
+    /*
     //angle of wire1 wrt z-axis in Y-Z plane...in radians
     double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(plane1).Wire(wire1).ThetaZ();
     //angle of wire2 wrt z-axis in Y-Z plane...in radians
@@ -1415,7 +1443,7 @@ namespace geo {
     y = 0.5 * ( b + d + (a-c)*TMath::Tan(angle) );
     
     return;
-
+    */
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
