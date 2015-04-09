@@ -99,7 +99,7 @@ namespace geo {
      * Note that x is by definition the drift direction, and a reconstructed x
      * typically depends on an assumption respect to the event time.
      */
-    bool ContainsX(double x, double const wiggle) const;
+    bool ContainsX(double x, double const wiggle = 1) const;
     
     /**
      * @brief Returns whether this TPC contains the specified world y coordinate
@@ -108,7 +108,7 @@ namespace geo {
      * @return whether the specified coordinate is in this TPC
      * @see ContainsPosition()
      */
-    bool ContainsY(double y, double const wiggle) const;
+    bool ContainsY(double y, double const wiggle = 1) const;
     
     /**
      * @brief Returns whether this TPC contains the specified world z coordinate
@@ -117,7 +117,7 @@ namespace geo {
      * @return whether the specified coordinate is in this TPC
      * @see ContainsPosition()
      */
-    bool ContainsZ(double z, double const wiggle) const;
+    bool ContainsZ(double z, double const wiggle = 1) const;
     
     /**
      * @brief Returns if TPC contains the specified world y and z coordinates
@@ -127,7 +127,7 @@ namespace geo {
      * @return whether the specified coordinate is in this TPC
      * @see ContainsPosition()
      */
-    bool ContainsYZ(double y, double z, double const wiggle) const
+    bool ContainsYZ(double y, double z, double const wiggle = 1) const
       { return ContainsY(y, wiggle) && ContainsZ(z, wiggle); }
     
     /**
@@ -140,7 +140,7 @@ namespace geo {
      * wiggle factor.
      * If the wiggle is less than 1, each size is shrinked.
      */
-    bool ContainsPosition(double const worldLoc[3], double const wiggle) const
+    bool ContainsPosition(double const worldLoc[3], double const wiggle = 1) const
       {
         return ContainsX(worldLoc[0], wiggle)
           && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
