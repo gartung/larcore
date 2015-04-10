@@ -19,6 +19,7 @@ class TGeoNode;
 class TGeoHMatrix;
 
 #include "SimpleTypesAndConstants/geo_types.h"
+#include "Geometry/BoxBoundedGeo.h"
 #include "Geometry/GeoObjectSorter.h"
 
 namespace geo {
@@ -26,7 +27,7 @@ namespace geo {
 
   //......................................................................
   /// Geometry information for a single tpc
-  class TPCGeo {
+  class TPCGeo: public BoxBoundedGeo {
   public:
     // Construct a representation of a single plane of the detector
     TPCGeo(std::vector<const TGeoNode*>& path, int depth);
@@ -89,87 +90,6 @@ namespace geo {
     const TVector3 WorldToLocal( const TVector3& world )        const;
     
     
-    /**
-     * @brief Returns whether this TPC contains the specified world x coordinate
-     * @param x the absolute ("world") coordinate x
-     * @param wiggle expansion factor for the range (see ContainsPosition())
-     * @return whether the specified coordinate is in this TPC
-     * @see ContainsPosition()
-     * 
-     * Note that x is by definition the drift direction, and a reconstructed x
-     * typically depends on an assumption respect to the event time.
-     */
-    bool ContainsX(double x, double const wiggle = 1) const;
-    
-    /**
-     * @brief Returns whether this TPC contains the specified world y coordinate
-     * @param y the absolute ("world") coordinate y
-     * @param wiggle expansion factor for the range (see ContainsPosition())
-     * @return whether the specified coordinate is in this TPC
-     * @see ContainsPosition()
-     */
-    bool ContainsY(double y, double const wiggle = 1) const;
-    
-    /**
-     * @brief Returns whether this TPC contains the specified world z coordinate
-     * @param z the absolute ("world") coordinate z
-     * @param wiggle expansion factor for the range (see ContainsPosition())
-     * @return whether the specified coordinate is in this TPC
-     * @see ContainsPosition()
-     */
-    bool ContainsZ(double z, double const wiggle = 1) const;
-    
-    /**
-     * @brief Returns if TPC contains the specified world y and z coordinates
-     * @param y the absolute ("world") coordinate y
-     * @param z the absolute ("world") coordinate z
-     * @param wiggle expansion factor for the range (see ContainsPosition())
-     * @return whether the specified coordinate is in this TPC
-     * @see ContainsPosition()
-     */
-    bool ContainsYZ(double y, double z, double const wiggle = 1) const
-      { return ContainsY(y, wiggle) && ContainsZ(z, wiggle); }
-    
-    /**
-     * @brief Returns whether this TPC contains the specified world coordinate
-     * @param worldLoc the absolute ("world") coordinate (x, y, z)
-     * @param wiggle expansion factor for the range
-     * @return whether the specified coordinate is in this TPC
-     *
-     * If the wiggle is larger than 1, each size of the TPC is expanded by the
-     * wiggle factor.
-     * If the wiggle is less than 1, each size is shrinked.
-     */
-    bool ContainsPosition(double const worldLoc[3], double const wiggle = 1) const
-      {
-        return ContainsX(worldLoc[0], wiggle)
-          && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
-      } // ContainsPosition()
-    
-    
-    /**
-     * @brief Returns whether the specified coordinate is in a range
-     * @param c the coordinate
-     * @param min lower boundary of the range
-     * @param max upper boundary of the range
-     * @param wiggle expansion factor for the range
-     * @return whether the specified coordinate is in a range
-     *
-     * If the wiggle is larger than 1, the range is expanded by the wiggle factor.
-     * If the wiggle is less than 1, the range is shrinked.
-     */
-    static bool CoordinateContained
-      (double c, double min, double max, double wiggle = 1.)
-      {
-        return (c >= (min > 0? min / wiggle: min * wiggle))
-          && (c <= (max < 0? max / wiggle: max * wiggle));
-      } // CoordinateContained()
-    
-    static bool CoordinateContained
-      (double c, double const* range, double wiggle = 1.)
-      { return CoordinateContained(c, range[0], range[1], wiggle); }
-    
-    
   private:
     
     void FindPlane(std::vector<const TGeoNode*>& path,
@@ -194,11 +114,8 @@ namespace geo {
     double                             fHalfHeight;       ///< half height of total volume
     double                             fLength;           ///< length of total volume
   
-    /// TPC boundaries in world coordinates (-x, +x, -y, +y, -z, +z)
-    std::array<double, 6>              tpcBoundaries;
-    
     /// Recomputes the TPC boundary
-    void BuildTPCBoundaries();
+    void InitTPCBoundaries();
   
   };
 }

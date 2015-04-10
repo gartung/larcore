@@ -606,7 +606,8 @@ namespace geo{
       else if(dir == geo::kPosX) 
         mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards positive x values";
       else{
-        throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
+        throw cet::exception("UnknownDriftDirection")
+          << "\t\tdrift direction is unknown (" << ((int) dir) << ")\n";
       }
 
       LOG_DEBUG("GeometryTest") << "\t testing PositionToTPC...";

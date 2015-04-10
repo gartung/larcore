@@ -32,7 +32,8 @@ namespace geo{
 
   //......................................................................
   TPCGeo::TPCGeo(std::vector<const TGeoNode*>& path, int depth)
-    : fActiveVolume(0)
+    : BoxBoundedGeo() // we initialize boundaries at the end of construction
+    , fActiveVolume(0)
     , fTotalVolume(0)
     , fDriftDirection(geo::kUnknownDrift)
   {
@@ -115,7 +116,7 @@ namespace geo{
       }
     }
     
-    BuildTPCBoundaries();
+    InitTPCBoundaries();
     
   } // TPCGeo::TPCGeo()
 
@@ -316,23 +317,7 @@ namespace geo{
   }
 
   //......................................................................
-  bool TPCGeo::ContainsX(double x, double const wiggle) const
-  {
-    return CoordinateContained(x, tpcBoundaries[0], tpcBoundaries[1], wiggle);
-  } // TPCGeo::ContainsX()
-  
-  bool TPCGeo::ContainsY(double y, double const wiggle) const
-  {
-    return CoordinateContained(y, tpcBoundaries[2], tpcBoundaries[3], wiggle);
-  } // TPCGeo::ContainsY()
-  
-  bool TPCGeo::ContainsZ(double z, double const wiggle) const 
-  {
-    return CoordinateContained(z, tpcBoundaries[4], tpcBoundaries[5], wiggle);
-  } // TPCGeo::ContainsZ()
-  
-  //......................................................................
-  void TPCGeo::BuildTPCBoundaries() {
+  void TPCGeo::InitTPCBoundaries() {
     // note that this assumes no rotations of the TPC
     // (except for rotations of a flat angle around one of the three main axes);
     // to avoid this, we should transform the six vertices
@@ -344,14 +329,14 @@ namespace geo{
     
     // y and z values are easy and can be figured out using the TPC origin
     // the x values are a bit trickier, at least the -x value seems to be
-    tpcBoundaries[0] =  world[0] - HalfWidth();
-    tpcBoundaries[1] =  world[0] + HalfWidth();
-    tpcBoundaries[2] =  world[1] - HalfHeight();
-    tpcBoundaries[3] =  world[1] + HalfHeight();
-    tpcBoundaries[4] =  world[2] - 0.5*Length();
-    tpcBoundaries[5] =  world[2] + 0.5*Length();
     
-  } // CryostatGeo::BuildTPCBoundariesCache()
+    SetBoundaries(
+      world[0] - HalfWidth(),  world[0] + HalfWidth(),
+      world[1] - HalfHeight(), world[1] + HalfHeight(),
+      world[2] - 0.5*Length(), world[2] + 0.5*Length()
+      );
+    
+  } // CryostatGeo::InitTPCBoundaries()
 
 }
 ////////////////////////////////////////////////////////////////////////
