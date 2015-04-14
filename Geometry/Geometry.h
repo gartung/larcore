@@ -345,7 +345,7 @@ namespace geo {
     unsigned int NOpChannels()                                    const;
 
     // Number of hardware channels for a given optical detector
-    unsigned int NHardwareChannels(int opDet)                     const;
+    unsigned int NOpHardwareChannels(int opDet)                   const;
 
     // Convert detector number and hardware channel to unique channel
     // and vice versa
