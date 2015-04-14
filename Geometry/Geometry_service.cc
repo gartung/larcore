@@ -323,6 +323,14 @@ namespace geo {
   }
 
   //......................................................................
+  // Is this a valid OpChannel number?
+  bool Geometry::IsValidOpChannel(int opChannel) const
+  {
+    return fChannelMapAlg->IsValidOpChannel(opChannel, this->NOpDets());
+  }
+
+  
+  //......................................................................
   unsigned int Geometry::Nplanes(unsigned int tpc,
 				 unsigned int cstat) const
   {

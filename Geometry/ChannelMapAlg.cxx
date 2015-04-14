@@ -67,4 +67,21 @@ namespace geo{
     return 0;
   }
 
+  //----------------------------------------------------------------------------
+  bool ChannelMapAlg::IsValidOpChannel(unsigned int opChannel, unsigned int NOpDets) const
+  {
+    // Check channel number
+    if ( opChannel >= this->NOpChannels(NOpDets) ) return false;
+
+    // Check opdet number
+    unsigned int opdet = this->OpDetFromOpChannel(opChannel);
+    if (opdet >= NOpDets) return false;
+
+    // Check hardware channel number
+    unsigned int hChan = this->HardwareChannelFromOpChannel(opChannel);
+    if (hChan >= this->NOpHardwareChannels(opdet)) return false;
+    
+    return true;
+  }
+
 }

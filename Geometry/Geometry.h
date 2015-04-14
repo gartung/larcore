@@ -353,6 +353,9 @@ namespace geo {
     unsigned int OpDetFromOpChannel(int opChannel)                const;
     unsigned int HardwareChannelFromOpChannel(int opChannel)      const;
 
+    // Is this a valid OpChannel number?
+    bool IsValidOpChannel(int opChannel)                          const;
+
     // Get unique opdet number from cryo and internal count
     unsigned int OpDetFromCryo(unsigned int o, unsigned int c )   const;
 

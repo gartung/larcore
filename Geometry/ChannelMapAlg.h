@@ -90,6 +90,7 @@ namespace geo{
    virtual unsigned int OpChannel(int detNum, int channel = 0) const;
    virtual unsigned int OpDetFromOpChannel(int opChannel) const;
    virtual unsigned int HardwareChannelFromOpChannel(int opChannel) const;
+   virtual bool         IsValidOpChannel(int opChannel, int NOpDets) const;
 
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.
