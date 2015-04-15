@@ -34,14 +34,14 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::NOpChannels(int NOpDets) const
+  unsigned int ChannelMapAlg::NOpChannels(unsigned int NOpDets) const
   {
     // By default just return the number of optical detectos
     return NOpDets;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::NOpHardwareChannels(int /*opDet*/) const
+  unsigned int ChannelMapAlg::NOpHardwareChannels(unsigned int /*opDet*/) const
   {
     // By defualt, 1 channel per optical detector
     return 1;
@@ -50,19 +50,19 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::OpChannel(int detNum, int channel) const
+  unsigned int ChannelMapAlg::OpChannel(unsigned int detNum, unsigned int channel) const
   {
     return detNum;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::OpDetFromOpChannel(int opChannel) const
+  unsigned int ChannelMapAlg::OpDetFromOpChannel(unsigned int opChannel) const
   {
     return opChannel;
   }
 
   //----------------------------------------------------------------------------
-  unsigned int ChannelMapAlg::HardwareChannelFromOpChannel(int opChannel) const
+  unsigned int ChannelMapAlg::HardwareChannelFromOpChannel(unsigned int opChannel) const
   {
     return 0;
   }
