@@ -1244,14 +1244,23 @@ namespace geo {
     double w2_End[3]   = {0.};
 
     if( wid1.Plane == wid2.Plane ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in the same plane, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in the same plane, return false";
       return false;     }
     if( wid1.TPC != wid2.TPC ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in different TPCs, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different TPCs, return false";
       return false;     }
     if( wid1.Cryostat != wid2.Cryostat ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in different Cryostats, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different Cryostats, return false";
       return false;     }
+    if( wid1.Wire<0 || wid1.Wire>=this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat)){
+      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid1.Wire<< "max wire number = "<< this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat);
+      return false;
+    }
+    if( wid2.Wire<0 || wid2.Wire>=this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat)){
+      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid2.Wire<< "max wire number = "<< this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat);
+      return false;
+    }
+  
 
     // get the endpoints to see if i1 and i2 even intersect
     this->WireEndPoints(wid1.Cryostat, wid1.TPC, wid1.Plane, wid1.Wire, w1_Start, w1_End);
