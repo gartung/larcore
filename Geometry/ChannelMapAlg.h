@@ -48,8 +48,9 @@ namespace geo{
    virtual void                	    Uninitialize() = 0;				   
    virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int        	    Nchannels()                               const = 0;
-   //virtual unsigned int             NOpChans()                                const = 0;
-
+   virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
+   virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
+   
    /**
     * @brief Returns the index of the wire nearset to the specified position
     * @param YPos y coordinate on the wire plane
@@ -85,6 +86,11 @@ namespace geo{
 					   unsigned int    PlaneNo,
 					   unsigned int    TPCNo,
 					   unsigned int    cstat)        const;
+
+   virtual unsigned int OpChannel(unsigned int detNum, unsigned int channel = 0) const;
+   virtual unsigned int OpDetFromOpChannel(unsigned int opChannel) const;
+   virtual unsigned int HardwareChannelFromOpChannel(unsigned int opChannel) const;
+   virtual bool         IsValidOpChannel(unsigned int opChannel, unsigned int NOpDets) const;
 
    // These methods retrieve the private fFirstChannel*
    // vectors for testing.

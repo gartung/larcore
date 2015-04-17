@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/ChannelMapAlg.h"
+#include "Geometry/Geometry.h"
 
 namespace geo{
 
@@ -32,5 +33,55 @@ namespace geo{
 
   }
 
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::NOpChannels(unsigned int NOpDets) const
+  {
+    // By default just return the number of optical detectos
+    return NOpDets;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::NOpHardwareChannels(unsigned int /*opDet*/) const
+  {
+    // By defualt, 1 channel per optical detector
+    return 1;
+  }
+
+
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::OpChannel(unsigned int detNum, unsigned int channel) const
+  {
+    return detNum;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::OpDetFromOpChannel(unsigned int opChannel) const
+  {
+    return opChannel;
+  }
+
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::HardwareChannelFromOpChannel(unsigned int opChannel) const
+  {
+    return 0;
+  }
+
+  //----------------------------------------------------------------------------
+  bool ChannelMapAlg::IsValidOpChannel(unsigned int opChannel, unsigned int NOpDets) const
+  {
+    // Check channel number
+    if ( opChannel >= this->NOpChannels(NOpDets) ) return false;
+
+    // Check opdet number
+    unsigned int opdet = this->OpDetFromOpChannel(opChannel);
+    if (opdet >= NOpDets) return false;
+
+    // Check hardware channel number
+    unsigned int hChan = this->HardwareChannelFromOpChannel(opChannel);
+    if (hChan >= this->NOpHardwareChannels(opdet)) return false;
+    
+    return true;
+  }
 
 }

@@ -68,10 +68,6 @@ namespace geo {
     unsigned int Ncryostats()                                     const { return fCryostats.size();}
     // Number of TPCs in the detector
     unsigned int NTPC(unsigned int cstat = 0)                     const;
-    // Number of OpDet in the detector (for particular cryostat)
-    unsigned int NOpDet(unsigned int cstat = 0)                   const;
-    // Number of OpChannels in the detector
-    unsigned int NOpChannels()                                    const;
     // Number of views (different wire orientations) in the detector
     unsigned int Nviews()                                         const;
     // Number of wire planes in TPC "tpc" of cryostat "cstat".
@@ -362,20 +358,43 @@ namespace geo {
                            unsigned int plane2, double slope2,
                            unsigned int tpc, unsigned int cstat);
 
+    
+    ////////////////////////////////
+    // Optical Detector functions //
+    ////////////////////////////////
+
+    // Number of OpDets in the whole detector
+    unsigned int NOpDets()                                        const;
+
+    // Number of electronics channels for all the optical detectors
+    unsigned int NOpChannels()                                    const;
+
+    // Number of hardware channels for a given optical detector
+    unsigned int NOpHardwareChannels(int opDet)                   const;
+
+    // Convert detector number and hardware channel to unique channel
+    // and vice versa
+    unsigned int OpChannel(int detNum, int hardwareChannel)       const;
+    unsigned int OpDetFromOpChannel(int opChannel)                const;
+    unsigned int HardwareChannelFromOpChannel(int opChannel)      const;
+
+    // Is this a valid OpChannel number?
+    bool IsValidOpChannel(int opChannel)                          const;
+
+    // Get unique opdet number from cryo and internal count
+    unsigned int OpDetFromCryo(unsigned int o, unsigned int c )   const;
+
+    // Access the OpDetGeo object by OpDet or Channel Number
+    const OpDetGeo& OpDetGeoFromOpChannel(unsigned int OpChannel) const;
+    const OpDetGeo& OpDetGeoFromOpDet(unsigned int OpDet)         const;
+
+
     // Return gdml string which gives sensitive opdet name
     std::string            OpDetGeoName(unsigned int c=0) const;
 
-    // Convert OpDet, Cryo into OpChannel
-    int         OpDetCryoToOpChannel(unsigned int o, 
-				     unsigned int c=0) const;
-
-    // Convert OpChannel into Cryo and OpDet
-    void        OpChannelToCryoOpDet(unsigned int OpChannel, 
-				     unsigned int& o, 
-				     unsigned int & c) const;
 
     // Find the nearest OpChannel to some point, in the appropriate cryostat
-    unsigned int  GetClosestOpChannel(double * xyz) const;
+    unsigned int  GetClosestOpDet(double * xyz) const;
 
     const WireGeo& WireIDToWireGeo(WireID CodeWire) const;
 
