@@ -1317,16 +1317,22 @@ namespace geo {
     double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
     double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
 
-    if (this->ValueInRange(x,x1,x2) &&
-	this->ValueInRange(x,x3,x4) &&
-	this->ValueInRange(y,y1,y2) &&
-	this->ValueInRange(y,y3,y4)){
+//    if (this->ValueInRange(x,x1,x2) &&
+//	this->ValueInRange(x,x3,x4) &&
+//	this->ValueInRange(y,y1,y2) &&
+//	this->ValueInRange(y,y3,y4)){
+//  The above checks make sure the intersection is within the wire range. 
+//  However, if the intersection is near the TPC boundary, as is 
+//  common for cosmics, the above check often fails. I am relaxing 
+//  the cut to require the intersection is within TPC volume. T.Yang, April, 2015
+    if (this->TPC(wid1.TPC,wid1.Cryostat).ContainsYZ(x,y)){
       widIntersect.y = x;
       widIntersect.z = y;
       widIntersect.TPC = wid1.TPC;
       return true;
     }
     else{
+      mf::LogWarning("WireIDsIntersect") << "(y,z) ("<<x<<","<<y<<") is not in TPC volume.";
       return false;
     }
 
@@ -1358,11 +1364,12 @@ namespace geo {
     if(first) {
       first = false;
       for (size_t i = 0; i<3; ++i){
-	double xyz0[3];
-	double xyz1[3];
-	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).GetCenter(xyz0);
-	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(1).GetCenter(xyz1);
-	angle[i] = atan2(xyz1[1]-xyz0[1],xyz1[2]-xyz0[2]);
+//	double xyz0[3];
+//	double xyz1[3];
+//	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).GetCenter(xyz0);
+//	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(1).GetCenter(xyz1);
+	//angle[i] = atan2(xyz1[2]-xyz0[2],xyz1[1]-xyz0[1]);
+	angle[i] = this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).ThetaZ();
       }
     } // first
     unsigned int plane3 = 10;
