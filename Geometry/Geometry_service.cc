@@ -1332,7 +1332,7 @@ namespace geo {
       return true;
     }
     else{
-      mf::LogWarning("WireIDsIntersect") << "(y,z) ("<<x<<","<<y<<") is not in TPC volume.";
+      //mf::LogWarning("WireIDsIntersect") << "(y,z) ("<<x<<","<<y<<") is not in TPC volume.";
       return false;
     }
 
@@ -1406,17 +1406,6 @@ namespace geo {
 				   double end_w2[3], 
                                    double &y, double &z)
   {
-    y = -9999;
-    z = -9999;
-    geo::WireID wid1(cstat,tpc,plane1,wire1);
-    geo::WireID wid2(cstat,tpc,plane2,wire2);
-    geo::WireIDIntersection widIntersect;
-    if (this->WireIDsIntersect(wid1,wid2,widIntersect)){
-      y = widIntersect.y;
-      z = widIntersect.z;
-    }
-    return;
-    /*
     //angle of wire1 wrt z-axis in Y-Z plane...in radians
     double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(plane1).Wire(wire1).ThetaZ();
     //angle of wire2 wrt z-axis in Y-Z plane...in radians
@@ -1491,7 +1480,6 @@ namespace geo {
     y = 0.5 * ( b + d + (a-c)*TMath::Tan(angle) );
     
     return;
-    */
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
