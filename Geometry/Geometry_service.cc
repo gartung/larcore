@@ -1149,6 +1149,7 @@ namespace geo {
     return;
   }
    
+  //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
   //......................................................................
   bool Geometry::ChannelsIntersect(raw::ChannelID_t c1, 
 				   raw::ChannelID_t c2, 
@@ -1179,89 +1180,9 @@ namespace geo {
       z = widIntersect.z;
       return false;
     }
-    /*
-    unsigned int cs1, tpc1, plane1, wire1;
-    unsigned int cs2, tpc2, plane2, wire2;
-
-    cs1 = chan1wires[0].Cryostat;
-    tpc1 = chan1wires[0].TPC;
-    plane1 = chan1wires[0].Plane;
-    wire1 = chan1wires[0].Wire;
-
-    cs2 = chan2wires[0].Cryostat;
-    tpc2 = chan2wires[0].TPC;
-    plane2 = chan2wires[0].Plane;
-    wire2 = chan2wires[0].Wire;
-
-    if( cs1 != cs2 || tpc1 != tpc2 ) {
-      mf::LogWarning("ChannelsIntersect") << "attempting to find intersection between wires"
-					  << " from different TPCs or Cryostats, return false";
-      return false;
-    }
-
-    double wire1_Start[3] = {0.};
-    double wire1_End[3]   = {0.};
-    double wire2_Start[3] = {0.};
-    double wire2_End[3]   = {0.};
-	
-    this->WireEndPoints(cs1, tpc1, plane1, wire1, wire1_Start, wire1_End);
-    this->WireEndPoints(cs2, tpc1, plane2, wire2, wire2_Start, wire2_End);
-
-    if(plane1 == plane2){
-      mf::LogWarning("ChannelsIntersect") << "You are comparing two wires in the same plane!";
-      return false;
-    }
-
-    // if endpoint of one input wire is within range of other input wire in 
-    // BOTH y AND z, wires overlap 
-    bool overlapY = this->ValueInRange(wire1_Start[1], wire2_Start[1], wire2_End[1]) ||
-      this->ValueInRange(wire1_End[1], wire2_Start[1], wire2_End[1]);
-    
-    bool overlapZ = this->ValueInRange(wire1_Start[2], wire2_Start[2], wire2_End[2]) ||
-      this->ValueInRange(wire1_End[2], wire2_Start[2], wire2_End[2]);
-    
-    // reverse ordering of wires...this is necessitated for now due to precision 
-    // of placement of wires 
-    bool overlapY_reverse = this->ValueInRange(wire2_Start[1], wire1_Start[1], wire1_End[1]) ||
-      this->ValueInRange(wire2_End[1], wire1_Start[1], wire1_End[1]);
-    
-    bool overlapZ_reverse = this->ValueInRange(wire2_Start[2], wire1_Start[2], wire1_End[2]) ||
-      this->ValueInRange(wire2_End[2], wire1_Start[2], wire1_End[2]);
- 
-    // override y overlap checks if a vertical plane exists:
-    if( this->Cryostat(cs1).TPC(tpc1).Plane(plane1).Wire(wire1).isVertical() || 
-	this->Cryostat(cs2).TPC(tpc1).Plane(plane2).Wire(wire2).isVertical() ){
-      overlapY         = true;	
-      overlapY_reverse = true;
-    }
-
-    //catch to get vertical wires, where the standard overlap might not work, Andrzej
-    if(std::abs(wire2_Start[2] - wire2_End[2]) < 0.01) overlapZ = overlapZ_reverse;
-
-    if(overlapY && overlapZ){
-      this->IntersectionPoint(wire1, wire2, 
-			      plane1, plane2, 
-			      cs1, tpc1,
-			      wire1_Start, wire1_End, 
-			      wire2_Start, wire2_End, 
-			      y, z);
-      return true;
-    }
-    else if(overlapY_reverse && overlapZ_reverse){
-      this->IntersectionPoint(wire2, wire1, 
-			      plane2, plane1, 
-			      cs1, tpc1,
-			      wire2_Start, wire2_End, 
-			      wire1_Start, wire1_End, 
-			      y, z);
-      return true;
-    }
-    
-    return false;    
-    */
   }
 
-  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false;
+  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false. T.Yang
   //......................................................................
   bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
 				   geo::WireIDIntersection & widIntersect   ) const
@@ -1324,15 +1245,9 @@ namespace geo {
 	this->ValueInRange(x,x3,x4) &&
 	this->ValueInRange(y,y1,y2) &&
 	this->ValueInRange(y,y3,y4)){
-//  The above checks make sure the intersection is within the wire range. 
-//  However, if the intersection is near the TPC boundary, as is 
-//  common for cosmics, the above check often fails. I am relaxing 
-//  the cut to require the intersection is within TPC volume. T.Yang, April, 2015
-//    if (this->TPC(wid1.TPC,wid1.Cryostat).ContainsYZ(x,y)){
       return true;
     }
     else{
-      //mf::LogWarning("WireIDsIntersect") << "(y,z) ("<<x<<","<<y<<") is not in TPC volume.";
       return false;
     }
 
@@ -1364,12 +1279,9 @@ namespace geo {
     if(first) {
       first = false;
       for (size_t i = 0; i<3; ++i){
-//	double xyz0[3];
-//	double xyz1[3];
-//	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).GetCenter(xyz0);
-//	this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(1).GetCenter(xyz1);
-	//angle[i] = atan2(xyz1[2]-xyz0[2],xyz1[1]-xyz0[1]);
 	angle[i] = this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).ThetaZ();
+	//We need to subtract pi/2 to make those 'wire coordinate directions'.
+	//But what matters is the difference between angles so we don't do that.
       }
     } // first
     unsigned int plane3 = 10;
@@ -1414,83 +1326,6 @@ namespace geo {
     y = widIntersect.y;
     z = widIntersect.z;
     return;
-
-    /*
-    //angle of wire1 wrt z-axis in Y-Z plane...in radians
-    double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(plane1).Wire(wire1).ThetaZ();
-    //angle of wire2 wrt z-axis in Y-Z plane...in radians
-    double angle2 = this->Cryostat(cstat).TPC(tpc).Plane(plane2).Wire(wire2).ThetaZ();
-    
-    if(angle1 == angle2) return;//comparing two wires in the same plane...pointless.
-
-    //coordinates of "upper" endpoints...(z1,y1) = (a,b) and (z2,y2) = (c,d) 
-    double a = 0.;
-    double b = 0.;
-    double c = 0.; 
-    double d = 0.;
-    double angle = 0.;
-    double anglex = 0.;
-    
-    // below is a special case of calculation when one of the planes is vertical. 
-    angle1 < angle2 ? angle = angle1 : angle = angle2;//get angle closest to the z-axis
-    
-    // special case, one plane is vertical
-    if(angle1 == M_PI/2 || angle2 == M_PI/2){
-      if(angle1 == M_PI/2){
-		
-	anglex = (angle2-M_PI/2);
-	a = end_w1[2];
-	b = end_w1[1];
-	c = end_w2[2];
-	d = end_w2[1];
-	// the if below can in principle be replaced by the sign of anglex (inverted) 
-	// in the formula for y below. But until the geometry is fully symmetric in y I'm 
-	// leaving it like this. Andrzej
-	if((anglex) > 0 ) b = start_w1[1];
-		    
-      }
-      else if(angle2 == M_PI/2){
-	anglex = (angle1-M_PI/2);
-	a = end_w2[2];
-	b = end_w2[1];
-	c = end_w1[2];
-	d = end_w1[1];
-	// the if below can in principle be replaced by the sign of anglex (inverted) 
-	// in the formula for y below. But until the geometry is fully symmetric in y I'm 
-	// leaving it like this. Andrzej
-	if((anglex) > 0 ) b = start_w2[1];  
-      }
-
-      y = b + ((c-a) - (b-d)*tan(anglex))/tan(anglex);
-      z = a;   // z is defined by the wire in the vertical plane
-      
-      return;
-    }
-
-    // end of vertical case
-   
-    z = 0;y = 0;
-                                                                      
-    if(angle1 < (TMath::Pi()/2.0)){
-      c = end_w1[2];
-      d = end_w1[1];
-      a = start_w2[2];
-      b = start_w2[1];
-    }
-    else{
-      c = end_w2[2];
-      d = end_w2[1];
-      a = start_w1[2];
-      b = start_w1[1];
-    }
-    
-    //Intersection point of two wires in the yz plane is completely
-    //determined by wire endpoints and angle of inclination.
-    z = 0.5 * ( c + a + (b-d)/TMath::Tan(angle) );
-    y = 0.5 * ( b + d + (a-c)*TMath::Tan(angle) );
-    
-    return;
-    */
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
