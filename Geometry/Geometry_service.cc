@@ -1175,8 +1175,8 @@ namespace geo {
       return true;
     }
     else{
-      y = -9999;
-      z = -9999;
+      y = widIntersect.y;
+      z = widIntersect.z;
       return false;
     }
     /*
@@ -1261,7 +1261,7 @@ namespace geo {
     */
   }
 
-
+  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false;
   //......................................................................
   bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
 				   geo::WireIDIntersection & widIntersect   ) const
@@ -1317,18 +1317,18 @@ namespace geo {
     double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
     double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
 
-//    if (this->ValueInRange(x,x1,x2) &&
-//	this->ValueInRange(x,x3,x4) &&
-//	this->ValueInRange(y,y1,y2) &&
-//	this->ValueInRange(y,y3,y4)){
+    widIntersect.y = x;
+    widIntersect.z = y;
+    widIntersect.TPC = wid1.TPC;
+    if (this->ValueInRange(x,x1,x2) &&
+	this->ValueInRange(x,x3,x4) &&
+	this->ValueInRange(y,y1,y2) &&
+	this->ValueInRange(y,y3,y4)){
 //  The above checks make sure the intersection is within the wire range. 
 //  However, if the intersection is near the TPC boundary, as is 
 //  common for cosmics, the above check often fails. I am relaxing 
 //  the cut to require the intersection is within TPC volume. T.Yang, April, 2015
-    if (this->TPC(wid1.TPC,wid1.Cryostat).ContainsYZ(x,y)){
-      widIntersect.y = x;
-      widIntersect.z = y;
-      widIntersect.TPC = wid1.TPC;
+//    if (this->TPC(wid1.TPC,wid1.Cryostat).ContainsYZ(x,y)){
       return true;
     }
     else{
@@ -1394,6 +1394,7 @@ namespace geo {
   // inner dimensions of the TPC frame.
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
+  // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
   void Geometry::IntersectionPoint(unsigned int wire1, 
 				   unsigned int wire2, 
 				   unsigned int plane1, 
@@ -1406,6 +1407,15 @@ namespace geo {
 				   double end_w2[3], 
                                    double &y, double &z)
   {
+    geo::WireID wid1(cstat,tpc,plane1,wire1);
+    geo::WireID wid2(cstat,tpc,plane2,wire2);
+    geo::WireIDIntersection widIntersect;
+    this->WireIDsIntersect(wid1,wid2,widIntersect);
+    y = widIntersect.y;
+    z = widIntersect.z;
+    return;
+
+    /*
     //angle of wire1 wrt z-axis in Y-Z plane...in radians
     double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(plane1).Wire(wire1).ThetaZ();
     //angle of wire2 wrt z-axis in Y-Z plane...in radians
@@ -1480,6 +1490,7 @@ namespace geo {
     y = 0.5 * ( b + d + (a-c)*TMath::Tan(angle) );
     
     return;
+    */
   }
     
   // Added shorthand function where start and endpoints are looked up automatically

@@ -316,6 +316,12 @@ namespace geo {
     // in the TPC intersect or not, and if they do then
     // determine the coordinates of the intersection.
     // Starting point of wire is end with lower z-coordinate.
+    // Please note the differences between functions:
+    // ChannelsIntersect(), WireIDsIntersect() and IntersectionPoint()
+    // all calculate wires intersection using the same equation.
+    // ChannelsIntersect() and WireIdsIntersect() will return true
+    // if the two wires cross, return false if they don't.
+    // IntersectionPoint() does not check if the two wires cross.
     bool ValueInRange(double value,
 		      double min,
 		      double max) const;
