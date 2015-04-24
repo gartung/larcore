@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
+#include <limits>
 
 #include "Geometry/AuxDetGeo.h"
 
@@ -26,7 +27,7 @@ namespace geo{
   
   //-----------------------------------------
   AuxDetGeo::AuxDetGeo(std::vector<const TGeoNode*>& path, int depth)
-  : fTotalVolume(0)
+    : fTotalVolume(0)
   {
     
     TGeoVolume *vc = path[depth]->GetVolume();
@@ -47,9 +48,16 @@ namespace geo{
       fGeoMatrix->Multiply(path[i]->GetMatrix());
     }
 
-    
+    // look for sensitive volumes - if there are none then this aux det 
+    // could be from an older gdml file than the introduction of AuxDetSensitiveGeo
+    // in that case assume the full AuxDetGeo is sensitive and copy its information
+    // into a single AuxDetSensitive
+    this->FindAuxDetSensitive(path, depth);
+    if( fSensitive.size() < 1) fSensitive.push_back(new AuxDetSensitiveGeo(fTotalVolume, fGeoMatrix));
+
     // set the ends depending on whether the shape is a box or trapezoid
-    if( strncmp(fTotalVolume->GetName(), "volAuxDetTrap", 13) == 0 ) {
+    std::string volName(fTotalVolume->GetName());
+    if( volName.find("Trap") != std::string::npos ) {
 
       //       Small Width
       //          ____          Height is the thickness
@@ -78,9 +86,39 @@ namespace geo{
     if(fGeoMatrix)  delete fGeoMatrix;
     return;
   }
-  
+
   //......................................................................
+  void AuxDetGeo::FindAuxDetSensitive(std::vector<const TGeoNode*>& path,
+				      unsigned int depth) 
+  {
+    // Check if the current node is a senstive volume - we already know
+    // we are in an Auxiliary detector
+    std::string pathName(path[depth]->GetName());
+    if( pathName.find("Sensitive") != std::string::npos){
+      this->MakeAuxDetSensitive(path, depth);
+      return;
+    }
   
+    // Explore the next layer down
+    unsigned int deeper = depth+1;
+    if (deeper>=path.size()) {
+      throw cet::exception("ExceededMaxDepth") << "Exceeded maximum depth\n";
+    }
+    const TGeoVolume* v = path[depth]->GetVolume();
+    int nd = v->GetNdaughters();
+    for (int i=0; i<nd; ++i) {
+      path[deeper] = v->GetNode(i);
+      this->FindAuxDetSensitive(path, deeper);
+    }
+  }
+
+  //......................................................................
+  void AuxDetGeo::MakeAuxDetSensitive(std::vector<const TGeoNode*>& path, int depth) 
+  {
+    fSensitive.push_back(new AuxDetSensitiveGeo(path, depth));
+  }
+  
+  //......................................................................  
   /// Transform a position from local frame to world frame
   /// \param local : 3D array. Position in the local frame  Input.
   /// \param world : 3D array. Position in the world frame. Returned.
@@ -90,7 +128,6 @@ namespace geo{
   }
   
   //......................................................................
-  
   /// Transform a 3-vector from local frame to world frame
   /// \param local : 3D array. Position in the local frame  Input.
   /// \param world : 3D array. Position in the world frame. Returned.
@@ -99,8 +136,7 @@ namespace geo{
     fGeoMatrix->LocalToMasterVect(local,world);
   }
   
-  //......................................................................
-  
+  //......................................................................  
   /// Transform a position from world frame to local frame
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
@@ -109,8 +145,7 @@ namespace geo{
     fGeoMatrix->MasterToLocal(world,local);
   }
   
-  //......................................................................
-  
+  //......................................................................  
   /// Transform a 3-vector from world frame to local frame
   /// \param world : 3D array. Position in the world frame. Input.
   /// \param local : 3D array. Position in the local frame  Returned.
@@ -119,8 +154,7 @@ namespace geo{
     fGeoMatrix->MasterToLocalVect(world,local);
   }
   
-  //......................................................................
-  
+  //......................................................................  
   /// Return the center position of an AuxDet
   /// \param xyz : 3-D array. The returned location.
   /// \param localz : Distance along the length of the volume (z)
@@ -131,8 +165,7 @@ namespace geo{
     this->LocalToWorld(xyzLocal, xyz);
   }
   
-  //......................................................................
-  
+  //......................................................................  
   // Return the unit normal vector (0,0,1) in local coordinates to global coordinates
   void AuxDetGeo::GetNormalVector(double* xyzDir) const
   {
@@ -141,8 +174,7 @@ namespace geo{
   }
   
   
-  //......................................................................
-  
+  //......................................................................  
   // Get the distance from some point to this detector, xyz in global coordinates
   double AuxDetGeo::DistanceToPoint(double * xyz) const
   {
@@ -152,5 +184,42 @@ namespace geo{
                      (Center[1]-xyz[1])*(Center[1]-xyz[1]) +
                      (Center[2]-xyz[2])*(Center[2]-xyz[2]));
   }
+
+  //......................................................................  
+  size_t const AuxDetGeo::FindSensitiveVolume(double const worldPos[3]) const
+  {
+    double local[3] = {0.};
+    for(unsigned int a = 0; a < fSensitive.size(); ++a) {
+
+      this->SensitiveVolume(a).WorldToLocal(worldPos, local);      
+      double HalfCenterWidth = (this->SensitiveVolume(a).HalfWidth1() + this->SensitiveVolume(a).HalfWidth2()) / 2;
+
+      if( local[2] >= - this->SensitiveVolume(a).Length()/2       &&
+	  local[2] <=   this->SensitiveVolume(a).Length()/2       &&
+	  local[1] >= - this->SensitiveVolume(a).HalfHeight()     &&
+	  local[1] <=   this->SensitiveVolume(a).HalfHeight()     &&
+	  // if SensitiveVolume a is a box, then HalfSmallWidth = HalfWidth
+	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->SensitiveVolume(a).HalfWidth2())/(this->SensitiveVolume(a).Length()/2) &&
+	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->SensitiveVolume(a).HalfWidth2())/(this->SensitiveVolume(a).Length()/2)
+        )  return a;
+
+    }// for loop over AuxDetSensitive a
+
+    throw cet::exception("Geometry") << "Can't find AuxDetSensitive for position ("
+				     << worldPos[0] << ","
+				     << worldPos[1] << ","
+				     << worldPos[2] << ")\n";
+
+    return UINT_MAX;
+  } 
+			     
+  //......................................................................  
+  AuxDetSensitiveGeo const& AuxDetGeo::PositionToSensitiveVolume(double const worldLoc[3],
+								 size_t     & sv) const
+  {
+    sv = this->FindSensitiveVolume(worldLoc);
+    return this->SensitiveVolume(sv);
+  }
+
 }
 ////////////////////////////////////////////////////////////////////////

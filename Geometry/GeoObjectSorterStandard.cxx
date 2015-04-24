@@ -8,6 +8,7 @@
 
 #include "Geometry/GeoObjectSorterStandard.h"
 #include "Geometry/AuxDetGeo.h"
+#include "Geometry/AuxDetSensitiveGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
 #include "Geometry/PlaneGeo.h"
@@ -32,7 +33,22 @@ namespace geo{
    
   }
 
+  //----------------------------------------------------------------------------
+  // Define sort order for cryostats in standard configuration
+  static bool sortAuxDetSensitiveStandard(const AuxDetSensitiveGeo* ad1, const AuxDetSensitiveGeo* ad2)
+  {
 
+    // sort based off of GDML name, assuming ordering is encoded
+    std::string ad1name = (ad1->TotalVolume())->GetName();
+    std::string ad2name = (ad2->TotalVolume())->GetName();
+
+    // assume volume name is "volAuxDetSensitive##"
+    int ad1Num = atoi( ad1name.substr( 9, ad1name.size()).c_str() );
+    int ad2Num = atoi( ad2name.substr( 9, ad2name.size()).c_str() );
+    
+    return ad1Num < ad2Num;
+   
+  }
 
   //----------------------------------------------------------------------------
   // Define sort order for cryostats in standard configuration
@@ -105,6 +121,14 @@ namespace geo{
   void GeoObjectSorterStandard::SortAuxDets(std::vector<geo::AuxDetGeo*> & adgeo) const
   {
     std::sort(adgeo.begin(), adgeo.end(), sortAuxDetStandard);
+    
+    return;
+  }
+
+  //----------------------------------------------------------------------------
+  void GeoObjectSorterStandard::SortAuxDetSensitive(std::vector<geo::AuxDetSensitiveGeo*> & adsgeo) const
+  {
+    std::sort(adsgeo.begin(), adsgeo.end(), sortAuxDetSensitiveStandard);
     
     return;
   }

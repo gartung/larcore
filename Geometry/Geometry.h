@@ -50,6 +50,7 @@ namespace geo {
   class PlaneGeo;
   class WireGeo;
   class AuxDetGeo;
+  class AuxDetSensitiveGeo;
   
   // The geometry of one entire detector.
   class Geometry
@@ -122,11 +123,20 @@ namespace geo {
      * @param worldLoc 3D coordinates of the point (world reference frame)
      * @return the index of the detector, or UINT_MAX if no detector is there
      */
-    unsigned int FindAuxDetAtPosition(double const worldLoc[3]) const;
+    unsigned int     FindAuxDetAtPosition(double const worldLoc[3]) const;
     
-    const AuxDetGeo&    PositionToAuxDet(double const  worldLoc[3],
-                                            unsigned int &ad)     const;    // return the AuxDetGeo object containing
-                                                                                // the world position worldLoc
+    const AuxDetGeo& PositionToAuxDet(double const  worldLoc[3],
+				      unsigned int &ad)             const;  // return the AuxDetGeo object containing
+                                                                            // the world position worldLoc
+
+    void  FindAuxDetSensitiveAtPosition(double const worldLoc[3],
+					size_t     & adg,
+					size_t     & sv) const;
+    
+    const AuxDetSensitiveGeo& PositionToAuxDetSensitive(double const worldLoc[3],
+							size_t     & ad,
+							size_t     & sv) const;  // return the AuxDetGeo object containing
+                                                                                 // the world position worldLoc
 
     std::vector< geo::WireID > ChannelToWire(raw::ChannelID_t const channel) const; // convert channel number to
                                                                             // list of possible

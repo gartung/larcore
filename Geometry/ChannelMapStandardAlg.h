@@ -28,26 +28,26 @@ namespace geo{
     void                     Initialize( std::vector<geo::CryostatGeo*> & cgeo, 
 					 std::vector<geo::AuxDetGeo*>   & adgeo );
     void                     Uninitialize();
-    std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)           const;
-    unsigned int             Nchannels()                               const;
+    std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)     const;
+    unsigned int             Nchannels()                                 const;
 
-    double WireCoordinate(double YPos, double ZPos,
-                          unsigned int    PlaneNo,
-                          unsigned int    TPCNo,
-                          unsigned int    cstat) const;
+    double                   WireCoordinate(double YPos, double ZPos,
+					    unsigned int    PlaneNo,
+					    unsigned int    TPCNo,
+					    unsigned int    cstat)       const;
 
     WireID                   NearestWireID(const TVector3& worldPos,
 					   unsigned int    PlaneNo,
 					   unsigned int    TPCNo,
-					   unsigned int    cstat)      const;
+					   unsigned int    cstat)         const;
     raw::ChannelID_t         PlaneWireToChannel(unsigned int plane,
 						unsigned int wire,
 						unsigned int tpc,
-						unsigned int cstat)    const;
-   View_t                    View( raw::ChannelID_t const channel )            const;
-   SigType_t                 SignalType( raw::ChannelID_t const channel )      const;
-   std::set<View_t>  const&  Views()                                   const;
-   std::set<PlaneID> const&  PlaneIDs()                                const;
+						unsigned int cstat)       const;
+   View_t                    View( raw::ChannelID_t const channel )       const;
+   SigType_t                 SignalType( raw::ChannelID_t const channel ) const;
+   std::set<View_t>  const&  Views()                                      const;
+   std::set<PlaneID> const&  PlaneIDs()                                   const;
 
   private:
     

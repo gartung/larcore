@@ -28,6 +28,7 @@ extern "C" {
 #include "Geometry/WireGeo.h"
 #include "Geometry/OpDetGeo.h"
 #include "Geometry/AuxDetGeo.h"
+#include "Geometry/AuxDetSensitiveGeo.h"
 #include "SummaryData/RunData.h"
 #include "Geometry/ChannelMapStandardAlg.h"
 // #include "Geometry/ChannelMapAPAAlg.h"
@@ -538,6 +539,56 @@ namespace geo {
       << worldLoc[2] << ")\n";
     
     return this->AuxDet(ad);
+  }
+
+  //......................................................................
+  void Geometry::FindAuxDetSensitiveAtPosition(double const worldPos[3],
+					       size_t     & adg,
+					       size_t     & sv) const
+  {
+    adg = UINT_MAX;
+    sv  = UINT_MAX;
+
+    double local[3] = {0.};
+    for(unsigned int a = 0; a < this->NAuxDets(); ++a) {
+
+      this->AuxDet(a).WorldToLocal(worldPos, local);      
+      double HalfCenterWidth = (this->AuxDet(a).HalfWidth1() + this->AuxDet(a).HalfWidth2()) / 2;
+
+      if( local[2] >= - this->AuxDet(a).Length()/2       &&
+	  local[2] <=   this->AuxDet(a).Length()/2       &&
+	  local[1] >= - this->AuxDet(a).HalfHeight()     &&
+	  local[1] <=   this->AuxDet(a).HalfHeight()     &&
+	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
+	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2) &&
+	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2)
+	  ){
+	// found the correct AuxDet, now get the sensitive volume
+	adg = a;
+	sv = this->AuxDet(a).FindSensitiveVolume(worldPos);
+	return;
+      }
+    }// for loop over AudDet a
+
+    // throw an exception because we couldn't find the sensitive volume
+    throw cet::exception("Geometry") << "Can't find AuxDetSensitive for position ("
+				     << worldPos[0] << ","
+				     << worldPos[1] << ","
+				     << worldPos[2] << ")\n";
+
+    return;
+  } // Geometry::FindAuxDetAtPosition()
+  
+
+  
+  //......................................................................
+  const AuxDetSensitiveGeo& Geometry::PositionToAuxDetSensitive(double const worldLoc[3],
+								size_t      &ad,
+								size_t      &sv) const
+  {    
+    // locate the desired Auxiliary Detector
+    this->FindAuxDetSensitiveAtPosition(worldLoc, ad, sv);    
+    return this->AuxDet(ad).SensitiveVolume(sv);
   }
   
   //......................................................................
