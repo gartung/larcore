@@ -73,20 +73,21 @@ namespace geo {
     unsigned int Nviews()                                         const;
     // Number of wire planes in TPC "tpc" of cryostat "cstat".
     unsigned int Nplanes(unsigned int tpc   = 0,
-			 unsigned int cstat = 0)                  const;
+                         unsigned int cstat = 0)                  const;
     // Number of wires in plane "p" of TPC "tpc" of cryostat "cstat".
     unsigned int Nwires(unsigned int p,
-			unsigned int tpc   = 0,
-			unsigned int cstat = 0)                   const;
-    // Number of detectors outside of the cryostat
+                        unsigned int tpc   = 0,
+                        unsigned int cstat = 0)                   const;
+    // Number of scintillator paddles (Auxiliary Detectors aka AuxDet) outside of the cryostat
     unsigned int NAuxDets()                                       const { return fAuxDets.size(); }
     // Number of sensitive volumes in an AuxDet
     unsigned int NAuxDetSensitive(size_t const& aid)               const;
 
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,
-			    unsigned int const cstat = 0)         const;
-    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const { return TPC(tpcid.TPC, tpcid.Cryostat); }
+                            unsigned int const cstat = 0)         const;
+    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const
+      { return TPC(tpcid.TPC, tpcid.Cryostat); }
 
 
     /**
@@ -97,8 +98,8 @@ namespace geo {
     geo::TPCID FindTPCAtPosition(double const worldLoc[3]) const;
     
     const TPCGeo&       PositionToTPC(double const  worldLoc[3],
-				      unsigned int &tpc,
-				      unsigned int &cstat)        const; // return the TPCGeo object containing
+                                      unsigned int &tpc,
+                                      unsigned int &cstat)        const; // return the TPCGeo object containing
                                                                          // the world position worldLoc
     /**
      * @brief Returns the index of the cryostat at specified location
@@ -108,11 +109,11 @@ namespace geo {
     unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
     
     const CryostatGeo&  PositionToCryostat(double const  worldLoc[3],
-					   unsigned int &cstat)   const; // return the CryostatGeo object containing
+                                           unsigned int &cstat)   const; // return the CryostatGeo object containing
                                                                          // the world position worldLoc
     const PlaneGeo&     Plane(unsigned int const p,
-			      unsigned int const tpc   = 0,
-			      unsigned int const cstat = 0)       const;
+                              unsigned int const tpc   = 0,
+                              unsigned int const cstat = 0)       const;
     
     const PlaneGeo&     Plane(const geo::PlaneID& pid)            const
       { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
@@ -161,42 +162,42 @@ namespace geo {
     std::set<PlaneID> const& PlaneIDs()                           const; // return vector of possible PlaneIDs in the detector
 
     raw::ChannelID_t  PlaneWireToChannel(unsigned int const plane,
-					   unsigned int const wire,
-					   unsigned int const tpc = 0,
-					   unsigned int const cstat = 0) const; // convert plane, wire to channel
+                                           unsigned int const wire,
+                                           unsigned int const tpc = 0,
+                                           unsigned int const cstat = 0) const; // convert plane, wire to channel
 
     raw::ChannelID_t  PlaneWireToChannel(WireID const& wireid)  const;
 
     //  assuming heirachical numbering scheme
     raw::ChannelID_t  NearestChannel(const double worldLoc[3],
-				       unsigned int const PlaneNo,
-				       unsigned int const TPCNo = 0,
-				       unsigned int const cstat = 0) const; // find the nearest channel to
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const; // find the nearest channel to
                                                                             // input world coordinates
     raw::ChannelID_t  NearestChannel(std::vector<double> const worldLoc,
-				       unsigned int const PlaneNo,
-				       unsigned int const TPCNo = 0,
-				       unsigned int const cstat = 0) const; // find the nearest channel to
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const; // find the nearest channel to
                                                                             // input world coordinates
     raw::ChannelID_t  NearestChannel(const TVector3& worldLoc,
-				       unsigned int const PlaneNo,
-				       unsigned int const TPCNo = 0,
-				       unsigned int const cstat = 0) const; // find the nearest channel to
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const; // find the nearest channel to
                                                                             // input world coordinates
     const geo::WireID   NearestWireID(const double worldLoc[3],
-				      unsigned int const PlaneNo,
-				      unsigned int const TPCNo = 0,
-				      unsigned int const cstat = 0)  const; // nearest wire to input
+                                      unsigned int const PlaneNo,
+                                      unsigned int const TPCNo = 0,
+                                      unsigned int const cstat = 0)  const; // nearest wire to input
                                                                             // world coordinates
     const geo::WireID   NearestWireID(std::vector<double> worldLoc,
-				      unsigned int const PlaneNo,
-				      unsigned int const TPCNo = 0,
-				      unsigned int const cstat = 0)  const; // nearest wire to input
+                                      unsigned int const PlaneNo,
+                                      unsigned int const TPCNo = 0,
+                                      unsigned int const cstat = 0)  const; // nearest wire to input
                                                                             // world coordinate
     const geo::WireID   NearestWireID(const TVector3& worldLoc,
-				      unsigned int const PlaneNo,
-				      unsigned int const TPCNo = 0,
-				      unsigned int const cstat = 0)  const; // nearest wire to input
+                                      unsigned int const PlaneNo,
+                                      unsigned int const TPCNo = 0,
+                                      unsigned int const cstat = 0)  const; // nearest wire to input
                                                                             // world coordinates
     double WireCoordinate(double YPos, double ZPos,
                           unsigned int PlaneNo,
@@ -204,24 +205,24 @@ namespace geo {
                           unsigned int cstat) const;
 
     unsigned int       NearestWire(const double worldLoc[3],
-				   unsigned int const PlaneNo,
-				   unsigned int const TPCNo = 0,
-				   unsigned int const cstat = 0)  const; // nearest wire to input
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0)  const; // nearest wire to input
                                                                          // world coordinates
     unsigned int       NearestWire(std::vector<double> worldLoc,
-				   unsigned int const PlaneNo,
-				   unsigned int const TPCNo = 0,
-				   unsigned int const cstat = 0)  const; // nearest wire to input
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0)  const; // nearest wire to input
                                                                          // world coordinate
     unsigned int       NearestWire(const TVector3& worldLoc,
-				   unsigned int const PlaneNo,
-				   unsigned int const TPCNo = 0,
-				   unsigned int const cstat = 0)  const; // nearest wire to input
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0)  const; // nearest wire to input
                                                                          // world coordinates
 
     const TGeoMaterial* Material(double x,
-				 double y,
-				 double z)                        const;
+                                 double y,
+                                 double z)                        const;
     
     /// half width of the TPC
     double DetHalfWidth(unsigned int tpc = 0, unsigned int cstat = 0) const;
@@ -240,16 +241,16 @@ namespace geo {
     double              CryostatHalfHeight(unsigned int cstat = 0)const; // half height of the cryostat
     double              CryostatLength(unsigned int cstat = 0)    const; // length of the cryostat
     void                CryostatBoundaries(double* boundaries,
-					   unsigned int cstat = 0)const; // boundaries of cryostat, 3 pairs of +/- coord
+                                           unsigned int cstat = 0)const; // boundaries of cryostat, 3 pairs of +/- coord
     double              PlanePitch(unsigned int p1 = 0,                  // distance between planes
-				   unsigned int p2 = 1,
-				   unsigned int tpc = 0,
-				   unsigned int cstat = 0)        const; // p1 < p2
+                                   unsigned int p2 = 1,
+                                   unsigned int tpc = 0,
+                                   unsigned int cstat = 0)        const; // p1 < p2
     double              WirePitch(unsigned int w1 = 0,                   // distance between wires
-				  unsigned int w2 = 1,                   // on the same plane
-				  unsigned int plane = 0,
-				  unsigned int tpc = 0,
-				  unsigned int cstat = 0)         const; // w1 < w2
+                                  unsigned int w2 = 1,                   // on the same plane
+                                  unsigned int plane = 0,
+                                  unsigned int tpc = 0,
+                                  unsigned int cstat = 0)         const; // w1 < w2
     // distance between wires on the same plane (w1 < w2)
     double              WirePitch(unsigned int w1,
                                   unsigned int w2,
@@ -265,15 +266,15 @@ namespace geo {
                                                                          // view have the same angle
 
     void                WorldBox(double* xlo,
-				 double* xhi,
-				 double* ylo,
-				 double* yhi,
-				 double* zlo,
-				 double* zhi)                     const; // volume box
+                                 double* xhi,
+                                 double* ylo,
+                                 double* yhi,
+                                 double* zlo,
+                                 double* zhi)                     const; // volume box
     double              TotalMass(const char* vol="volWorld")     const; // total mass of the
                                                                          // specified volume
     double              MassBetweenPoints(double *p1,
-					  double *p2)             const; // mass between two points
+                                          double *p2)             const; // mass between two points
                                                                          // in the world
 
     // A typical y-position value at the surface (where earth meets air)
@@ -302,7 +303,7 @@ namespace geo {
 
     // The Geant4 simulation needs to know the name of the LAr TPC volume.
     const std::string GetLArTPCVolumeName(unsigned int const tpc = 0,
-					  unsigned int const cstat = 0) const;
+                                          unsigned int const cstat = 0) const;
 
     // The event display needs to know the name of the cryostat.
     const std::string GetCryostatVolumeName(unsigned int const cstat = 0)const;
@@ -315,7 +316,7 @@ namespace geo {
     // of the TPC in the world co-ordinate system, making it easier
     // to write detector-independent simulation code.
     const TVector3 GetTPCFrontFaceCenter(unsigned int tpc = 0,
-					 unsigned int cstat = 0)  const;
+                                         unsigned int cstat = 0)  const;
 
     // Name of the deepest volume containing the point xyz
     // returns volume containing the origin by default
@@ -336,41 +337,41 @@ namespace geo {
     // if the two wires cross, return false if they don't.
     // IntersectionPoint() does not check if the two wires cross.
     bool ValueInRange(double value,
-		      double min,
-		      double max) const;
+                      double min,
+                      double max) const;
     void WireEndPoints(unsigned int cstat,
-		       unsigned int tpc,
-		       unsigned int plane,
-		       unsigned int wire,
-		       double *xyzStart,
-		       double *xyzEnd) const;
+                       unsigned int tpc,
+                       unsigned int plane,
+                       unsigned int wire,
+                       double *xyzStart,
+                       double *xyzEnd) const;
     bool ChannelsIntersect(raw::ChannelID_t c1,
-			   raw::ChannelID_t c2,
-			   double &y,
-			   double &z);
+                           raw::ChannelID_t c2,
+                           double &y,
+                           double &z);
     bool WireIDsIntersect(const WireID& wid1,
-			  const WireID& wid2,
-			  WireIDIntersection & widIntersect) const;
+                          const WireID& wid2,
+                          WireIDIntersection & widIntersect) const;
     void IntersectionPoint(unsigned int wire1,
-			   unsigned int wire2,
-			   unsigned int plane1,
-			   unsigned int plane2,
-			   unsigned int cstat,
-			   unsigned int tpc,
+                           unsigned int wire2,
+                           unsigned int plane1,
+                           unsigned int plane2,
+                           unsigned int cstat,
+                           unsigned int tpc,
                            double start_w1[3],
-			   double end_w1[3],
-			   double start_w2[3],
-			   double end_w2[3],
+                           double end_w1[3],
+                           double start_w2[3],
+                           double end_w2[3],
                            double &y,
-			   double &z);
+                           double &z);
     void IntersectionPoint(unsigned int wire1,
-			   unsigned int wire2,
-			   unsigned int plane1,
-			   unsigned int plane2,
-			   unsigned int cstat,
-			   unsigned int tpc,
+                           unsigned int wire2,
+                           unsigned int plane1,
+                           unsigned int plane2,
+                           unsigned int cstat,
+                           unsigned int tpc,
                            double &y,
-			   double &z);
+                           double &z);
 
     // Given a slope dTime/dWire in two planes, return with the slope in the 3rd plane
     double ThirdPlaneSlope(unsigned int plane1, double slope1, 
@@ -704,7 +705,7 @@ namespace geo {
      *   std::cout << "Cryo: " << iWire->Cryostat << " TPC: " << iWire->TPC
      *     << " plane: " << iWire->Plane << " << " wire: " << iWire->Wire
      *     << std::endl;
-	  *   const geo::WireGeo* Wire = iWire.get();
+          *   const geo::WireGeo* Wire = iWire.get();
      *   // ...
      *   ++iWire;
      * } // while
@@ -856,13 +857,13 @@ namespace geo {
   private:
 
     void LoadGeometryFile(std::string gdmlfile,
-			  std::string rootfile);
+                          std::string rootfile);
     void InitializeChannelMap();
 
     void FindCryostat(std::vector<const TGeoNode*>& path,
-		      unsigned int depth);
+                      unsigned int depth);
     void MakeCryostat(std::vector<const TGeoNode*>& path,
-		      int depth);
+                      int depth);
     void FindAuxDet(std::vector<const TGeoNode*>& path,
                     unsigned int depth);
     void MakeAuxDet(std::vector<const TGeoNode*>& path,

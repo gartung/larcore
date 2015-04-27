@@ -24,9 +24,9 @@ namespace geo{
 
   //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::NearestWire(const TVector3& worldPos,
-					  unsigned int    PlaneNo,
-					  unsigned int    TPCNo,
-					  unsigned int    cstat) const
+                                          unsigned int    PlaneNo,
+                                          unsigned int    TPCNo,
+                                          unsigned int    cstat) const
   {
     
     return this->NearestWireID(worldPos, PlaneNo, TPCNo, cstat).Wire;

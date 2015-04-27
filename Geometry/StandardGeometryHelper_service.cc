@@ -31,9 +31,9 @@ namespace geo
   {}  
   
   void StandardGeometryHelper::doConfigureChannelMapAlg( const TString & detectorName,
-							 fhicl::ParameterSet const & sortingParam,
-							 std::vector<geo::CryostatGeo*> & c,
-							 std::vector<geo::AuxDetGeo*>   & ad )
+                                                         fhicl::ParameterSet const & sortingParam,
+                                                         std::vector<geo::CryostatGeo*> & c,
+                                                         std::vector<geo::AuxDetGeo*>   & ad )
   {
     fChannelMap = nullptr;
     

@@ -48,8 +48,8 @@ namespace geo
     ///
     void  ConfigureChannelMapAlg( const TString & detectorName, 
                                   fhicl::ParameterSet const & sortingParameters,
-				  std::vector<geo::CryostatGeo*> & c,
-				  std::vector<geo::AuxDetGeo*>   & ad );
+                                  std::vector<geo::CryostatGeo*> & c,
+                                  std::vector<geo::AuxDetGeo*>   & ad );
     
     /// Returns null pointer if the initialization failed
     /// NOTE:  the sub-class owns the ChannelMapAlg object
@@ -64,7 +64,7 @@ namespace geo
     void doConfigureChannelMapAlg( const TString & detectorName,
                                    fhicl::ParameterSet const & sortingParameters,
                                    std::vector<geo::CryostatGeo*> & c,
-				   std::vector<geo::AuxDetGeo*>   & ad ) = 0;
+                                   std::vector<geo::AuxDetGeo*>   & ad ) = 0;
     
     /// Returns the ChannelMapAlg
     virtual 
@@ -80,7 +80,7 @@ namespace geo
   void ExptGeoHelperInterface::ConfigureChannelMapAlg( const TString & detName,
                                                        fhicl::ParameterSet const & sortingParam,
                                                        std::vector<geo::CryostatGeo*> & c,
-						       std::vector<geo::AuxDetGeo*>   & ad )
+                                                       std::vector<geo::AuxDetGeo*>   & ad )
   {
     doConfigureChannelMapAlg( detName, sortingParam, c, ad ); 
   }

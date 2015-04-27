@@ -86,13 +86,13 @@ namespace geo {
     
     if( !sp.find_file(GDMLFileName, fGDMLfile) )
       throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
-				       << GDMLFileName
-				       << "\n bail ungracefully.\n";
+                                       << GDMLFileName
+                                       << "\n bail ungracefully.\n";
 
     if( !sp.find_file(ROOTFileName, fROOTfile) )
       throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
-				       << ROOTFileName
-				       << "\n bail ungracefully.\n";
+                                       << ROOTFileName
+                                       << "\n bail ungracefully.\n";
 
     
     this->LoadGeometryFile(fGDMLfile, fROOTfile);
@@ -134,54 +134,54 @@ namespace geo {
       // try the old DetId_t code
       std::string const nodetname("nodetectorname");
       if(rdcol[0]->DetName().compare(nodetname) == 0){
-	LOG_WARNING("Geometry") << "Detector name not set: " << rdcol[0]->DetName()
-				<< " use detector id: " << rdcol[0]->DetId()
-				<< " This is expected behavior for legacy files" ;
+        LOG_WARNING("Geometry") << "Detector name not set: " << rdcol[0]->DetName()
+                                << " use detector id: " << rdcol[0]->DetId()
+                                << " This is expected behavior for legacy files" ;
 
-	fDetId = rdcol[0]->DetId();
+        fDetId = rdcol[0]->DetId();
       
-	switch(fDetId){
-	case geo::kBo         : 
-	  relpathgdml += "bo";         relpathroot += "bo";         fDetectorName = "bo";         break;
-	case geo::kArgoNeuT   : 
-	  relpathgdml += "argoneut";   relpathroot += "argoneut";   fDetectorName = "argoneut";   break;
-	case geo::kLArIAT   : 
-	  relpathgdml += "lariat";     relpathroot += "lariat.gdml";     fDetectorName = "lariat";     break;	
-	case geo::kMicroBooNE : 
-	  // We're going to tack on the suffix gdml later. Don't do it here too. Don't presume
-	  // yet to do this for anyone but MicroBooNE, as falling back to the read-in geometry
-	  // is a use case not everyone intends to perform, as we are doing now with CI tests.
-	  relpathgdml += "microboone"; relpathroot += "microboone"; fDetectorName = "microboone"; break;
-	case geo::kLBNE10kt   : 
-	  relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt";   break;
-	case geo::kLBNE34kt   : 
-	  relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   fDetectorName = "lbne34kt";   break;
-	case geo::kLBNE35t    : 
-	  relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    fDetectorName = "lbne35t";    break;
-	case geo::kJP250L     : 
-	  relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     fDetectorName = "jp250L";     break;
-	case geo::kCSU40L     : 
-	  relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     fDetectorName = "csu40l";     break;
-	case geo::kICARUS     : 
-	  relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus";     break;
-	default               : 
-	  throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up\n";
-	}
+        switch(fDetId){
+        case geo::kBo         : 
+          relpathgdml += "bo";         relpathroot += "bo";         fDetectorName = "bo";         break;
+        case geo::kArgoNeuT   : 
+          relpathgdml += "argoneut";   relpathroot += "argoneut";   fDetectorName = "argoneut";   break;
+        case geo::kLArIAT   : 
+          relpathgdml += "lariat";     relpathroot += "lariat.gdml";     fDetectorName = "lariat";     break;        
+        case geo::kMicroBooNE : 
+          // We're going to tack on the suffix gdml later. Don't do it here too. Don't presume
+          // yet to do this for anyone but MicroBooNE, as falling back to the read-in geometry
+          // is a use case not everyone intends to perform, as we are doing now with CI tests.
+          relpathgdml += "microboone"; relpathroot += "microboone"; fDetectorName = "microboone"; break;
+        case geo::kLBNE10kt   : 
+          relpathgdml += "lbne10kt";   relpathroot += "lbne10kt.gdml";   fDetectorName = "lbne10kt";   break;
+        case geo::kLBNE34kt   : 
+          relpathgdml += "lbne34kt";   relpathroot += "lbne34kt.gdml";   fDetectorName = "lbne34kt";   break;
+        case geo::kLBNE35t    : 
+          relpathgdml += "lbne35t";    relpathroot += "lbne35t.gdml";    fDetectorName = "lbne35t";    break;
+        case geo::kJP250L     : 
+          relpathgdml += "jp250L";     relpathroot += "jp250L.gdml";     fDetectorName = "jp250L";     break;
+        case geo::kCSU40L     : 
+          relpathgdml += "csu40l";     relpathroot += "csu40l.gdml";     fDetectorName = "csu40l";     break;
+        case geo::kICARUS     : 
+          relpathgdml += "icarus";     relpathroot += "icarus.gdml";     fDetectorName = "icarus";     break;
+        default               : 
+          throw cet::exception("LoadNewGeometry") << "detid invalid, " << fDetId << " give up\n";
+        }
       }
       else{
-	// the detector name is specified in the RunData object
-	fDetectorName = rdcol[0]->DetName();
-	relpathgdml += fDetectorName;
-	relpathroot += fDetectorName;
+        // the detector name is specified in the RunData object
+        fDetectorName = rdcol[0]->DetName();
+        relpathgdml += fDetectorName;
+        relpathroot += fDetectorName;
       }
     
       if(fDisableWiresInG4) {
-	relpathgdml+="_nowires.gdml";
-	relpathroot+=".gdml";
+        relpathgdml+="_nowires.gdml";
+        relpathroot+=".gdml";
       }
       else {
-	relpathgdml+=".gdml";
-	relpathroot+=".gdml";
+        relpathgdml+=".gdml";
+        relpathroot+=".gdml";
       }
 
             
@@ -189,21 +189,21 @@ namespace geo {
       cet::search_path sp("FW_SEARCH_PATH");
       
       if( !sp.find_file(relpathgdml, fGDMLfile) )
-	throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
-					 << relpathgdml
-					 << "\n bail ungracefully.\n";
+        throw cet::exception("Geometry") << "cannot find the gdml geometry file: \n" 
+                                         << relpathgdml
+                                         << "\n bail ungracefully.\n";
       
       if( !sp.find_file(relpathroot, fROOTfile) )
-	throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
-					 << relpathroot
-					 << "\n bail ungracefully.\n";
+        throw cet::exception("Geometry") << "cannot find the root geometry file: \n" 
+                                         << relpathroot
+                                         << "\n bail ungracefully.\n";
       
       this->LoadGeometryFile(fGDMLfile, fROOTfile);
     }
     else 
       mf::LogWarning("LoadNewGeometry") << "cannot find sumdata::RunData object to grab detector name\n" 
-					<< "this is expected if generating MC files\n"
-					<< "using default geometry from configuration file\n";
+                                        << "this is expected if generating MC files\n"
+                                        << "using default geometry from configuration file\n";
     return;
   }
 
@@ -261,8 +261,8 @@ namespace geo {
     this->InitializeChannelMap();
 
     mf::LogWarning("LoadNewGeometry") << "New detector geometry loaded from "   
-				      << "\n\t" << fROOTfile 
-				      << "\n\t" << fGDMLfile << std::endl;
+                                      << "\n\t" << fROOTfile 
+                                      << "\n\t" << fGDMLfile << std::endl;
     
   }
 
@@ -333,15 +333,15 @@ namespace geo {
   
   //......................................................................
   unsigned int Geometry::Nplanes(unsigned int tpc,
-				 unsigned int cstat) const
+                                 unsigned int cstat) const
   {
     return this->Cryostat(cstat).TPC(tpc).Nplanes();
   }
 
   //......................................................................
   unsigned int Geometry::Nwires(unsigned int p, 
-				unsigned int tpc,
-				unsigned int cstat) const 
+                                unsigned int tpc,
+                                unsigned int cstat) const 
   {
     return this->Cryostat(cstat).TPC(tpc).Plane(p).Nwires();
   }
@@ -379,8 +379,8 @@ namespace geo {
   {
     if(cstat >= fCryostats.size()) 
       throw cet::exception("Geometry") << "Cryostat " 
-				       << cstat 
-				       << " does not exist\n";
+                                       << cstat 
+                                       << " does not exist\n";
 
     return *fCryostats[cstat];
   }
@@ -416,7 +416,7 @@ namespace geo {
   // \throws geo::Exception if "tpc" is outside allowed range
   //
   const TPCGeo& Geometry::TPC(unsigned int const tpc,
-			      unsigned int const cstat) const 
+                              unsigned int const cstat) const 
   {
     return this->Cryostat(cstat).TPC(tpc);
   }
@@ -442,8 +442,8 @@ namespace geo {
   
   //......................................................................
   const TPCGeo& Geometry::PositionToTPC(double const  worldLoc[3],
-					unsigned int &tpc,
-					unsigned int &cstat) const
+                                        unsigned int &tpc,
+                                        unsigned int &cstat) const
   {
     return this->PositionToCryostat(worldLoc,cstat).PositionToTPC(worldLoc,tpc, 1.+fPositionWiggle);
   }
@@ -495,16 +495,16 @@ namespace geo {
 
   //......................................................................
   const CryostatGeo& Geometry::PositionToCryostat(double const  worldLoc[3],
-						  unsigned int &cstat) const
+                                                  unsigned int &cstat) const
   {
     cstat = FindCryostatAtPosition(worldLoc);
     
     if(cstat == UINT_MAX)
       throw cet::exception("Geometry") << "Can't find Cryostat for position (" 
-				       << worldLoc[0] << ","
-				       << worldLoc[1] << "," 
-				       << worldLoc[2] << ")\n";
-			
+                                       << worldLoc[0] << ","
+                                       << worldLoc[1] << "," 
+                                       << worldLoc[2] << ")\n";
+                        
     return this->Cryostat(cstat);
   }
     
@@ -560,8 +560,8 @@ namespace geo {
   // \throws geo::Exception if "i" is outside allowed range
   //
   const PlaneGeo& Geometry::Plane(unsigned int const p, 
-				  unsigned int const tpc,
-				  unsigned int const cstat) const 
+                                  unsigned int const tpc,
+                                  unsigned int const cstat) const 
   {
     return this->Cryostat(cstat).TPC(tpc).Plane(p);
   }
@@ -621,7 +621,7 @@ namespace geo {
 
   //......................................................................
   const std::string Geometry::GetLArTPCVolumeName(unsigned int const tpc,
-						  unsigned int const cstat) const
+                                                  unsigned int const cstat) const
   {
 
     return std::string(this->Cryostat(cstat).TPC(tpc).ActiveVolume()->GetName()); 
@@ -635,21 +635,21 @@ namespace geo {
 
   //......................................................................
   double Geometry::DetHalfWidth(unsigned int tpc,
-				unsigned int cstat)  const 
+                                unsigned int cstat)  const 
   {
     return this->Cryostat(cstat).TPC(tpc).ActiveHalfWidth();
   }
 
   //......................................................................
   double Geometry::DetHalfHeight(unsigned int tpc,
-				 unsigned int cstat) const 
+                                 unsigned int cstat) const 
   {
     return this->Cryostat(cstat).TPC(tpc).ActiveHalfHeight();
   }
 
   //......................................................................
   double Geometry::DetLength(unsigned int tpc,
-			     unsigned int cstat) const
+                             unsigned int cstat) const
   { 
     return this->Cryostat(cstat).TPC(tpc).ActiveLength();
   }
@@ -681,7 +681,7 @@ namespace geo {
   // [4]: -z
   // [5]: +z
   void Geometry::CryostatBoundaries(double* boundaries,
-				    unsigned int cstat) const
+                                    unsigned int cstat) const
   {
     // get the half width, height, etc of the cryostat
     double halflength = ((TGeoBBox*)this->Cryostat(cstat).Volume()->GetShape())->GetDZ();
@@ -710,9 +710,9 @@ namespace geo {
   // This method returns the distance between the specified planes.
   // p1 < p2
   double Geometry::PlanePitch(unsigned int p1, 
-			      unsigned int p2, 
-			      unsigned int tpc,
-			      unsigned int cstat) const
+                              unsigned int p2, 
+                              unsigned int tpc,
+                              unsigned int cstat) const
   { 
     return this->Cryostat(cstat).TPC(tpc).PlanePitch(p1, p2);
   }
@@ -721,10 +721,10 @@ namespace geo {
   // This method returns the distance between the specified wires.
   // w1 < w2.  The wires are assumed to be on the same plane
   double Geometry::WirePitch(unsigned int w1,  
-			     unsigned int w2,  
-			     unsigned int plane,
-			     unsigned int tpc,
-			     unsigned int cstat) const
+                             unsigned int w2,  
+                             unsigned int plane,
+                             unsigned int tpc,
+                             unsigned int cstat) const
   { 
     return this->Cryostat(cstat).TPC(tpc).WirePitch(w1,w2,plane);    
   }
@@ -771,8 +771,8 @@ namespace geo {
   // \param zhi : On return, upper bound on z positions
   //
   void Geometry::WorldBox(double* xlo, double* xhi,
-			  double* ylo, double* yhi,
-			  double* zlo, double* zhi) const
+                          double* ylo, double* yhi,
+                          double* zlo, double* zhi) const
   {
     const TGeoShape* s = gGeoManager->GetVolume("volWorld")->GetShape();
     if(!s)
@@ -794,7 +794,7 @@ namespace geo {
 
   //......................................................................
   const TVector3 Geometry::GetTPCFrontFaceCenter(unsigned int tpc,
-  						 unsigned int cstat) const
+                                                   unsigned int cstat) const
   {
     return TVector3( 0.5 * this->DetHalfWidth(tpc, cstat), 0 , 0 );
   }
@@ -812,12 +812,12 @@ namespace geo {
        TMath::Abs(point.z()) > halflength
        ){
       mf::LogWarning("GeometryBadInputPoint") << "point (" << point.x() << ","
-					      << point.y() << "," << point.z() << ") "
-					      << "is not inside the world volume "
-					      << " half width = " << halfwidth
-					      << " half height = " << halfheight
-					      << " half length = " << halflength
-					      << " returning unknown volume name";
+                                              << point.y() << "," << point.z() << ") "
+                                              << "is not inside the world volume "
+                                              << " half width = " << halfwidth
+                                              << " half height = " << halfheight
+                                              << " half length = " << halflength
+                                              << " returning unknown volume name";
       const std::string unknown("unknownVolume");
       return unknown;
     }
@@ -839,25 +839,25 @@ namespace geo {
        TMath::Abs(point.z()) > halflength
        ){ 
       mf::LogWarning("GeometryBadInputPoint") << "point (" << point.x() << ","
-					      << point.y() << "," << point.z() << ") "
-					      << "is not inside the world volume "
-					      << " half width = " << halfwidth
-					      << " half height = " << halfheight
-					      << " half length = " << halflength
-					      << " returning unknown material name";
+                                              << point.y() << "," << point.z() << ") "
+                                              << "is not inside the world volume "
+                                              << " half width = " << halfwidth
+                                              << " half height = " << halfheight
+                                              << " half length = " << halflength
+                                              << " returning unknown material name";
       const std::string unknown("unknownMaterial");
       return unknown;
     }
     
     const std::string name(gGeoManager->FindNode(point.x(), 
-						 point.y(), 
-						 point.z())->GetMedium()->GetMaterial()->GetName());
+                                                 point.y(), 
+                                                 point.z())->GetMedium()->GetMaterial()->GetName());
     return name;
   }
 
   //......................................................................
   void Geometry::FindCryostat(std::vector<const TGeoNode*>& path,
-			      unsigned int depth)
+                              unsigned int depth)
   {
     const char* nm = path[depth]->GetName();
     if( (strncmp(nm, "volCryostat", 11) == 0) ){
@@ -930,8 +930,8 @@ namespace geo {
     if(gvol) return gvol->Weight();
 
     throw cet::exception("Geometry") << "could not find specified volume " 
-				     << vol
-				     << " to determine total mass\n"; 
+                                     << vol
+                                     << " to determine total mass\n"; 
   }
 
   //......................................................................
@@ -953,8 +953,8 @@ namespace geo {
 
     //first initialize a track - get the direction cosines
     double length = TMath::Sqrt(TMath::Power(p2[0]-p1[0], 2.)
-				+ TMath::Power(p2[1]-p1[1], 2.)
-				+ TMath::Power(p2[2]-p1[2], 2.));
+                                + TMath::Power(p2[1]-p1[1], 2.)
+                                + TMath::Power(p2[2]-p1[2], 2.));
     double dxyz[3] = {(p2[0]-p1[0])/length, (p2[1]-p1[1])/length, (p2[2]-p1[2])/length}; 
 
     gGeoManager->InitTrack(p1,dxyz);
@@ -977,8 +977,8 @@ namespace geo {
     //get the distance between the current point and the last one
     const double *current = gGeoManager->GetCurrentPoint();
     length = TMath::Sqrt(TMath::Power(p2[0]-current[0], 2.)
-			 + TMath::Power(p2[1]-current[1], 2.)
-			 + TMath::Power(p2[2]-current[2], 2.));
+                         + TMath::Power(p2[1]-current[1], 2.)
+                         + TMath::Power(p2[2]-current[2], 2.));
     columnD += length*node->GetMedium()->GetMaterial()->GetDensity();
 
     return columnD;
@@ -1007,18 +1007,18 @@ namespace geo {
   // parallel wires with constant pitch across the entire plane, with
   // a hierarchical numbering scheme - Ben J Oct 2011
   unsigned int Geometry::NearestWire(const TVector3& worldPos, 
-				     unsigned int const PlaneNo, 
-				     unsigned int const TPCNo,
-				     unsigned int const cstat) const
+                                     unsigned int const PlaneNo, 
+                                     unsigned int const TPCNo,
+                                     unsigned int const cstat) const
   {
     return fChannelMapAlg->NearestWire(worldPos, PlaneNo, TPCNo, cstat);
   }
 
   //----------------------------------------------------------------------------
   unsigned int Geometry::NearestWire(const double worldPos[3], 
-				     unsigned int const PlaneNo, 
-				     unsigned int const TPCNo,
-				     unsigned int const cstat) const
+                                     unsigned int const PlaneNo, 
+                                     unsigned int const TPCNo,
+                                     unsigned int const cstat) const
   {
     TVector3 wp(worldPos);
     return this->NearestWire(wp, PlaneNo, TPCNo, cstat);
@@ -1026,44 +1026,44 @@ namespace geo {
 
   //----------------------------------------------------------------------------
   unsigned int Geometry::NearestWire(std::vector<double> const worldPos, 
-				     unsigned int const PlaneNo, 
-				     unsigned int const TPCNo,
-				     unsigned int const cstat) const
+                                     unsigned int const PlaneNo, 
+                                     unsigned int const TPCNo,
+                                     unsigned int const cstat) const
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
-							     << "worldPos: " 
-							     << worldPos.size() << "\n";
+                                                             << "worldPos: " 
+                                                             << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestWire(wp, PlaneNo, TPCNo, cstat);
   }
 
   //----------------------------------------------------------------------------
   const geo::WireID Geometry::NearestWireID(const TVector3& worldPos, 
-					    unsigned int const PlaneNo, 
-					    unsigned int const TPCNo,
-					    unsigned int const cstat) const
+                                            unsigned int const PlaneNo, 
+                                            unsigned int const TPCNo,
+                                            unsigned int const cstat) const
   {
     return fChannelMapAlg->NearestWireID(worldPos,PlaneNo,TPCNo,cstat);
   }
 
   //----------------------------------------------------------------------------
   const geo::WireID Geometry::NearestWireID(std::vector<double> worldPos, 
-					    unsigned int const  PlaneNo, 
-					    unsigned int const  TPCNo,
-					    unsigned int const  cstat) const
+                                            unsigned int const  PlaneNo, 
+                                            unsigned int const  TPCNo,
+                                            unsigned int const  cstat) const
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
-							     << "worldPos: " 
-							     << worldPos.size() << "\n";
+                                                             << "worldPos: " 
+                                                             << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestWireID(wp,PlaneNo,TPCNo,cstat);
   }
 
   //----------------------------------------------------------------------------
   const geo::WireID Geometry::NearestWireID(const double        worldPos[3], 
-					    unsigned int const  PlaneNo, 
-					    unsigned int const  TPCNo,
-					    unsigned int const  cstat) const
+                                            unsigned int const  PlaneNo, 
+                                            unsigned int const  TPCNo,
+                                            unsigned int const  cstat) const
   {
     TVector3 wp(worldPos);
     return this->NearestWireID(wp,PlaneNo,TPCNo,cstat);
@@ -1071,9 +1071,9 @@ namespace geo {
 
   //----------------------------------------------------------------------------
   raw::ChannelID_t Geometry::NearestChannel(const double worldPos[3], 
-				    unsigned int const PlaneNo, 
-				    unsigned int const TPCNo,
-				    unsigned int const cstat) const
+                                    unsigned int const PlaneNo, 
+                                    unsigned int const TPCNo,
+                                    unsigned int const cstat) const
   {
     TVector3 wp(worldPos);
     return this->NearestChannel(wp, PlaneNo, TPCNo, cstat);
@@ -1081,22 +1081,22 @@ namespace geo {
 
   //----------------------------------------------------------------------------
   raw::ChannelID_t Geometry::NearestChannel(std::vector<double> const worldPos, 
-				    unsigned int const PlaneNo, 
-				    unsigned int const TPCNo,
-				    unsigned int const cstat) const
+                                    unsigned int const PlaneNo, 
+                                    unsigned int const TPCNo,
+                                    unsigned int const cstat) const
   {
     if(worldPos.size() > 3) throw cet::exception("Geometry") << "bad size vector for "
-							     << "worldPos: " 
-							     << worldPos.size() << "\n";
+                                                             << "worldPos: " 
+                                                             << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
     return this->NearestChannel(wp, PlaneNo, TPCNo, cstat);
   }
 
   //----------------------------------------------------------------------------
   raw::ChannelID_t Geometry::NearestChannel(const TVector3& worldPos, 
-				    unsigned int const PlaneNo, 
-				    unsigned int const TPCNo,
-				    unsigned int const cstat) const
+                                    unsigned int const PlaneNo, 
+                                    unsigned int const TPCNo,
+                                    unsigned int const cstat) const
   {
     
     // This method is supposed to return a channel number rather than
@@ -1108,9 +1108,9 @@ namespace geo {
 
   //--------------------------------------
   raw::ChannelID_t Geometry::PlaneWireToChannel(unsigned int const plane,
-					unsigned int const wire,
-					unsigned int const tpc,
-					unsigned int const cstat) const
+                                        unsigned int const wire,
+                                        unsigned int const tpc,
+                                        unsigned int const cstat) const
   {
     return fChannelMapAlg->PlaneWireToChannel(plane, wire, tpc, cstat);
   }
@@ -1133,11 +1133,11 @@ namespace geo {
 
   //......................................................................
   void Geometry::WireEndPoints(unsigned int cstat,
-			       unsigned int tpc,
-			       unsigned int plane, 
-			       unsigned int wire, 
-			       double *xyzStart, 
-			       double *xyzEnd) const
+                               unsigned int tpc,
+                               unsigned int plane, 
+                               unsigned int wire, 
+                               double *xyzStart, 
+                               double *xyzEnd) const
   {  
     double halfL = this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).HalfL();//half-length of wire
     this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).GetCenter(xyzStart,halfL);
@@ -1162,9 +1162,9 @@ namespace geo {
   //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
   //......................................................................
   bool Geometry::ChannelsIntersect(raw::ChannelID_t c1, 
-				   raw::ChannelID_t c2, 
-				   double &y, 
-				   double &z)
+                                   raw::ChannelID_t c2, 
+                                   double &y, 
+                                   double &z)
   {
 
     std::vector< geo::WireID > chan1wires, chan2wires; 
@@ -1174,11 +1174,10 @@ namespace geo {
 
     if ( chan1wires.size() == 0 || chan2wires.size() == 0 ) {
       mf::LogWarning("ChannelsIntersect") << "one of the channels you gave was out of range " << std::endl
-					  << "channel 1 " << c1 << std::endl
-					  << "channel 2 " << c2 << std::endl;
+                                          << "channel 1 " << c1 << std::endl
+                                          << "channel 2 " << c2 << std::endl;
       return false;
     }
-    
     geo::WireIDIntersection widIntersect;
     if (this->WireIDsIntersect(chan1wires[0],chan2wires[0],widIntersect)){
       y = widIntersect.y;
@@ -1195,7 +1194,7 @@ namespace geo {
   // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false. T.Yang
   //......................................................................
   bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
-				   geo::WireIDIntersection & widIntersect   ) const
+                                   geo::WireIDIntersection & widIntersect   ) const
   {
     widIntersect.y = -9999;
     widIntersect.z = -9999;
@@ -1252,9 +1251,9 @@ namespace geo {
     widIntersect.z = y;
     widIntersect.TPC = wid1.TPC;
     if (this->ValueInRange(x,x1,x2) &&
-	this->ValueInRange(x,x3,x4) &&
-	this->ValueInRange(y,y1,y2) &&
-	this->ValueInRange(y,y3,y4)){
+        this->ValueInRange(x,x3,x4) &&
+        this->ValueInRange(y,y1,y2) &&
+        this->ValueInRange(y,y3,y4)){
       return true;
     }
     else{
@@ -1318,15 +1317,15 @@ namespace geo {
   // Mitch - Feb., 2011
   // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
   void Geometry::IntersectionPoint(unsigned int wire1, 
-				   unsigned int wire2, 
-				   unsigned int plane1, 
-				   unsigned int plane2,
-				   unsigned int cstat,
-				   unsigned int tpc,
+                                   unsigned int wire2, 
+                                   unsigned int plane1, 
+                                   unsigned int plane2,
+                                   unsigned int cstat,
+                                   unsigned int tpc,
                                    double start_w1[3], 
-				   double end_w1[3], 
-				   double start_w2[3], 
-				   double end_w2[3], 
+                                   double end_w1[3], 
+                                   double start_w2[3], 
+                                   double end_w2[3], 
                                    double &y, double &z)
   {
     geo::WireID wid1(cstat,tpc,plane1,wire1);
@@ -1343,11 +1342,11 @@ namespace geo {
   //    particular algorithm.  Ben J, Oct 2011
   //--------------------------------------------------------------------
   void Geometry::IntersectionPoint(unsigned int wire1, 
-				   unsigned int wire2, 
-				   unsigned int plane1, 
-				   unsigned int plane2,
-				   unsigned int cstat,
-				   unsigned int tpc, 
+                                   unsigned int wire2, 
+                                   unsigned int plane1, 
+                                   unsigned int plane2,
+                                   unsigned int cstat,
+                                   unsigned int tpc, 
                                    double &y, double &z)
   {
     double WireStart1[3] = {0.};
@@ -1358,7 +1357,7 @@ namespace geo {
     this->WireEndPoints(cstat, tpc, plane1, wire1, WireStart1, WireEnd1);
     this->WireEndPoints(cstat, tpc, plane2, wire2, WireStart2, WireEnd2);
     this->IntersectionPoint(wire1, wire2, plane1, plane2, cstat, tpc,
-			    WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);		     
+                            WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);                     
   }
 
 
@@ -1378,15 +1377,15 @@ namespace geo {
     static unsigned int NCryo;
     // If not yet loaded static parameters, do it
     if(Loaded == false){
-	
+        
       Loaded = true;
       
       // Store the lowest ID for each cryostat
       NCryo=Ncryostats();
       LowestID.resize(NCryo + 1);
-      LowestID.at(0)=0;	
+      LowestID.at(0)=0;        
       for(size_t cryo=0; cryo!=NCryo; ++cryo){
-	LowestID.at(cryo+1)=LowestID.at(cryo)+Cryostat(c).NOpDet();
+        LowestID.at(cryo+1)=LowestID.at(cryo)+Cryostat(c).NOpDet();
       }
       
     }
@@ -1396,8 +1395,8 @@ namespace geo {
     }
     else{
       throw cet::exception("OpDetCryoToOpID Error") << "Coordinates c=" << c 
-						    << ", o=" << o 
-						    << " out of range. Abort\n";
+                                                    << ", o=" << o 
+                                                    << " out of range. Abort\n";
     }
     
     // if all is well, we never get to this point in the method
@@ -1426,16 +1425,16 @@ namespace geo {
       // Store the lowest ID for each cryostat
       NCryo=Ncryostats();
       LowestID.resize(NCryo + 1);
-      LowestID[0] = 0;	
+      LowestID[0] = 0;        
       for(size_t cryo = 0; cryo != NCryo; ++cryo){
-	LowestID[cryo+1] = LowestID[cryo] + Cryostat(cryo).NOpDet();
+        LowestID[cryo+1] = LowestID[cryo] + Cryostat(cryo).NOpDet();
       }
-	
+        
     }
 
     for(size_t i=0; i!=NCryo; ++i){
       if( (OpDet >= LowestID[i]) && (OpDet < LowestID[i+1]) ){
-	int c = i;
+        int c = i;
         int o = OpDet-LowestID[i]; 
         return this->Cryostat(c).OpDet(o);
       }
@@ -1451,7 +1450,7 @@ namespace geo {
   //--------------------------------------------------------------------
   // Find the closest OpChannel to this point, in the appropriate cryostat  
   unsigned int Geometry::GetClosestOpDet(double * xyz) const
-  {	
+  {        
     unsigned int c;
     PositionToCryostat(xyz, c);
     int o = Cryostat(c).GetClosestOpDet(xyz);

@@ -44,10 +44,10 @@ namespace geo{
    virtual ~ChannelMapAlg();
 
    virtual void                     Initialize( std::vector<geo::CryostatGeo*> & cgeo,
-						std::vector<geo::AuxDetGeo*>   & adgeo ) = 0;
-   virtual void                	    Uninitialize() = 0;				   
-   virtual std::vector<WireID> 	    ChannelToWire(raw::ChannelID_t channel)   const = 0;
-   virtual unsigned int        	    Nchannels()                               const = 0;
+                                                std::vector<geo::AuxDetGeo*>   & adgeo ) = 0;
+   virtual void                            Uninitialize() = 0;                                   
+   virtual std::vector<WireID>             ChannelToWire(raw::ChannelID_t channel)   const = 0;
+   virtual unsigned int                    Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
    virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
    
@@ -65,27 +65,27 @@ namespace geo{
     * values corresponding to the actual wires.
     */
    virtual double WireCoordinate(double YPos,
-				 double ZPos,
+                                 double ZPos,
                                  unsigned int PlaneNo,
                                  unsigned int TPCNo,
                                  unsigned int cstat)                       const = 0;
 
-   virtual WireID              	    NearestWireID(const TVector3& worldPos,		   
-						  unsigned int    PlaneNo,
-						  unsigned int    TPCNo,
-						  unsigned int    cstat)   const = 0;
-   virtual raw::ChannelID_t    	    PlaneWireToChannel(unsigned int plane,		   
-                               	                       unsigned int wire,		   
-                               	                       unsigned int tpc,		   
-                               	                       unsigned int cstat)       const = 0;
-   virtual View_t	       	    View( raw::ChannelID_t const channel ) 	 const = 0;
-   virtual SigType_t     	    SignalType( raw::ChannelID_t const channel ) const = 0;
-   virtual std::set<View_t>  const& Views()                                      const = 0;
-   virtual std::set<PlaneID> const& PlaneIDs()                                   const = 0;
+   virtual WireID                          NearestWireID(const TVector3& worldPos,                   
+                                                  unsigned int    PlaneNo,
+                                                  unsigned int    TPCNo,
+                                                  unsigned int    cstat)   const = 0;
+   virtual raw::ChannelID_t                PlaneWireToChannel(unsigned int plane,                   
+                                                              unsigned int wire,                   
+                                                              unsigned int tpc,                   
+                                                              unsigned int cstat)    const = 0;
+   virtual View_t                           View( raw::ChannelID_t const channel )               const = 0;
+   virtual SigType_t                 SignalType( raw::ChannelID_t const channel )      const = 0;
+   virtual std::set<View_t>  const& Views()                                   const = 0;
+   virtual std::set<PlaneID> const& PlaneIDs()                                const = 0;
    unsigned int                     NearestWire(const TVector3& worldPos,
-					   unsigned int    PlaneNo,
-					   unsigned int    TPCNo,
-					   unsigned int    cstat)                const;
+                                           unsigned int    PlaneNo,
+                                           unsigned int    TPCNo,
+                                           unsigned int    cstat)        const;
 
    virtual unsigned int OpChannel(unsigned int detNum, unsigned int channel = 0) const;
    virtual unsigned int OpDetFromOpChannel(unsigned int opChannel)               const;
