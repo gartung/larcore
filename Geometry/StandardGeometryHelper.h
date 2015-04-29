@@ -57,7 +57,6 @@ namespace geo
     
     
     fhicl::ParameterSet fPset; ///< copy of configuration parameter set
-  //  art::ActivityRegistry & fReg;
     std::shared_ptr<geo::ChannelMapAlg> fChannelMap; ///< channel map algorithm
     
   };

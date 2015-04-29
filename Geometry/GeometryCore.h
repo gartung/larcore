@@ -18,12 +18,6 @@
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "Geometry/ChannelMapAlg.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
-#include "Geometry/OpDetGeo.h"
-#include "Geometry/AuxDetGeo.h"
 
 // Framework and infrastructure libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -78,24 +72,40 @@ namespace geo {
   /**
    * @brief Description of geometry of one entire detector
    * 
-   * How to correctly instanciate a GeometryCore object
+   * How to correctly instantiate a GeometryCore object
    * ---------------------------------------------------
    * 
-   * Instanciation is a multi-step procedure:
-   * 1. construct a GeometryCore object
-   * 2. load a geometry with GeometryCore::LoadGeometryFile()
-   * 3. acquire a channel mapping algorithm with
-   *    GeometryCore::InitializeChannelMap()
-   * 4. have the channel map operate on the geometry itself (for sorting etc.)
+   * Instantiation is a multi-step procedure:
+   * 1. construct a GeometryCore object (the "service provider"),
+   *    with the full configuration; at this step, configuration is just stored
+   * 2. load a geometry with GeometryCore::LoadGeometryFile();
+   *    this loads the detector geometry information
+   * 3. prepare a channel map algorithm object (might use for example
+   *    GeometryCore::DetectorName() or the detector geometry from the
+   *    newly created object, but any use of channel mapping related functions
+   *    is forbidden and it would yield undefined behaviour (expected to be
+   *    catastrophic)
+   * 4. acquire the channel mapping algorithm with
+   *    GeometryCore::ApplyChannelMap(); at this point, the ChannelMapAlg object
+   *    is asked to initialize itself and to perform whatever modifications to
+   *    the geometry provider is needed.
+   * 
+   * Step 3 (creation of the channel mapping algorithm object) can be performed
+   * at any time before step 4, provided that no GeometryCore instance is needed
+   * for it.
    * 
    * 
    * Configuration parameters
-	* -------------------------
-	* 
-	* - *SurfaceY* (real; mandatory)
-	* - *Name* (string; mandatory)
-	* - *MinWireZDist* (real; default: 3)
-	* - *PositionEpsilon* (real; default: 0.01%)
+   * -------------------------
+   * 
+   * - *Name* (string; mandatory): string identifying the detector; it can be
+   *   different from the base name of the file used to initialize the geometry;
+   *   standard names are recommended by each experiment.
+   *   This name can be used, for example, to select which channel mapping
+   *   algorithm to use.
+   * - *SurfaceY* (real; mandatory)
+   * - *MinWireZDist* (real; default: 3)
+   * - *PositionEpsilon* (real; default: 0.01%)
    */
   class GeometryCore {
   public:
@@ -114,26 +124,6 @@ namespace geo {
      * The next step is to do exactly that, by GeometryCore::LoadGeometryFile().
      */
     GeometryCore(fhicl::ParameterSet const& pset);
-#if 0
-    /**
-     * @brief Initialize geometry from a given configuration
-     * @param pset configuration parameters
-     * @param pChannelMap shared pointer to channel map algorithm object
-     * @param GDMLfile full path of geometry for Geant4
-     * @param ROOTfile full path of geometry for the internal description
-     * 
-     * This constructor does not look for the geometry description files and it
-     * expects the two paths to be complete enough that the files can be
-     * directly opened.
-     * The channel map algorithm will be shared with this object, and its
-     * content will be reinitialized.
-     */
-    GeometryCore(
-      std::string GDMLfile, std::string ROOTfile,
-      std::shared_ptr<geo::ChannelMapAlg> pChannelMap,
-      fhicl::ParameterSet const& pset
-      );
-#endif // 0
     
     /// Destructor
     ~GeometryCore();
@@ -844,17 +834,56 @@ namespace geo {
     }; // class wire_iterator
     
     
-    /// Initializes the geometry to work with this channel map
-    void ApplyChannelMap(std::shared_ptr<geo::ChannelMapAlg> pChannelMap);
+    /**
+     * @brief Loads the geometry information from the specified files
+     * @param gdmlfile path to file to be used for Geant4 simulation
+     * @param rootfile path to file for internal geometry representation
+     * @see ApplyChannelMap()
+     *
+     * Both paths must directly resolve to an available file, as no search
+     * is performed for them.
+     * 
+     * The gdmlfile parameter does not have to necessarily be in GDML format,
+     * as long as it's something supported by Geant4. This file is not used by
+     * the geometry, but its path is provided on request by the simulation
+     * modules (see LArSoft `LArG4` module).
+     * The rootfile also does not need to be a ROOT file, but just anything
+     * that TGeoManager::Import() supports. This file is parsed immediately
+     * and the internal geometry representation is built out of it.
+     * 
+     * @note After calling this method, the detector geometry information can
+     * be considered complete, but the geometry service provider is not fully
+     * initialized yet, since it's still necessary to provide or update the
+     * channel mapping.
+     */
+    void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
 
+    /**
+     * @brief Initializes the geometry to work with this channel map
+     * @param pChannelMap a pointer to the channel mapping algorithm to be used
+     * @see LoadGeometryFile()
+     * 
+     * The specified channel mapping is used with this geometry.
+     * The algorithm object is asked and allowed to make the necessary
+     * modifications to the geometry description.
+	  * These modifications typically involve some resorting of the objects.
+	  * 
+	  * The ownership of the algorithm object is shared, usually with a calling
+	  * framework: we maintain it alive as long as we need it (and no other code
+	  * can delete it), and we delete it only if no other code is sharing the
+	  * ownership.
+     * 
+     * This method needs to be called after LoadGeometryFile() to complete the
+     * geometry initialization.
+     */
+    void ApplyChannelMap(std::shared_ptr<geo::ChannelMapAlg> pChannelMap);
+    
   protected:
     /// Sets the detector name
     void SetDetectorName(std::string new_name) { fDetectorName = new_name; }
     
     /// Sets the detector ID; this is legacy as detector ID should not be used
     void SetDetectorID(geo::DetId_t ID) { fDetId = ID; }
-    
-    void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
     
     // There are some issues that require detector-specific queries.
     /// This method returns an enumerated type that can be tested in those cases

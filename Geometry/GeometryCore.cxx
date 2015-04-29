@@ -85,7 +85,6 @@ namespace geo {
     }
     
     if (rootfile.empty()) {
-      // Failed to resolve the file name
       throw cet::exception("GeometryCore")
         << "No ROOT Geometry file specified!\n";
     }
