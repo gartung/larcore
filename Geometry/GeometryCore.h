@@ -1,72 +1,147 @@
-////////////////////////////////////////////////////////////////////////
-/// \file  Geometry.h
-/// \brief Encapsulate the geometry of one entire detector
-///
-/// \version $Id: Geometry.h,v 1.16 2009/11/03 22:53:20 brebel Exp $
-/// \author  brebel@fnal.gov
-////////////////////////////////////////////////////////////////////////
-///
-/// Revised <seligman@nevis.columbia.edu> 29-Jan-2009
-///         Revise the class to make it into more of a general detector
-///         interface.
-///
+/**
+ * @file   GeometryCore.h
+ * @brief  Access the description of detector geometry
+ * @author brebel@fnal.gov
+ * @see    GeometryCore.cxx
+ *
+ * Revised <seligman@nevis.columbia.edu> 29-Jan-2009
+ *         Revise the class to make it into more of a general detector interface
+ * Revised <petrillo@fnal.gov> 27-Apr-2015
+ *         Factorization into a framework-independent GeometryCore.h and a
+ *         art framework interface
+ */
+#ifndef GEO_GEOMETRYCORE_H
+#define GEO_GEOMETRYCORE_H
 
-#ifndef GEO_GEOMETRY_H
-#define GEO_GEOMETRY_H
 
+// LArSoft libraries
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "Geometry/ChannelMapAlg.h"
-#include "Geometry/ExptGeoHelperInterface.h"
+#include "Geometry/CryostatGeo.h"
+#include "Geometry/TPCGeo.h"
+#include "Geometry/PlaneGeo.h"
+#include "Geometry/WireGeo.h"
+#include "Geometry/OpDetGeo.h"
+#include "Geometry/AuxDetGeo.h"
 
-#include <TString.h>
+// Framework and infrastructure libraries
+#include "fhiclcpp/ParameterSet.h"
+
+// ROOT libraries
 #include <TVector3.h>
-#include <Rtypes.h>
+// #include <Rtypes.h>
 
+// C/C++ standard libraries
+#include <cstddef> // size_t
+#include <string>
 #include <vector>
-#include <map>
 #include <set>
-#include <cstring>
-#include <memory>
+#include <memory> // std::shared_ptr<>
 #include <iterator> // std::forward_iterator_tag
 
-#include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Services/Registry/ActivityRegistry.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Registry/ServiceMacros.h"
 
+// ROOT class prototypes
 class TGeoManager;
-class TGeoVolume;
 class TGeoNode;
 class TGeoMaterial;
-class TGeoHMatrix;
 
+
+/// Namespace collecting geometry-related classes utilities
 namespace geo {
-
-  // Foward declarations within namespace.
+  
+  
+  // Forward declarations within namespace.
   class CryostatGeo;
   class TPCGeo;
   class PlaneGeo;
   class WireGeo;
   class AuxDetGeo;
   class AuxDetSensitiveGeo;
+  class OpDetGeo;
   
-  // The geometry of one entire detector.
-  class Geometry
-  {
+  
+  /// Data in the geometry description
+  struct GeometryData_t {
+    
+    /// Type of list of cryostats
+    using CryostatList_t = std::vector<CryostatGeo*>;
+    /// Type of list of auxiliary detectors
+    using AuxDetList_t = std::vector<AuxDetGeo*>;
+    
+    CryostatList_t cryostats; ///< The detector cryostats
+    AuxDetList_t   auxDets;   ///< The auxiliary detectors
+    
+  }; // GeometryData_t
+  
+  
+  /**
+   * @brief Description of geometry of one entire detector
+   * 
+   * How to correctly instanciate a GeometryCore object
+   * ---------------------------------------------------
+   * 
+   * Instanciation is a multi-step procedure:
+   * 1. construct a GeometryCore object
+   * 2. load a geometry with GeometryCore::LoadGeometryFile()
+   * 3. acquire a channel mapping algorithm with
+   *    GeometryCore::InitializeChannelMap()
+   * 4. have the channel map operate on the geometry itself (for sorting etc.)
+   * 
+   * 
+   * Configuration parameters
+	* -------------------------
+	* 
+	* - *SurfaceY* (real; mandatory)
+	* - *Name* (string; mandatory)
+	* - *MinWireZDist* (real; default: 3)
+	* - *PositionEpsilon* (real; default: 0.01%)
+   */
+  class GeometryCore {
   public:
-
-    // Access to the single instance of thie class.  For example:
-    Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
-    ~Geometry();
-
-    void preBeginRun(art::Run const& run);
+    
+    /// Type of list of cryostats
+    using CryostatList_t = GeometryData_t::CryostatList_t;
+    /// Type of list of auxiliary detectors
+    using AuxDetList_t = GeometryData_t::AuxDetList_t;
+    
+    
+    /**
+     * @brief Initialize geometry from a given configuration
+     * @param pset configuration parameters
+     * 
+     * This constructor does not load any geometry description.
+     * The next step is to do exactly that, by GeometryCore::LoadGeometryFile().
+     */
+    GeometryCore(fhicl::ParameterSet const& pset);
+#if 0
+    /**
+     * @brief Initialize geometry from a given configuration
+     * @param pset configuration parameters
+     * @param pChannelMap shared pointer to channel map algorithm object
+     * @param GDMLfile full path of geometry for Geant4
+     * @param ROOTfile full path of geometry for the internal description
+     * 
+     * This constructor does not look for the geometry description files and it
+     * expects the two paths to be complete enough that the files can be
+     * directly opened.
+     * The channel map algorithm will be shared with this object, and its
+     * content will be reinitialized.
+     */
+    GeometryCore(
+      std::string GDMLfile, std::string ROOTfile,
+      std::shared_ptr<geo::ChannelMapAlg> pChannelMap,
+      fhicl::ParameterSet const& pset
+      );
+#endif // 0
+    
+    /// Destructor
+    ~GeometryCore();
 
     // Number of readout channels in the detector
     unsigned int Nchannels()                                      const;
     // Number of cryostats in the detector
-    unsigned int Ncryostats()                                     const { return fCryostats.size();}
+    unsigned int Ncryostats()                                     const { return Cryostats().size();}
     // Number of TPCs in the detector
     unsigned int NTPC(unsigned int cstat = 0)                     const;
     // Number of views (different wire orientations) in the detector
@@ -79,9 +154,7 @@ namespace geo {
                         unsigned int tpc   = 0,
                         unsigned int cstat = 0)                   const;
     // Number of scintillator paddles (Auxiliary Detectors aka AuxDet) outside of the cryostat
-    unsigned int NAuxDets()                                       const { return fAuxDets.size(); }
-    // Number of sensitive volumes in an AuxDet
-    unsigned int NAuxDetSensitive(size_t const& aid)               const;
+    unsigned int NAuxDets()                                       const { return AuxDets().size(); }
 
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,
@@ -293,9 +366,6 @@ namespace geo {
     // The name of the detector.
     std::string         DetectorName()                            const { return std::string(fDetectorName); }
 
-    // There are some issues that require detector-specific queries.
-    // This method returns an enumerated type that can be tested in those cases
-    //geo::DetId_t DetId()                                          const {return fDetId; }
 
 
     // The Geant4 simulation needs to know the name of the world volume.
@@ -417,7 +487,6 @@ namespace geo {
     unsigned int  GetClosestOpDet(double * xyz) const;
 
     const WireGeo& WireIDToWireGeo(WireID CodeWire) const;
-
     
       protected:
     /// Base class for geometry iterators
@@ -469,12 +538,29 @@ namespace geo {
     /// @{
     /// @name Iteration through geometry elements
     
+      protected:
+    
+    /// Base class for geometry iterators (note: this is not an interator)
+    class geometry_iterator_base {
+        public:
+      
+      /// Constructor: associates with the specified geometry
+      geometry_iterator_base(geo::GeometryCore const* geom): pGeo(geom) {}
+      
+        protected:
+      const GeometryCore* pGeo; ///< pointer to the geometry
+      
+    }; // class geometry_iterator_base
+    
+    
+      public:
+    
     /** ************************************************************************
      * @brief Forward iterator browsing all cryostats in the detector
      * 
      * Usage example:
      * @code
-     * geo::Geometry::cryostat_iterator iCryostat;
+     * geo::GeometryCore::cryostat_iterator iCryostat;
      * while (iCryostat) {
      *   std::cout << "Cryo: " << iCryostat->Cryostat << std::endl;
      *   const geo::CryostatGeo* pCryo = iCryostat.get();
@@ -484,24 +570,28 @@ namespace geo {
      * @endcode
      */
     class cryostat_iterator:
-      public std::forward_iterator_tag, protected geometry_iteratorbase
+      public std::forward_iterator_tag, protected geometry_iterator_base
     {
         public:
       typedef unsigned int CryoID; /// type of cryostat ID
       
       /// Default constructor: points to the first cryostat
-      cryostat_iterator(Geometry const* geom = nullptr):
-        geometry_iteratorbase(geom)
+      cryostat_iterator(geo::GeometryCore const* geom):
+        geometry_iterator_base(geom)
         { set_limits_and_validity(); }
       
       /// Constructor: points to the specified cryostat
-      cryostat_iterator(CryoID start_from): cryoid(start_from)
+      cryostat_iterator(geo::GeometryCore const* geom, CryoID start_from):
+        geometry_iterator_base(geom), cryoid(start_from)
         { set_limits_and_validity(); }
       
       bool operator== (const cryostat_iterator& as) const
         { return cryoid == as.cryoid; }
       bool operator!= (const cryostat_iterator& as) const
         { return cryoid != as.cryoid; }
+      
+      /// Returns whether the iterator is pointing to a valid cryostat
+      operator bool() const { return isValid; }
       
       /// Returns a copy of the TPCID the iterator points to
       CryoID operator* () const { return cryoid; }
@@ -520,23 +610,15 @@ namespace geo {
       cryostat_iterator operator-- (int)
         { cryostat_iterator old(*this); this->operator--(); return old; }
       
-      /// Returns whether the iterator is pointing to a valid cryostat
-      operator bool() const { return isValid; }
-      
       /// Skips to the next cryostat
       cryostat_iterator& next() { return this->operator++(); }
       
       /// Returns a pointer to cryostat, or nullptr if the iterator is not valid
       const CryostatGeo* get() const;
       
-      /// Sets this iterator to the end iterator (past-last cryostat)
-      void set_end();
-      
-      /// Returns whether this iterator matches the "end iterator" (set_end())
-      bool is_end() const;
-      
         protected:
       bool isValid = false;  ///< whether the current iterator position is valid
+      
       CryoID cryoid = { 0 }; ///< current cryostat
       CryoID limits = { 0 }; ///< maxima of the indices
       
@@ -550,7 +632,7 @@ namespace geo {
      * 
      * Usage example:
      * @code
-     * geo::Geometry::TPC_iterator iTPC;
+     * geo::GeometryCore::TPC_iterator iTPC;
      * while (iTPC) {
      *   std::cout << "Cryo: " << iTPC->Cryostat << " TPC: " << iTPC->TPC
      *     << std::endl;
@@ -561,16 +643,17 @@ namespace geo {
      * @endcode
      */
     class TPC_iterator:
-      public std::forward_iterator_tag, protected geometry_iteratorbase
+      public std::forward_iterator_tag, protected geometry_iterator_base
     {
         public:
       /// Default constructor: points to the first TPC
-      TPC_iterator(Geometry const* geom = nullptr):
-        geometry_iteratorbase(geom)
+      TPC_iterator(geo::GeometryCore const* geom):
+        geometry_iterator_base(geom)
         { set_limits_and_validity(); }
       
       /// Constructor: points to the specified TPC
-      TPC_iterator(TPCID start_from): tpcid(start_from)
+      TPC_iterator(geo::GeometryCore const* geom, TPCID start_from):
+        geometry_iterator_base(geom), tpcid(start_from)
         { set_limits_and_validity(); }
       
       bool operator== (const TPC_iterator& as) const
@@ -603,12 +686,6 @@ namespace geo {
       /// Returns a pointer to the cryostat the plane belongs to
       const CryostatGeo* getCryostat() const;
       
-      /// Sets this iterator to the end iterator (past-last TPC)
-      void set_end();
-      
-      /// Returns whether this iterator matches the "end iterator" (set_end())
-      bool is_end() const;
-      
         protected:
       TPCID tpcid = { 0, 0 }; ///< current TPC
       TPCID limits = { 0, 0 }; ///< maxima of the indices
@@ -623,7 +700,7 @@ namespace geo {
      * 
      * Usage example:
      * @code
-     * geo::Geometry::plane_iterator iPlane;
+     * geo::GeometryCore::plane_iterator iPlane;
      * while (iPlane) {
      *   std::cout << "Cryo: " << iPlane->Cryostat << " TPC: " << iPlane->TPC
      *     << " plane: " << iPlane->Plane << std::endl;
@@ -634,16 +711,17 @@ namespace geo {
      * @endcode
      */
     class plane_iterator:
-      public std::forward_iterator_tag, protected geometry_iteratorbase
+      public std::forward_iterator_tag, protected geometry_iterator_base
     {
         public:
       /// Default constructor: points to the first plane
-      plane_iterator(Geometry const* geom = nullptr):
-        geometry_iteratorbase(geom)
+      plane_iterator(geo::GeometryCore const* geom):
+        geometry_iterator_base(geom)
         { set_limits_and_validity(); }
       
       /// Constructor: points to the specified plane
-      plane_iterator(PlaneID start_from): planeid(start_from)
+      plane_iterator(geo::GeometryCore const* geom, PlaneID start_from):
+        geometry_iterator_base(geom), planeid(start_from)
         { set_limits_and_validity(); }
       
       bool operator== (const plane_iterator& as) const
@@ -679,12 +757,6 @@ namespace geo {
       /// Returns a pointer to the cryostat the plane belongs to
       const CryostatGeo* getCryostat() const;
       
-      /// Sets this iterator to the end iterator (past-last plane)
-      void set_end();
-      
-      /// Returns whether this iterator matches the "end iterator" (set_end())
-      bool is_end() const;
-      
         protected:
       PlaneID planeid = { 0, 0, 0 }; ///< current plane
       PlaneID limits = { 0, 0, 0 }; ///< maxima of the indices
@@ -700,7 +772,7 @@ namespace geo {
      * 
      * Usage example:
      * @code
-     * geo::Geometry::wire_iterator iWire;
+     * geo::GeometryCore::wire_iterator iWire;
      * while (iWire) {
      *   std::cout << "Cryo: " << iWire->Cryostat << " TPC: " << iWire->TPC
      *     << " plane: " << iWire->Plane << " << " wire: " << iWire->Wire
@@ -712,16 +784,17 @@ namespace geo {
      * @endcode
      */
     class wire_iterator:
-      public std::forward_iterator_tag, protected geometry_iteratorbase
+      public std::forward_iterator_tag, protected geometry_iterator_base
     {
         public:
       /// Default constructor: points to the first wire
-      wire_iterator(Geometry const* geom = nullptr):
-        geometry_iteratorbase(geom)
+      wire_iterator(geo::GeometryCore const* geom):
+        geometry_iterator_base(geom)
         { set_limits_and_validity(); }
       
       /// Constructor: points to the specified wire
-      wire_iterator(WireID start_from): wireid(start_from)
+      wire_iterator(geo::GeometryCore const* geom, WireID start_from):
+        geometry_iterator_base(geom), wireid(start_from)
         { set_limits_and_validity(); }
       
       bool operator== (const wire_iterator& as) const
@@ -760,12 +833,6 @@ namespace geo {
       /// Returns a pointer to the cryostat the wire belongs to
       const CryostatGeo* getCryostat() const;
       
-      /// Sets this iterator to the end iterator (past-last wire)
-      void set_end();
-      
-      /// Returns whether this iterator matches the "end iterator" (set_end())
-      bool is_end() const;
-      
         protected:
       WireID wireid = { 0, 0, 0, 0 }; ///< current wire
       WireID limits = { 0, 0, 0, 0 }; ///< maxima of the indices
@@ -777,89 +844,40 @@ namespace geo {
     }; // class wire_iterator
     
     
-    /**
-     * @brief Allow range-for loop through cryostats
-     * 
-     * The iteration will go through all cryostats in the detector, in a defined
-     * order.
-     * Use it as:
-     *     
-     *     
-     *     for (unsigned int cstat: geom->IterateCryostats()) {
-     *       geo::CryostatGeo const& cryo = geom->Cryostat(cstat);
-     *       // ...
-     *     } // for cryostats
-     *     
-     * Note that changes in the geometry inside the loop will not be noticed.
-     */
-    GeoIteratorBox<cryostat_iterator> IterateCryostats() const
-      { return { this }; }
+    /// Initializes the geometry to work with this channel map
+    void ApplyChannelMap(std::shared_ptr<geo::ChannelMapAlg> pChannelMap);
+
+  protected:
+    /// Sets the detector name
+    void SetDetectorName(std::string new_name) { fDetectorName = new_name; }
     
+    /// Sets the detector ID; this is legacy as detector ID should not be used
+    void SetDetectorID(geo::DetId_t ID) { fDetId = ID; }
     
-    /**
-     * @brief Allow range-for loop through all TPCs in the detector
-     * 
-     * The iteration will go through all TPCs in the detector, in a defined
-     * order.
-     * Use it as:
-     *     
-     *     
-     *     for (geo::TPCID tpcid: geom->IterateTPCs()) {
-     *       geo::TPCGeo const& TPC = geom->TPC(tpcid);
-     *       // ...
-     *     } // for TPCs
-     *     
-     * Note that changes in the geometry inside the loop will not be noticed.
-     */
-    GeoIteratorBox<TPC_iterator> IterateTPCs() const
-      { return { this }; }
+    void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
     
+    // There are some issues that require detector-specific queries.
+    /// This method returns an enumerated type that can be tested in those cases
+    geo::DetId_t DetectorID() const { return fDetId; }
     
-    /**
-     * @brief Allow range-for loop through all planes in the detector
-     * 
-     * The iteration will go through all planes in the detector, in a defined
-     * order.
-     * Use it as:
-     *     
-     *     
-     *     for (geo::PlaneID planeid: geom->IteratePlanes()) {
-     *       geo::PlaneGeo const& plane = geom->Plane(planeid);
-     *       // ...
-     *     } // for planes
-     *     
-     * Note that changes in the geometry inside the loop will not be noticed.
-     */
-    GeoIteratorBox<plane_iterator> IteratePlanes() const
-      { return { this }; }
+    /// Returns the object handling the channel map
+    geo::ChannelMapAlg const* ChannelMap() const
+      { return fChannelMapAlg.get(); }
     
+    //@{
+    /// Return the internal cryostat list
+    CryostatList_t&       Cryostats()       { return fGeoData.cryostats; }
+    CryostatList_t const& Cryostats() const { return fGeoData.cryostats; }
+    //@}
     
-    /**
-     * @brief Allow range-for loop through all wires in the detector
-     * 
-     * The iteration will go through all wires in the detector, in a defined
-     * order.
-     * Use it as:
-     *     
-     *     
-     *     for (geo::WireID wireid: geom->IterateWires()) {
-     *       geo::WireGeo const& wire = geom->Wire(wireid);
-     *       // ...
-     *     } // for wires
-     *     
-     * Note that changes in the geometry inside the loop will not be noticed.
-     */
-    GeoIteratorBox<wire_iterator> IterateWires() const
-      { return { this }; }
-    
-    /// @}
+    //@{
+    /// Return the interfal auxiliary detectors list
+    AuxDetList_t&       AuxDets()       { return fGeoData.auxDets; }
+    AuxDetList_t const& AuxDets() const { return fGeoData.auxDets; }
+    //@}
     
   private:
-
-    void LoadGeometryFile(std::string gdmlfile,
-                          std::string rootfile);
-    void InitializeChannelMap();
-
+    
     void FindCryostat(std::vector<const TGeoNode*>& path,
                       unsigned int depth);
     void MakeCryostat(std::vector<const TGeoNode*>& path,
@@ -868,32 +886,27 @@ namespace geo {
                     unsigned int depth);
     void MakeAuxDet(std::vector<const TGeoNode*>& path,
                     int depth);
-
-    std::vector<CryostatGeo*> fCryostats;        ///< The detector cryostats
-    std::vector<AuxDetGeo*>   fAuxDets;          ///< The auxiliary detectors
-
+    
+    /// Deletes the detector geometry structures
+    void ClearGeometry();
+    
+    
+    GeometryData_t            fGeoData;          ///< The detector description data
+    
     double                    fSurfaceY;         ///< The point where air meets earth for this detector.
-    TString                   fDetectorName;     ///< Name of the detector.
+    std::string               fDetectorName;     ///< Name of the detector.
     std::string               fGDMLfile;         ///< The GDML file used for the detector geometry
     std::string               fROOTfile;         ///< The GDML file used for the detector geometry
-    std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
                                                  ///< geometry file
     double                    fMinWireZDist;     ///< Minimum distance in Z from a point in which
                                                  ///< to look for the closest wire
-    bool                      fDisableWiresInG4; ///< If set true, supply G4 with GDMLfileNoWires
                                                  ///< rather than GDMLfile
-    bool                      fForceUseFCLOnly;  ///< Force Geometry to only use the geometry
-                                                 ///< files specified in the fcl file
-    geo::DetId_t              fDetId;            ///< Detector type
+    geo::DetId_t              fDetId;            ///< Detector type (deprecated, legacy)
     double                    fPositionWiggle;   ///< accounting for rounding errors when testing positions
     std::shared_ptr<const geo::ChannelMapAlg>
                               fChannelMapAlg;    ///< Object containing the channel to wire mapping
-    fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
-    art::ServiceHandle<geo::ExptGeoHelperInterface>
-                              fExptGeoHelper;    ///< Expt-specific geometry helper service
-  };
-
+  }; // class GeometryCore
+  
 } // namespace geo
 
-DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
-#endif // GEO_GEOMETRY_H
+#endif // GEO_GEOMETRYCORE_H

@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/ChannelMapStandardAlg.h"
+#include "Geometry/GeometryCore.h"
 #include "Geometry/AuxDetGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
@@ -30,9 +31,14 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  void ChannelMapStandardAlg::Initialize( std::vector<geo::CryostatGeo*> & cgeo, 
-                                          std::vector<geo::AuxDetGeo*>   & adgeo )
+  void ChannelMapStandardAlg::Initialize( GeometryData_t& geodata )
   {
+    // start over:
+    Uninitialize();
+    
+    std::vector<geo::CryostatGeo*>& cgeo = geodata.cryostats;
+    std::vector<geo::AuxDetGeo*>  & adgeo = geodata.auxDets;
+    
     fNcryostat = cgeo.size();
     
     mf::LogInfo("ChannelMapStandardAlg") << "Initializing Standard ChannelMap...";

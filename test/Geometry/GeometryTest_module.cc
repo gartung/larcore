@@ -829,7 +829,7 @@ namespace geo{
     bool bTestWireCoordinate = true;
     
     // get a wire and find its center
-    geo::Geometry::plane_iterator iPlane;
+    geo::Geometry::plane_iterator iPlane(&*geom);
     while (iPlane) {
       unsigned int cs = iPlane->Cryostat;
       unsigned int t = iPlane->TPC;
@@ -1129,7 +1129,7 @@ namespace geo{
     art::ServiceHandle<geo::Geometry> geom;
     
     unsigned int nErrors = 0;
-    for (geo::Geometry::TPC_iterator iTPC; iTPC; ++iTPC) {
+    for (geo::Geometry::TPC_iterator iTPC(&*geom); iTPC; ++iTPC) {
       const geo::TPCGeo& TPC = *(iTPC.get());
       
       LOG_DEBUG("GeometryTest") << "Cryostat #" << iTPC->Cryostat

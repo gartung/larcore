@@ -8,19 +8,27 @@
 #ifndef GEO_CHANNELMAPALG_H
 #define GEO_CHANNELMAPALG_H
 
+// LArSoft  libraries
+#include "SimpleTypesAndConstants/geo_types.h"
+#include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+
+// Framework libraries
+#include "cetlib/exception.h"
+
+// ROOT libraries
+#include "TVector3.h"
+
+// C/C++ standard libraries
 #include <vector>
 #include <set>
 
-#include "cetlib/exception.h"
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
-#include "Geometry/AuxDetGeo.h"
-#include "Geometry/CryostatGeo.h"
-
-#include "TVector3.h"
 
 namespace geo{
-
+  
+  // forward-declaration from geometry
+  class GeometryData_t;
+  
+  
   /// Exception thrown on invalid wire number (e.g. NearestWireID())
   class InvalidWireIDError: public cet::exception {
       public:
@@ -43,9 +51,8 @@ namespace geo{
    ChannelMapAlg();
    virtual ~ChannelMapAlg();
 
-   virtual void                     Initialize( std::vector<geo::CryostatGeo*> & cgeo,
-                                                std::vector<geo::AuxDetGeo*>   & adgeo ) = 0;
-   virtual void                            Uninitialize() = 0;                                   
+   virtual void                     Initialize(GeometryData_t& geodata) = 0;
+   virtual void                            Uninitialize() = 0;
    virtual std::vector<WireID>             ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int                    Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;

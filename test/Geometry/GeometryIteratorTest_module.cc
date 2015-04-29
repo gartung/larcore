@@ -84,10 +84,10 @@ namespace geo{
     LOG_VERBATIM("GeometryIteratorTest") << "We have " << nCryo << " cryostats";
     
     unsigned int nErrors = 0;
-    geo::Geometry::cryostat_iterator iCryostat;
-    geo::Geometry::TPC_iterator iTPC;
-    geo::Geometry::plane_iterator iPlane;
-    geo::Geometry::wire_iterator iWire;
+    geo::Geometry::cryostat_iterator iCryostat(&*geom);
+    geo::Geometry::TPC_iterator iTPC(&*geom);
+    geo::Geometry::plane_iterator iPlane(&*geom);
+    geo::Geometry::wire_iterator iWire(&*geom);
     
     unsigned int TotalCryostats = 0;
     unsigned int TotalTPCs = 0;

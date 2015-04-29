@@ -5,81 +5,68 @@
 /// \author  rs@fnal.gov
 ////////////////////////////////////////////////////////////////////////////////
 
+// class header
 #include "Geometry/StandardGeometryHelper.h"
 
-#include "Geometry/ChannelMapAlg.h"
-
-// Migration note:
-// This class will needs to create only the ChannelMapStandardAlg after migration
+// LArSoft libraries
 #include "Geometry/ChannelMapStandardAlg.h"
-// #include "Geometry/ChannelMap35Alg.h"
-// #include "Geometry/ChannelMapAPAAlg.h"
-
-#include "TString.h"
+#include "Geometry/GeometryCore.h"
 
 
 namespace geo
 {
 
-  StandardGeometryHelper::StandardGeometryHelper( fhicl::ParameterSet const & pset, art::ActivityRegistry & reg )
-  :  fPset( pset ),
-     fReg( reg ),
-     fChannelMap()
-  {}
+  //----------------------------------------------------------------------------
+  StandardGeometryHelper::StandardGeometryHelper
+    (fhicl::ParameterSet const& pset, art::ActivityRegistry&)
+    : fPset( pset )
+    , fChannelMap()
+    {}
 
-  StandardGeometryHelper::~StandardGeometryHelper() throw()
-  {}  
-  
-  void StandardGeometryHelper::doConfigureChannelMapAlg( const TString & detectorName,
-                                                         fhicl::ParameterSet const & sortingParam,
-                                                         std::vector<geo::CryostatGeo*> & c,
-                                                         std::vector<geo::AuxDetGeo*>   & ad )
+
+  //----------------------------------------------------------------------------
+  void StandardGeometryHelper::doConfigureChannelMapAlg
+    (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom)
   {
-    fChannelMap = nullptr;
+    fChannelMap.reset();
     
-    fChannelMap = std::shared_ptr<geo::ChannelMapStandardAlg>( new geo::ChannelMapStandardAlg( sortingParam ) );
+    std::string const detectorName = geom->DetectorName();
     
     // Migration note:
     // Should just create ChannelMapStandardAlg with no decision-making after transition
-    if ( detectorName.Contains("argoneut")
-        || detectorName.Contains("microboone")
-        || detectorName.Contains("bo")
-        || detectorName.Contains("jp250l")
-        || detectorName.Contains("csu40l")
-        || detectorName.Contains("lariat")
-        || detectorName.Contains("icarus")
-        || detectorName.Contains("lartpcdetector")
+    // detector names in this code must be all lower case
+    if ( (detectorName.find("argoneut") != std::string::npos)
+        || (detectorName.find("microboone") != std::string::npos)
+        || (detectorName.find("bo") != std::string::npos)
+        || (detectorName.find("jp250l") != std::string::npos)
+        || (detectorName.find("csu40l") != std::string::npos)
+        || (detectorName.find("lariat") != std::string::npos)
+        || (detectorName.find("icarus") != std::string::npos)
+        || (detectorName.find("lartpcdetector") != std::string::npos)
        )
     {
-      fChannelMap = std::shared_ptr<geo::ChannelMapAlg>( new geo::ChannelMapStandardAlg( sortingParam ) );
+      fChannelMap
+        = std::make_shared<geo::ChannelMapStandardAlg>(sortingParameters);
     }
-//     if ( detectorName.Contains("lbne35t") ) 
-//     {
-//       fChannelMap = std::shared_ptr<geo::ChannelMapAlg>( new geo::ChannelMap35Alg( sortingParam ) );
-//     }
-//     else if ( detectorName.Contains("lbne10kt") ) 
-//     {
-//       fChannelMap = std::shared_ptr<geo::ChannelMapAlg>( new geo::ChannelMapAPAAlg( sortingParam ) );
-//     }
-//     else if ( detectorName.Contains("lbne34kt") )
-//     {
-//       fChannelMap = std::shared_ptr<geo::ChannelMapAlg>( new geo::ChannelMapAPAAlg( sortingParam ) );
-//     }
-    else
-    {
-      fChannelMap = nullptr;
-    }
+    
     if ( fChannelMap )
     {
-      fChannelMap->Initialize( c, ad );
+      geom->ApplyChannelMap(fChannelMap);
     }
-  }
+  } // StandardGeometryHelper::doConfigureChannelMapAlg()
   
-  std::shared_ptr<const geo::ChannelMapAlg> StandardGeometryHelper::doGetChannelMapAlg() const
+  
+  //----------------------------------------------------------------------------
+  StandardGeometryHelper::ChannelMapAlgPtr_t
+  StandardGeometryHelper::doGetChannelMapAlg() const
   {
     return fChannelMap;
   }
 
-}
+  //----------------------------------------------------------------------------
+  
+} // namespace geo
 
-DEFINE_ART_SERVICE_INTERFACE_IMPL(geo::StandardGeometryHelper, geo::ExptGeoHelperInterface)
+DEFINE_ART_SERVICE_INTERFACE_IMPL(
+  geo::StandardGeometryHelper, geo::ExptGeoHelperInterface
+  )

@@ -1,89 +1,70 @@
-////////////////////////////////////////////////////////////////////////////////
-/// \file StandardGeometryHelper.h
-/// \brief Geometry helper service for detectors that use strictly standard functionality
-/// 
-/// Handles detector-specific information for the generic Geometry service
-/// within LArSoft. Derived from the ExptGeoHelperInterface class. This version
-/// provides strictly standard functionality
-///
-/// \verion $Id
-/// \author rs@fnal.gov
-////////////////////////////////////////////////////////////////////////////////
+/**
+ * @file   StandardGeometryHelper.h
+ * @brief  Geometry helper service for detectors with strictly standard mapping
+ * @author rs@fnal.gov
+ * 
+ * Handles detector-specific information for the generic Geometry service
+ * within LArSoft. Derived from the ExptGeoHelperInterface class. This version
+ * provides strictly standard functionality
+ */
 
 #ifndef GEO_StandardGeometryHelper_h
 #define GEO_StandardGeometryHelper_h
 
+// LArSoft libraries
 #include "Geometry/ExptGeoHelperInterface.h"
 
-#include <memory>
-#include <vector>
-
-// Forward declarations
-//
-class TString;
-
-namespace art
-{
-  class ActivityRegistry;
-}
-
-namespace fhicl
-{
-  class ParameterSet;
-}
-
-namespace geo
-{
-  class ChannelMapAlg;
-  class AuxDetGeo;
-  class CryostatGeo;
-}
-
-namespace geo
-{
-  class ChannelMapAlg;
-}
+// C/C++ standard libraries
+#include <memory> // std::shared_ptr<>
 
 // Declaration
 //
 namespace geo
 {
+  /**
+   * @brief Simple implementation of channel mapping
+   *
+   * This ExptGeoHelperInterface implementation serves a ChannelMapStandardAlg
+   * for experiments that are known to work well with it.
+   */
   class StandardGeometryHelper : public ExptGeoHelperInterface
   {
   public:
-  
-    StandardGeometryHelper( fhicl::ParameterSet const & pset, art::ActivityRegistry &reg );
-    ~StandardGeometryHelper() throw();
-
-    // Public interface for ExptGeoHelperInterface (for reference purposes)
-    //
-    // Configure and initialize the channel map.
-    //
-    // void  ConfigureChannelMapAlg( const TString & detectorName, 
-    //                               fhicl::ParameterSet const & sortingParam,
-    //                               std::vector<geo::CryostatGeo*> & c,
-    //                                     std::vector<geo::AuxDetGeo*>   & ad );
-    //
-    // Returns null pointer if the initialization failed
-    // NOTE:  the sub-class owns the ChannelMapAlg object
-    //
-    // std::shared_ptr<const geo::ChannelMapAlg> & GetChannelMapAlg() const;
-  
+    
+    /// Constructor; follows the standard art service signature
+    StandardGeometryHelper
+      ( fhicl::ParameterSet const & pset, art::ActivityRegistry &reg );
+    
+    /*
+      Public interface for ExptGeoHelperInterface (for reference purposes)
+      
+      Configure, initialize and return the channel map:
+      
+      void ConfigureChannelMapAlg
+        (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom);
+      
+      Returns null pointer if the initialization failed:
+      
+      ChannelMapAlgPtr_t GetChannelMapAlg() const;
+    */
+    
   private:
     
-    void  doConfigureChannelMapAlg( const TString & detectorName,
-                                    fhicl::ParameterSet const & sortingParam,
-                                    std::vector<geo::CryostatGeo*> & c,
-                                    std::vector<geo::AuxDetGeo*>   & ad ) override;
-    std::shared_ptr<const geo::ChannelMapAlg> doGetChannelMapAlg() const override;
+    virtual void doConfigureChannelMapAlg
+      (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom)
+      override;
+    virtual ChannelMapAlgPtr_t doGetChannelMapAlg() const override;
     
-    fhicl::ParameterSet const & fPset;
-    art::ActivityRegistry & fReg;
-    std::shared_ptr<geo::ChannelMapAlg> fChannelMap;
-  
+    
+    fhicl::ParameterSet fPset; ///< copy of configuration parameter set
+  //  art::ActivityRegistry & fReg;
+    std::shared_ptr<geo::ChannelMapAlg> fChannelMap; ///< channel map algorithm
+    
   };
 
 }
-DECLARE_ART_SERVICE_INTERFACE_IMPL(geo::StandardGeometryHelper, geo::ExptGeoHelperInterface, LEGACY)
+DECLARE_ART_SERVICE_INTERFACE_IMPL(
+  geo::StandardGeometryHelper, geo::ExptGeoHelperInterface, LEGACY
+  )
 
 #endif // GEO_StandardGeometryHelper_h
