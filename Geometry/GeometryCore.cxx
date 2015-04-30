@@ -10,6 +10,7 @@
 #include "Geometry/GeometryCore.h"
 
 // lar includes
+#include "SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
 #include "Geometry/PlaneGeo.h"
@@ -23,7 +24,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // ROOT includes
-#include <TMath.h> // FIXME remove use of TMath where unnecessary
 #include <TGeoManager.h>
 #include <TGeoNode.h>
 #include <TGeoVolume.h>
@@ -34,7 +34,7 @@
 // C/C++ includes
 #include <cstddef> // size_t
 #include <cctype> // ::tolower()
-#include <cmath> // std::abs()
+#include <cmath> // std::abs() ...
 #include <vector>
 #include <algorithm> // std::for_each(), std::transform()
 #include <utility> // std::swap()
@@ -43,8 +43,11 @@
 
 
 namespace geo {
-
-
+  
+  template <typename T>
+  inline T sqr(T v) { return v * v; }
+  
+  
   //......................................................................
   // Constructor.
   GeometryCore::GeometryCore(
@@ -657,9 +660,9 @@ namespace geo {
     double halflength = ((TGeoBBox*)volWorld->GetShape())->GetDZ();
     double halfheight = ((TGeoBBox*)volWorld->GetShape())->GetDY();
     double halfwidth  = ((TGeoBBox*)volWorld->GetShape())->GetDX();
-    if(TMath::Abs(point.x()) > halfwidth  ||
-       TMath::Abs(point.y()) > halfheight ||
-       TMath::Abs(point.z()) > halflength
+    if(std::abs(point.x()) > halfwidth  ||
+       std::abs(point.y()) > halfheight ||
+       std::abs(point.z()) > halflength
        ){
       mf::LogWarning("GeometryCoreBadInputPoint") << "point (" << point.x() << ","
                                               << point.y() << "," << point.z() << ") "
@@ -684,9 +687,9 @@ namespace geo {
     double halflength = ((TGeoBBox*)volWorld->GetShape())->GetDZ();
     double halfheight = ((TGeoBBox*)volWorld->GetShape())->GetDY();
     double halfwidth  = ((TGeoBBox*)volWorld->GetShape())->GetDX();
-    if(TMath::Abs(point.x()) > halfwidth  ||
-       TMath::Abs(point.y()) > halfheight ||
-       TMath::Abs(point.z()) > halflength
+    if(std::abs(point.x()) > halfwidth  ||
+       std::abs(point.y()) > halfheight ||
+       std::abs(point.z()) > halflength
        ){ 
       mf::LogWarning("GeometryCoreBadInputPoint") << "point (" << point.x() << ","
                                               << point.y() << "," << point.z() << ") "
@@ -802,9 +805,9 @@ namespace geo {
     double columnD = 0.;
 
     //first initialize a track - get the direction cosines
-    double length = TMath::Sqrt(TMath::Power(p2[0]-p1[0], 2.)
-                                + TMath::Power(p2[1]-p1[1], 2.)
-                                + TMath::Power(p2[2]-p1[2], 2.));
+    double length = std::sqrt( sqr(p2[0]-p1[0])
+                             + sqr(p2[1]-p1[1])
+                             + sqr(p2[2]-p1[2]));
     double dxyz[3] = {(p2[0]-p1[0])/length, (p2[1]-p1[1])/length, (p2[2]-p1[2])/length}; 
 
     gGeoManager->InitTrack(p1,dxyz);
@@ -826,9 +829,9 @@ namespace geo {
     //now you are in the same volume as the last point, but not at that point.
     //get the distance between the current point and the last one
     const double *current = gGeoManager->GetCurrentPoint();
-    length = TMath::Sqrt(TMath::Power(p2[0]-current[0], 2.)
-                         + TMath::Power(p2[1]-current[1], 2.)
-                         + TMath::Power(p2[2]-current[2], 2.));
+    length = std::sqrt( sqr(p2[0]-current[0])
+                      + sqr(p2[1]-current[1])
+                      + sqr(p2[2]-current[2]));
     columnD += length*node->GetMedium()->GetMaterial()->GetDensity();
 
     return columnD;
@@ -1185,6 +1188,7 @@ namespace geo {
     y = widIntersect.y;
     z = widIntersect.z;
     return;
+    
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
