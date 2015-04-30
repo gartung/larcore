@@ -69,8 +69,11 @@ namespace geo {
   }; // GeometryData_t
   
   
-  /**
+  /** **************************************************************************
    * @brief Description of geometry of one entire detector
+   * 
+   * @note All lengths are specified in centimetres
+   * 
    * 
    * How to correctly instantiate a GeometryCore object
    * ---------------------------------------------------
@@ -103,9 +106,12 @@ namespace geo {
    *   standard names are recommended by each experiment.
    *   This name can be used, for example, to select which channel mapping
    *   algorithm to use.
-   * - *SurfaceY* (real; mandatory)
+   * - *SurfaceY* (real; mandatory): depth of the detector, in centimetrs;
+   *   see SurfaceY() for details
    * - *MinWireZDist* (real; default: 3)
-   * - *PositionEpsilon* (real; default: 0.01%)
+   * - *PositionEpsilon* (real; default: 0.01%) set the default tolerance
+   *   (see DefaultWiggle())
+   * 
    */
   class GeometryCore {
   public:
@@ -127,32 +133,301 @@ namespace geo {
     
     /// Destructor
     ~GeometryCore();
+    
+    
+    
+    /**
+     * @brief Returns the tolerance used in looking for positions
+     * @return the tolerance value
+     * 
+     * This parameter is used as tolerance ("wiggle") for methods that require
+     * it (e.g. CryostatGeo::FindTPCAtPosition()).
+     * Typically, it's a additional fraction of tolerance: 0 means no tolerance,
+     * 0.1 means 10% tolerance.
+     * 
+     * @todo Confirm the definition of wiggle: this one is taken from other doc
+     */
+    double DefaultWiggle() const { return fPositionWiggle; }
+    
+    /**
+     * @brief Returns the full directory path to the geometry file source
+     * @return the full directory path to the geometry file source
+     * 
+     * This is the full path of the source of the detector geometry GeometryCore
+     * relies on.
+     */
+    std::string ROOTFile() const { return fROOTfile; }
 
-    // Number of readout channels in the detector
-    unsigned int Nchannels()                                      const;
-    // Number of cryostats in the detector
-    unsigned int Ncryostats()                                     const { return Cryostats().size();}
-    // Number of TPCs in the detector
-    unsigned int NTPC(unsigned int cstat = 0)                     const;
-    // Number of views (different wire orientations) in the detector
-    unsigned int Nviews()                                         const;
-    // Number of wire planes in TPC "tpc" of cryostat "cstat".
-    unsigned int Nplanes(unsigned int tpc   = 0,
-                         unsigned int cstat = 0)                  const;
-    // Number of wires in plane "p" of TPC "tpc" of cryostat "cstat".
-    unsigned int Nwires(unsigned int p,
-                        unsigned int tpc   = 0,
-                        unsigned int cstat = 0)                   const;
-    // Number of scintillator paddles (Auxiliary Detectors aka AuxDet) outside of the cryostat
-    unsigned int NAuxDets()                                       const { return AuxDets().size(); }
-
-    const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
-    const TPCGeo&       TPC(unsigned int const tpc   = 0,
-                            unsigned int const cstat = 0)         const;
-    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const
+    /**
+     * @brief Returns the full directory path to the GDML file source
+     * @return the full directory path to the GDML file source
+     * 
+     * This is the full path of the source of the detector geometry handed to
+     * the detector simulation (GEANT).
+     */
+    std::string GDMLFile() const { return fGDMLfile; }
+    
+    
+    
+    /// @{
+    /// @name Detector information
+    
+    //
+    // global features
+    //
+    /// Returns a string with the name of the detector, as configured
+    std::string DetectorName() const { return fDetectorName; }
+    
+    
+    //
+    // position
+    //
+    
+    /**
+     * @brief Fills the arguments with the boundaries of the world
+     * @param xlo (output) pointer to the lower x coordinate
+     * @param xlo (output) pointer to the upper x coordinate
+     * @param ylo (output) pointer to the lower y coordinate
+     * @param ylo (output) pointer to the upper y coordinate
+     * @param zlo (output) pointer to the lower z coordinate
+     * @param zlo (output) pointer to the upper z coordinate
+     * @throw cet::exception (`"GeometryCore"` category) if no world found
+     *
+     * This method fills the boundaries of the world volume, that is the one
+     * known as `"volWorld"` in the geometry.
+     * 
+     * If a pointer is null, its coordinate is skipped.
+     *
+     * @todo Replace it with a TPC boundaries style thing?
+     * @todo Unify the coordinates type
+     */
+    void WorldBox(double* xlo, double* xhi,
+                  double* ylo, double* yhi,
+                  double* zlo, double* zhi) const;
+    
+    /**
+     * @brief The position of the detector respect to earth surface
+     * @return typical y position at surface in units of cm
+     * 
+     * This is the depth (y) of the surface (where earth meets air) for this
+     * detector site.
+     * The number is expressed in world coordinates and in centimetres,
+     * and it represents the y coordinate of earth surface.
+     * A negative value means that the origin of coordinates, typically matching
+     * the detector centre, is above surface.
+     * 
+     * @todo check that this is actually how it is used
+     */
+    //
+    double SurfaceY() const { return fSurfaceY; }
+    
+    
+    //
+    // object description and information
+    //
+    
+    /// Access to the ROOT geometry description manager
+    TGeoManager* ROOTGeoManager() const;
+    
+    /// Return the name of the world volume (needed by Geant4 simulation)
+    const std::string GetWorldVolumeName() const;
+    
+    /**
+     * @brief Returns the name of the deepest volume containing specified point
+     * @param point the location to query, in world coordinates
+     * @return name of the volume containing the point
+     * 
+     * @todo Use a reference to TVector3
+     * @todo Use a double[3] instead?
+     * @todo declare it const
+     * @todo what happens if none?
+     * @todo Unify the coordinates type
+     */
+    const std::string VolumeName(TVector3 point);
+    
+    
+    /**
+     * @brief Name of the deepest material containing the point xyz
+     * @return material of the origin by default
+     * 
+     * @todo make this constant
+     * @todo remove return value constantness (or make it a reference)
+     * @todo Unify the coordinates type
+     */
+    const std::string MaterialName(TVector3 point);
+    
+    
+    /// Returns the material at the specified position
+    /// @todo Unify the coordinates type
+    TGeoMaterial const* Material(double x, double y, double z) const;
+    
+    /// Returns the total mass [kg] of the specified volume (default: world)
+    /// @todo Use GetWorldVolumeName() as default instead
+    double TotalMass(const char* vol = "volWorld") const;
+    
+    // this requires a bit more explanation about what this mass density is...
+    /**
+     * @brief Return the column density between two points
+     * @param p1 pointer to array holding (x, y, z) of the first point
+     * @param p2 pointer to array holding (x, y, z) of the second point
+     * @return the mass
+     * 
+     * Both points are specified in world coordinates.
+     * 
+     * @todo Unify the coordinates type
+     */
+    /// Returns the mass between two coordinates
+    double MassBetweenPoints(double *p1, double *p2) const;
+    
+    /// @}
+    
+    
+    
+    /// @{
+    /// @name Cryostat access and information
+    
+    //
+    // group features
+    //
+    
+    /// Returns the number of cryostats in the detector
+    /// @todo Change return type to size_t
+    unsigned int Ncryostats() const { return Cryostats().size(); }
+    
+    
+    //
+    // access
+    //
+    
+    /**
+     * @brief Returns the specified cryostat
+     * @param cstat number of cryostat
+     * @return a constant reference to the specified cryostat
+     * 
+     * @todo Make the cryostat number mandatory (as CryostatID)
+     * @todo what happens if it does not exist?
+     */
+    CryostatGeo const& Cryostat(unsigned int const cstat = 0) const;
+    
+    /**
+     * @brief Returns the index of the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the index of the cryostat, or UINT_MAX if no cryostat is there
+     *
+     * @todo replace the return value with a CryostatID
+     * @todo what happens if it does not exist?
+     * @todo Unify the coordinates type
+     */
+    unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Returns the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param cstat (output) number of cryostat
+     * @return a constant reference to the CryostatGeo object of the cryostat
+     * @throws cet::exception ("Geometry" category) if no cryostat matches
+     * 
+     * The tolerance used here is the one returned by DefaultWiggle().
+     * 
+     * @todo replace the output parameters with a cryostat ID
+     */
+    CryostatGeo const& PositionToCryostat
+      (double const worldLoc[3], unsigned int &cstat) const;
+    
+    
+    //
+    // single object features
+    //
+    
+    /// Returns the half width of the cryostat (x direction)
+    double CryostatHalfWidth(unsigned int cstat = 0) const;
+    
+    /// Returns the height of the cryostat (y direction)
+    double CryostatHalfHeight(unsigned int cstat = 0) const;
+    
+    /// Returns the length of the cryostat (z direction)
+    double CryostatLength(unsigned int cstat = 0) const;
+    
+    /**
+     * @brief Returns the boundaries of the specified cryostat
+     * @param boundaries (output) pointer to an area of 6 doubles for boundaries
+     * @param cstat number of cryostat
+     * 
+     * The boundaries array is filled with:
+     * [0] lower x coordinate  [1] upper x coordinate
+     * [2] lower y coordinate  [3] upper y coordinate
+     * [4] lower z coordinate  [5] upper z coordinate
+     * 
+     * @todo What happen on invalid cryostat?
+     * @todo Use a CryostatID instead
+     * @todo Check the implementation in TPC and use that one instead
+     */
+    void CryostatBoundaries
+      (double* boundaries, unsigned int cstat = 0) const;
+    
+    
+    //
+    // object description
+    //
+    
+    /**
+     * @brief Return the name of LAr TPC volume
+     * @param cstat index of the cryostat
+     * @return the name of the specified TPC
+     * 
+     * This information is used in the event display.
+     * 
+     * @todo Use a cryostat ID instead
+     * @todo What if it does not exist?
+     * @todo remove constantness of return type (or make it a reference)
+     */
+    const std::string GetCryostatVolumeName(unsigned int const cstat = 0) const;
+    
+    
+    /// @} Cryostat access and information
+    
+    
+    
+    /// @{
+    /// @name TPC access and information
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the total number of TPCs in the specified cryostat
+     * @param cstat cryostat number
+     * 
+     * @todo Make the cryostat number mandatory (as CryostatID)
+     * @todo Change return type to size_t
+     * @todo what happens if it does not exist?
+     */
+    unsigned int NTPC(unsigned int cstat = 0) const;
+    
+    
+    //
+    // access
+    //
+    
+    ///@{
+    /**
+     * @brief Returns the specified TPC
+     * @param tpcid ID of the tpc
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return a constant reference to the specified TPC
+     * 
+     * @todo remove the version with integers
+     * @todo what happens if it does not exist?
+     */
+    TPCGeo const& TPC
+      (unsigned int const tpc   = 0, unsigned int const cstat = 0) const;
+    TPCGeo const& TPC(geo::TPCID const& tpcid) const
       { return TPC(tpcid.TPC, tpcid.Cryostat); }
-
-
+    ///@}
+    
+    
     /**
      * @brief Returns the ID of the TPC at specified location
      * @param worldLoc 3D coordinates of the point (world reference frame)
@@ -160,258 +435,504 @@ namespace geo {
      */
     geo::TPCID FindTPCAtPosition(double const worldLoc[3]) const;
     
-    const TPCGeo&       PositionToTPC(double const  worldLoc[3],
-                                      unsigned int &tpc,
-                                      unsigned int &cstat)        const; // return the TPCGeo object containing
-                                                                         // the world position worldLoc
+    
     /**
-     * @brief Returns the index of the cryostat at specified location
+     * @brief Returns the TPC at specified location
      * @param worldLoc 3D coordinates of the point (world reference frame)
-     * @return the index of the cryostat, or UINT_MAX if no cryostat is there
+     * @param tpc (output) tpc number within the cryostat
+     * @param cstat (output) number of cryostat
+     * @return a constant reference to the TPCGeo object of the TPC
+     * @throws cet::exception ("Geometry" category) if no TPC matches
+     * 
+     * @todo replace the output parameters with a TPC ID
      */
-    unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
+    TPCGeo const& PositionToTPC
+      (double const worldLoc[3], unsigned int &tpc, unsigned int &cstat) const;
     
-    const CryostatGeo&  PositionToCryostat(double const  worldLoc[3],
-                                           unsigned int &cstat)   const; // return the CryostatGeo object containing
-                                                                         // the world position worldLoc
-    const PlaneGeo&     Plane(unsigned int const p,
-                              unsigned int const tpc   = 0,
-                              unsigned int const cstat = 0)       const;
     
-    const PlaneGeo&     Plane(const geo::PlaneID& pid)            const
-      { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
-
-    WireGeo const&      Wire(
-      unsigned int const w, unsigned int const p,
-      unsigned int const tpc   = 0, unsigned int const cstat = 0)
+    //
+    // single object features
+    //
+    
+    /**
+     * @brief Returns the half width of the specified TPC (x direction)
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return the value of the half width of the specified TPC
+     * 
+     * 
+     * @todo what happens if it does not exist?
+     * @todo add a version with TPCID
+     * @todo deprecate this function
+     * @todo rename the function
+     */
+    double DetHalfWidth(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    
+    /**
+     * @brief Returns the half height of the specified TPC (y direction)
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return the value of the half height of the specified TPC
+     * 
+     * 
+     * @todo what happens if it does not exist?
+     * @todo add a version with TPCID
+     * @todo deprecate this function
+     * @todo rename the function
+     */
+    double DetHalfHeight(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    
+    /**
+     * @brief Returns the length of the specified TPC (z direction)
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return the value of the length of the specified TPC
+     * 
+     * 
+     * @todo what happens if it does not exist?
+     * @todo add a version with TPCID
+     * @todo deprecate this function
+     * @todo rename the function
+     */
+    double DetLength(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    
+    
+    /**
+     * @brief Returns the centre of side of the detector facing the beam
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return a vector of the position of centre of TPC face toward the beam
+     * 
+     * As of April 2015, the origin of the co-ordinate system for ArgoNEUT and
+     * MicroBooNE is for z=0 and y=0 to be at the centre of the front face of
+     * the detector, but x=0 to be the edge of the TPC.
+     * This is convenient for read-out, but a pain for simulation.
+     * This method returns the centre of the front face of the TPC in the world
+     * co-ordinate system, making it easier to write detector-independent
+     * simulation code.
+     * 
+     * @todo Replace with a TPCID
+     */
+    const TVector3 GetTPCFrontFaceCenter
+      (unsigned int tpc = 0, unsigned int cstat = 0) const;
+    
+    
+    //
+    // object description
+    //
+    
+    /**
+     * @brief Return the name of specified LAr TPC volume
+     * @param tpc index of TPC in the cryostat
+     * @param cstat index of the cryostat
+     * @return the name of the specified TPC
+     * 
+     * This information is used by Geant4 simulation
+     * 
+     * @todo Use a TPCID instead
+     * @todo What if it does not exist?
+     */
+    const std::string GetLArTPCVolumeName
+      (unsigned int const tpc = 0, unsigned int const cstat = 0) const;
+    
+    /// @} TPC access and information
+    
+    
+    
+    /// @{
+    /// @name Plane access and information
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the total number of wire planes in the specified TPC
+     * @param tpc tpc number within the cryostat
+     * @param cstat cryostat number
+     * 
+     * @todo Make all the arguments mandatory (as TPCID)
+     * @todo Change return type to size_t
+     * @todo what happens if TPC does not exist?
+     */
+    unsigned int Nplanes(unsigned int tpc   = 0, unsigned int cstat = 0) const;
+    
+    
+    /**
+     * @brief Returns the number of views (different wire orientations)
+     * 
+     * Returns the number of different views, or wire orientations, in the
+     * detector.
+     * 
+     * The function assumes that all TPCs in all cryostats of a detector have
+     * the same number of planes, which should be a safe assumption.
+     * 
+     * @todo Change return type to size_t
+     */
+    unsigned int Nviews() const;
+    
+    /**
+     * @brief Returns a list of possible PlaneIDs in the detector
+     * @return a constant reference to the set of plane IDs
+     * 
+     * @todo verify the implementation
+     * @todo verify the use
+     * @deprecated This function smells a lot... do we really need a list of 720
+     * plane IDs of DUNE FD? probably better to use iterators instead
+     */
+    std::set<PlaneID> const& PlaneIDs() const;
+    
+    
+    //
+    // access
+    //
+    
+    //@{
+    /**
+     * @brief Returns the specified plane
+     * @param planeid ID of the plane
+     * @param plane plane number within the TPC
+     * @param tpc tpc number within the cryostat
+     * @param cstat number of cryostat
+     * @return a constant reference to the specified plane
+     * 
+     * @todo remove the version with integers
+     * @todo what happens if it does not exist?
+     */
+    PlaneGeo const& Plane
+      (unsigned int const p, unsigned int const tpc   = 0, unsigned int const cstat = 0)
       const;
+    PlaneGeo const& Plane(const geo::PlaneID& pid) const
+      { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
+    //@}
     
-    const WireGeo&      Wire(const geo::WireID& wid) const
-      { return Wire(wid.Wire, wid.Plane, wid.TPC, wid.Cryostat); }
-
-    const AuxDetGeo&    AuxDet(unsigned int const ad = 0)         const;
+    
+    //
+    // single object features
+    //
     
     /**
-     * @brief Returns the index of the auxiliary detector at specified location
-     * @param worldLoc 3D coordinates of the point (world reference frame)
-     * @return the index of the detector, or UINT_MAX if no detector is there
+     * @brief Returns the distance between two planes
+     * @param p1 index of the first plane
+     * @param p2 index of the second plane
+     * @param tpc tpc number within the cryostat
+     * @param cstat cryostat number
+     * @return distance between the planes
+     * 
+     * @todo add a version with plane IDs
+     * @todo deprecate this function
+     * @todo add a default version for a given TPCID
+     * @todo add a version with two plane indices for a given TPCID
+     * @todo return the absolute value of the distance (makes the order unimportant)
+     * @todo document what will happen (in the future methods) with planes on different TPCs
      */
-    std::vector<AuxDetGeo*> const& AuxDetGeoVec() const { return fAuxDets; }
-
-    unsigned int     FindAuxDetAtPosition(double const worldLoc[3]) const;
+    double PlanePitch(unsigned int p1 = 0,
+                      unsigned int p2 = 1,
+                      unsigned int tpc = 0,
+                      unsigned int cstat = 0) const;
     
-    const AuxDetGeo& PositionToAuxDet(double const  worldLoc[3],
-				      unsigned int &ad)             const;  // return the AuxDetGeo object containing
-                                                                            // the world position worldLoc
-
-    void  FindAuxDetSensitiveAtPosition(double const worldLoc[3],
-					size_t     & adg,
-					size_t     & sv) const;
+    /**
+     * @brief Returns the view (wire orientation) on the channels of specified TPC plane
+     * @param plane TPC plane ID
+     * @return the type of signal on the specified plane, or geo::kUnknown
+     * 
+     * @todo verify that kUnknown is returned on invalid plane
+     */
+    View_t View(geo::PlaneID const pid) const;
     
-    const AuxDetSensitiveGeo& PositionToAuxDetSensitive(double const worldLoc[3],
-							size_t     & ad,
-							size_t     & sv) const;  // return the AuxDetGeo object containing
-                                                                                 // the world position worldLoc
-
-    std::vector< geo::WireID > ChannelToWire(raw::ChannelID_t const channel) const; // convert channel number to
-                                                                            // list of possible
-                                                                            // WireIDs
-
-    SigType_t         SignalType(raw::ChannelID_t const channel)    const; // return the signal type for a given channel
-    SigType_t         SignalType(geo::PlaneID const pid)        const; // return the signal type for a given channel
-    View_t            View(raw::ChannelID_t const channel)            const; // return the view type for a given channel
-    View_t            View(geo::PlaneID const pid)              const; // return the view type for a given channel
-    std::set<View_t>  const& Views()                              const; // return vector of possible views in the detector
-    std::set<PlaneID> const& PlaneIDs()                           const; // return vector of possible PlaneIDs in the detector
-
-    raw::ChannelID_t  PlaneWireToChannel(unsigned int const plane,
-                                           unsigned int const wire,
-                                           unsigned int const tpc = 0,
-                                           unsigned int const cstat = 0) const; // convert plane, wire to channel
-
-    raw::ChannelID_t  PlaneWireToChannel(WireID const& wireid)  const;
-
-    //  assuming heirachical numbering scheme
-    raw::ChannelID_t  NearestChannel(const double worldLoc[3],
-                                       unsigned int const PlaneNo,
-                                       unsigned int const TPCNo = 0,
-                                       unsigned int const cstat = 0) const; // find the nearest channel to
-                                                                            // input world coordinates
-    raw::ChannelID_t  NearestChannel(std::vector<double> const worldLoc,
-                                       unsigned int const PlaneNo,
-                                       unsigned int const TPCNo = 0,
-                                       unsigned int const cstat = 0) const; // find the nearest channel to
-                                                                            // input world coordinates
-    raw::ChannelID_t  NearestChannel(const TVector3& worldLoc,
-                                       unsigned int const PlaneNo,
-                                       unsigned int const TPCNo = 0,
-                                       unsigned int const cstat = 0) const; // find the nearest channel to
-                                                                            // input world coordinates
+    /**
+     * @brief Returns the type of signal on the channels of specified TPC plane
+     * @param plane TPC plane ID
+     * @return the type of signal on the specified plane, or geo::kMysteryType
+     * 
+     * Assumes that all the channels on the plane have the same signal type.
+     * 
+     * @todo verify that kMysteryType is returned on invalid plane
+     */
+    SigType_t SignalType(geo::PlaneID const pid) const;
+    
+    
+    /// @} Plane access and information
+    
+    
+    /// @{
+    /// @name Wire access and information
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the total number of wires in the specified plane
+     * @param p plane number within the TPC
+     * @param tpc tpc number within the cryostat
+     * @param cstat cryostat number
+     * 
+     * @todo Make all the arguments mandatory (as PlaneID)
+     * @todo Change return type to size_t
+     * @todo what happens if it does not exist?
+     */
+    unsigned int Nwires
+      (unsigned int p, unsigned int tpc   = 0, unsigned int cstat = 0) const;
+    
+    
+    //
+    // access
+    //
+    
+    /**
+     * @brief Returns the specified wire
+     * @param CodeWire ID of the wire
+     * @return a constant reference to the specified wire
+     * 
+     * @todo what happens if it does not exist?
+     * @todo rename this to Wire()
+     */
+    WireGeo const& WireIDToWireGeo(WireID CodeWire) const;
+    
+    
+    //
+    // single object features
+    //
+    
+    /**
+     * @brief Returns the distance between two wires
+     * @param w1 index of the first wire
+     * @param w2 index of the second wire
+     * @param p plane number within the TPC
+     * @param tpc tpc number within the cryostat
+     * @param cstat cryostat number
+     * @return the distance between the two wires
+     * 
+     * The wires must belong to the same plane. They are assumed parallel.
+     * 
+     * @todo add a version with wire IDs
+     * @todo deprecate this function
+     * @todo add a default version for a given PlaneID
+     * @todo add a version with two wire indices for a given PlaneID
+     * @todo return the absolute value of the distance (makes the order unimportant)
+     * @todo document what will happen (in the future methods) with wires on different planes
+     * 
+     */
+    double WirePitch(unsigned int w1 = 0, 
+                     unsigned int w2 = 1, 
+                     unsigned int plane = 0,
+                     unsigned int tpc = 0,
+                     unsigned int cstat = 0) const;
+    
+    /**
+     * @brief Returns the distance between two wires in the specified view
+     * @param w1 index of the first wire
+     * @param w2 index of the second wire
+     * @param p plane number within the TPC
+     * @param tpc tpc number within the cryostat
+     * @param cstat cryostat number
+     * @return the distance between the two wires
+     * 
+     * This method assumes that all the wires on all the planes on the specified
+     * view of all TPCs have the same pitch.
+     */
+    double WirePitch(geo::View_t view) const; 
+    
+    
+    /**
+     * @brief Returns the angle of the wires in the specified view from vertical
+     * @param view the view
+     * @param TPC the index of the TPC in the specified cryostat
+     * @param Cryo the cryostat
+     * @return the angle [radians]
+     * 
+     * The angle is defined as in WireGeo::ThetaZ().
+     * 
+     * This method assumes all wires in the view have the same angle (it queries
+     * for the first).
+     *
+     * @todo Use a TPCID
+     * @deprecated This does not feel APA-ready
+     */
+    double WireAngleToVertical(geo::View_t view, int TPC=0, int Cryo=0) const;
+    
+    
+    /// @} Wire access and information
+    
+    
+    
+    /// @{
+    /**
+     * @name Wire geometry queries
+     * 
+     * Please note the differences between functions:
+     * ChannelsIntersect(), WireIDsIntersect() and IntersectionPoint()
+     * all calculate wires intersection using the same equation.
+     * ChannelsIntersect() and WireIdsIntersect() will return true
+     * if the two wires cross, return false if they don't.
+     * IntersectionPoint() does not check if the two wires cross.
+     */
+    
+    //
+    // simple geometry queries
+    //
+    
+    /**
+     * @brief Fills two arrays with the coordinates of the wire end points
+     * @param cstat cryostat number
+     * @param tpc tpc number within the cryostat
+     * @param plane plane number within the TPC
+     * @param wire wire number within the plane
+     * @param xyzStart (output) an array with the start coordinate
+     * @param xyzEnd (output) an array with the end coordinate
+     * 
+     * The starting point is the wire end with lower z coordinate.
+     * 
+     * @todo use a wire ID instead
+     * @todo use an array instead?
+     * @todo what happens if it does not exist?
+     */
+    void WireEndPoints(
+      unsigned int cstat, unsigned int tpc, unsigned int plane, unsigned int wire,
+      double *xyzStart, double *xyzEnd
+      ) const;
+    
+    
+    //
+    // closest wire
+    //
+    
+    //@{
+    /**
+     * @brief Returns the ID of wire closest to position in the specified TPC
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param PlaneNo plane number within the TPC
+     * @param TPCNo tpc number within the cryostat
+     * @param cstat cryostat number
+     * @return the ID of the wire, or an invalid wire ID
+     *
+     * The different versions allow different way to provide the position.
+     *
+     * @todo add a PlaneID version
+     * @todo remove the integers version
+     * @todo Verify the invalid wire ID part
+     */
     const geo::WireID   NearestWireID(const double worldLoc[3],
                                       unsigned int const PlaneNo,
                                       unsigned int const TPCNo = 0,
-                                      unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                            // world coordinates
+                                      unsigned int const cstat = 0)  const;
     const geo::WireID   NearestWireID(std::vector<double> worldLoc,
                                       unsigned int const PlaneNo,
                                       unsigned int const TPCNo = 0,
-                                      unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                            // world coordinate
+                                      unsigned int const cstat = 0)  const;
     const geo::WireID   NearestWireID(const TVector3& worldLoc,
                                       unsigned int const PlaneNo,
                                       unsigned int const TPCNo = 0,
-                                      unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                            // world coordinates
+                                      unsigned int const cstat = 0)  const;
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns the index of wire closest to position in the specified TPC
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param PlaneNo plane number within the TPC
+     * @param TPCNo tpc number within the cryostat
+     * @param cstat cryostat number
+     * @return the index of the wire
+     *
+     * The different versions allow different way to provide the position.
+     *
+     * @todo add a PlaneID version
+     * @todo remove the integers version
+     * @todo what happens when no wire is found?
+     * @todo deprecate this for NearestWireID()
+     */
+    unsigned int       NearestWire(const double worldLoc[3],
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0)  const;
+    unsigned int       NearestWire(std::vector<double> worldLoc,
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0) const;
+    unsigned int       NearestWire(const TVector3& worldLoc,
+                                   unsigned int const PlaneNo,
+                                   unsigned int const TPCNo = 0,
+                                   unsigned int const cstat = 0)  const;
+    //@}
+    
+    
+   /**
+    * @brief Returns the index of the nearest wire to the specified position
+    * @param YPos y coordinate on the wire plane
+    * @param ZPos z coordinate on the wire plane
+    * @param PlaneNo number of plane
+    * @param TPCNo number of TPC
+    * @param cstat number of cryostat
+    * @return an index interpolation between the two nearest wires
+    * @see ChannelMapAlg::WireCoordinate()
+    *
+    * Respect to NearestWireID(), this method returns a real number,
+    * representing a continuous coordinate in the wire axis, with the round
+    * values corresponding to the actual wires.
+    * 
+    * @todo Unify (y, z) coordinate
+    * @todo use plane ID instead
+    */
     double WireCoordinate(double YPos, double ZPos,
                           unsigned int PlaneNo,
                           unsigned int TPCNo,
                           unsigned int cstat) const;
-
-    unsigned int       NearestWire(const double worldLoc[3],
-                                   unsigned int const PlaneNo,
-                                   unsigned int const TPCNo = 0,
-                                   unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                         // world coordinates
-    unsigned int       NearestWire(std::vector<double> worldLoc,
-                                   unsigned int const PlaneNo,
-                                   unsigned int const TPCNo = 0,
-                                   unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                         // world coordinate
-    unsigned int       NearestWire(const TVector3& worldLoc,
-                                   unsigned int const PlaneNo,
-                                   unsigned int const TPCNo = 0,
-                                   unsigned int const cstat = 0)  const; // nearest wire to input
-                                                                         // world coordinates
-
-    const TGeoMaterial* Material(double x,
-                                 double y,
-                                 double z)                        const;
     
-    /// half width of the TPC
-    double DetHalfWidth(unsigned int tpc = 0, unsigned int cstat = 0) const;
-    double DetHalfWidth(geo::TPCID const& tpcid) const
-      { return DetHalfWidth(tpcid.TPC, tpcid.Cryostat); }
-    /// half height of the TPC
-    double DetHalfHeight(unsigned int tpc = 0, unsigned int cstat = 0) const;
-    double DetHalfHeight(geo::TPCID const& tpcid) const
-      { return DetHalfHeight(tpcid.TPC, tpcid.Cryostat); }
-     /// length of the TPC
-    double DetLength(unsigned int tpc = 0, unsigned int cstat = 0) const;
-    double DetLength(geo::TPCID const& tpcid) const
-      { return DetLength(tpcid.TPC, tpcid.Cryostat); }
-    
-    double              CryostatHalfWidth(unsigned int cstat = 0) const; // half width of the cryostat
-    double              CryostatHalfHeight(unsigned int cstat = 0)const; // half height of the cryostat
-    double              CryostatLength(unsigned int cstat = 0)    const; // length of the cryostat
-    void                CryostatBoundaries(double* boundaries,
-                                           unsigned int cstat = 0)const; // boundaries of cryostat, 3 pairs of +/- coord
-    double              PlanePitch(unsigned int p1 = 0,                  // distance between planes
-                                   unsigned int p2 = 1,
-                                   unsigned int tpc = 0,
-                                   unsigned int cstat = 0)        const; // p1 < p2
-    double              WirePitch(unsigned int w1 = 0,                   // distance between wires
-                                  unsigned int w2 = 1,                   // on the same plane
-                                  unsigned int plane = 0,
-                                  unsigned int tpc = 0,
-                                  unsigned int cstat = 0)         const; // w1 < w2
-    // distance between wires on the same plane (w1 < w2)
-    double              WirePitch(unsigned int w1,
-                                  unsigned int w2,
-                                  geo::PlaneID const& plane
-                                  ) const
-      { return WirePitch(w1, w2, plane.Plane, plane.TPC, plane.Cryostat); }
-    double              WirePitch(geo::PlaneID const& planeid) const
-      { return WirePitch(0, 1, planeid); }
-
-    double              WirePitch(geo::View_t view)               const; // assumes all planes in
-                                                                         // a view have the same pitch
-    double              WireAngleToVertical(geo::View_t view, int TPC=0, int Cryo=0)     const; // assumes all wires in the
-                                                                         // view have the same angle
-
-    void                WorldBox(double* xlo,
-                                 double* xhi,
-                                 double* ylo,
-                                 double* yhi,
-                                 double* zlo,
-                                 double* zhi)                     const; // volume box
-    double              TotalMass(const char* vol="volWorld")     const; // total mass of the
-                                                                         // specified volume
-    double              MassBetweenPoints(double *p1,
-                                          double *p2)             const; // mass between two points
-                                                                         // in the world
-
-    // A typical y-position value at the surface (where earth meets air)
-    // for this detector site
     //
-    // \returns typical y position at surface in units of cm
-    double              SurfaceY()                                const { return fSurfaceY; }
-
-    // Access to the ROOT geometry description.
-    TGeoManager*        ROOTGeoManager()                          const;
-
-    // The full directory path to the GDML file that was the source
-    // of the detector geometry.
-    std::string         ROOTFile()                                const { return fROOTfile; }
-    std::string         GDMLFile()                                const { return fGDMLfile; }
-    // The name of the detector.
-    std::string         DetectorName()                            const { return std::string(fDetectorName); }
-
-
-
-    // The Geant4 simulation needs to know the name of the world volume.
-    const std::string GetWorldVolumeName()                        const;
-
-    // The Geant4 simulation needs to know the name of the LAr TPC volume.
-    const std::string GetLArTPCVolumeName(unsigned int const tpc = 0,
-                                          unsigned int const cstat = 0) const;
-
-    // The event display needs to know the name of the cryostat.
-    const std::string GetCryostatVolumeName(unsigned int const cstat = 0)const;
-
-    // As of Aug-2009, the origin of the co-ordinate system for
-    // ArgoNEUT and MicroBooNE is for z=0 and y=0 to be at the center
-    // of the front face of the detector, but x=0 to be the edge of
-    // the TPC.  This is convenient for read-out, but a pain for
-    // simulation.  This method returns the center of the front face
-    // of the TPC in the world co-ordinate system, making it easier
-    // to write detector-independent simulation code.
-    const TVector3 GetTPCFrontFaceCenter(unsigned int tpc = 0,
-                                         unsigned int cstat = 0)  const;
-
-    // Name of the deepest volume containing the point xyz
-    // returns volume containing the origin by default
-    const std::string VolumeName(TVector3 point);
-
-    // Name of the deepest material containing the point xyz
-    // returns material of the origin by default
-    const std::string MaterialName(TVector3 point);
-
+    // wire intersections
+    //
+    
     // The following functions are utilized to determine if two wires
     // in the TPC intersect or not, and if they do then
     // determine the coordinates of the intersection.
-    // Starting point of wire is end with lower z-coordinate.
-    // Please note the differences between functions:
-    // ChannelsIntersect(), WireIDsIntersect() and IntersectionPoint()
-    // all calculate wires intersection using the same equation.
-    // ChannelsIntersect() and WireIdsIntersect() will return true
-    // if the two wires cross, return false if they don't.
-    // IntersectionPoint() does not check if the two wires cross.
-    bool ValueInRange(double value,
-                      double min,
-                      double max) const;
-    void WireEndPoints(unsigned int cstat,
-                       unsigned int tpc,
-                       unsigned int plane,
-                       unsigned int wire,
-                       double *xyzStart,
-                       double *xyzEnd) const;
-    bool ChannelsIntersect(raw::ChannelID_t c1,
-                           raw::ChannelID_t c2,
-                           double &y,
-                           double &z);
-    bool WireIDsIntersect(const WireID& wid1,
-                          const WireID& wid2,
-                          WireIDIntersection & widIntersect) const;
+    
+    /**
+     * @brief Computes the intersection between two wires
+     * @param wid1 ID of the first wire
+     * @param wid2 ID of the other wire
+     * @param widIntersect (output) the coordinate of the intersection point
+     * @return whether an intersection was found
+     * 
+     * The "intersection" refers to the projection of the wires into the same
+     * x = 0 plane.
+     * Wires are assumed to have at most one intersection.
+     * If wires are parallel or belong to different TPCs or to the same plane
+     * (i.e. they are parallel), widIntersect is undefined and false is
+     * returned.
+     * 
+     * @todo What if the wires intersect outside their TPC?
+     */
+    bool WireIDsIntersect
+      (WireID const& wid1, WireID const& wid2, WireIDIntersection& widIntersect)
+      const;
+    
+    /**
+     * @brief Returns the intersection point of two wires
+     * @param wire1 wire index of the first wire
+     * @param wire2 wire index of the other wire
+     * @param plane1 plane index of the first wire
+     * @param plane2 plane index of the other wire
+     * @param tpc tpc number within the cryostat where the planes belong
+     * @param cstat cryostat number
+     * @param start_w1 coordinates of the start of the first wire
+     * @param end_w1 coordinates of the end of the first wire
+     * @param start_w2 coordinates of the start of the other wire
+     * @param end_w2 coordinates of the end of the other wire
+     * @param y (output) y coordinate of the intersection point
+     * @param z (output) z coordinate of the intersection point
+     *
+     * No check is performed, not any information provided, about the validity
+     * of the result.
+     * 
+     * @todo move to protected (or just junk it)
+     * @todo make wire borders constant
+     * @todo return a WireIDIntersection instead
+     * @todo what if the intersection is outside the TPC?
+     *
+     * @deprecated For internal use only
+     */
     void IntersectionPoint(unsigned int wire1,
                            unsigned int wire2,
                            unsigned int plane1,
@@ -424,6 +945,26 @@ namespace geo {
                            double end_w2[3],
                            double &y,
                            double &z);
+    
+    /**
+     * @brief Returns the intersection point of two wires
+     * @param wire1 wire index of the first wire
+     * @param wire2 wire index of the other wire
+     * @param plane1 plane index of the first wire
+     * @param plane2 plane index of the other wire
+     * @param cstat cryostat number
+     * @param tpc tpc number within the cryostat where the planes belong
+     * @param y (output) y coordinate of the intersection point
+     * @param z (output) z coordinate of the intersection point
+     *
+     * No check is performed, not any information provided, about the validity
+     * of the result.
+     * 
+     * @todo use WireIDs instead? or else, use TPCID
+     * @todo move to protected (or just junk it)
+     * @todo return a WireIDIntersection instead
+     * @todo what if the intersection is outside the TPC?
+     */
     void IntersectionPoint(unsigned int wire1,
                            unsigned int wire2,
                            unsigned int plane1,
@@ -432,51 +973,356 @@ namespace geo {
                            unsigned int tpc,
                            double &y,
                            double &z);
-
-    // Given a slope dTime/dWire in two planes, return with the slope in the 3rd plane
+    
+    
+    /**
+     * @brief Returns the slope on the third plane, given it in the other two
+     * @param plane1 plane index of the first slope
+     * @param slope1 slope as seen on the first plane
+     * @param plane2 plane index of the second slope
+     * @param slope2 slope as seen on the second plane
+     * @param tpc tpc number within the cryostat where the planes belong
+     * @param cstat cryostat number
+     * @return the slope on the third plane
+     *
+     * Given a slope as projected in two planes, returns the slope as projected
+     * in the third plane.
+     * The slopes are defined in dTime/dWire units, that assumes equal wire
+     * pitch in all planes and a uniform drift velocity.
+     * This method assumes the presence of three planes.
+     * 
+     * @todo Probably the math is good for any number of planes though
+     * @todo Check the correctness of the definition of the slopes
+     * @todo What happens if it's infinite?
+     */
     double ThirdPlaneSlope(unsigned int plane1, double slope1, 
                            unsigned int plane2, double slope2,
                            unsigned int tpc, unsigned int cstat);
 
+    /// @} Wire geometry queries
     
-    ////////////////////////////////
-    // Optical Detector functions //
-    ////////////////////////////////
-
-    // Number of OpDets in the whole detector
-    unsigned int NOpDets()                                        const;
-
-    // Number of electronics channels for all the optical detectors
-    unsigned int NOpChannels()                                    const;
+    
+    
+    /// @{
+    /// @name Optical detector access and information
+    
+    //
+    // group features
+    //
+    
+    /// Number of OpDets in the whole detector
+    unsigned int NOpDets() const;
+    
+    
+    //
+    // access
+    //
+    //@{
+    /// Access the OpDetGeo object by OpDet or Channel Number
+    OpDetGeo const& OpDetGeoFromOpChannel(unsigned int OpChannel) const;
+    OpDetGeo const& OpDetGeoFromOpDet(unsigned int OpDet) const;
+    //@}
+    
+    /**
+     * @brief Find the nearest OpChannel to some point
+     * @param xyz point to be queried, in world coordinates
+     * @return the nearest OpChannel to the point
+     * 
+     * The cryostat the channel is in is automatically discovered.
+     * @todo make xyz constant; maybe an array?
+     * @todo Unify the coordinates type
+     */
+    unsigned int GetClosestOpDet(double * xyz) const;
+    
+    
+    //
+    // object description
+    //
+    
+    /**
+     * @brief Returns gdml string which gives sensitive opdet name
+     * @param c ID of the cryostat the detector is in
+     * 
+     * This name is defined in the geometry (GDML) description.
+	  * 
+     * @todo Change to use CryostatID
+     */
+    std::string OpDetGeoName(unsigned int c = 0) const;
+    
+    /// @} Optical detector access and information
+    
+    
+    
+    /// @{
+    /// @name Auxiliary detectors access and information
+    
+    /// @todo use a AutDetID_t instead of unsigned int?
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the number of auxiliary detectors
+     * 
+     * This method returns the total number of scintillator paddles
+     * (Auxiliary Detectors aka AuxDet) outside of the cryostat
+     * 
+     * @todo Change return type to size_t
+     */
+    unsigned int NAuxDets() const { return AuxDets().size(); }
+    
+    
+    //
+    // access
+    //
+    
+    /**
+     * @brief Returns the specified auxiliary detector
+     * @param ad the auxiliary detector index
+     * @return a constant reference to the specified auxiliary detector
+     * 
+     * @todo what happens if it does not exist?
+     * @todo remove the default parameter?
+     */
+    AuxDetGeo const& AuxDet(unsigned int const ad = 0) const;
+    
+    /// Returns the full list of pointer to the auxiliary detectors
+    std::vector<AuxDetGeo*> const& AuxDetGeoVec() const { return fAuxDets; }
+    
+    /**
+     * @brief Returns the index of the auxiliary detector at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the index of the detector, or UINT_MAX if no detector is there
+     * 
+     * @todo replace with numeric_limits<>?
+     */
+    unsigned int FindAuxDetAtPosition(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Fills the indices of the sensitive auxiliary detector at location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param adg (output) auxiliary detector index
+     * @param sv (output) sensitive volume index
+     */
+    void  FindAuxDetSensitiveAtPosition(double const worldLoc[3],
+                                        size_t     & adg,
+                                        size_t     & sv) const;
+    
+    /**
+     * @brief Returns the auxiliary detector at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param ad (output) the auxiliary detector index
+     * @return constant reference to AuxDetGeo object of the auxiliary detector
+     * 
+     * @todo what happens if it does not exist?
+     */
+    AuxDetGeo const& PositionToAuxDet
+      (double const worldLoc[3], unsigned int &ad) const;
+    
+    /**
+     * @brief Returns the auxiliary detector at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param ad (output) the auxiliary detector index
+     * @param sv (output) the auxiliary detector sensitive volume index
+     * @return reference to AuxDetSensitiveGeo object of the auxiliary detector
+     * 
+     * @todo what happens if it does not exist?
+     */
+    const AuxDetSensitiveGeo& PositionToAuxDetSensitive(double const worldLoc[3],
+                                                        size_t     & ad,
+                                                        size_t     & sv) const;
+    
+    /// @} Auxiliary detectors access and information
+    
+    
+    
+    /// @{
+    /// @name TPC readout channels and views
+    
+    //
+    // group features
+    //
+    
+    /// Returns the number of TPC readout channels in the detector
+    unsigned int Nchannels() const;
+    
+    /**
+     * @brief Returns a list of possible views in the detector
+     * @return a constant reference to the set of views
+     * 
+     * @todo Verify the implementation
+     */
+    std::set<View_t> const& Views() const;
+    
+    
+    //
+    // access
+    //
+    
+    //@{
+    /**
+     * @brief Returns the ID of the TPC channel connected to the specified wire
+     * @param plane the number of plane
+     * @param wire the number of wire
+     * @param tpc the number of TPC
+     * @param cryostat the number of cryostat
+     * @param wireid the ID of the wire
+     * @return the ID of the channel, or raw::InvalidChannelID if invalid wire
+     *
+     * @todo Verify the raw::InvalidChannelID part
+     * @todo remove the integers version
+     */
+    raw::ChannelID_t  PlaneWireToChannel(unsigned int const plane,
+                                         unsigned int const wire,
+                                         unsigned int const tpc = 0,
+                                         unsigned int const cstat = 0) const;
+    raw::ChannelID_t  PlaneWireToChannel(WireID const& wireid)  const;
+    //@}
+    
+    //
+    // single object features
+    //
+    
+    /**
+     * @brief Returns the type of signal on the specified TPC channel
+     * @param channel TPC channel ID
+     * @return the type of signal on the specified channel, or geo::kMysteryType
+     * 
+     * @todo verify that kMysteryType is returned on invalid channel
+     */
+    SigType_t SignalType(raw::ChannelID_t const channel) const;
+    
+    
+    /**
+     * @brief Returns the view (wire orientation) on the specified TPC channel
+     * @param channel TPC channel ID
+     * @return the type of signal on the specified channel, or geo::kUnknown
+     * 
+     * @todo verify that kUnknown is returned on invalid channel
+     * @todo what does this mean for APAs? is it at least well defined?
+     */
+    View_t View(raw::ChannelID_t const channel) const;
+    
+    
+    /**
+     * @brief Returns a list of wires connected to the specified TPC channel
+     * @param channel TPC channel ID
+     * @return vector containing the ID of all the connected wires
+     */
+    std::vector<geo::WireID> ChannelToWire
+      (raw::ChannelID_t const channel) const;
+    
+    
+    //
+    // geometry queries
+    //
+    
+    //@{
+    /**
+     * @brief Returns the ID of the channel nearest to the specified position
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param PlaneNo the number of plane
+     * @param TPCNo the number of TPC
+     * @param cstat the number of cryostat
+     * @return the ID of the channel, or raw::InvalidChannelID if invalid wire
+     *
+     * The different versions allow different way to provide the position.
+     *
+     * @todo add a PlaneID version
+     * @todo remove the integers version
+     * @todo Verify the raw::InvalidChannelID part
+     */
+    raw::ChannelID_t  NearestChannel(const double worldLoc[3],
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const;
+    raw::ChannelID_t  NearestChannel(std::vector<double> const worldLoc,
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const;
+    raw::ChannelID_t  NearestChannel(const TVector3& worldLoc,
+                                       unsigned int const PlaneNo,
+                                       unsigned int const TPCNo = 0,
+                                       unsigned int const cstat = 0) const;
+    //@}
+    
+    /**
+     * @brief Returns an intersection point of two channels
+     * @param c1 one channel ID
+     * @param c2 the other channel ID
+     * @param y (output) y coordinate of the intersection
+     * @param z (output) z coordinate of the intersection
+     * @return whether a intersection point was found
+     * 
+     * @todo what happens for channels from different TPCs?
+     * @todo what happens for channels with multiple intersection points?
+     * 
+     * @deprecated This is clearly not APA-aware
+     */
+    bool ChannelsIntersect
+      (raw::ChannelID_t c1, raw::ChannelID_t c2, double &y, double &z);
+    
+    /// @} TPC readout channels
+    
+    
+    
+    /// @{
+    /// @name Optical readout channels
+    /// @todo add explanation of the different IDs
+    
+    //
+    // group features
+    //
+    
+    /// Number of electronics channels for all the optical detectors
+    unsigned int NOpChannels() const;
 
     // Number of hardware channels for a given optical detector
-    unsigned int NOpHardwareChannels(int opDet)                   const;
+    unsigned int NOpHardwareChannels(int opDet) const;
+    
+    
+    //
+    // access
+    //
+    
+    /// Is this a valid OpChannel number?
+    bool IsValidOpChannel(int opChannel) const;
+    
+    /// Convert detector number and hardware channel to unique channel
+    unsigned int OpChannel(int detNum, int hardwareChannel) const;
+    
+    /// Convert unique channel to detector number
+    unsigned int OpDetFromOpChannel(int opChannel) const;
+    
+    /// Convert unique channel to hardware channel
+    unsigned int HardwareChannelFromOpChannel(int opChannel) const;
+    
+    /// Get unique opdet number from cryo and internal count
+    unsigned int OpDetFromCryo(unsigned int o, unsigned int c) const;
 
-    // Convert detector number and hardware channel to unique channel
-    // and vice versa
-    unsigned int OpChannel(int detNum, int hardwareChannel)       const;
-    unsigned int OpDetFromOpChannel(int opChannel)                const;
-    unsigned int HardwareChannelFromOpChannel(int opChannel)      const;
-
-    // Is this a valid OpChannel number?
-    bool IsValidOpChannel(int opChannel)                          const;
-
-    // Get unique opdet number from cryo and internal count
-    unsigned int OpDetFromCryo(unsigned int o, unsigned int c )   const;
-
-    // Access the OpDetGeo object by OpDet or Channel Number
-    const OpDetGeo& OpDetGeoFromOpChannel(unsigned int OpChannel) const;
-    const OpDetGeo& OpDetGeoFromOpDet(unsigned int OpDet)         const;
-
-
-    // Return gdml string which gives sensitive opdet name
-    std::string            OpDetGeoName(unsigned int c=0) const;
-
-
-    // Find the nearest OpChannel to some point, in the appropriate cryostat
-    unsigned int  GetClosestOpDet(double * xyz) const;
-
-    const WireGeo& WireIDToWireGeo(WireID CodeWire) const;
+    /// @} Optical readout channels
+    
+    
+    //
+    // unsorted methods
+    //
+    
+    /**
+     * @brief Returns whether a value is within the specified range
+     * @param value the value to be tested
+     * @param min the lower boundary
+     * @param max the upper boundary
+     * @return whether the value is within range
+     * 
+     * If min is larger than max, they are swapped.
+     * A tolerance of 10^-6 (absolute) is used.
+     * 
+     * @todo Use wiggle instead of 10^-6
+     * @todo resort source code for a bit of speed up
+     */
+    bool ValueInRange(double value, double min, double max) const;
+    
     
       protected:
     /// Base class for geometry iterators
@@ -834,6 +1680,9 @@ namespace geo {
     }; // class wire_iterator
     
     
+    /// @{
+    /// @name Geometry initialization
+    
     /**
      * @brief Loads the geometry information from the specified files
      * @param gdmlfile path to file to be used for Geant4 simulation
@@ -857,7 +1706,7 @@ namespace geo {
      * channel mapping.
      */
     void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
-
+    
     /**
      * @brief Initializes the geometry to work with this channel map
      * @param pChannelMap a pointer to the channel mapping algorithm to be used
@@ -866,17 +1715,19 @@ namespace geo {
      * The specified channel mapping is used with this geometry.
      * The algorithm object is asked and allowed to make the necessary
      * modifications to the geometry description.
-	  * These modifications typically involve some resorting of the objects.
-	  * 
-	  * The ownership of the algorithm object is shared, usually with a calling
-	  * framework: we maintain it alive as long as we need it (and no other code
-	  * can delete it), and we delete it only if no other code is sharing the
-	  * ownership.
+     * These modifications typically involve some resorting of the objects.
+     * 
+     * The ownership of the algorithm object is shared, usually with a calling
+     * framework: we maintain it alive as long as we need it (and no other code
+     * can delete it), and we delete it only if no other code is sharing the
+     * ownership.
      * 
      * This method needs to be called after LoadGeometryFile() to complete the
      * geometry initialization.
      */
     void ApplyChannelMap(std::shared_ptr<geo::ChannelMapAlg> pChannelMap);
+    /// @}
+    
     
   protected:
     /// Sets the detector name
@@ -907,33 +1758,30 @@ namespace geo {
     
   private:
     
-    void FindCryostat(std::vector<const TGeoNode*>& path,
-                      unsigned int depth);
-    void MakeCryostat(std::vector<const TGeoNode*>& path,
-                      int depth);
-    void FindAuxDet(std::vector<const TGeoNode*>& path,
-                    unsigned int depth);
-    void MakeAuxDet(std::vector<const TGeoNode*>& path,
-                    int depth);
+    void FindCryostat(std::vector<const TGeoNode*>& path, unsigned int depth);
+    
+    void MakeCryostat(std::vector<const TGeoNode*>& path, int depth);
+    
+    void FindAuxDet(std::vector<const TGeoNode*>& path, unsigned int depth);
+    
+    void MakeAuxDet(std::vector<const TGeoNode*>& path, int depth);
     
     /// Deletes the detector geometry structures
     void ClearGeometry();
     
     
-    GeometryData_t            fGeoData;          ///< The detector description data
+    GeometryData_t fGeoData;        ///< The detector description data
     
-    double                    fSurfaceY;         ///< The point where air meets earth for this detector.
-    std::string               fDetectorName;     ///< Name of the detector.
-    std::string               fGDMLfile;         ///< The GDML file used for the detector geometry
-    std::string               fROOTfile;         ///< The GDML file used for the detector geometry
-                                                 ///< geometry file
-    double                    fMinWireZDist;     ///< Minimum distance in Z from a point in which
-                                                 ///< to look for the closest wire
-                                                 ///< rather than GDMLfile
-    geo::DetId_t              fDetId;            ///< Detector type (deprecated, legacy)
-    double                    fPositionWiggle;   ///< accounting for rounding errors when testing positions
+    double         fSurfaceY;       ///< The point where air meets earth for this detector.
+    std::string    fDetectorName;   ///< Name of the detector.
+    std::string    fGDMLfile;       ///< path to geometry file used for Geant4 simulation
+    std::string    fROOTfile;       ///< path to geometry file for geometry in GeometryCore
+    double         fMinWireZDist;   ///< Minimum distance in Z from a point in which
+                                    ///< to look for the closest wire
+    geo::DetId_t   fDetId;          ///< Detector type (deprecated, legacy)
+    double         fPositionWiggle; ///< accounting for rounding errors when testing positions
     std::shared_ptr<const geo::ChannelMapAlg>
-                              fChannelMapAlg;    ///< Object containing the channel to wire mapping
+                   fChannelMapAlg;  ///< Object containing the channel to wire mapping
   }; // class GeometryCore
   
 } // namespace geo

@@ -62,6 +62,7 @@ namespace geo{
     * @brief Returns the index of the wire nearset to the specified position
     * @param YPos y coordinate on the wire plane
     * @param ZPos z coordinate on the wire plane
+    * @param PlaneNo number of plane
     * @param TPCNo number of TPC
     * @param cstat number of cryostat
     * @return an index interpolation between the two nearest wires
