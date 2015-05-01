@@ -1312,7 +1312,7 @@ namespace geo {
   }
   
   //--------------------------------------------------------------------
-  const WireGeo& GeometryCore::WireIDToWireGeo(geo::WireID CodeWire) const
+  WireGeo const& GeometryCore::WireIDToWireGeo(geo::WireID const& CodeWire) const
   {
     unsigned int cryo  = CodeWire.Cryostat;
     unsigned int tpc   = CodeWire.TPC;
@@ -1324,40 +1324,40 @@ namespace geo {
   
   
   //--------------------------------------------------------------------
-  constexpr GeometryCore::geometry_iterator_base::BeginPos_t
-    GeometryCore::geometry_iterator_base::begin_pos;
-  constexpr GeometryCore::geometry_iterator_base::EndPos_t
-    GeometryCore::geometry_iterator_base::end_pos;
-  constexpr GeometryCore::geometry_iterator_base::UndefinedPos_t
-    GeometryCore::geometry_iterator_base::undefined_pos;
+  constexpr details::geometry_iterator_base::BeginPos_t
+    details::geometry_iterator_base::begin_pos;
+  constexpr details::geometry_iterator_base::EndPos_t
+    details::geometry_iterator_base::end_pos;
+  constexpr details::geometry_iterator_base::UndefinedPos_t
+    details::geometry_iterator_base::undefined_pos;
   
   //--------------------------------------------------------------------
-  void GeometryCore::cryostat_iterator::next() {
+  void cryostat_iterator::next() {
     if (!id.isValid) return;
     if (++id.Cryostat < limits.Cryostat) return;
     id.isValid = false;
-  } // GeometryCore::cryostat_iterator::next()
+  } // cryostat_iterator::next()
   
   
-  void GeometryCore::cryostat_iterator::prev() {
+  void cryostat_iterator::prev() {
     if (!id.isValid) return;
     if (id.Cryostat-- >= 0) return;
     id.isValid = false;
-  } // GeometryCore::cryostat_iterator::prev()
+  } // cryostat_iterator::prev()
   
   
-  const CryostatGeo* GeometryCore::cryostat_iterator::get() const
+  const CryostatGeo* cryostat_iterator::get() const
     { return id.isValid? &(pGeo->Cryostat(id.Cryostat)): nullptr; }
   
   
-  void GeometryCore::cryostat_iterator::set_limits() {
+  void cryostat_iterator::set_limits() {
     limits = CryostatID(pGeo->Ncryostats());
     limits.isValid = false;
-  } // GeometryCore::cryostat_iterator::set_limits()
+  } // cryostat_iterator::set_limits()
   
   
   //--------------------------------------------------------------------
-  GeometryCore::TPC_iterator& GeometryCore::TPC_iterator::operator++() {
+  TPC_iterator& TPC_iterator::operator++() {
     if (!tpcid.isValid) return *this;
     
     ++tpcid.TPC;
@@ -1369,36 +1369,36 @@ namespace geo {
     } // while
     tpcid.isValid = false;
     return *this;
-  } // GeometryCore::TPC_iterator::operator++()
+  } // TPC_iterator::operator++()
   
   
-  const TPCGeo* GeometryCore::TPC_iterator::get() const
+  const TPCGeo* TPC_iterator::get() const
     { return tpcid.isValid? &(pGeo->TPC(tpcid.TPC, tpcid.Cryostat)): nullptr; }
   
   
-  const CryostatGeo* GeometryCore::TPC_iterator::getCryostat() const {
+  const CryostatGeo* TPC_iterator::getCryostat() const {
     return tpcid.isValid? &(pGeo->Cryostat(tpcid.Cryostat)): nullptr;
-  } // GeometryCore::TPC_iterator::getCryostat()
+  } // TPC_iterator::getCryostat()
   
   
-  void GeometryCore::TPC_iterator::set_limits_and_validity() {
+  void TPC_iterator::set_limits_and_validity() {
     tpcid.isValid = false;
     limits.Cryostat = pGeo->Ncryostats();
     if (tpcid.Cryostat >= limits.Cryostat) return;
     limits.TPC = pGeo->NTPC(tpcid.Cryostat);
     if (tpcid.TPC >= limits.TPC) return;
     tpcid.isValid = true;
-  } // GeometryCore::TPC_iterator::set_limits_and_validity()
+  } // TPC_iterator::set_limits_and_validity()
   
   
-  void GeometryCore::TPC_iterator::new_cryostat() {
+  void TPC_iterator::new_cryostat() {
     tpcid.TPC = 0;
     limits.TPC = pGeo->NTPC(tpcid.Cryostat);
-  } // GeometryCore::TPC_iterator::new_cryostat()
+  } // TPC_iterator::new_cryostat()
   
   
   //--------------------------------------------------------------------
-  GeometryCore::plane_iterator& GeometryCore::plane_iterator::operator++() {
+  plane_iterator& plane_iterator::operator++() {
     if (!planeid.isValid) return *this;
     
     ++planeid.Plane;
@@ -1414,27 +1414,27 @@ namespace geo {
     } // while
     planeid.isValid = false;
     return *this;
-  } // GeometryCore::plane_iterator::operator++()
+  } // plane_iterator::operator++()
   
   
-  const PlaneGeo* GeometryCore::plane_iterator::get() const {
+  const PlaneGeo* plane_iterator::get() const {
     return planeid.isValid?
       &(pGeo->Plane(planeid.Plane, planeid.TPC, planeid.Cryostat)): nullptr;
-  } // GeometryCore::plane_iterator::get()
+  } // plane_iterator::get()
   
   
-  const TPCGeo* GeometryCore::plane_iterator::getTPC() const {
+  const TPCGeo* plane_iterator::getTPC() const {
     return planeid.isValid?
       &(pGeo->TPC(planeid.TPC, planeid.Cryostat)): nullptr;
-  } // GeometryCore::plane_iterator::getTPC()
+  } // plane_iterator::getTPC()
   
   
-  const CryostatGeo* GeometryCore::plane_iterator::getCryostat() const {
+  const CryostatGeo* plane_iterator::getCryostat() const {
     return planeid.isValid? &(pGeo->Cryostat(planeid.Cryostat)): nullptr;
-  } // GeometryCore::plane_iterator::getCryostat()
+  } // plane_iterator::getCryostat()
   
   
-  void GeometryCore::plane_iterator::set_limits_and_validity() {
+  void plane_iterator::set_limits_and_validity() {
     planeid.isValid = false;
     limits.Cryostat = pGeo->Ncryostats();
     if (planeid.Cryostat >= limits.Cryostat) return;
@@ -1445,23 +1445,23 @@ namespace geo {
     limits.Plane = TPC.Nplanes();
     if (planeid.Plane >= limits.Plane) return;
     planeid.isValid = true;
-  } // GeometryCore::plane_iterator::set_limits_and_validity()
+  } // plane_iterator::set_limits_and_validity()
   
   
-  void GeometryCore::plane_iterator::new_cryostat() {
+  void plane_iterator::new_cryostat() {
     planeid.TPC = 0;
     limits.TPC = pGeo->NTPC(planeid.Cryostat);
-  } // GeometryCore::plane_iterator::new_cryostat()
+  } // plane_iterator::new_cryostat()
   
   
-  void GeometryCore::plane_iterator::new_tpc() {
+  void plane_iterator::new_tpc() {
     planeid.Plane = 0;
     limits.Plane = pGeo->Nplanes(planeid.TPC, planeid.Cryostat);
-  } // GeometryCore::plane_iterator::new_tpc()
+  } // plane_iterator::new_tpc()
   
   
   //--------------------------------------------------------------------
-  GeometryCore::wire_iterator& GeometryCore::wire_iterator::operator++() {
+  wire_iterator& wire_iterator::operator++() {
     if (!wireid.isValid) return *this;
     
     ++wireid.Wire;
@@ -1481,31 +1481,31 @@ namespace geo {
     } // while
     wireid.isValid = false;
     return *this;
-  } // GeometryCore::wire_iterator::operator++()
+  } // wire_iterator::operator++()
   
   
-  const WireGeo* GeometryCore::wire_iterator::get() const {
+  const WireGeo* wire_iterator::get() const {
     return wireid.isValid? &(getPlane()->Wire(wireid.Wire)): nullptr;
-  } // GeometryCore::wire_iterator::get()
+  } // wire_iterator::get()
   
   
-  const PlaneGeo* GeometryCore::wire_iterator::getPlane() const {
+  const PlaneGeo* wire_iterator::getPlane() const {
     return wireid.isValid?
       &(pGeo->Plane(wireid.Plane, wireid.TPC, wireid.Cryostat)): nullptr;
-  } // GeometryCore::wire_iterator::get()
+  } // wire_iterator::get()
   
   
-  const TPCGeo* GeometryCore::wire_iterator::getTPC() const {
+  const TPCGeo* wire_iterator::getTPC() const {
     return wireid.isValid? &(pGeo->TPC(wireid.TPC, wireid.Cryostat)): nullptr;
-  } // GeometryCore::wire_iterator::getTPC()
+  } // wire_iterator::getTPC()
   
   
-  const CryostatGeo* GeometryCore::wire_iterator::getCryostat() const {
+  const CryostatGeo* wire_iterator::getCryostat() const {
     return wireid.isValid? &(pGeo->Cryostat(wireid.Cryostat)): nullptr;
-  } // GeometryCore::wire_iterator::getCryostat()
+  } // wire_iterator::getCryostat()
   
   
-  void GeometryCore::wire_iterator::set_limits_and_validity() {
+  void wire_iterator::set_limits_and_validity() {
     wireid.isValid = false;
     limits.Cryostat = pGeo->Ncryostats();
     if (wireid.Cryostat >= limits.Cryostat) return;
@@ -1519,24 +1519,24 @@ namespace geo {
     limits.Wire = Plane.Nwires();
     if (wireid.Wire >= limits.Wire) return;
     wireid.isValid = true;
-  } // GeometryCore::wire_iterator::set_limits_and_validity()
+  } // wire_iterator::set_limits_and_validity()
   
   
-  void GeometryCore::wire_iterator::new_cryostat() {
+  void wire_iterator::new_cryostat() {
     wireid.TPC = 0;
     limits.TPC = pGeo->NTPC(wireid.Cryostat);
-  } // GeometryCore::wire_iterator::new_cryostat()
+  } // wire_iterator::new_cryostat()
   
   
-  void GeometryCore::wire_iterator::new_tpc() {
+  void wire_iterator::new_tpc() {
     wireid.Plane = 0;
     limits.Plane = pGeo->Nplanes(wireid.TPC, wireid.Cryostat);
-  } // GeometryCore::wire_iterator::new_tpc()
+  } // wire_iterator::new_tpc()
   
-  void GeometryCore::wire_iterator::new_plane() {
+  void wire_iterator::new_plane() {
     wireid.Wire = 0;
     limits.Wire = pGeo->Nwires(wireid.Plane, wireid.TPC, wireid.Cryostat);
-  } // GeometryCore::wire_iterator::new_plane()
+  } // wire_iterator::new_plane()
   
   
 } // namespace geo

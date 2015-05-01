@@ -253,23 +253,24 @@ namespace geo{
       ++nErrors;
     }
     
-    // test if we can loop all cryostats with the iterators;
-    // this is not the best way to write the test, but it shows a good use of
-    // the iterators for a loop (although one might prefer
-    // GeometryCode::IterateCryostats() and not to have nLoopedCryostats in the
-    // way)
+    // test if we can loop all cryostats with the iterators (via iterator box)
     unsigned int nLoopedCryostats = 0;
-    auto cend = geom->end_cryostat();
-    for (iCryostat = geom->begin_cryostat(); iCryostat != cend;
-      ++iCryostat, ++nLoopedCryostats)
-    {
-      if (nLoopedCryostats >= nCryostats) break;
+    for (geo::CryostatID const& cID: geom->IterateCryostats()) {
+      if (nLoopedCryostats >= nCryostats) {
+        LOG_ERROR("GeometryIteratorTest")
+          << "After all " << nLoopedCryostats
+          << " cryostats, iterator has not reached the end ("
+          << *(geom->end_cryostat()) << ") but it's still at " << cID;
+        ++nErrors;
+        break;
+      }
+      ++nLoopedCryostats;
     }
-    if (iCryostat != cend) {
+    if (nLoopedCryostats < nCryostats) {
       LOG_ERROR("GeometryIteratorTest")
-        << "After all " << nLoopedCryostats
-        << " cryostats, iterator has not reached the end (" << (*cend)
-        << ") but it's still at " << *iCryostat;
+        << "Looped only " << nLoopedCryostats
+        << " cryostats, iterator has reached " << *iCryostat
+        << " but we expected " << nCryostats << " iterations!";
       ++nErrors;
     } // if
     
