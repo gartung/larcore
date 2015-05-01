@@ -84,7 +84,8 @@ namespace geo{
     LOG_VERBATIM("GeometryIteratorTest") << "We have " << nCryo << " cryostats";
     
     unsigned int nErrors = 0;
-    geo::Geometry::cryostat_iterator iCryostat(&*geom);
+    geo::Geometry::cryostat_iterator iCryostat = geom->begin_cryostat();
+    unsigned int nCryostats = 0;
     geo::Geometry::TPC_iterator iTPC(&*geom);
     geo::Geometry::plane_iterator iPlane(&*geom);
     geo::Geometry::wire_iterator iWire(&*geom);
@@ -107,7 +108,7 @@ namespace geo{
           << "Cryostat iterator thinks it's all over at C=" << c;
         ++nErrors;
       }
-      else if (*iCryostat != c) {
+      else if (iCryostat->Cryostat != c) {
         LOG_ERROR("GeometryIteratorTest")
           << "Cryostat iterator thinks it's at C=" << (*iCryostat)
           << " instead of " << c;
@@ -242,14 +243,35 @@ namespace geo{
         ++iTPC;
       } // end loop over tpcs
       ++iCryostat;
+      ++nCryostats;
     } // end loop over cryostats
     
     if (iCryostat) {
       LOG_ERROR("GeometryIteratorTest")
-        << "Cryostat iterator thinks it's still at C=" << *iCryostat
+        << "Cryostat iterator thinks it's still at " << *iCryostat
         << ", but we are already over";
       ++nErrors;
     }
+    
+    // test if we can loop all cryostats with the iterators;
+    // this is not the best way to write the test, but it shows a good use of
+    // the iterators for a loop (although one might prefer
+    // GeometryCode::IterateCryostats() and not to have nLoopedCryostats in the
+    // way)
+    unsigned int nLoopedCryostats = 0;
+    auto cend = geom->end_cryostat();
+    for (iCryostat = geom->begin_cryostat(); iCryostat != cend;
+      ++iCryostat, ++nLoopedCryostats)
+    {
+      if (nLoopedCryostats >= nCryostats) break;
+    }
+    if (iCryostat != cend) {
+      LOG_ERROR("GeometryIteratorTest")
+        << "After all " << nLoopedCryostats
+        << " cryostats, iterator has not reached the end (" << (*cend)
+        << ") but it's still at " << *iCryostat;
+      ++nErrors;
+    } // if
     
     if (iTPC) {
       LOG_ERROR("GeometryIteratorTest")

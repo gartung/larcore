@@ -1324,30 +1324,36 @@ namespace geo {
   
   
   //--------------------------------------------------------------------
-  GeometryCore::cryostat_iterator& GeometryCore::cryostat_iterator::operator++() {
-    if (!isValid) return *this;
-    if (++cryoid < limits) return *this;
-    isValid = false;
-    return *this;
-  } // GeometryCore::cryostat_iterator::operator++()
+  constexpr GeometryCore::geometry_iterator_base::BeginPos_t
+    GeometryCore::geometry_iterator_base::begin_pos;
+  constexpr GeometryCore::geometry_iterator_base::EndPos_t
+    GeometryCore::geometry_iterator_base::end_pos;
+  constexpr GeometryCore::geometry_iterator_base::UndefinedPos_t
+    GeometryCore::geometry_iterator_base::undefined_pos;
+  
+  //--------------------------------------------------------------------
+  void GeometryCore::cryostat_iterator::next() {
+    if (!id.isValid) return;
+    if (++id.Cryostat < limits.Cryostat) return;
+    id.isValid = false;
+  } // GeometryCore::cryostat_iterator::next()
   
   
-  GeometryCore::cryostat_iterator& GeometryCore::cryostat_iterator::operator--() {
-    if (!isValid) return *this;
-    if (cryoid-- >= 0) return *this;
-    isValid = false;
-    return *this;
-  } // GeometryCore::cryostat_iterator::operator--()
+  void GeometryCore::cryostat_iterator::prev() {
+    if (!id.isValid) return;
+    if (id.Cryostat-- >= 0) return;
+    id.isValid = false;
+  } // GeometryCore::cryostat_iterator::prev()
   
   
   const CryostatGeo* GeometryCore::cryostat_iterator::get() const
-    { return isValid? &(pGeo->Cryostat(cryoid)): nullptr; }
+    { return id.isValid? &(pGeo->Cryostat(id.Cryostat)): nullptr; }
   
   
-  void GeometryCore::cryostat_iterator::set_limits_and_validity() {
-    limits = pGeo->Ncryostats();
-    isValid = (cryoid < limits);
-  } // GeometryCore::cryostat_iterator::set_limits_and_validity()
+  void GeometryCore::cryostat_iterator::set_limits() {
+    limits = CryostatID(pGeo->Ncryostats());
+    limits.isValid = false;
+  } // GeometryCore::cryostat_iterator::set_limits()
   
   
   //--------------------------------------------------------------------

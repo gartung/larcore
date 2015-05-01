@@ -1380,11 +1380,33 @@ namespace geo {
     class geometry_iterator_base {
         public:
       
+      //@{
+      /// Structures to distinguish the constructors
+      struct BeginPos_t {};
+      struct EndPos_t {};
+      struct UndefinedPos_t {};
+      
+      static constexpr BeginPos_t begin_pos = {};
+      static constexpr EndPos_t end_pos = {};
+      static constexpr UndefinedPos_t undefined_pos = {};
+      //@}
+      
       /// Constructor: associates with the specified geometry
       geometry_iterator_base(geo::GeometryCore const* geom): pGeo(geom) {}
       
+      /// Constructor: associates with the specified geometry and sets to begin
+      geometry_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+        pGeo(geom) {}
+      
+      /// Constructor: associates with the specified geometry and sets to end
+      geometry_iterator_base(geo::GeometryCore const* geom, EndPos_t):
+        pGeo(geom) {}
+      
         protected:
-      const GeometryCore* pGeo; ///< pointer to the geometry
+      const GeometryCore* pGeo = nullptr; ///< pointer to the geometry
+      
+      /// Default constructor; do not use a default-constructed iterator as-is!
+      geometry_iterator_base() {}
       
     }; // class geometry_iterator_base
     
@@ -1406,59 +1428,86 @@ namespace geo {
      * @endcode
      */
     class cryostat_iterator:
-      public std::forward_iterator_tag, protected geometry_iterator_base
+      public std::forward_iterator_tag, public geometry_iterator_base
     {
         public:
-      typedef unsigned int CryoID; /// type of cryostat ID
       
-      /// Default constructor: points to the first cryostat
+      /// Default constructor; effect not defined: assign to it before using!
+      cryostat_iterator() {}
+      
+      /// Constructor: points to begin
       cryostat_iterator(geo::GeometryCore const* geom):
-        geometry_iterator_base(geom)
-        { set_limits_and_validity(); }
+        cryostat_iterator(geom, begin_pos) {}
       
       /// Constructor: points to the specified cryostat
-      cryostat_iterator(geo::GeometryCore const* geom, CryoID start_from):
-        geometry_iterator_base(geom), cryoid(start_from)
-        { set_limits_and_validity(); }
+      cryostat_iterator
+        (geo::GeometryCore const* geom, CryostatID const& start_from):
+        cryostat_iterator(geom, undefined_pos)
+        { id = start_from; }
+      
+      /// Constructor: points to begin
+      cryostat_iterator(geo::GeometryCore const* geom, BeginPos_t):
+        cryostat_iterator(geom, undefined_pos)
+        { set_begin(); }
+      
+      /// Constructor: points to end
+      cryostat_iterator(geo::GeometryCore const* geom, EndPos_t):
+        cryostat_iterator(geom, undefined_pos)
+        { set_end(); }
       
       bool operator== (const cryostat_iterator& as) const
-        { return cryoid == as.cryoid; }
-      bool operator!= (const cryostat_iterator& as) const
-        { return cryoid != as.cryoid; }
-      
-      /// Returns whether the iterator is pointing to a valid cryostat
-      operator bool() const { return isValid; }
+        { return id == as.id; }
+      bool operator!= (const cryostat_iterator& as) const 
+        { return id != as.id; }
       
       /// Returns a copy of the TPCID the iterator points to
-      CryoID operator* () const { return cryoid; }
+      CryostatID const& operator* () const { return id; }
+      
+      /// Returns a copy of the TPCID the iterator points to
+      CryostatID const* operator-> () const { return &id; }
       
       /// Prefix increment: returns this iterator pointing to the next cryostat
-      cryostat_iterator& operator++ ();
+      cryostat_iterator& operator++ () { next(); return *this; }
       
       /// Prefix decrement: returns this iterator pointing to the previous cryostat
-      cryostat_iterator& operator-- ();
+      cryostat_iterator& operator-- () { prev(); return *this; }
       
       /// Postfix increment: returns the current iterator, then increments it
       cryostat_iterator operator++ (int)
-        { cryostat_iterator old(*this); this->operator++(); return old; }
+        { cryostat_iterator old(*this); next(); return old; }
       
       /// Postfix decrement: returns the current iterator, then decrements it
       cryostat_iterator operator-- (int)
-        { cryostat_iterator old(*this); this->operator--(); return old; }
+        { cryostat_iterator old(*this); prev(); return old; }
       
-      /// Skips to the next cryostat
-      cryostat_iterator& next() { return this->operator++(); }
+      /// Returns whether the iterator is pointing to a valid cryostat
+      operator bool() const { return id.isValid; }
       
       /// Returns a pointer to cryostat, or nullptr if the iterator is not valid
-      const CryostatGeo* get() const;
+      CryostatGeo const* get() const;
       
         protected:
-      bool isValid = false;  ///< whether the current iterator position is valid
+      CryostatID id;     ///< current cryostat
+      CryostatID limits; ///< maxima of the indices
       
-      CryoID cryoid = { 0 }; ///< current cryostat
-      CryoID limits = { 0 }; ///< maxima of the indices
+      cryostat_iterator(geo::GeometryCore const* geom, UndefinedPos_t):
+        geometry_iterator_base(geom), id()
+        { set_limits(); }
       
-      void set_limits_and_validity();
+      /// Sets the iterator to the end position
+      void set_begin() { id = CryostatID(0); id.isValid = (id != limits); }
+      
+      /// Sets the iterator to the end position
+      void set_end() { id = limits; }
+      
+      /// Skips to the next cryostat
+      void next();
+      
+      /// Skips to the previous cryostat
+      void prev();
+      
+      void set_limits();
+      
     }; // class cryostat_iterator
     
     
@@ -1678,6 +1727,16 @@ namespace geo {
       void new_tpc();
       void new_plane();
     }; // class wire_iterator
+    
+    
+    /// Returns an iterator pointing to the first cryostat
+    cryostat_iterator begin_cryostat() const
+      { return { this, cryostat_iterator::begin_pos }; }
+    
+    /// Returns an iterator pointing after the last cryostat
+    cryostat_iterator end_cryostat() const
+      { return { this, cryostat_iterator::end_pos }; }
+    
     
     
     /// @{

@@ -3,6 +3,7 @@
 
 #include <climits>
 #include <cmath>
+#include <limits> // std::numeric_limits<>
 
 namespace geo {
   typedef enum coordinates {
@@ -52,6 +53,35 @@ namespace geo {
     kPosX,         ///< drift towards positive X values			
     kNegX 	   ///< drift towards negative X values			
   } DriftDirection_t;
+
+  // The data type to uniquely identify a cryostat
+  struct CryostatID {
+    using ID_t = unsigned int; ///< type for the ID number
+    
+    CryostatID(): isValid(false), Cryostat(std::numeric_limits<ID_t>::max()) {}
+    
+    explicit CryostatID(unsigned int c): isValid(true), Cryostat(c) {}
+    
+    bool isValid;  ///< whether this ID points to a valid TPC
+    ID_t Cryostat; ///< index of cryostat the TPC belongs
+    
+    /// Returns true if the ID is valid
+    operator bool() const { return isValid; }
+    
+    /// Returns true if the ID is not valid
+    bool operator! () const { return !isValid; }
+    
+    bool operator== (const CryostatID& cid) const
+      { return Cryostat == cid.Cryostat; }
+    
+    bool operator!= (const CryostatID& cid) const
+      { return Cryostat != cid.Cryostat; }
+    
+    /// Order cryostats with increasing ID
+    bool operator< (const CryostatID& cid) const
+      { return Cryostat < cid.Cryostat; }
+    
+  }; // struct CryostatID
 
   // The data type to uniquely identify a TPC
   struct TPCID { 
@@ -218,6 +248,14 @@ namespace geo {
       return std::abs( y ) > std::abs( otherIntersect.y );
     }
   };
+
+  /// Generic output of CryostatID to stream
+  template <typename Stream>
+  inline Stream& operator<< (Stream& out, const CryostatID& cid) {
+    out << "C:" << cid.Cryostat;
+    return out;
+  } // operator<< (Stream, CryostatID)
+
 
   /// Generic output of TPCID to stream
   template <typename Stream>
