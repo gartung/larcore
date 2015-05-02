@@ -3,7 +3,7 @@
 
 #include <climits>
 #include <cmath>
-#include <limits> // std::numeric_limits<>
+// #include <limits> // std::numeric_limits<>
 
 namespace geo {
   typedef enum coordinates {
@@ -54,16 +54,24 @@ namespace geo {
     kNegX 	   ///< drift towards negative X values			
   } DriftDirection_t;
 
-  // The data type to uniquely identify a cryostat
+  /// The data type to uniquely identify a cryostat
   struct CryostatID {
-    using ID_t = unsigned int; ///< type for the ID number
+    typedef unsigned int ID_t; ///< type for the ID number
     
-    CryostatID(): isValid(false), Cryostat(std::numeric_limits<ID_t>::max()) {}
+    bool isValid;  ///< whether this ID points to a valid element
+    ID_t Cryostat; ///< index of cryostat
     
+    // not constexpr because we would need an implementation file to define the
+    // constant (and because ROOT 5 does not understand that)
+  //  static constexpr ID_t InvalidID = std::numeric_limits<ID_t>::max();
+    /// Special code for an invalid ID
+    static const ID_t InvalidID = UINT_MAX;
+    
+    /// Default constructor: an invalid cryostat
+    CryostatID(): isValid(false), Cryostat(InvalidID) {}
+    
+    /// Constructor: valid ID of cryostat with index c
     explicit CryostatID(unsigned int c): isValid(true), Cryostat(c) {}
-    
-    bool isValid;  ///< whether this ID points to a valid TPC
-    ID_t Cryostat; ///< index of cryostat the TPC belongs
     
     /// Returns true if the ID is valid
     operator bool() const { return isValid; }
@@ -71,18 +79,29 @@ namespace geo {
     /// Returns true if the ID is not valid
     bool operator! () const { return !isValid; }
     
-    bool operator== (const CryostatID& cid) const
-      { return Cryostat == cid.Cryostat; }
+    /// Comparison: the IDs point to the same cryostat (validity is ignored)
+    bool operator== (CryostatID const& other) const
+      { return Cryostat == other.Cryostat; }
     
-    bool operator!= (const CryostatID& cid) const
-      { return Cryostat != cid.Cryostat; }
+    /// Comparison: the IDs point to different cryostats (validity is ignored)
+    bool operator!= (CryostatID const& other) const
+      { return Cryostat != other.Cryostat; }
     
     /// Order cryostats with increasing ID
-    bool operator< (const CryostatID& cid) const
-      { return Cryostat < cid.Cryostat; }
+    bool operator< (CryostatID const& other) const
+      { return Cryostat < other.Cryostat; }
+    
+    /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
+    int cmp(CryostatID const& other) const
+      { return ThreeWayComparison(Cryostat, other.Cryostat); }
+    
+    /// Returns < 0 if a < b, 0 if a == b, > 0 if a > b
+    static int ThreeWayComparison(ID_t a, ID_t b)
+      { return (a == b)? 0: ((a < b)? -1: +1); }
     
   }; // struct CryostatID
 
+#if 0
   // The data type to uniquely identify a TPC
   struct TPCID { 
     TPCID(): isValid(false), Cryostat(UINT_MAX), TPC(UINT_MAX) {}
@@ -114,7 +133,53 @@ namespace geo {
       } // operator<
 
   }; // struct TPCID
+#else
+  /// The data type to uniquely identify a TPC
+  struct TPCID: public CryostatID {
+    
+    ID_t TPC; ///< index of the TPC within its cryostat
+    
+    /// Default constructor: an invalid TPC ID
+    TPCID(): CryostatID(), TPC(InvalidID) {}
 
+    /// Constructor: TPC with index t in the cryostat identified by cryoid
+    TPCID(CryostatID const& cryoid, ID_t t): CryostatID(cryoid), TPC(t) {}
+
+    /// Constructor: TPC with index t in the cryostat index c
+    TPCID(ID_t c, ID_t t): CryostatID(c), TPC(t) {}
+
+    /// Comparison: the IDs point to the same TPC (validity is ignored)
+    bool operator== (TPCID const& other) const
+      { return CryostatID::operator==(other) && (TPC == other.TPC); }
+
+    /// Comparison: the IDs point to different TPCs (validity is ignored)
+    bool operator!= (TPCID const& other) const
+      { return CryostatID::operator!=(other) || (TPC != other.TPC); }
+
+    // Order TPCID in increasing Cryo, then TPC
+    bool operator< (TPCID const& other) const
+      {
+        register int cmp_res = CryostatID::cmp(other);
+        if (cmp_res == 0) // same cryostat: compare TPC
+          return TPC < other.TPC;
+        else              // return the order of cryostats
+          return cmp_res < 0;
+      } // operator<
+
+    /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
+    int cmp(TPCID const& other) const
+      {
+        register int cmp_res = CryostatID::cmp(other);
+        if (cmp_res == 0) // same cryostat: compare TPC
+          return ThreeWayComparison(TPC, other.TPC);
+        else              // return the order of cryostats
+          return cmp_res < 0;
+      } // cmp()
+    
+  }; // struct TPCID
+#endif
+
+#if 0
   // The data type to uniquely identify a Plane
   struct PlaneID { 
     PlaneID()
@@ -165,7 +230,53 @@ namespace geo {
     }
 
   };
+#else
+  /// The data type to uniquely identify a Plane
+  struct PlaneID: public TPCID {
+    
+    ID_t Plane; ///< index of the plane within its TPC
+    
+    /// Default constructor: an invalid plane ID
+    PlaneID(): TPCID(), Plane(InvalidID) {}
 
+    /// Constructor: plane with index p in the TPC identified by tpcid
+    PlaneID(TPCID const& tpcid, ID_t p): TPCID(tpcid), Plane(p) {}
+
+    /// Constructor: plane with index p in the cryostat index c, TPC index t
+    PlaneID(ID_t c, ID_t t, ID_t p): TPCID(c, t), Plane(p) {}
+
+    /// Comparison: the IDs point to the same plane (validity is ignored)
+    bool operator== (PlaneID const& other) const
+      { return TPCID::operator==(other) && (Plane == other.Plane); }
+
+    /// Comparison: the IDs point to different planes (validity is ignored)
+    bool operator!= (PlaneID const& other) const
+      { return TPCID::operator!=(other) || (Plane != other.Plane); }
+
+    // Order PlaneID in increasing TPC, then plane
+    bool operator< (PlaneID const& other) const
+      {
+        register int cmp_res = TPCID::cmp(other);
+        if (cmp_res == 0) // same TPC: compare plane
+          return Plane < other.Plane;
+        else              // return the order of TPC
+          return cmp_res < 0;
+      } // operator<
+
+    /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
+    int cmp(PlaneID const& other) const
+      {
+        register int cmp_res = TPCID::cmp(other);
+        if (cmp_res == 0) // same TPC: compare plane
+          return ThreeWayComparison(Plane, other.Plane);
+        else              // return the order of TPC
+          return cmp_res < 0;
+      } // cmp()
+    
+  }; // struct PlaneID
+#endif // 0
+  
+#if 0
   // The data type to uniquely identify a code wire segment.
   struct WireID { 
     WireID()
@@ -235,7 +346,57 @@ namespace geo {
     } // cmp()
 
   };
+#else
+  // The data type to uniquely identify a code wire segment.
+  struct WireID: public PlaneID {
+    
+    ID_t Wire; ///< index of the wire within its plane
+    
+    /// Default constructor: an invalid TPC ID
+    WireID(): PlaneID(), Wire(InvalidID) {}
 
+    /// Constructor: wire with index w in the plane identified by planeid
+    WireID(PlaneID const& planeid, ID_t w): PlaneID(planeid), Wire(w) {}
+
+    /// Constructor: wire with index w in cryostat index c, TPC index t,
+    /// plane index p
+    WireID(ID_t c, ID_t t, ID_t p, ID_t w): PlaneID(c, t, p), Wire(w) {}
+
+    /// Comparison: the IDs point to the same wire (validity is ignored)
+    bool operator== (WireID const& other) const
+      { return PlaneID::operator==(other) && (Wire == other.Wire); }
+
+    /// Comparison: the IDs point to different wires (validity is ignored)
+    bool operator!= (WireID const& other) const
+      { return PlaneID::operator!=(other) || (Wire != other.Wire); }
+
+    // Order WireID in increasing plane, then wire
+    bool operator< (WireID const& other) const
+      {
+        register int cmp_res = PlaneID::cmp(other);
+        if (cmp_res == 0) // same plane: compare wire
+          return Wire < other.Wire;
+        else              // return the order of planes
+          return cmp_res < 0;
+      } // operator<
+
+    /// Returns < 0 if this is smaller than tpcid, 0 if equal, > 0 if larger
+    int cmp(WireID const& other) const
+      {
+        register int cmp_res = PlaneID::cmp(other);
+        if (cmp_res == 0) // same plane: compare wire
+          return ThreeWayComparison(Wire, other.Wire);
+        else              // return the order of planes
+          return cmp_res < 0;
+      } // cmp()
+    
+    
+    /// Backward compatibility; use the wire directly or a explicit cast instead
+    /// @todo Remove the instances of geo::WireID::planeID() in the code
+    PlaneID const& planeID() const { return *this; }
+    
+  }; // struct WireID
+#endif // 0
 
   struct WireIDIntersection{
     double y;                  ///< y position of intersection
@@ -251,7 +412,7 @@ namespace geo {
 
   /// Generic output of CryostatID to stream
   template <typename Stream>
-  inline Stream& operator<< (Stream& out, const CryostatID& cid) {
+  inline Stream& operator<< (Stream& out, CryostatID const& cid) {
     out << "C:" << cid.Cryostat;
     return out;
   } // operator<< (Stream, CryostatID)
@@ -259,25 +420,24 @@ namespace geo {
 
   /// Generic output of TPCID to stream
   template <typename Stream>
-  inline Stream& operator<< (Stream& out, const TPCID& tid) {
-    out << "C:" << tid.Cryostat << " T:" << tid.TPC;
+  inline Stream& operator<< (Stream& out, TPCID const& tid) {
+    out << ((CryostatID const&) tid) << " T:" << tid.TPC;
     return out;
   } // operator<< (Stream, TPCID)
 
 
   /// Generic output of PlaneID to stream
   template <typename Stream>
-  inline Stream& operator<< (Stream& out, const PlaneID& pid) {
-    out << "C:" << pid.Cryostat << " T:" << pid.TPC << " P:" << pid.Plane;
+  inline Stream& operator<< (Stream& out, PlaneID const& pid) {
+    out << ((TPCID const&) pid) << " P:" << pid.Plane;
     return out;
   } // operator<< (Stream, PlaneID)
 
 
   /// Generic output of WireID to stream
   template <typename Stream>
-  inline Stream& operator<< (Stream& out, const WireID& wid) {
-    out << "C:" << wid.Cryostat << " T:" << wid.TPC
-       << " P:" << wid.Plane << " W:" << wid.Wire;
+  inline Stream& operator<< (Stream& out, WireID const& wid) {
+    out << ((PlaneID const&) wid) << " W:" << wid.Wire;
     return out;
   } // operator<< (Stream, WireID)
 
