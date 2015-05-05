@@ -1,12 +1,7 @@
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  Geometry
-          LIB_LIBRARIES ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_IO_SOURCES}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_PERSISTENCY_PROVENANCE}
-                        ${ART_UTILITIES}
-                        ${MF_MESSAGELOGGER}
+          LIB_LIBRARIES ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
                         ${CETLIB}
