@@ -23,6 +23,17 @@ simple_plugin ( GeometryTest "module"
 
 # geometry test on "standard" geometry
 
+# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
+cet_test(Geometry_test
+  SOURCES Geometry_test.cxx GeometryTestAlg.cxx
+  LIBRARIES Geometry
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+)
+
+
 # these tests run a FCL file and fail only if lar exits with a bad exit code;
 # they are fast and always run.
 # FCL files need to be copied to the test area (DATAFILES directive) since they
