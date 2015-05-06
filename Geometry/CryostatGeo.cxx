@@ -331,7 +331,7 @@ namespace geo{
 
   //......................................................................
 
-  const TVector3 CryostatGeo::WorldToLocal( const TVector3& world ) const
+  TVector3 CryostatGeo::WorldToLocal( const TVector3& world ) const
   {
     double worldArray[4];
     double localArray[4];
@@ -345,7 +345,7 @@ namespace geo{
 
   //......................................................................
 
-  const TVector3 CryostatGeo::LocalToWorld( const TVector3& local ) const
+  TVector3 CryostatGeo::LocalToWorld( const TVector3& local ) const
   {
     double worldArray[4];
     double localArray[4];
@@ -372,7 +372,7 @@ namespace geo{
   //......................................................................
   // Find the nearest opdet to point in this cryostat
 
-  unsigned int CryostatGeo::GetClosestOpDet(double * xyz) const
+  unsigned int CryostatGeo::GetClosestOpDet(double const* xyz) const
   {
     int    ClosestDet=-1;
     float  ClosestDist=UINT_MAX;

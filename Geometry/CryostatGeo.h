@@ -89,7 +89,7 @@ namespace geo {
     const OpDetGeo&   OpDet(unsigned int iopdet)                const;
 
     /// Find the nearest opdet to point in this cryostat
-    unsigned int GetClosestOpDet(double * xyz)                  const;
+    unsigned int GetClosestOpDet(double const* xyz)             const;
     
     /// Get name of opdet geometry element
     std::string  OpDetGeoName()                                 const { return fOpDetGeoName; }
@@ -102,7 +102,7 @@ namespace geo {
     //@{
     /// Transform point from local plane frame to world frame
     void LocalToWorld(const double* tpc, double* world)         const;
-    const TVector3 LocalToWorld( const TVector3& local )        const;
+    TVector3 LocalToWorld( const TVector3& local )              const;
     //@}
     
     /// Transform direction vector from local to world
@@ -111,7 +111,7 @@ namespace geo {
     //@{
     /// Transform point from world frame to local tpc frame
     void WorldToLocal(const double* world, double* tpc)         const;
-    const TVector3 WorldToLocal( const TVector3& world )        const;
+    TVector3 WorldToLocal( const TVector3& world )              const;
     //@}
     
     // Transform direction vector from world to local
