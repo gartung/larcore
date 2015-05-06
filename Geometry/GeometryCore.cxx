@@ -236,15 +236,15 @@ namespace geo {
   //
   // \throws geo::Exception if "cstat" is outside allowed range
   //
-  const CryostatGeo& GeometryCore::Cryostat(unsigned int const cstat) const 
-  {
-    if(cstat >= Ncryostats()) 
-      throw cet::exception("GeometryCore") << "Cryostat " 
-                                           << cstat 
+  CryostatGeo const& GeometryCore::Cryostat(CryostatID const& cryoid) const {
+    CryostatGeo const* pCryo = CryostatPtr(cryoid);
+    if(!pCryo) {
+      throw cet::exception("GeometryCore") << "Cryostat #"
+                                           << cryoid.Cryostat
                                            << " does not exist\n";
-
-    return *(Cryostats()[cstat]);
-  }
+    }
+    return *pCryo;
+  } // GeometryCore::Cryostat(CryostatID)
 
   //......................................................................
   //

@@ -726,19 +726,34 @@ namespace geo {
     //
     
     //@{
+    /// Returns whether we have the specified cryostat
+    bool HasCryostat(geo::CryostatID const& cryoid) const
+      { return cryoid.Cryostat < Ncryostats(); }
+    
     /**
      * @brief Returns the specified cryostat
      * @param cstat number of cryostat
      * @param cryoid cryostat ID
      * @return a constant reference to the specified cryostat
+     * @throws cet::exception ("GeometryCore" category) if not present
      * 
      * @todo Make the cryostat number mandatory (as CryostatID)
      * @todo what happens if it does not exist?
      */
-    CryostatGeo const& Cryostat(unsigned int const cstat = 0) const;
-    CryostatGeo const& GetElement(geo::CryostatID cryoid) const
-      { return Cryostat(cryoid.Cryostat); }
+    CryostatGeo const& Cryostat(geo::CryostatID const& cryoid) const;
+    CryostatGeo const& Cryostat(unsigned int const cstat = 0) const
+      { return Cryostat(geo::CryostatID(cstat)); }
+    CryostatGeo const& GetElement(geo::CryostatID const& cryoid) const
+      { return Cryostat(cryoid); }
     //@}
+    
+    /**
+     * @brief Returns the specified cryostat
+     * @param cryoid cryostat ID
+     * @return a constant pointer to the specified cryostat, or nullptr id none
+     */
+    CryostatGeo const* CryostatPtr(geo::CryostatID const& cryoid) const
+      { return HasCryostat(cryoid)? Cryostats()[cryoid.Cryostat]: nullptr; }
     
     /**
      * @brief Returns the index of the cryostat at specified location
