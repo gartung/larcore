@@ -28,8 +28,8 @@ namespace geo {
                                                 ///< with respect to z axis 
                                                 ///< in the Y-Z plane, in 
                                                 ///< radians by default
-    double CosThetaFromNormal(double * xyz) const;
-    double DistanceToPoint(double * xyz) const;
+    double CosThetaFromNormal(double const* xyz) const;
+    double DistanceToPoint(double const* xyz) const;
 
 
     void LocalToWorld(const double* local, double* world)     const;

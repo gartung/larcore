@@ -5,7 +5,7 @@
 /// \author  bjpjones@mit.edu
 ////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
+#include <cmath>
 
 #include "Geometry/OpDetGeo.h"
 
@@ -14,6 +14,11 @@
 #include "TGeoMatrix.h"
 #include "TGeoNode.h"
 #include "TMath.h"
+
+namespace {
+  template <typename T>
+  inline T sqr(T v) { return v*v; }
+} // local namespace
 
 namespace geo{
 
@@ -135,27 +140,27 @@ namespace geo{
 
   //......................................................................
   // Get the distance from some point to this detector
-  double OpDetGeo::DistanceToPoint(double * xyz) const
+  double OpDetGeo::DistanceToPoint(double const* xyz) const
   {
     double Center[3];
     GetCenter(Center);
-    return pow(
-      pow(Center[0]-xyz[0],2) +
-      pow(Center[1]-xyz[1],2) + 
-      pow(Center[2]-xyz[2],2), 0.5);        
+    return std::sqrt(
+      sqr(Center[0]-xyz[0]) +
+      sqr(Center[1]-xyz[1]) +
+      sqr(Center[2]-xyz[2]));
   }
 
 
   //......................................................................
   // Get cos(angle) to normal of this detector - used for solid angle calcs
-  double OpDetGeo::CosThetaFromNormal(double * xyz) const
+  double OpDetGeo::CosThetaFromNormal(double const* xyz) const
   {
     double local[3];
-    WorldToLocal(local, xyz);
+    WorldToLocal(xyz, local);
     return local[2] / 
-      pow( pow(local[0],2) +
-	   pow(local[1],2) +
-	   pow(local[2],2), 0.5);
+      std::sqrt(sqr(local[0]) +
+	   sqr(local[1]) +
+	   sqr(local[2]));
 
   }
 
