@@ -73,23 +73,16 @@ namespace geo {
     /// Constructor: valid ID of cryostat with index c
     explicit CryostatID(unsigned int c): isValid(true), Cryostat(c) {}
     
+    /// Constructor: valid ID of cryostat with index c
+    CryostatID(unsigned int c, bool valid): isValid(valid), Cryostat(c) {}
+    
     /// Returns true if the ID is valid
     operator bool() const { return isValid; }
     
     /// Returns true if the ID is not valid
     bool operator! () const { return !isValid; }
     
-    /// Comparison: the IDs point to the same cryostat (validity is ignored)
-    bool operator== (CryostatID const& other) const
-      { return Cryostat == other.Cryostat; }
-    
-    /// Comparison: the IDs point to different cryostats (validity is ignored)
-    bool operator!= (CryostatID const& other) const
-      { return Cryostat != other.Cryostat; }
-    
-    /// Order cryostats with increasing ID
-    bool operator< (CryostatID const& other) const
-      { return Cryostat < other.Cryostat; }
+    // comparison operators are out of class
     
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(CryostatID const& other) const
@@ -148,24 +141,8 @@ namespace geo {
     /// Constructor: TPC with index t in the cryostat index c
     TPCID(ID_t c, ID_t t): CryostatID(c), TPC(t) {}
 
-    /// Comparison: the IDs point to the same TPC (validity is ignored)
-    bool operator== (TPCID const& other) const
-      { return CryostatID::operator==(other) && (TPC == other.TPC); }
-
-    /// Comparison: the IDs point to different TPCs (validity is ignored)
-    bool operator!= (TPCID const& other) const
-      { return CryostatID::operator!=(other) || (TPC != other.TPC); }
-
-    // Order TPCID in increasing Cryo, then TPC
-    bool operator< (TPCID const& other) const
-      {
-        register int cmp_res = CryostatID::cmp(other);
-        if (cmp_res == 0) // same cryostat: compare TPC
-          return TPC < other.TPC;
-        else              // return the order of cryostats
-          return cmp_res < 0;
-      } // operator<
-
+    // comparison operators are out of class
+    
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(TPCID const& other) const
       {
@@ -245,24 +222,8 @@ namespace geo {
     /// Constructor: plane with index p in the cryostat index c, TPC index t
     PlaneID(ID_t c, ID_t t, ID_t p): TPCID(c, t), Plane(p) {}
 
-    /// Comparison: the IDs point to the same plane (validity is ignored)
-    bool operator== (PlaneID const& other) const
-      { return TPCID::operator==(other) && (Plane == other.Plane); }
-
-    /// Comparison: the IDs point to different planes (validity is ignored)
-    bool operator!= (PlaneID const& other) const
-      { return TPCID::operator!=(other) || (Plane != other.Plane); }
-
-    // Order PlaneID in increasing TPC, then plane
-    bool operator< (PlaneID const& other) const
-      {
-        register int cmp_res = TPCID::cmp(other);
-        if (cmp_res == 0) // same TPC: compare plane
-          return Plane < other.Plane;
-        else              // return the order of TPC
-          return cmp_res < 0;
-      } // operator<
-
+    // comparison operators are out of class
+    
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(PlaneID const& other) const
       {
@@ -362,24 +323,6 @@ namespace geo {
     /// plane index p
     WireID(ID_t c, ID_t t, ID_t p, ID_t w): PlaneID(c, t, p), Wire(w) {}
 
-    /// Comparison: the IDs point to the same wire (validity is ignored)
-    bool operator== (WireID const& other) const
-      { return PlaneID::operator==(other) && (Wire == other.Wire); }
-
-    /// Comparison: the IDs point to different wires (validity is ignored)
-    bool operator!= (WireID const& other) const
-      { return PlaneID::operator!=(other) || (Wire != other.Wire); }
-
-    // Order WireID in increasing plane, then wire
-    bool operator< (WireID const& other) const
-      {
-        register int cmp_res = PlaneID::cmp(other);
-        if (cmp_res == 0) // same plane: compare wire
-          return Wire < other.Wire;
-        else              // return the order of planes
-          return cmp_res < 0;
-      } // operator<
-
     /// Returns < 0 if this is smaller than tpcid, 0 if equal, > 0 if larger
     int cmp(WireID const& other) const
       {
@@ -410,6 +353,103 @@ namespace geo {
     }
   };
 
+  //----------------------------------------------------------------------------
+  //--- ID comparison operators
+  //---
+  
+  /// @{
+  /// @name ID comparison operators
+  /// @details The result of comparison with invalid IDs is undefined.
+  
+  /// Comparison: the IDs point to the same cryostat (validity is ignored)
+  inline bool operator== (CryostatID const& a, CryostatID const& b)
+    { return a.Cryostat == b.Cryostat; }
+  
+  /// Comparison: the IDs point to different cryostats (validity is ignored)
+  inline bool operator!= (CryostatID const& a, CryostatID const& b)
+    { return a.Cryostat != b.Cryostat; }
+  
+  /// Order cryostats with increasing ID
+  inline bool operator< (CryostatID const& a, CryostatID const& b)
+    { return a.Cryostat < b.Cryostat; }
+  
+  
+  /// Comparison: the IDs point to the same TPC (validity is ignored)
+  inline bool operator== (TPCID const& a, TPCID const& b) {
+    return
+      (static_cast<CryostatID const&>(a) == static_cast<CryostatID const&>(b))
+      && (a.TPC == b.TPC);
+  } // operator== (TPCID, TPCID)
+  
+  /// Comparison: the IDs point to different TPCs (validity is ignored)
+  inline bool operator!= (TPCID const& a, TPCID const& b) {
+    return
+      (static_cast<CryostatID const&>(a) != static_cast<CryostatID const&>(b))
+      || (a.TPC != b.TPC);
+  } // operator!= (TPCID, TPCID)
+  
+  /// Order TPCID in increasing Cryo, then TPC
+  inline bool operator< (TPCID const& a, TPCID const& b) {
+    register int cmp_res = (static_cast<CryostatID const&>(a)).cmp(b);
+    if (cmp_res == 0) // same cryostat: compare TPC
+      return a.TPC < b.TPC;
+    else              // return the order of cryostats
+      return cmp_res < 0;
+  } // operator< (TPCID, TPCID)
+  
+  
+  /// Comparison: the IDs point to the same plane (validity is ignored)
+  inline bool operator== (PlaneID const& a, PlaneID const& b) {
+    return
+      (static_cast<TPCID const&>(a) == static_cast<TPCID const&>(b))
+      && (a.Plane == b.Plane);
+  } // operator== (PlaneID, PlaneID)
+  
+  /// Comparison: the IDs point to different planes (validity is ignored)
+  inline bool operator!= (PlaneID const& a, PlaneID const& b) {
+    return
+      (static_cast<TPCID const&>(a) != static_cast<TPCID const&>(b))
+      || (a.Plane != b.Plane);
+  } // operator!= (PlaneID, PlaneID)
+  
+  /// Order PlaneID in increasing TPC, then plane
+  inline bool operator< (PlaneID const& a, PlaneID const& b) {
+    register int cmp_res = (static_cast<TPCID const&>(a)).cmp(b);
+    if (cmp_res == 0) // same TPC: compare plane
+      return a.Plane < b.Plane;
+    else              // return the order of TPC
+      return cmp_res < 0;
+  } // operator< (PlaneID, PlaneID)
+  
+  
+  /// Comparison: the IDs point to the same wire (validity is ignored)
+  inline bool operator== (WireID const& a, WireID const& b) {
+    return
+      (static_cast<PlaneID const&>(a) == static_cast<PlaneID const&>(b))
+      && (a.Wire == b.Wire);
+  } // operator== (WireID, WireID)
+  
+  /// Comparison: the IDs point to different wires (validity is ignored)
+  inline bool operator!= (WireID const& a, WireID const& b) {
+    return
+      (static_cast<PlaneID const&>(a) != static_cast<PlaneID const&>(b))
+      || (a.Wire != b.Wire);
+  } // operator!= (WireID, WireID)
+  
+  // Order WireID in increasing plane, then wire
+  inline bool operator< (WireID const& a, WireID const& b) {
+    register int cmp_res = (static_cast<PlaneID const&>(a)).cmp(b);
+    if (cmp_res == 0) // same plane: compare wire
+      return a.Wire < b.Wire;
+    else              // return the order of planes
+      return cmp_res < 0;
+  } // operator< (WireID, WireID)
+  
+  ///@}
+  
+  //----------------------------------------------------------------------------
+  //--- ID output operators
+  //---
   /// Generic output of CryostatID to stream
   template <typename Stream>
   inline Stream& operator<< (Stream& out, CryostatID const& cid) {
