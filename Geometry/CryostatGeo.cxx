@@ -4,12 +4,20 @@
 /// \version $Id: CryostatGeo.cxx,v 1.12 2010/03/05 19:47:51 bpage Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
+
 #include <iostream>
 #include <cmath>
 #include <limits> // std::numeric_limits<>
+<<<<<<< HEAD
 #include <algorithm> // std::for_each()
 #include <memory> // std::default_delete<>
 
+||||||| merged common ancestors
+
+=======
+#include <algorithm> // std::for_each()
+#include <memory> // std::default_delete<>
+>>>>>>> Fixed memory leak in optical detector geometry
 
 // ROOT includes
 #include "TMath.h"
@@ -114,8 +122,8 @@ namespace geo{
   {
     for(size_t i = 0; i < fTPCs.size(); ++i)
       if(fTPCs[i]) delete fTPCs[i];
-  
     fTPCs.clear();
+    
     std::for_each
       (fOpDets.begin(), fOpDets.end(), std::default_delete<OpDetGeo>());
     fOpDets.clear();
