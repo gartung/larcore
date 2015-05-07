@@ -11,10 +11,6 @@
 
 // lar includes
 #include "SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
 #include "Geometry/OpDetGeo.h"
 #include "Geometry/AuxDetGeo.h"
 #include "Geometry/AuxDetSensitiveGeo.h"
@@ -140,12 +136,6 @@ namespace geo {
   }
 
   //......................................................................
-  unsigned int GeometryCore::NTPC(unsigned int cstat) const
-  {
-    return this->Cryostat(cstat).NTPC();
-  }
-
-  //......................................................................
   unsigned int GeometryCore::NOpDets() const
   {
     int N=0;
@@ -265,23 +255,6 @@ namespace geo {
     return *(AuxDets()[ad]);
   }
   
-
-  
-  //......................................................................
-  //
-  // Return the geometry description of the ith plane in the detector.
-  //
-  // \param tpc : input plane number, starting from 0
-  // \returns plane geometry for ith plane
-  //
-  // \throws geo::Exception if "tpc" is outside allowed range
-  //
-  const TPCGeo& GeometryCore::TPC(unsigned int const tpc,
-                              unsigned int const cstat) const 
-  {
-    return this->Cryostat(cstat).TPC(tpc);
-  }
-
   
   //......................................................................
   geo::TPCID GeometryCore::FindTPCAtPosition(double const worldLoc[3]) const {
@@ -411,22 +384,6 @@ namespace geo {
     return this->AuxDet(ad).SensitiveVolume(sv);
   }
   
-  //......................................................................
-  //
-  // Return the geometry description of the ith plane in the detector.
-  //
-  // \param p : input plane number, starting from 0
-  // \returns plane geometry for ith plane
-  //
-  // \throws geo::Exception if "i" is outside allowed range
-  //
-  const PlaneGeo& GeometryCore::Plane(unsigned int const p, 
-                                  unsigned int const tpc,
-                                  unsigned int const cstat) const 
-  {
-    return this->Cryostat(cstat).TPC(tpc).Plane(p);
-  }
-
   //......................................................................
   SigType_t GeometryCore::SignalType(raw::ChannelID_t const channel) const
   {
@@ -1324,141 +1281,12 @@ namespace geo {
   
   
   //--------------------------------------------------------------------
-  constexpr details::geometry_iterator_base::BeginPos_t
-    details::geometry_iterator_base::begin_pos;
-  constexpr details::geometry_iterator_base::EndPos_t
-    details::geometry_iterator_base::end_pos;
-  constexpr details::geometry_iterator_base::UndefinedPos_t
-    details::geometry_iterator_base::undefined_pos;
-  
-  //--------------------------------------------------------------------
-  void cryostat_iterator::next() {
-    if (!id.isValid) return;
-    if (++id.Cryostat < limits.Cryostat) return;
-    id.isValid = false;
-  } // cryostat_iterator::next()
-  
-  
-  void cryostat_iterator::prev() {
-    if (!id.isValid) return;
-    if (id.Cryostat-- >= 0) return;
-    id.isValid = false;
-  } // cryostat_iterator::prev()
-  
-  
-  const CryostatGeo* cryostat_iterator::get() const
-    { return id.isValid? &(pGeo->Cryostat(id.Cryostat)): nullptr; }
-  
-  
-  void cryostat_iterator::set_limits() {
-    limits = CryostatID(pGeo->Ncryostats());
-    limits.isValid = false;
-  } // cryostat_iterator::set_limits()
-  
-  
-  //--------------------------------------------------------------------
-  TPC_iterator& TPC_iterator::operator++() {
-    if (!tpcid.isValid) return *this;
-    
-    ++tpcid.TPC;
-    while (true) {
-      if (tpcid.TPC < limits.TPC) return *this;
-      tpcid.TPC = 0;
-      if (++tpcid.Cryostat >= limits.Cryostat) break;
-      new_cryostat();
-    } // while
-    tpcid.isValid = false;
-    return *this;
-  } // TPC_iterator::operator++()
-  
-  
-  const TPCGeo* TPC_iterator::get() const
-    { return tpcid.isValid? &(pGeo->TPC(tpcid.TPC, tpcid.Cryostat)): nullptr; }
-  
-  
-  const CryostatGeo* TPC_iterator::getCryostat() const {
-    return tpcid.isValid? &(pGeo->Cryostat(tpcid.Cryostat)): nullptr;
-  } // TPC_iterator::getCryostat()
-  
-  
-  void TPC_iterator::set_limits_and_validity() {
-    tpcid.isValid = false;
-    limits.Cryostat = pGeo->Ncryostats();
-    if (tpcid.Cryostat >= limits.Cryostat) return;
-    limits.TPC = pGeo->NTPC(tpcid.Cryostat);
-    if (tpcid.TPC >= limits.TPC) return;
-    tpcid.isValid = true;
-  } // TPC_iterator::set_limits_and_validity()
-  
-  
-  void TPC_iterator::new_cryostat() {
-    tpcid.TPC = 0;
-    limits.TPC = pGeo->NTPC(tpcid.Cryostat);
-  } // TPC_iterator::new_cryostat()
-  
-  
-  //--------------------------------------------------------------------
-  plane_iterator& plane_iterator::operator++() {
-    if (!planeid.isValid) return *this;
-    
-    ++planeid.Plane;
-    while (true) {
-      if (planeid.Plane < limits.Plane) return *this;
-      planeid.Plane = 0;
-      if (++planeid.TPC >= limits.TPC) {
-        planeid.TPC = 0;
-        if (++planeid.Cryostat >= limits.Cryostat) break;
-        new_cryostat();
-      }
-      new_tpc();
-    } // while
-    planeid.isValid = false;
-    return *this;
-  } // plane_iterator::operator++()
-  
-  
-  const PlaneGeo* plane_iterator::get() const {
-    return planeid.isValid?
-      &(pGeo->Plane(planeid.Plane, planeid.TPC, planeid.Cryostat)): nullptr;
-  } // plane_iterator::get()
-  
-  
-  const TPCGeo* plane_iterator::getTPC() const {
-    return planeid.isValid?
-      &(pGeo->TPC(planeid.TPC, planeid.Cryostat)): nullptr;
-  } // plane_iterator::getTPC()
-  
-  
-  const CryostatGeo* plane_iterator::getCryostat() const {
-    return planeid.isValid? &(pGeo->Cryostat(planeid.Cryostat)): nullptr;
-  } // plane_iterator::getCryostat()
-  
-  
-  void plane_iterator::set_limits_and_validity() {
-    planeid.isValid = false;
-    limits.Cryostat = pGeo->Ncryostats();
-    if (planeid.Cryostat >= limits.Cryostat) return;
-    const CryostatGeo& cryo = pGeo->Cryostat(planeid.Cryostat);
-    limits.TPC = cryo.NTPC();
-    if (planeid.TPC >= limits.TPC) return;
-    const TPCGeo& TPC = cryo.TPC(planeid.TPC);
-    limits.Plane = TPC.Nplanes();
-    if (planeid.Plane >= limits.Plane) return;
-    planeid.isValid = true;
-  } // plane_iterator::set_limits_and_validity()
-  
-  
-  void plane_iterator::new_cryostat() {
-    planeid.TPC = 0;
-    limits.TPC = pGeo->NTPC(planeid.Cryostat);
-  } // plane_iterator::new_cryostat()
-  
-  
-  void plane_iterator::new_tpc() {
-    planeid.Plane = 0;
-    limits.Plane = pGeo->Nplanes(planeid.TPC, planeid.Cryostat);
-  } // plane_iterator::new_tpc()
-  
+  constexpr details::geometry_iterator_types::BeginPos_t
+    details::geometry_iterator_types::begin_pos;
+  constexpr details::geometry_iterator_types::EndPos_t
+    details::geometry_iterator_types::end_pos;
+  constexpr details::geometry_iterator_types::UndefinedPos_t
+    details::geometry_iterator_types::undefined_pos;
   
   //--------------------------------------------------------------------
   wire_iterator& wire_iterator::operator++() {

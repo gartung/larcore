@@ -7,11 +7,6 @@
 
 
 
-#include <cmath>
-#include <vector>
-#include <string>
-#include <iostream>
-
 // LArSoft includes
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/Geometry.h"
@@ -29,18 +24,26 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 
+// C/C++ standard libraries
+#include <cmath>
+#include <vector>
+#include <string>
+#include <memory>
+#include <iostream>
 
 namespace geo {
+  class GeometryIteratorTester; // tester algorithm class
+  
   class GeometryIteratorTest: public art::EDAnalyzer {
       public:
     explicit GeometryIteratorTest(fhicl::ParameterSet const& pset);
 
-    virtual void analyze(art::Event const&) {}
-    virtual void beginJob();
+    virtual void analyze(art::Event const&) override {}
+    virtual void beginJob() override;
 
       private:
+    std::unique_ptr<GeometryIteratorTester> tester;
 
-    unsigned int testTPCiterator();
   }; // class GeometryIteratorTest
 } // namespace geo
 
@@ -48,47 +51,36 @@ namespace geo {
 //------------------------------------------------------------------------------
 namespace geo{
 
+  //----------------------------------------------------------------------------
+  
+  class GeometryIteratorTester {
+      public:
+    GeometryCore const* geom = nullptr; ///< pointer to the geometry description
+    
+    
+    /// Constructor: reads configuration, does nothing
+    GeometryIteratorTester(fhicl::ParameterSet const& /* pset */) {}
+    
+    /// Algorithm set up
+    void Setup(geo::GeometryCore const* pGeo) { geom = pGeo; }
+    
+    /// Executes the test
+    unsigned int Run();
+    
+  }; // class GeometryIteratorTester
+  
+  
   //......................................................................
-  GeometryIteratorTest::GeometryIteratorTest(fhicl::ParameterSet const& pset) 
-    : EDAnalyzer(pset)
-    {}
-
-
-  //......................................................................
-  void GeometryIteratorTest::beginJob() {
-    unsigned int nErrors = 0;
-    try{
-      nErrors += testTPCiterator();
-
-    }
-    catch (cet::exception &e) {
-      mf::LogWarning("GeometryIteratorTest") << "exception caught: \n" << e;
-      ++nErrors;
-    }
-    if (nErrors) {
-      mf::LogError("GeometryIteratorTest") << nErrors << " errors collected!";
-      throw cet::exception("GeometryIteratorTest")
-        << "geometry iterator test failed with " << nErrors << " errors\n";
-    }
-    else {
-      mf::LogError("GeometryIteratorTest")
-        << "Test was completed with no errors";
-    }
-  } // GeometryIteratorTest::beginJob()
-
-
-  //......................................................................
-  unsigned int GeometryIteratorTest::testTPCiterator() {
-    art::ServiceHandle<geo::Geometry> geom;
+  unsigned int GeometryIteratorTester::Run() {
     const unsigned int nCryo = geom->Ncryostats(); 
     LOG_VERBATIM("GeometryIteratorTest") << "We have " << nCryo << " cryostats";
     
     unsigned int nErrors = 0;
+    unsigned int nCryostats = 0, nTPCs = 0, nPlanes = 0, nWires = 0;
     geo::Geometry::cryostat_iterator iCryostat = geom->begin_cryostat();
-    unsigned int nCryostats = 0;
-    geo::Geometry::TPC_iterator iTPC(&*geom);
-    geo::Geometry::plane_iterator iPlane(&*geom);
-    geo::Geometry::wire_iterator iWire(&*geom);
+    geo::Geometry::TPC_iterator iTPC(geom);
+    geo::Geometry::plane_iterator iPlane(geom);
+    geo::Geometry::wire_iterator iWire(geom);
     
     unsigned int TotalCryostats = 0;
     unsigned int TotalTPCs = 0;
@@ -237,10 +229,13 @@ namespace geo{
             }
           
             ++iWire;
+            ++nWires;
           } // end loop over wires
           ++iPlane;
+          ++nPlanes;
         } // end loop over planes
         ++iTPC;
+        ++nTPCs;
       } // end loop over tpcs
       ++iCryostat;
       ++nCryostats;
@@ -255,7 +250,11 @@ namespace geo{
     
     // test if we can loop all cryostats with the iterators (via iterator box)
     unsigned int nLoopedCryostats = 0;
+    LOG_DEBUG("GeometryIteratorsDump")
+      << "Looping though " << nCryostats << " cryostats";
     for (geo::CryostatID const& cID: geom->IterateCryostats()) {
+      LOG_TRACE("GeometryIteratorsDump") << cID;
+      std::cout << cID << std::endl;
       if (nLoopedCryostats >= nCryostats) {
         LOG_ERROR("GeometryIteratorTest")
           << "After all " << nLoopedCryostats
@@ -269,8 +268,7 @@ namespace geo{
     if (nLoopedCryostats < nCryostats) {
       LOG_ERROR("GeometryIteratorTest")
         << "Looped only " << nLoopedCryostats
-        << " cryostats, iterator has reached " << *iCryostat
-        << " but we expected " << nCryostats << " iterations!";
+        << " cryostats, while we expected " << nCryostats << " iterations!";
       ++nErrors;
     } // if
     
@@ -281,6 +279,30 @@ namespace geo{
       ++nErrors;
     }
     
+    // test if we can loop all TPCs with the iterators (via iterator box)
+    unsigned int nLoopedTPCs = 0;
+    LOG_DEBUG("GeometryIteratorsDump")
+      << "Looping though " << nTPCs << " TPCs";
+    for (geo::TPCID const& tID: geom->IterateTPCs()) {
+      LOG_TRACE("GeometryIteratorsDump") << tID;
+      std::cout << tID << std::endl;
+      if (nLoopedTPCs >= nTPCs) {
+        LOG_ERROR("GeometryIteratorTest")
+          << "After all " << nLoopedTPCs
+          << " TPCs, iterator has not reached the end ("
+          << *(geom->end_TPC()) << ") but it's still at " << tID;
+        ++nErrors;
+        break;
+      }
+      ++nLoopedTPCs;
+    }
+    if (nLoopedTPCs < nTPCs) {
+      LOG_ERROR("GeometryIteratorTest")
+        << "Looped only " << nLoopedTPCs
+        << " TPCs, while we expected " << nTPCs << " iterations!";
+      ++nErrors;
+    } // if
+    
     if (iPlane) {
       LOG_ERROR("GeometryIteratorTest")
         << "plane iterator thinks it's still at C=" << iPlane->Cryostat
@@ -288,6 +310,30 @@ namespace geo{
         << ", but we are already over";
       ++nErrors;
     }
+    
+    // test if we can loop all planes with the iterators (via iterator box)
+    unsigned int nLoopedPlanes = 0;
+    LOG_DEBUG("GeometryIteratorsDump")
+      << "Looping though " << nPlanes << " planes";
+    for (geo::PlaneID const& pID: geom->IteratePlanes()) {
+      LOG_TRACE("GeometryIteratorsDump") << pID;
+      std::cout << pID << std::endl;
+      if (nLoopedPlanes >= nPlanes) {
+        LOG_ERROR("GeometryIteratorTest")
+          << "After all " << nLoopedPlanes
+          << " planes, iterator has not reached the end ("
+          << *(geom->end_plane()) << ") but it's still at " << pID;
+        ++nErrors;
+        break;
+      }
+      ++nLoopedPlanes;
+    }
+    if (nLoopedPlanes < nPlanes) {
+      LOG_ERROR("GeometryIteratorTest")
+        << "Looped only " << nLoopedPlanes
+        << " planes, while we expected " << nPlanes << " iterations!";
+      ++nErrors;
+    } // if
     
     if (iWire) {
       LOG_ERROR("GeometryIteratorTest")
@@ -381,8 +427,42 @@ namespace geo{
     
     return nErrors;
   } // GeometryIteratorTest::testTPCiterator()
+  
+  
+  
+  //----------------------------------------------------------------------------
+  GeometryIteratorTest::GeometryIteratorTest(fhicl::ParameterSet const& pset) 
+    : EDAnalyzer(pset), tester(new GeometryIteratorTester(pset))
+    {}
 
 
+  //......................................................................
+  void GeometryIteratorTest::beginJob() {
+    
+    tester.Setup(&*(art::ServiceHandle<geo::Geometry>()));
+    
+    unsigned int nErrors = 0;
+    try{
+      nErrors += tester.Run();
+    }
+    catch (cet::exception &e) {
+      mf::LogWarning("GeometryIteratorTest") << "exception caught: \n" << e;
+      ++nErrors;
+    }
+    if (nErrors) {
+      mf::LogError("GeometryIteratorTest") << nErrors << " errors collected!";
+      throw cet::exception("GeometryIteratorTest")
+        << "geometry iterator test failed with " << nErrors << " errors\n";
+    }
+    else {
+      mf::LogError("GeometryIteratorTest")
+        << "Test was completed with no errors";
+    }
+  } // GeometryIteratorTest::beginJob()
+
+
+  //......................................................................
+  
   DEFINE_ART_MODULE(GeometryIteratorTest)
 
 } // namespace geo

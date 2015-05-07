@@ -46,6 +46,10 @@
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "Geometry/ChannelMapAlg.h"
+#include "Geometry/CryostatGeo.h"
+#include "Geometry/TPCGeo.h"
+#include "Geometry/PlaneGeo.h"
+#include "Geometry/WireGeo.h"
 
 // Framework and infrastructure libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -61,6 +65,7 @@
 #include <set>
 #include <memory> // std::shared_ptr<>
 #include <iterator> // std::forward_iterator_tag
+#include <type_traits> // std::is_base_of<>
 
 
 // ROOT class prototypes
@@ -74,20 +79,38 @@ namespace geo {
   
   
   // Forward declarations within namespace.
-  class CryostatGeo;
-  class TPCGeo;
-  class PlaneGeo;
-  class WireGeo;
   class AuxDetGeo;
   class AuxDetSensitiveGeo;
   class OpDetGeo;
   class GeometryCore;
   
   
+  //
+  // iterators
+  //
+  
   namespace details {
     
-    /// Base class for geometry iterators (note: this is not an interator)
-    class geometry_iterator_base {
+    /// Base class for geometry iterators, containing some type definitions
+    class geometry_iterator_types {
+        public:
+      
+      //@{
+      /// Structures to distinguish the constructors
+      struct BeginPos_t {};
+      struct EndPos_t {};
+      struct UndefinedPos_t {};
+      
+      static constexpr BeginPos_t begin_pos = {};
+      static constexpr EndPos_t end_pos = {};
+      static constexpr UndefinedPos_t undefined_pos = {};
+      //@}
+      
+        protected:
+    }; // class geometry_iterator_types
+    
+    /// Base class for geometry iterators (note: this is not an iterator)
+    class geometry_iterator_base: public geometry_iterator_types {
         public:
       
       //@{
@@ -104,267 +127,479 @@ namespace geo {
       /// Constructor: associates with the specified geometry
       geometry_iterator_base(geo::GeometryCore const* geom): pGeo(geom) {}
       
-      /// Constructor: associates with the specified geometry and sets to begin
-      geometry_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
-        pGeo(geom) {}
-      
-      /// Constructor: associates with the specified geometry and sets to end
-      geometry_iterator_base(geo::GeometryCore const* geom, EndPos_t):
-        pGeo(geom) {}
-      
         protected:
-      const GeometryCore* pGeo = nullptr; ///< pointer to the geometry
+      GeometryCore const* pGeo = nullptr; ///< pointer to the geometry
       
       /// Default constructor; do not use a default-constructed iterator as-is!
       geometry_iterator_base() {}
       
     }; // class geometry_iterator_base
+    
+    
+    
+    /**
+     * @brief Base forward iterator browsing all cryostats in the detector
+     * @tparam GEOID ID type to be used
+     * 
+     * This iterator assumes that GEOID is derived from geo::CryostatID.
+     * Note that no polymorphic behaviour is required, or expected, from GEOID.
+     * 
+     * This iterator is designed to carry on, untouched, anything else that the
+     * GEOID type defines beyond the required CryostatID data.
+     *
+     * Currently, backward iterations are not supported.
+     */
+    template <typename GEOID>
+    class cryostat_iterator_base:
+      virtual public std::forward_iterator_tag, public geometry_iterator_base
+    {
+      using LocalID_t = geo::CryostatID; ///< type of the ID we change
+      static_assert(std::is_base_of<LocalID_t, GEOID>::value,
+        "template type GEOID is not a LocalID_t");
+      
+      using ElementPtr_t = geo::CryostatGeo const*;
+
+        public:
+      using iterator = cryostat_iterator_base<GEOID>; ///< type of this iterator
+      
+      /// Default constructor; effect not defined: assign to it before using!
+      cryostat_iterator_base() {}
+      
+      /// Constructor: points to begin
+      cryostat_iterator_base(geo::GeometryCore const* geom):
+        cryostat_iterator_base(geom, begin_pos) {}
+      
+      /// Constructor: points to the specified cryostat
+      cryostat_iterator_base
+        (geo::GeometryCore const* geom, GEOID const& start_from):
+        cryostat_iterator_base(geom, undefined_pos)
+        { id = start_from; }
+      
+      /// Constructor: points to begin
+      cryostat_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+        cryostat_iterator_base(geom, undefined_pos)
+        { set_begin(); }
+      
+      /// Constructor: points to end
+      cryostat_iterator_base(geo::GeometryCore const* geom, EndPos_t):
+        cryostat_iterator_base(geom, undefined_pos)
+        { set_end(); }
+      
+      // TODO reconsider if the additional template is indeed needed
+      /// Returns true if the two iterators point to the same cryostat
+      template <typename OTHERID>
+      bool operator== (cryostat_iterator_base<OTHERID> const& as) const
+        { return localID() == as.localID(); }
+      
+      /// Returns true if the two iterators point to different cryostats
+      template <typename OTHERID>
+      bool operator!= (cryostat_iterator_base<OTHERID> const& as) const 
+        { return localID() != as.localID(); }
+      
+      /// Returns the ID the iterator points to
+      LocalID_t const& operator* () const { return localID(); }
+      
+      /// Returns a pointer to the ID the iterator points to
+      LocalID_t const* operator-> () const { return &(localID()); }
+      
+      /// Prefix increment: returns this iterator pointing to the next cryostat
+      iterator& operator++ () { next(); return *this; }
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      iterator operator++ (int) { iterator old(*this); next(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid cryostat
+      operator bool() const;
+      
+      /// Returns a pointer to cryostat, or nullptr if invalid
+      ElementPtr_t get() const;
+      
+        protected:
+      using GeoID_t = GEOID; ///< type of the actual ID stored in the iterator
+      using ID_t = typename GeoID_t::ID_t;
+      
+      /// Constructor: does not set the current ID
+      cryostat_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
+        geometry_iterator_base(geom), id()
+        { set_local_limits(); }
+      
+      //@{
+      /// Returns the actual type of ID we store
+      GeoID_t const& ID() const { return id; }
+      GeoID_t& ID() { return id; }
+      //@}
+      
+      /// Returns the type of ID we act on
+      LocalID_t const& localID() const 
+        { return static_cast<LocalID_t const&>(ID()); }
+      
+      /// Returns a pointer to the geometry
+      geo::GeometryCore const* geometry() const { return pGeo; }
+      
+      /// Sets the iterator to the begin position
+      void set_begin();
+      
+      /// Sets the iterator to the end position
+      void set_end();
+      
+      /// Skips to the next cryostat
+      void next();
+      
+      /// Returns whether this iterator has reached the end
+      bool at_end() const { return index() == limit; }
+      
+      /// Returns the index (part if the ID) this iterator runs on
+      ID_t const& index() const { return localID().Cryostat; }
+      
+        private:
+      GeoID_t id; ///< ID of the current cryostat
+      ID_t limit = LocalID_t::InvalidID; ///< maximum number of cryostats
+      
+      /// Sets the limit member to the past-the-end cryostat number
+      void set_local_limits();
+      
+      /// Returns the type of ID we act on (non-const version)
+      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      
+      /// Returns the index (part if the ID) this iterator runs on  (non-const)
+      ID_t& index() { return localID().Cryostat; }
+      
+    }; // class cryostat_iterator_base<>
+    
+    
+    /**
+     * @brief Base forward iterator browsing all TPCs in the detector
+     * @tparam GEOID ID type to be used
+     * 
+     * This iterator requires that GEOID is derived from geo::TPCID.
+     * Note that no polymorphic behaviour is required, or expected, from GEOID.
+     * 
+     * This iterator is designed to carry on, untouched, anything else that the
+     * GEOID type defines beyond the required TPCID data.
+     * 
+     * @noe A number of "local" methods are overloaded: since there is no
+     * polymorphism here and they are not virtual functions, these are designed
+     * not to replace the inherited methods except within the non-inherited and
+     * explicitly redefined methods.
+     * 
+     * Currently, backward iterations are not supported.
+     */
+    template <typename GEOID>
+    class TPC_iterator_base:
+      virtual public std::forward_iterator_tag,
+      private cryostat_iterator_base<GEOID>
+    {
+      using LocalID_t = geo::TPCID; ///< type of the ID we change
+      static_assert(std::is_base_of<LocalID_t, GEOID>::value,
+        "template type GEOID is not a LocalID_t");
+      
+      using upper_iterator = cryostat_iterator_base<GEOID>;
+      using ElementPtr_t = geo::TPCGeo const*;
+      
+        public:
+      using iterator = TPC_iterator_base<GEOID>; ///< type of this iterator
+      
+      // import all the useful types from the base templated class
+      using typename upper_iterator::ID_t;
+      using typename upper_iterator::UndefinedPos_t;
+      using typename upper_iterator::BeginPos_t;
+      using typename upper_iterator::EndPos_t;
+      
+      // import all the useful members from the base templated class
+      using upper_iterator::undefined_pos;
+      using upper_iterator::begin_pos;
+      using upper_iterator::end_pos;
+      
+      /// Default constructor; effect not defined: assign to it before using!
+      TPC_iterator_base() {}
+      
+      /// Constructor: points to begin
+      TPC_iterator_base(geo::GeometryCore const* geom):
+        TPC_iterator_base(geom, begin_pos) {}
+      
+      /// Constructor: points to the specified cryostat
+      TPC_iterator_base
+        (geo::GeometryCore const* geom, GEOID const& start_from):
+        upper_iterator(geom, start_from)
+        { set_local_limits(); }
+      
+      /// Constructor: points to begin
+      TPC_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+        upper_iterator(geom, begin_pos)
+        { set_local_limits(); }
+      
+      /// Constructor: points to end
+      TPC_iterator_base(geo::GeometryCore const* geom, EndPos_t):
+        upper_iterator(geom, end_pos)
+        {} // the local limit is ill-defined and left invalid
+      
+      // TODO reconsider if the additional template is indeed needed
+      /// Returns true if the two iterators point to the same TPC
+      template <typename OTHERID>
+      bool operator== (TPC_iterator_base<OTHERID> const& as) const
+        { return localID() == as.localID(); }
+      
+      /// Returns true if the two iterators point to different TPCs
+      template <typename OTHERID>
+      bool operator!= (TPC_iterator_base<OTHERID> const& as) const 
+        { return localID() != as.localID(); }
+      
+      /// Returns the TPCID the iterator points to
+      LocalID_t const& operator* () const { return localID(); }
+      
+      /// Returns the TPCID the iterator points to
+      LocalID_t const* operator-> () const { return &(localID()); }
+      
+      /// Prefix increment: returns this iterator pointing to the next TPC
+      iterator& operator++ () { next(); return *this; }
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      iterator operator++ (int) { iterator old(*this); next(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid TPC
+      operator bool() const;
+      
+      /// Returns a pointer to TPC, or nullptr if invalid
+      ElementPtr_t get() const;
+      
+        protected:
+      
+      /// Constructor: position undefined (meaning undefined local limits too)
+      TPC_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
+        upper_iterator(geom, undefined_pos)
+        {}
+      
+      using upper_iterator::ID; // to be explicit; this is NOT overloaded
+      
+      /// Returns the type of ID we act on
+      LocalID_t const& localID() const 
+        { return static_cast<LocalID_t const&>(upper_iterator::localID()); }
+      
+      using upper_iterator::at_end; // to be explicit; this is NOT overloaded
+      
+      using upper_iterator::geometry; // keep it protected (not private)
+      
+      /// Skips to the next TPC
+      void next();
+      
+      /// Returns the index (part if the ID) this iterator runs on
+      ID_t const& index() const { return localID().TPC; }
+        
+        private:
+      
+      /// maximum number of TPCs in the current cryostat
+      ID_t limit = LocalID_t::InvalidID;
+      
+      /// Sets limit to the past-the-end TPC number of current croystat
+      void set_local_limits();
+      
+      /// Returns the type of ID we act on (non-const version)
+      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      
+      /// Returns the index (part if the ID) this iterator runs on  (non-const)
+      ID_t& index() { return localID().TPC; }
+      
+    }; // class TPC_iterator_base
+
+
+    /**
+     * @brief Base forward iterator browsing all planes in the detector
+     * @tparam GEOID ID type to be used
+     * 
+     * This iterator requires that GEOID is derived from geo::PlaneID.
+     * Note that no polymorphic behaviour is required, or expected, from GEOID.
+     * 
+     * This iterator is designed to carry on, untouched, anything else that the
+     * GEOID type defines beyond the required PlaneID data.
+     * 
+     * @noe A number of "local" methods are overloaded: since there is no
+     * polymorphism here and they are not virtual functions, these are designed
+     * not to replace the inherited methods except within the non-inherited and
+     * explicitly redefined methods.
+     * 
+     * Currently, backward iterations are not supported.
+     */
+    template <typename GEOID>
+    class plane_iterator_base:
+      virtual public std::forward_iterator_tag, private TPC_iterator_base<GEOID>
+    {
+      using LocalID_t = geo::PlaneID; ///< type of the ID we change
+      static_assert(std::is_base_of<LocalID_t, GEOID>::value,
+        "template type GEOID is not a LocalID_t");
+      
+      using upper_iterator = TPC_iterator_base<GEOID>;
+      using ElementPtr_t = geo::PlaneGeo const*;
+      
+        public:
+      using iterator = plane_iterator_base<GEOID>; ///< type of this iterator
+      
+      // import all the useful types from the base templated class
+      using typename upper_iterator::ID_t;
+      using typename upper_iterator::UndefinedPos_t;
+      using typename upper_iterator::BeginPos_t;
+      using typename upper_iterator::EndPos_t;
+      
+      // import all the useful members from the base templated class
+      using upper_iterator::undefined_pos;
+      using upper_iterator::begin_pos;
+      using upper_iterator::end_pos;
+      
+      /// Default constructor; effect not defined: assign to it before using!
+      plane_iterator_base() {}
+      
+      /// Constructor: points to begin
+      plane_iterator_base(geo::GeometryCore const* geom):
+        plane_iterator_base(geom, begin_pos) {}
+      
+      /// Constructor: points to the specified cryostat
+      plane_iterator_base
+        (geo::GeometryCore const* geom, GEOID const& start_from):
+        upper_iterator(geom, start_from)
+        { set_local_limits(); }
+      
+      /// Constructor: points to begin
+      plane_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+        upper_iterator(geom, begin_pos)
+        { set_local_limits(); }
+      
+      /// Constructor: points to end
+      plane_iterator_base(geo::GeometryCore const* geom, EndPos_t):
+        upper_iterator(geom, end_pos)
+        {} // the local limit is ill-defined and left invalid
+      
+      // TODO reconsider if the additional template is indeed needed
+      /// Returns true if the two iterators point to the same plane
+      template <typename OTHERID>
+      bool operator== (plane_iterator_base<OTHERID> const& as) const
+        { return localID() == as.localID(); }
+      
+      /// Returns true if the two iterators point to different planes
+      template <typename OTHERID>
+      bool operator!= (plane_iterator_base<OTHERID> const& as) const 
+        { return localID() != as.localID(); }
+      
+      /// Returns the PlaneID the iterator points to
+      LocalID_t const& operator* () const { return localID(); }
+      
+      /// Returns the PlaneID the iterator points to
+      LocalID_t const* operator-> () const { return &(localID()); }
+      
+      /// Prefix increment: returns this iterator pointing to the next plane
+      iterator& operator++ () { next(); return *this; }
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      iterator operator++ (int) { iterator old(*this); next(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid plane
+      operator bool() const;
+      
+      /// Returns a pointer to plane, or nullptr if invalid
+      ElementPtr_t get() const;
+      
+        protected:
+      
+      /// Constructor: position undefined (meaning undefined local limits too)
+      plane_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
+        upper_iterator(geom, undefined_pos)
+        {}
+      
+      using upper_iterator::ID; // to be explicit; this is NOT overloaded
+      
+      /// Returns the type of ID we act on
+      LocalID_t const& localID() const 
+        { return static_cast<LocalID_t const&>(upper_iterator::localID()); }
+      
+      using upper_iterator::at_end; // to be explicit; this is NOT overloaded
+      
+      /// Skips to the next plane
+      void next();
+      
+      /// Returns the index (part if the ID) this iterator runs on
+      ID_t const& index() const { return localID().Plane; }
+        
+        private:
+      
+      /// maximum number of planes in the current TPC
+      ID_t limit = LocalID_t::InvalidID;
+      
+      /// Sets limit to the past-the-end plane number of current croystat
+      void set_local_limits();
+      
+      /// Returns the type of ID we act on (non-const version)
+      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      
+      /// Returns the index (part if the ID) this iterator runs on  (non-const)
+      ID_t& index() { return localID().Plane; }
+      
+    }; // class plane_iterator_base
+
+
   } // namespace details
   
-  
-  
-  //
-  // iterators
-  //
   
   
   /**
    * @brief Forward iterator browsing all cryostats in the detector
    * 
-   * Usage example:
+   * Prefer asking the geometry object for iterators rather than constructing
+   * them anew: see geo::GeometryCore::cryostat_iterator for the recommended
+   * usage.
+   * Stand-alone example (not recommended):
    * @code
-   * geo::GeometryCore::cryostat_iterator iCryostat;
-   * while (iCryostat) {
-   *   std::cout << "Cryo: " << iCryostat->Cryostat << std::endl;
-   *   const geo::CryostatGeo* pCryo = iCryostat.get();
+   * geo::GeometryCore::cryostat_iterator iCryostat,
+   *   cbegin(geom, geo::cryostat_iterator::begin_pos),
+   *   cend(geom, geo::cryostat_iterator::end_pos);
+   * for (iCryostat = cbegin; iCryostat != cend; ++iCryostat) {
+   *   geo::CryostatID const& cid = *iCryostat;
+   *   geo::CryostatGeo const* pCryo = iCryostat.get();
+   *   std::cout << "We are at: " << cid << std::endl;
    *   // ...
-   *   ++iCryostat;
-   * } // while
+   * } // for
    * @endcode
    */
-  class cryostat_iterator:
-    public std::forward_iterator_tag, public details::geometry_iterator_base
-  {
-      public:
-    
-    /// Default constructor; effect not defined: assign to it before using!
-    cryostat_iterator() {}
-    
-    /// Constructor: points to begin
-    cryostat_iterator(geo::GeometryCore const* geom):
-      cryostat_iterator(geom, begin_pos) {}
-    
-    /// Constructor: points to the specified cryostat
-    cryostat_iterator
-      (geo::GeometryCore const* geom, CryostatID const& start_from):
-      cryostat_iterator(geom, undefined_pos)
-      { id = start_from; }
-    
-    /// Constructor: points to begin
-    cryostat_iterator(geo::GeometryCore const* geom, BeginPos_t):
-      cryostat_iterator(geom, undefined_pos)
-      { set_begin(); }
-    
-    /// Constructor: points to end
-    cryostat_iterator(geo::GeometryCore const* geom, EndPos_t):
-      cryostat_iterator(geom, undefined_pos)
-      { set_end(); }
-    
-    bool operator== (const cryostat_iterator& as) const
-      { return id == as.id; }
-    bool operator!= (const cryostat_iterator& as) const 
-      { return id != as.id; }
-    
-    /// Returns a copy of the TPCID the iterator points to
-    CryostatID const& operator* () const { return id; }
-    
-    /// Returns a copy of the TPCID the iterator points to
-    CryostatID const* operator-> () const { return &id; }
-    
-    /// Prefix increment: returns this iterator pointing to the next cryostat
-    cryostat_iterator& operator++ () { next(); return *this; }
-    
-    /// Prefix decrement: returns this iterator pointing to the previous cryostat
-    cryostat_iterator& operator-- () { prev(); return *this; }
-    
-    /// Postfix increment: returns the current iterator, then increments it
-    cryostat_iterator operator++ (int)
-      { cryostat_iterator old(*this); next(); return old; }
-    
-    /// Postfix decrement: returns the current iterator, then decrements it
-    cryostat_iterator operator-- (int)
-      { cryostat_iterator old(*this); prev(); return old; }
-    
-    /// Returns whether the iterator is pointing to a valid cryostat
-    operator bool() const { return id.isValid; }
-    
-    /// Returns a pointer to cryostat, or nullptr if the iterator is not valid
-    CryostatGeo const* get() const;
-    
-      protected:
-    CryostatID id;     ///< current cryostat
-    CryostatID limits; ///< maxima of the indices
-    
-    cryostat_iterator(geo::GeometryCore const* geom, UndefinedPos_t):
-      details::geometry_iterator_base(geom), id()
-      { set_limits(); }
-    
-    /// Sets the iterator to the end position
-    void set_begin() { id = CryostatID(0); id.isValid = (id != limits); }
-    
-    /// Sets the iterator to the end position
-    void set_end() { id = limits; }
-    
-    /// Skips to the next cryostat
-    void next();
-    
-    /// Skips to the previous cryostat
-    void prev();
-    
-    void set_limits();
-    
-  }; // class cryostat_iterator
-  
+  using cryostat_iterator = details::cryostat_iterator_base<geo::CryostatID>;
   
   
   /**
    * @brief Forward iterator browsing all TPCs in the detector
    * 
-   * Usage example:
+   * Prefer asking the geometry object for iterators rather than constructing
+   * them anew: see geo::GeometryCore::TPC_iterator for the recommended usage.
+   * Stand-alone example (not recommended):
    * @code
-   * geo::GeometryCore::TPC_iterator iTPC;
-   * while (iTPC) {
-   *   std::cout << "Cryo: " << iTPC->Cryostat << " TPC: " << iTPC->TPC
-   *     << std::endl;
-   *   const geo::TPCGeo* pTPC = iTPC.get();
+   * geo::GeometryCore::TPC_iterator iTPC,
+   *   tbegin(geom, geo::TPC_iterator::begin_pos),
+   *   tend(geom, geo::TPC_iterator::end_pos);
+   * for (iTPC = tbegin; iTPC != tend; ++iTPC) {
+   *   geo::TPCID const& tid = *iTPC;
+   *   geo::TPCGeo const* pTPC = iTPC.get();
+   *   std::cout << "We are at: " << tid << std::endl;
    *   // ...
-   *   ++iTPC;
-   * } // while
+   * } // for
    * @endcode
    */
-  class TPC_iterator:
-    public std::forward_iterator_tag, protected details::geometry_iterator_base
-  {
-      public:
-    /// Default constructor: points to the first TPC
-    TPC_iterator(geo::GeometryCore const* geom):
-      details::geometry_iterator_base(geom)
-      { set_limits_and_validity(); }
-    
-    /// Constructor: points to the specified TPC
-    TPC_iterator(geo::GeometryCore const* geom, TPCID start_from):
-      details::geometry_iterator_base(geom), tpcid(start_from)
-      { set_limits_and_validity(); }
-    
-    bool operator== (const TPC_iterator& as) const
-      { return tpcid == as.tpcid; }
-    bool operator!= (const TPC_iterator& as) const
-      { return tpcid != as.tpcid; }
-    
-    /// Returns a copy of the TPCID the iterator points to
-    const TPCID& operator* () const { return tpcid; }
-    
-    /// Returns a constant pointer to the TPCID the iterator points to
-    const TPCID* operator-> () const { return &tpcid; }
-    
-    /// Prefix increment: returns this iterator pointing to the next TPC
-    TPC_iterator& operator++ ();
-    
-    /// Postfix increment: returns the current iterator, then increments it
-    TPC_iterator operator++ (int)
-      { TPC_iterator old(*this); this->operator++(); return old; }
-    
-    /// Returns whether the iterator is pointing to a valid TPC
-    operator bool() const { return tpcid.isValid; }
-    
-    /// Skips to the next TPC
-    TPC_iterator& next() { return this->operator++(); }
-    
-    /// Returns a pointer to the TPC, or nullptr if the iterator is not valid
-    const TPCGeo* get() const;
-    
-    /// Returns a pointer to the cryostat the plane belongs to
-    const CryostatGeo* getCryostat() const;
-    
-      protected:
-    TPCID tpcid = { 0, 0 }; ///< current TPC
-    TPCID limits = { 0, 0 }; ///< maxima of the indices
-    
-    void set_limits_and_validity();
-    void new_cryostat();
-  }; // class TPC_iterator
-
-
+  using TPC_iterator = details::TPC_iterator_base<geo::TPCID>;
+  
+  
   /**
    * @brief Forward iterator browsing all planes in the detector
    * 
-   * Usage example:
+   * Prefer asking the geometry object for iterators rather than constructing
+   * them anew: see geo::GeometryCore::plane_iterator for the recommended usage.
+   * Stand-alone example (not recommended):
    * @code
-   * geo::GeometryCore::plane_iterator iPlane;
-   * while (iPlane) {
-   *   std::cout << "Cryo: " << iPlane->Cryostat << " TPC: " << iPlane->TPC
-   *     << " plane: " << iPlane->Plane << std::endl;
-   *   const geo::PlaneGeo* Plane = iPlane.get();
+   * geo::GeometryCore::plane_iterator iPlane,
+   *   tbegin(geom, geo::plane_iterator::begin_pos),
+   *   tend(geom, geo::plane_iterator::end_pos);
+   * for (iPlane = tbegin; iPlane != tend; ++iPlane) {
+   *   geo::PlaneID const& pid = *iPlane;
+   *   geo::PlaneGeo const* pPlane = iPlane.get();
+   *   std::cout << "We are at: " << pid << std::endl;
    *   // ...
-   *   ++iPlane;
-   * } // while
+   * } // for
    * @endcode
    */
-  class plane_iterator:
-    public std::forward_iterator_tag, protected details::geometry_iterator_base
-  {
-      public:
-    /// Default constructor: points to the first plane
-    plane_iterator(geo::GeometryCore const* geom):
-      details::geometry_iterator_base(geom)
-      { set_limits_and_validity(); }
-    
-    /// Constructor: points to the specified plane
-    plane_iterator(geo::GeometryCore const* geom, PlaneID start_from):
-      details::geometry_iterator_base(geom), planeid(start_from)
-      { set_limits_and_validity(); }
-    
-    bool operator== (const plane_iterator& as) const
-      { return planeid == as.planeid; }
-    bool operator!= (const plane_iterator& as) const
-      { return planeid != as.planeid; }
-    
-    /// Returns a copy of the PlaneID the iterator points to
-    const PlaneID& operator* () const { return planeid; }
-    
-    /// Returns a constant pointer to the PlaneID the iterator points to
-    const PlaneID* operator-> () const { return &planeid; }
-    
-    /// Prefix increment: returns this iterator pointing to the next plane
-    plane_iterator& operator++ ();
-    
-    /// Postfix increment: returns the current iterator, then increments it
-    plane_iterator operator++ (int)
-      { plane_iterator old(*this); this->operator++(); return old; }
-    
-    /// Returns whether the iterator is pointing to a valid plane
-    operator bool() const { return planeid.isValid; }
-    
-    /// Skips to the next plane
-    plane_iterator& next() { return this->operator++(); }
-    
-    /// Returns a pointer to plane, or nullptr if the iterator is not valid
-    const PlaneGeo* get() const;
-    
-    /// Returns a pointer to the TPC the plane belongs to
-    const TPCGeo* getTPC() const;
-    
-    /// Returns a pointer to the cryostat the plane belongs to
-    const CryostatGeo* getCryostat() const;
-    
-      protected:
-    PlaneID planeid = { 0, 0, 0 }; ///< current plane
-    PlaneID limits = { 0, 0, 0 }; ///< maxima of the indices
-    
-    void set_limits_and_validity();
-    void new_cryostat();
-    void new_tpc();
-  }; // class plane_iterator
+  using plane_iterator = details::plane_iterator_base<geo::PlaneID>;
   
   
   /**
@@ -540,8 +775,28 @@ namespace geo {
     using AuxDetList_t = GeometryData_t::AuxDetList_t;
     
     
-    // temporary (?): import iterators
+    // import iterators
+    /**
+     * @brief Forward-iterator browsing all cryostats in the detector
+     * 
+     * Usage example with a while loop:
+     * @code
+     * geo::GeometryCore::cryostat_iterator iCryostat = geom->begin_cryostat(),
+     *   cend = geom->end_cryostat();
+     * while (iCryostat != cend) {
+     *   std::cout << "Cryo: " << iCryostat->Cryostat << std::endl;
+     *   const geo::CryostatGeo* pCryo = iCryostat.get();
+     *   ++iCryostat;
+     *   // ...
+     * } // while
+     * @endcode
+     * The recommended way to iterate is actually to use
+     * GeometryCore::IterateCryostats() in a range-for loop.
+     * It is recommended to save the end iterator rather than calling
+     * GeometryCore::end_cryostat() on every check.
+     */
     using cryostat_iterator = geo::cryostat_iterator;
+    
     using TPC_iterator = geo::TPC_iterator;
     using plane_iterator = geo::plane_iterator;
     using wire_iterator = geo::wire_iterator;
@@ -716,10 +971,14 @@ namespace geo {
     // group features
     //
     
+    //@{
     /// Returns the number of cryostats in the detector
     /// @todo Change return type to size_t
     unsigned int Ncryostats() const { return Cryostats().size(); }
-    
+    unsigned int NElements() const { return Ncryostats(); }
+    unsigned int NSiblingElements(geo::CryostatID const&) const
+      { return Ncryostats(); }
+    //@}
     
     //
     // access
@@ -729,6 +988,10 @@ namespace geo {
     /// Returns whether we have the specified cryostat
     bool HasCryostat(geo::CryostatID const& cryoid) const
       { return cryoid.Cryostat < Ncryostats(); }
+    
+    /// Returns whether we have the specified cryostat
+    bool HasElement(geo::CryostatID const& cryoid) const
+      { return HasCryostat(cryoid); }
     
     /**
      * @brief Returns the specified cryostat
@@ -747,6 +1010,7 @@ namespace geo {
       { return Cryostat(cryoid); }
     //@}
     
+    //@{
     /**
      * @brief Returns the specified cryostat
      * @param cryoid cryostat ID
@@ -754,6 +1018,9 @@ namespace geo {
      */
     CryostatGeo const* CryostatPtr(geo::CryostatID const& cryoid) const
       { return HasCryostat(cryoid)? Cryostats()[cryoid.Cryostat]: nullptr; }
+    CryostatGeo const* GetElementPtr(geo::CryostatID const& cryoid) const
+      { return CryostatPtr(cryoid); }
+    //@}
     
     /**
      * @brief Returns the index of the cryostat at specified location
@@ -785,13 +1052,65 @@ namespace geo {
     // iterators
     //
     
+    
+    /// Initializes the specified ID with the ID of the first cryostat
+    void GetBeginID(geo::CryostatID& id) const
+      { id = geo::CryostatID(0, HasCryostat(geo::CryostatID(0))); }
+    
+    /// Initializes the specified ID with the ID of the first TPC
+    void GetBeginID(geo::TPCID& id) const
+      { GetBeginID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
+    
+    /// Initializes the specified ID with the ID of the first plane
+    void GetBeginID(geo::PlaneID& id) const
+      { GetBeginID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
+    
+    /// Initializes the specified ID with the ID of the first wire
+    void GetBeginID(geo::WireID& id) const
+      { GetBeginID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
+    
+    /// Initializes the specified ID with the invalid ID after the last cryostat
+    void GetEndID(geo::CryostatID& id) const
+      { id = geo::CryostatID(Ncryostats(), false); }
+    
+    /// Initializes the specified ID with the invalid ID after the last TPC
+    void GetEndID(geo::TPCID& id) const
+      { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
+    
+    /// Initializes the specified ID with the invalid ID after the last plane
+    void GetEndID(geo::PlaneID& id) const
+      { GetEndID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
+    
+    /// Initializes the specified ID with the invalid ID after the last wire
+    void GetEndID(geo::WireID& id) const
+      { GetEndID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
+    
+    
+    
     /// Returns an iterator pointing to the first cryostat
     cryostat_iterator begin_cryostat() const
-      { return { this, cryostat_iterator::begin_pos }; }
+      { return cryostat_iterator(this, cryostat_iterator::begin_pos); }
     
     /// Returns an iterator pointing after the last cryostat
     cryostat_iterator end_cryostat() const
-      { return { this, cryostat_iterator::end_pos }; }
+      { return cryostat_iterator(this, cryostat_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first TPC in the detector
+    TPC_iterator begin_TPC() const
+      { return TPC_iterator(this, TPC_iterator::begin_pos); }
+    
+    /// Returns an iterator pointing after the last TPC in the detector
+    TPC_iterator end_TPC() const
+      { return TPC_iterator(this, TPC_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first plane in the detector
+    plane_iterator begin_plane() const
+      { return plane_iterator(this, plane_iterator::begin_pos); }
+    
+    /// Returns an iterator pointing after the last plane in the detector
+    plane_iterator end_plane() const
+      { return plane_iterator(this, plane_iterator::end_pos); }
+    
     
     /**
      * @brief Enables ranged-for loops on all cryostats of the detector
@@ -812,6 +1131,48 @@ namespace geo {
       &GeometryCore::begin_cryostat, &GeometryCore::end_cryostat
       >
     IterateCryostats() const { return { this }; }
+    
+    
+    /**
+     * @brief Enables ranged-for loops on all TPCs of the detector
+     * @returns an object suitable for ranged-for loops on all TPCs
+     * 
+     * Example of usage:
+     *     
+     *     for (geo::TPCID const& tID: geom->IterateTPCs()) {
+     *       geo::TPCGeo const& TPC = geom->TPC(tID);
+     *       
+     *       // useful code here
+     *       
+     *     } // for all TPC
+     *     
+     */
+    IteratorBox<
+      TPC_iterator,
+      &GeometryCore::begin_TPC, &GeometryCore::end_TPC
+      >
+    IterateTPCs() const { return { this }; }
+    
+    
+    /**
+     * @brief Enables ranged-for loops on all planes of the detector
+     * @returns an object suitable for ranged-for loops on all planes
+     * 
+     * Example of usage:
+     *     
+     *     for (geo::PlaneID const& pID: geom->IteratePlanes()) {
+     *       geo::PlaneGeo const& Plane = geom->Plane(cID);
+     *       
+     *       // useful code here
+     *       
+     *     } // for all planes
+     *     
+     */
+    IteratorBox<
+      plane_iterator,
+      &GeometryCore::begin_plane, &GeometryCore::end_plane
+      >
+    IteratePlanes() const { return { this }; }
     
     
     //
@@ -882,12 +1243,41 @@ namespace geo {
      * @todo Change return type to size_t
      * @todo what happens if it does not exist?
      */
-    unsigned int NTPC(unsigned int cstat = 0) const;
+    unsigned int NTPC(unsigned int cstat = 0) const
+      { return NTPC(geo::CryostatID(cstat)); }
+    
+    /**
+     * @brief Returns the total number of TPCs in the specified cryostat
+     * @param cryoid cryostat number
+     * @return number of TPCs in specified cryostat, or 0 if no cryostat found
+     * 
+     * @todo Change return type to size_t
+     */
+    unsigned int NTPC(geo::CryostatID const& cryoid) const
+      {
+        CryostatGeo const* pCryo = GetElementPtr(cryoid);
+        return pCryo? pCryo->NElements(): 0;
+      }
+    unsigned int NElements(geo::CryostatID const& cryoid) const
+      { return NTPC(cryoid); }
+    unsigned int NSiblingElements(geo::TPCID const& tpcid) const
+      { return NTPC(tpcid); }
+    //@}
     
     
     //
     // access
     //
+    /// Returns whether we have the specified TPC
+    bool HasTPC(geo::TPCID const& tpcid) const
+      {
+        CryostatGeo const* pCryo = CryostatPtr(tpcid);
+        return pCryo? pCryo->HasTPC(tpcid): false;
+      }
+    
+    /// Returns whether we have the specified TPC
+    bool HasElement(geo::TPCID const& tpcid) const { return HasTPC(tpcid); }
+    
     
     ///@{
     /**
@@ -901,13 +1291,28 @@ namespace geo {
      * @todo what happens if it does not exist?
      */
     TPCGeo const& TPC
-      (unsigned int const tpc   = 0, unsigned int const cstat = 0) const;
+      (unsigned int const tpc   = 0, unsigned int const cstat = 0) const
+      { return TPC(geo::TPCID(cstat, tpc)); }
     TPCGeo const& TPC(geo::TPCID const& tpcid) const
-      { return TPC(tpcid.TPC, tpcid.Cryostat); }
+      { return Cryostat(tpcid).TPC(tpcid); }
     TPCGeo const& GetElement(geo::TPCID const& tpcid) const
       { return TPC(tpcid); }
     ///@}
     
+    //@{
+    /**
+     * @brief Returns the specified TPC
+     * @param tpcid TPC ID
+     * @return a constant pointer to the specified TPC, or nullptr id none
+     */
+    TPCGeo const* TPCPtr(geo::TPCID const& tpcid) const
+      {
+        CryostatGeo const* pCryo = CryostatPtr(tpcid);
+        return pCryo? pCryo->TPCPtr(tpcid): nullptr;
+      } // TPCPtr()
+    TPCGeo const* GetElementPtr(geo::TPCID const& tpcid) const
+      { return TPCPtr(tpcid); }
+    //@}
     
     /**
      * @brief Returns the ID of the TPC at specified location
@@ -1074,6 +1479,26 @@ namespace geo {
     unsigned int Nplanes(unsigned int tpc   = 0, unsigned int cstat = 0) const;
     
     
+    //@{
+    /**
+     * @brief Returns the total number of planes in the specified TPC
+     * @param tpcid TPC ID
+     * @return number of planes in specified TPC, or 0 if no TPC found
+     * 
+     * @todo Change return type to size_t
+     */
+    unsigned int Nplanes(geo::TPCID const& tpcid) const
+      {
+        TPCGeo const* pTPC = GetElementPtr(tpcid);
+        return pTPC? pTPC->NElements(): 0;
+      }
+    unsigned int NElements(geo::TPCID const& tpcid) const
+      { return NTPC(tpcid); }
+    unsigned int NSiblingElements(geo::PlaneID const& planeid) const
+      { return NTPC(planeid); }
+    //@}
+    
+    
     /**
      * @brief Returns the number of views (different wire orientations)
      * 
@@ -1103,25 +1528,52 @@ namespace geo {
     // access
     //
     
-    //@{
+    /// Returns whether we have the specified plane
+    bool HasTPC(geo::PlaneID const& planeid) const
+      {
+        geo::CryostatGeo const* pCryo = CryostatPtr(planeid);
+        return pCryo? pCryo->HasTPC(planeid): false;
+      }
+    
+    /// Returns whether we have the specified TPC
+    bool HasElement(geo::PlaneID const& planeid) const { return HasTPC(planeid); }
+    
+    
+    ///@{
     /**
-     * @brief Returns the specified plane
-     * @param planeid ID of the plane
-     * @param plane plane number within the TPC
-     * @param tpc tpc number within the cryostat
+     * @brief Returns the specified TPC
+     * @param planeid ID of the tpc
+     * @param p plane number within the TPC
+     * @param tpc TPC number within the cryostat
      * @param cstat number of cryostat
-     * @return a constant reference to the specified plane
+     * @return a constant reference to the specified TPC
      * 
      * @todo remove the version with integers
      * @todo what happens if it does not exist?
      */
     PlaneGeo const& Plane
       (unsigned int const p, unsigned int const tpc   = 0, unsigned int const cstat = 0)
-      const;
-    PlaneGeo const& Plane(const geo::PlaneID& pid) const
-      { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
-    PlaneGeo const& GetElement(const geo::PlaneID& pid) const
-      { return Plane(pid); }
+      const
+      { return Plane(geo::PlaneID(cstat, tpc, p)); }
+    PlaneGeo const& Plane(geo::PlaneID const& planeid) const
+      { return TPC(planeid).Plane(planeid); }
+    PlaneGeo const& GetElement(geo::PlaneID const& planeid) const
+      { return Plane(planeid); }
+    ///@}
+    
+    //@{
+    /**
+     * @brief Returns the specified plane
+     * @param planeid plane ID
+     * @return a constant pointer to the specified plane, or nullptr id none
+     */
+    PlaneGeo const* PlanePtr(geo::PlaneID const& planeid) const
+      {
+        geo::TPCGeo const* pTPC = TPCPtr(planeid);
+        return pTPC? pTPC->PlanePtr(planeid): nullptr;
+      } // PlanePtr()
+    PlaneGeo const* GetElementPtr(geo::PlaneID const& planeid) const
+      { return PlanePtr(planeid); }
     //@}
     
     
@@ -2001,5 +2453,118 @@ namespace geo {
   }; // class GeometryCore
   
 } // namespace geo
+
+
+
+//******************************************************************************
+//***  template implementation
+//***
+
+//
+// geo::details::cryostat_iterator_base<>
+//
+template <typename GEOID>
+inline geo::details::cryostat_iterator_base<GEOID>::operator bool() const
+  { return geometry()->HasElement(localID()); }
+
+template <typename GEOID>
+inline auto geo::details::cryostat_iterator_base<GEOID>::get() const
+  -> ElementPtr_t
+  { return geometry()->GetElementPtr(localID()); }
+
+template <typename GEOID>
+inline void geo::details::cryostat_iterator_base<GEOID>::set_local_limits()
+  { limit = geometry()->NSiblingElements(localID()); }
+
+template <typename GEOID>
+inline void geo::details::cryostat_iterator_base<GEOID>::set_begin()
+  { geometry()->GetBeginID(ID()); }
+
+template <typename GEOID>
+inline void geo::details::cryostat_iterator_base<GEOID>::set_end()
+  { geometry()->GetEndID(ID()); }
+
+template <typename GEOID>
+void geo::details::cryostat_iterator_base<GEOID>::next() {
+  if (at_end()) return;
+  if (++index() < limit) return;
+  localID().isValid = false;
+} // geo::cryostat_iterator_base<GEOID>::next()
+
+
+//
+// geo::details::TPC_iterator_base<>
+//
+template <typename GEOID>
+inline geo::details::TPC_iterator_base<GEOID>::operator bool() const
+  { return upper_iterator::geometry()->HasElement(localID()); }
+
+template <typename GEOID>
+inline auto geo::details::TPC_iterator_base<GEOID>::get() const -> ElementPtr_t
+  { return upper_iterator::geometry()->GetElementPtr(localID()); }
+
+template <typename GEOID>
+inline void geo::details::TPC_iterator_base<GEOID>::set_local_limits() {
+  // limit is how many sibling TPCs there are
+  limit = upper_iterator::geometry()->NSiblingElements(localID());
+} // geo::details::TPC_iterator_base<GEOID>::set_local_limits()
+
+template <typename GEOID>
+inline void geo::details::TPC_iterator_base<GEOID>::next() {
+  // if at end (checked in the inherited context), do nothing
+  if (upper_iterator::at_end()) return;
+  
+  // if after incrementing we haven't reached the limit, we are done
+  if (++index() < limit) return;
+  
+  // we reached the end of the current elements list, we need to escalate:
+  // - go to the next parent; if that becomes invalid, too bad, but we go on
+  upper_iterator::next();
+  // - set the index to the first element of the new parent
+  index() = 0;
+  // - update how many elements there are
+  //   (expect 0 if it is now at_end() -- and it does not even matter)
+  set_local_limits();
+} // geo::details::TPC_iterator_base<GEOID>::next()
+
+
+//
+// geo::details::plane_iterator_base<>
+//
+template <typename GEOID>
+inline geo::details::plane_iterator_base<GEOID>::operator bool() const
+  { return upper_iterator::geometry()->HasElement(localID()); }
+
+template <typename GEOID>
+inline auto geo::details::plane_iterator_base<GEOID>::get() const
+  -> ElementPtr_t
+  { return upper_iterator::geometry()->GetElementPtr(localID()); }
+
+template <typename GEOID>
+inline void geo::details::plane_iterator_base<GEOID>::set_local_limits() {
+  // limit is how many sibling planes there are
+  limit = upper_iterator::geometry()->NSiblingElements(localID());
+} // geo::details::plane_iterator_base<GEOID>::set_local_limits()
+
+template <typename GEOID>
+inline void geo::details::plane_iterator_base<GEOID>::next() {
+  // if at end (checked in the inherited context), do nothing
+  if (upper_iterator::at_end()) return;
+  
+  // if after incrementing we haven't reached the limit, we are done
+  if (++index() < limit) return;
+  
+  // we reached the end of the current elements list, we need to escalate:
+  // - go to the next parent; if that becomes invalid, too bad, but we go on
+  upper_iterator::next();
+  // - set the index to the first element of the new parent
+  index() = 0;
+  // - update how many elements there are
+  //   (expect 0 if it is now at_end() -- and it does not even matter)
+  set_local_limits();
+} // geo::details::plane_iterator_base<GEOID>::next()
+
+
+//******************************************************************************
 
 #endif // GEO_GEOMETRYCORE_H

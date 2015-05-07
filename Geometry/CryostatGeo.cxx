@@ -8,16 +8,8 @@
 #include <iostream>
 #include <cmath>
 #include <limits> // std::numeric_limits<>
-<<<<<<< HEAD
 #include <algorithm> // std::for_each()
 #include <memory> // std::default_delete<>
-
-||||||| merged common ancestors
-
-=======
-#include <algorithm> // std::for_each()
-#include <memory> // std::default_delete<>
->>>>>>> Fixed memory leak in optical detector geometry
 
 // ROOT includes
 #include "TMath.h"
@@ -206,12 +198,13 @@ namespace geo{
   //......................................................................
   const TPCGeo& CryostatGeo::TPC(unsigned int itpc) const
   {
-    if(itpc >= fTPCs.size()){
-      throw cet::exception("TPCOutOfRange") << "Request for non-existant TPC " 
-					    << itpc << "\n";
+    TPCGeo const* pTPC = TPCPtr(itpc);
+    if(!pTPC){
+      throw cet::exception("TPCOutOfRange") << "Request for non-existant TPC "
+                                            << itpc << "\n";
     }
 
-    return *fTPCs[itpc];
+    return *pTPC;
   }
 
 

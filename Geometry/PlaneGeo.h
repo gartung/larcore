@@ -7,14 +7,17 @@
 ////////////////////////////////////////////////////////////////////////
 #ifndef GEO_PLANEGEO_H
 #define GEO_PLANEGEO_H
+
+// LArSoft libraries
+#include "SimpleTypesAndConstants/geo_types.h"
+#include "Geometry/GeoObjectSorter.h"
+
+// C/C++ standard libraries
 #include <vector>
-#include <algorithm>
+
 class TGeoNode;
 class TGeoHMatrix;
 class TVector3;
-
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/GeoObjectSorter.h"
 
 namespace geo {
   class WireGeo;
@@ -28,9 +31,27 @@ namespace geo {
     PlaneGeo(std::vector<const TGeoNode*>& path, int depth);
     ~PlaneGeo();
 
-    /// Method to sort WireGeo objects
-    void SortWires(geo::GeoObjectSorter const& sorter);
+    
+    /// @{
+    /// @name Plane properties
+    
+    /// Which coordinate does this plane measure
+    View_t View()                                             const { return fView;          }
+    
+    /// What is the orienation of the plane
+    Orient_t Orientation()                                    const { return fOrientation;   }
 
+    /// What is the signal type for the plane
+    SigType_t SignalType()                                    const { return fSignalType;    }
+
+    double ThetaZ()                                           const;
+    
+    /// @}
+    
+    
+    /// @{
+    /// @name Wire access
+    
     /// Number of wires in this plane
     unsigned int Nwires()                                     const { return fWire.size();   }
 
@@ -46,22 +67,13 @@ namespace geo {
     /// Return the last wire in the plane.
     const WireGeo& LastWire()                                 const { return Wire(Nwires()-1); }
     
-    /// Which coordinate does this plane measure
-    View_t View()                                             const { return fView;          }
+    /// @}
     
-    /// What is the orienation of the plane
-    Orient_t Orientation()                                    const { return fOrientation;   }
-
-    /// What is the signal type for the plane
-    SigType_t SignalType()                                    const { return fSignalType;    }
-
-    /// Set the signal type and view from TPCGeo
-    void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
-    void SetView(geo::View_t view)                                  { fView = view; }
-
+    
+    /// @{
+    /// @name Plane geometry properties
+    
     double WirePitch()                                        const { return fWirePitch; }
-    
-    double ThetaZ()                                           const;
     
     /**
      * @brief Returns whether the higher z wires have higher wire ID
@@ -94,7 +106,13 @@ namespace geo {
      * lies on the plane and its direction goes toward increasing wire IDs.
      */
     TVector3 GetIncreasingWireDirection() const;
-
+    
+    /// @}
+    
+    
+    /// @{
+    /// @name Coordinate transformation
+    
     /// Transform point from local plane frame to world frame
     void LocalToWorld(const double* plane, double* world)     const;
     
@@ -112,6 +130,21 @@ namespace geo {
     
     // Again, with TVectors
     const TVector3 WorldToLocal( const TVector3& world )      const;
+    
+    /// @}
+    
+    
+    /// @{
+    /// @name Setters
+    
+    /// Set the signal type and view from TPCGeo
+    void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
+    void SetView(geo::View_t view)                                  { fView = view; }
+    
+    /// @}
+    
+    /// Apply sorting to WireGeo objects
+    void SortWires(geo::GeoObjectSorter const& sorter);
     
   private:
     

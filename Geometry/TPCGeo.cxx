@@ -214,11 +214,12 @@ namespace geo{
   //......................................................................
   const PlaneGeo& TPCGeo::Plane(unsigned int iplane) const
   {
-    if(iplane >= fPlanes.size()){
+    geo::PlaneGeo const* pPlane = PlanePtr(iplane);
+    if (!pPlane){
       throw cet::exception("PlaneOutOfRange") << "Request for non-existant plane " << iplane << "\n";
     }
 
-    return *fPlanes[iplane];
+    return *pPlane;
   }
 
   //......................................................................
@@ -280,7 +281,7 @@ namespace geo{
 
   //......................................................................
 
-  const TVector3 TPCGeo::WorldToLocal( const TVector3& world ) const
+  TVector3 TPCGeo::WorldToLocal( const TVector3& world ) const
   {
     double worldArray[4];
     double localArray[4];
@@ -294,7 +295,7 @@ namespace geo{
 
   //......................................................................
 
-  const TVector3 TPCGeo::LocalToWorld( const TVector3& local ) const
+  TVector3 TPCGeo::LocalToWorld( const TVector3& local ) const
   {
     double worldArray[4];
     double localArray[4];

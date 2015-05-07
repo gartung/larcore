@@ -56,12 +56,78 @@ namespace geo {
     /// @{
     /// @name TPC access
     
+    //@{
     /// Number of TPCs in this cryostat
     unsigned int      NTPC()                                    const { return fTPCs.size();      }
-
+    unsigned int      NElements()                               const { return fTPCs.size();      }
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns whether a TPC with index itpc is present in this cryostat
+     * @param itpc index of TPC in this cryostat
+     * @return whether the TPC with index itpc is present in this cryostat
+     */
+    bool HasTPC(unsigned int itpc) const { return itpc < NTPC(); }
+    bool HasElement(unsigned int itpc) const { return HasTPC(itpc); }
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns whether the TPC in tpcid is present in this cryostat
+     * @param tpcid full TPC ID
+     * @return whether the TPC in tpcid is present in this cryostat
+     *
+     * The cryostat number in tpcid is ignored, as it is ignored whether tpcid
+     * is invalid.
+     */
+    bool HasTPC(geo::TPCID const& tpcid) const { return HasTPC(tpcid.TPC); }
+    bool HasElement(geo::TPCID const& tpcid) const { return HasTPC(tpcid); }
+    //@}
+    
     /// Return the itpc'th TPC in the cryostat.
+    /// @throws cet::exception (category "TPCOutOfRange") if no such TPC
     const TPCGeo&     TPC(unsigned int itpc)                    const;
-
+    
+    //@{
+    /**
+     * @brief Returns the TPC in tpcid from this cryostat
+     * @param tpcid full TPC ID
+     * @return a constant reference to the TPC in tpcid
+     * @throws cet::exception (category "TPCOutOfRange") if no such TPC
+     *
+     * The cryostat number in tpcid is ignored, as it is ignored whether tpcid
+     * is invalid.
+     */
+    const TPCGeo&     TPC(TPCID const& tpcid)                   const
+      { return TPC(tpcid.TPC); }
+    const TPCGeo&     GetElement(TPCID const& tpcid)            const
+      { return TPC(tpcid); }
+    //@}
+    
+    /**
+     * @brief Returns the TPC number itpc from this cryostat
+     * @param itpc the number of local TPC
+     * @return a constant pointer to the TPC, or nullptr if it does not exist
+     */
+    TPCGeo const*     TPCPtr(unsigned int itpc)                    const
+      { return HasTPC(itpc)? fTPCs[itpc]: nullptr; }
+    
+    //@{
+    /**
+     * @brief Returns the TPC in tpcid from this cryostat
+     * @param tpcid full TPC ID
+     * @return a constant pointer to the TPC, or nullptr if it does not exist
+     *
+     * The cryostat number in tpcid is ignored, as it is ignored whether tpcid
+     * is invalid.
+     */
+    TPCGeo const*     TPCPtr(TPCID const& tpcid)                   const
+      { return TPCPtr(tpcid.TPC); }
+    TPCGeo const*     GetElementPtr(TPCID const& tpcid)            const
+      { return TPCPtr(tpcid); }
+    //@}
+    
     /**
      * @brief Returns the index of the TPC at specified location
      * @param worldLoc 3D coordinates of the point (world reference frame)
