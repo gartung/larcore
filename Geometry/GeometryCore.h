@@ -106,7 +106,6 @@ namespace geo {
       static constexpr UndefinedPos_t undefined_pos = {};
       //@}
       
-        protected:
     }; // class geometry_iterator_types
     
     /// Base class for geometry iterators (note: this is not an iterator)
@@ -128,10 +127,14 @@ namespace geo {
       geometry_iterator_base(geo::GeometryCore const* geom): pGeo(geom) {}
       
         protected:
-      GeometryCore const* pGeo = nullptr; ///< pointer to the geometry
+      /// Returns a pointer to the geometry
+      geo::GeometryCore const* geometry() const { return pGeo; }
       
       /// Default constructor; do not use a default-constructed iterator as-is!
       geometry_iterator_base() {}
+      
+        private:
+      GeometryCore const* pGeo = nullptr; ///< pointer to the geometry
       
     }; // class geometry_iterator_base
     
@@ -229,27 +232,11 @@ namespace geo {
       GeoID_t& ID() { return id; }
       //@}
       
-      /// Returns the type of ID we act on
-      LocalID_t const& localID() const 
-        { return static_cast<LocalID_t const&>(ID()); }
-      
-      /// Returns a pointer to the geometry
-      geo::GeometryCore const* geometry() const { return pGeo; }
-      
-      /// Sets the iterator to the begin position
-      void set_begin();
-      
-      /// Sets the iterator to the end position
-      void set_end();
-      
       /// Skips to the next cryostat
       void next();
       
       /// Returns whether this iterator has reached the end
-      bool at_end() const { return index() == limit; }
-      
-      /// Returns the index (part if the ID) this iterator runs on
-      ID_t const& index() const { return localID().Cryostat; }
+      bool at_end() const { return local_index() == limit; }
       
         private:
       GeoID_t id; ///< ID of the current cryostat
@@ -258,11 +245,24 @@ namespace geo {
       /// Sets the limit member to the past-the-end cryostat number
       void set_local_limits();
       
-      /// Returns the type of ID we act on (non-const version)
-      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      /// Sets the iterator to the begin position
+      void set_begin();
       
-      /// Returns the index (part if the ID) this iterator runs on  (non-const)
-      ID_t& index() { return localID().Cryostat; }
+      /// Sets the iterator to the end position
+      void set_end();
+      
+      //@{
+      /// Returns the type of ID we act on
+      LocalID_t const& localID() const 
+        { return static_cast<LocalID_t const&>(ID()); }
+      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      //@}
+      
+      //@{
+      /// Returns the index (part if the ID) this iterator runs on
+      ID_t const& local_index() const { return localID().Cryostat; }
+      ID_t& local_index() { return localID().Cryostat; }
+      //@}
       
     }; // class cryostat_iterator_base<>
     
@@ -287,7 +287,7 @@ namespace geo {
     template <typename GEOID>
     class TPC_iterator_base:
       virtual public std::forward_iterator_tag,
-      private cryostat_iterator_base<GEOID>
+      protected cryostat_iterator_base<GEOID>
     {
       using LocalID_t = geo::TPCID; ///< type of the ID we change
       static_assert(std::is_base_of<LocalID_t, GEOID>::value,
@@ -373,17 +373,15 @@ namespace geo {
       
       /// Returns the type of ID we act on
       LocalID_t const& localID() const 
-        { return static_cast<LocalID_t const&>(upper_iterator::localID()); }
+        { return static_cast<LocalID_t const&>(upper_iterator::ID()); }
       
       using upper_iterator::at_end; // to be explicit; this is NOT overloaded
-      
-      using upper_iterator::geometry; // keep it protected (not private)
       
       /// Skips to the next TPC
       void next();
       
       /// Returns the index (part if the ID) this iterator runs on
-      ID_t const& index() const { return localID().TPC; }
+      ID_t const& local_index() const { return localID().TPC; }
         
         private:
       
@@ -397,11 +395,11 @@ namespace geo {
       LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
       
       /// Returns the index (part if the ID) this iterator runs on  (non-const)
-      ID_t& index() { return localID().TPC; }
+      ID_t& local_index() { return localID().TPC; }
       
     }; // class TPC_iterator_base
-
-
+    
+    
     /**
      * @brief Base forward iterator browsing all planes in the detector
      * @tparam GEOID ID type to be used
@@ -421,7 +419,8 @@ namespace geo {
      */
     template <typename GEOID>
     class plane_iterator_base:
-      virtual public std::forward_iterator_tag, private TPC_iterator_base<GEOID>
+      virtual public std::forward_iterator_tag,
+      protected TPC_iterator_base<GEOID>
     {
       using LocalID_t = geo::PlaneID; ///< type of the ID we change
       static_assert(std::is_base_of<LocalID_t, GEOID>::value,
@@ -507,7 +506,7 @@ namespace geo {
       
       /// Returns the type of ID we act on
       LocalID_t const& localID() const 
-        { return static_cast<LocalID_t const&>(upper_iterator::localID()); }
+        { return static_cast<LocalID_t const&>(upper_iterator::ID()); }
       
       using upper_iterator::at_end; // to be explicit; this is NOT overloaded
       
@@ -515,23 +514,156 @@ namespace geo {
       void next();
       
       /// Returns the index (part if the ID) this iterator runs on
-      ID_t const& index() const { return localID().Plane; }
+      ID_t const& local_index() const { return localID().Plane; }
         
         private:
       
       /// maximum number of planes in the current TPC
       ID_t limit = LocalID_t::InvalidID;
       
-      /// Sets limit to the past-the-end plane number of current croystat
+      /// Sets limit to the past-the-end plane number of current TPC
       void set_local_limits();
       
       /// Returns the type of ID we act on (non-const version)
       LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
       
       /// Returns the index (part if the ID) this iterator runs on  (non-const)
-      ID_t& index() { return localID().Plane; }
+      ID_t& local_index() { return localID().Plane; }
       
     }; // class plane_iterator_base
+    
+    
+    /**
+     * @brief Base forward iterator browsing all wires in the detector
+     * @tparam GEOID ID type to be used
+     * 
+     * This iterator requires that GEOID is derived from geo::WireID.
+     * Note that no polymorphic behaviour is required, or expected, from GEOID.
+     * 
+     * This iterator is designed to carry on, untouched, anything else that the
+     * GEOID type defines beyond the required WireID data.
+     * 
+     * @noe A number of "local" methods are overloaded: since there is no
+     * polymorphism here and they are not virtual functions, these are designed
+     * not to replace the inherited methods except within the non-inherited and
+     * explicitly redefined methods.
+     * 
+     * Currently, backward iterations are not supported.
+     */
+    template <typename GEOID>
+    class wire_iterator_base:
+      virtual public std::forward_iterator_tag,
+      protected plane_iterator_base<GEOID>
+    {
+      using LocalID_t = geo::WireID; ///< type of the ID we change
+      static_assert(std::is_base_of<LocalID_t, GEOID>::value,
+        "template type GEOID is not a LocalID_t");
+      
+      using upper_iterator = plane_iterator_base<GEOID>;
+      using ElementPtr_t = geo::WireGeo const*;
+      
+        public:
+      using iterator = wire_iterator_base<GEOID>; ///< type of this iterator
+      
+      // import all the useful types from the base templated class
+      using typename upper_iterator::ID_t;
+      using typename upper_iterator::UndefinedPos_t;
+      using typename upper_iterator::BeginPos_t;
+      using typename upper_iterator::EndPos_t;
+      
+      // import all the useful members from the base templated class
+      using upper_iterator::undefined_pos;
+      using upper_iterator::begin_pos;
+      using upper_iterator::end_pos;
+      
+      /// Default constructor; effect not defined: assign to it before using!
+      wire_iterator_base() {}
+      
+      /// Constructor: points to begin
+      wire_iterator_base(geo::GeometryCore const* geom):
+        wire_iterator_base(geom, begin_pos) {}
+      
+      /// Constructor: points to the specified cryostat
+      wire_iterator_base
+        (geo::GeometryCore const* geom, GEOID const& start_from):
+        upper_iterator(geom, start_from)
+        { set_local_limits(); }
+      
+      /// Constructor: points to begin
+      wire_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+        upper_iterator(geom, begin_pos)
+        { set_local_limits(); }
+      
+      /// Constructor: points to end
+      wire_iterator_base(geo::GeometryCore const* geom, EndPos_t):
+        upper_iterator(geom, end_pos)
+        {} // the local limit is ill-defined and left invalid
+      
+      // TODO reconsider if the additional template is indeed needed
+      /// Returns true if the two iterators point to the same wire
+      template <typename OTHERID>
+      bool operator== (wire_iterator_base<OTHERID> const& as) const
+        { return localID() == as.localID(); }
+      
+      /// Returns true if the two iterators point to different wires
+      template <typename OTHERID>
+      bool operator!= (wire_iterator_base<OTHERID> const& as) const 
+        { return localID() != as.localID(); }
+      
+      /// Returns the WireID the iterator points to
+      LocalID_t const& operator* () const { return localID(); }
+      
+      /// Returns the WireID the iterator points to
+      LocalID_t const* operator-> () const { return &(localID()); }
+      
+      /// Prefix increment: returns this iterator pointing to the next wire
+      iterator& operator++ () { next(); return *this; }
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      iterator operator++ (int) { iterator old(*this); next(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid wire
+      operator bool() const;
+      
+      /// Returns a pointer to wire, or nullptr if invalid
+      ElementPtr_t get() const;
+      
+        protected:
+      
+      /// Constructor: position undefined (meaning undefined local limits too)
+      wire_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
+        upper_iterator(geom, undefined_pos)
+        {}
+      
+      using upper_iterator::ID; // to be explicit; this is NOT overloaded
+      
+      /// Returns the type of ID we act on
+      LocalID_t const& localID() const 
+        { return static_cast<LocalID_t const&>(upper_iterator::ID()); }
+      
+      using upper_iterator::at_end; // to be explicit; this is NOT overloaded
+      
+      /// Skips to the next wire
+      void next();
+      
+      /// Returns the index (part if the ID) this iterator runs on
+      ID_t const& local_index() const { return localID().Wire; }
+        
+        private:
+      
+      /// maximum number of wires in the current plane
+      ID_t limit = LocalID_t::InvalidID;
+      
+      /// Sets limit to the past-the-end wire number of current plane
+      void set_local_limits();
+      
+      /// Returns the type of ID we act on (non-const version)
+      LocalID_t& localID() { return static_cast<LocalID_t&>(ID()); }
+      
+      /// Returns the index (part if the ID) this iterator runs on (non-const)
+      ID_t& local_index() { return localID().Wire; }
+      
+    }; // class wire_iterator_base
 
 
   } // namespace details
@@ -589,9 +721,9 @@ namespace geo {
    * Stand-alone example (not recommended):
    * @code
    * geo::GeometryCore::plane_iterator iPlane,
-   *   tbegin(geom, geo::plane_iterator::begin_pos),
-   *   tend(geom, geo::plane_iterator::end_pos);
-   * for (iPlane = tbegin; iPlane != tend; ++iPlane) {
+   *   pbegin(geom, geo::plane_iterator::begin_pos),
+   *   pend(geom, geo::plane_iterator::end_pos);
+   * for (iPlane = pbegin; iPlane != pend; ++iPlane) {
    *   geo::PlaneID const& pid = *iPlane;
    *   geo::PlaneGeo const* pPlane = iPlane.get();
    *   std::cout << "We are at: " << pid << std::endl;
@@ -605,78 +737,22 @@ namespace geo {
   /**
    * @brief Forward iterator browsing all wires in the detector
    * 
-   * Usage example:
+   * Prefer asking the geometry object for iterators rather than constructing
+   * them anew: see geo::GeometryCore::wire_iterator for the recommended usage.
+   * Stand-alone example (not recommended):
    * @code
-   * geo::GeometryCore::wire_iterator iWire;
-   * while (iWire) {
-   *   std::cout << "Cryo: " << iWire->Cryostat << " TPC: " << iWire->TPC
-   *     << " plane: " << iWire->Plane << " << " wire: " << iWire->Wire
-   *     << std::endl;
-        *   const geo::WireGeo* Wire = iWire.get();
+   * geo::GeometryCore::wire_iterator iWire,
+   *   wbegin(geom, geo::wire_iterator::begin_pos),
+   *   wend(geom, geo::wire_iterator::end_pos);
+   * for (iWire = wbegin; iWire != wend; ++iWire) {
+   *   geo::WireID const& wid = *iWire;
+   *   geo::WireGeo const* pWire = iWire.get();
+   *   std::cout << "We are at: " << wid << std::endl;
    *   // ...
-   *   ++iWire;
-   * } // while
+   * } // for
    * @endcode
    */
-  class wire_iterator:
-    public std::forward_iterator_tag, protected details::geometry_iterator_base
-  {
-      public:
-    /// Default constructor: points to the first wire
-    wire_iterator(geo::GeometryCore const* geom):
-      details::geometry_iterator_base(geom)
-      { set_limits_and_validity(); }
-    
-    /// Constructor: points to the specified wire
-    wire_iterator(geo::GeometryCore const* geom, WireID start_from):
-      details::geometry_iterator_base(geom), wireid(start_from)
-      { set_limits_and_validity(); }
-    
-    bool operator== (const wire_iterator& as) const
-      { return wireid == as.wireid; }
-    bool operator!= (const wire_iterator& as) const
-      { return wireid != as.wireid; }
-    
-    /// Returns a copy of the WireID the iterator points to
-    const WireID& operator* () const { return wireid; }
-    
-    /// Returns a constant pointer to the WireID the iterator points to
-    const WireID* operator-> () const { return &wireid ; }
-    
-    /// Prefix increment: returns this iterator pointing to the next wire
-    wire_iterator& operator++ ();
-    
-    /// Postfix increment: returns the current iterator, then increments it
-    wire_iterator operator++ (int)
-      { wire_iterator old(*this); this->operator++(); return old; }
-    
-    /// Returns whether the iterator is pointing to a valid wire
-    operator bool() const { return wireid.isValid; }
-    
-    /// Skips to the next wire
-    wire_iterator& next() { return this->operator++(); }
-    
-    /// Returns a pointer to wire, or nullptr if the iterator is not valid
-    const WireGeo* get() const;
-    
-    /// Returns a pointer to the plane the wire belongs to
-    const PlaneGeo* getPlane() const;
-    
-    /// Returns a pointer to the TPC the wire belongs to
-    const TPCGeo* getTPC() const;
-    
-    /// Returns a pointer to the cryostat the wire belongs to
-    const CryostatGeo* getCryostat() const;
-    
-      protected:
-    WireID wireid = { 0, 0, 0, 0 }; ///< current wire
-    WireID limits = { 0, 0, 0, 0 }; ///< maxima of the indices
-    
-    void set_limits_and_validity();
-    void new_cryostat();
-    void new_tpc();
-    void new_plane();
-  }; // class wire_iterator
+  using wire_iterator = details::wire_iterator_base<geo::WireID>;
   
   
   
@@ -797,8 +873,75 @@ namespace geo {
      */
     using cryostat_iterator = geo::cryostat_iterator;
     
+    /**
+     * @brief Forward-iterator browsing all TPCs in the detector
+     * 
+     * Usage example with a while loop:
+     * @code
+     * geo::GeometryCore::TPC_iterator iTPC = geom->begin_TPC(),
+     *   tend = geom->end_TPC();
+     * while (iTPC != tend) {
+     *   std::cout << "TPC: " << *iTPC << std::endl;
+     *   // the TPC descriptor object
+     *   const geo::TPCGeo* pTPC = iTPC.get();
+     *   // the cryostat the TPC is in
+     *   geo::CryostatGeo const& Cryo = geom->Cryostat(*iTPC);
+     *   ++iTPC;
+     *   // ...
+     * } // while
+     * @endcode
+     * The recommended way to iterate is actually to use
+     * GeometryCore::IterateTPCs() in a range-for loop.
+     * It is recommended to save the end iterator rather than calling
+     * GeometryCore::end_TPC() on every check.
+     */
     using TPC_iterator = geo::TPC_iterator;
+    
+    /**
+     * @brief Forward-iterator browsing all planes in the detector
+     * 
+     * Usage example with a while loop:
+     * @code
+     * geo::GeometryCore::plane_iterator iPlane = geom->begin_plane(),
+     *   pend = geom->end_plane();
+     * while (iPlane != pend) {
+     *   std::cout << "Plane: " << *iPlane << std::endl;
+     *   // the plane descriptor object
+     *   const geo::PlaneGeo* pPlane = iPlane.get();
+     *   // the TPC the plane is in
+     *   geo::TPCGeo const& TPC = geom->TPC(*iPlane);
+     *   ++iPlane;
+     *   // ...
+     * } // while
+     * @endcode
+     * The recommended way to iterate is actually to use
+     * GeometryCore::IteratePlanes() in a range-for loop.
+     * It is recommended to save the end iterator rather than calling
+     * GeometryCore::end_plane() on every check.
+     */
     using plane_iterator = geo::plane_iterator;
+    /**
+     * @brief Forward-iterator browsing all wires in the detector
+     * 
+     * Usage example with a while loop:
+     * @code
+     * geo::GeometryCore::wire_iterator iWire = geom->begin_wire(),
+     *   wend = geom->end_wire();
+     * while (iWire != wend) {
+     *   std::cout << "Wire: " << *iWire << std::endl;
+     *   // the wire descriptor object
+     *   const geo::WireGeo* pWire = iWire.get();
+     *   // the TPC the wire is in
+     *   geo::TPCGeo const& TPC = geom->TPC(*iWire);
+     *   ++iWire;
+     *   // ...
+     * } // while
+     * @endcode
+     * The recommended way to iterate is actually to use
+     * GeometryCore::IterateWires() in a range-for loop.
+     * It is recommended to save the end iterator rather than calling
+     * GeometryCore::end_wire() on every check.
+     */
     using wire_iterator = geo::wire_iterator;
     
     
@@ -972,8 +1115,14 @@ namespace geo {
     //
     
     //@{
-    /// Returns the number of cryostats in the detector
-    /// @todo Change return type to size_t
+    /**
+     * @brief Returns the number of cryostats in the detector
+     *
+     * The NElements() and NSiblingElements() methods are overloaded and their
+     * return depends on the type of ID.
+     *
+     * @todo Change return type to size_t
+     */
     unsigned int Ncryostats() const { return Cryostats().size(); }
     unsigned int NElements() const { return Ncryostats(); }
     unsigned int NSiblingElements(geo::CryostatID const&) const
@@ -985,13 +1134,17 @@ namespace geo {
     //
     
     //@{
-    /// Returns whether we have the specified cryostat
+    /**
+     * @brief Returns whether we have the specified cryostat
+     *
+     * The HasElement() method is overloaded and its meaning depends on the type
+     * of ID.
+     */
     bool HasCryostat(geo::CryostatID const& cryoid) const
       { return cryoid.Cryostat < Ncryostats(); }
-    
-    /// Returns whether we have the specified cryostat
     bool HasElement(geo::CryostatID const& cryoid) const
       { return HasCryostat(cryoid); }
+    //@}
     
     /**
      * @brief Returns the specified cryostat
@@ -1000,6 +1153,9 @@ namespace geo {
      * @return a constant reference to the specified cryostat
      * @throws cet::exception ("GeometryCore" category) if not present
      * 
+     * The GetElement() method is overloaded and its return depends on the type
+     * of ID.
+     *
      * @todo Make the cryostat number mandatory (as CryostatID)
      * @todo what happens if it does not exist?
      */
@@ -1014,7 +1170,10 @@ namespace geo {
     /**
      * @brief Returns the specified cryostat
      * @param cryoid cryostat ID
-     * @return a constant pointer to the specified cryostat, or nullptr id none
+     * @return a constant pointer to the specified cryostat, or nullptr if none
+     * 
+     * The GetElementPtr() method is overloaded and its return depends on the
+     * type of ID.
      */
     CryostatGeo const* CryostatPtr(geo::CryostatID const& cryoid) const
       { return HasCryostat(cryoid)? Cryostats()[cryoid.Cryostat]: nullptr; }
@@ -1111,6 +1270,14 @@ namespace geo {
     plane_iterator end_plane() const
       { return plane_iterator(this, plane_iterator::end_pos); }
     
+    /// Returns an iterator pointing to the first wire in the detector
+    wire_iterator begin_wire() const
+      { return wire_iterator(this, wire_iterator::begin_pos); }
+    
+    /// Returns an iterator pointing after the last wire in the detector
+    wire_iterator end_wire() const
+      { return wire_iterator(this, wire_iterator::end_pos); }
+    
     
     /**
      * @brief Enables ranged-for loops on all cryostats of the detector
@@ -1161,7 +1328,7 @@ namespace geo {
      * Example of usage:
      *     
      *     for (geo::PlaneID const& pID: geom->IteratePlanes()) {
-     *       geo::PlaneGeo const& Plane = geom->Plane(cID);
+     *       geo::PlaneGeo const& Plane = geom->Plane(pID);
      *       
      *       // useful code here
      *       
@@ -1173,6 +1340,27 @@ namespace geo {
       &GeometryCore::begin_plane, &GeometryCore::end_plane
       >
     IteratePlanes() const { return { this }; }
+    
+    
+    /**
+     * @brief Enables ranged-for loops on all wires of the detector
+     * @returns an object suitable for ranged-for loops on all wires
+     * 
+     * Example of usage:
+     *     
+     *     for (geo::WireID const& wID: geom->IterateWires()) {
+     *       geo::WireGeo const& Wire = geom->Wire(wID);
+     *       
+     *       // useful code here
+     *       
+     *     } // for all wires
+     *     
+     */
+    IteratorBox<
+      wire_iterator,
+      &GeometryCore::begin_wire, &GeometryCore::end_wire
+      >
+    IterateWires() const { return { this }; }
     
     
     //
@@ -1250,6 +1438,9 @@ namespace geo {
      * @brief Returns the total number of TPCs in the specified cryostat
      * @param cryoid cryostat number
      * @return number of TPCs in specified cryostat, or 0 if no cryostat found
+     *
+     * The NElements() and NSiblingElements() methods are overloaded and their
+     * return depends on the type of ID.
      * 
      * @todo Change return type to size_t
      */
@@ -1287,6 +1478,9 @@ namespace geo {
      * @param cstat number of cryostat
      * @return a constant reference to the specified TPC
      * 
+     * The GetElement() method is overloaded and its return depends on the type
+     * of ID.
+     * 
      * @todo remove the version with integers
      * @todo what happens if it does not exist?
      */
@@ -1303,7 +1497,10 @@ namespace geo {
     /**
      * @brief Returns the specified TPC
      * @param tpcid TPC ID
-     * @return a constant pointer to the specified TPC, or nullptr id none
+     * @return a constant pointer to the specified TPC, or nullptr if none
+     * 
+     * The GetElementPtr() method is overloaded and its return depends on the
+     * type of ID.
      */
     TPCGeo const* TPCPtr(geo::TPCID const& tpcid) const
       {
@@ -1476,7 +1673,8 @@ namespace geo {
      * @todo Change return type to size_t
      * @todo what happens if TPC does not exist?
      */
-    unsigned int Nplanes(unsigned int tpc   = 0, unsigned int cstat = 0) const;
+    unsigned int Nplanes(unsigned int tpc   = 0, unsigned int cstat = 0) const
+      { return Nplanes(geo::TPCID(cstat, tpc)); }
     
     
     //@{
@@ -1484,6 +1682,9 @@ namespace geo {
      * @brief Returns the total number of planes in the specified TPC
      * @param tpcid TPC ID
      * @return number of planes in specified TPC, or 0 if no TPC found
+     *
+     * The NElements() and NSiblingElements() methods are overloaded and their
+     * return depends on the type of ID.
      * 
      * @todo Change return type to size_t
      */
@@ -1493,9 +1694,9 @@ namespace geo {
         return pTPC? pTPC->NElements(): 0;
       }
     unsigned int NElements(geo::TPCID const& tpcid) const
-      { return NTPC(tpcid); }
+      { return Nplanes(tpcid); }
     unsigned int NSiblingElements(geo::PlaneID const& planeid) const
-      { return NTPC(planeid); }
+      { return Nplanes(planeid); }
     //@}
     
     
@@ -1528,25 +1729,34 @@ namespace geo {
     // access
     //
     
-    /// Returns whether we have the specified plane
-    bool HasTPC(geo::PlaneID const& planeid) const
+    //@{
+    /**
+     * @brief Returns whether we have the specified plane
+     *
+     * The HasElement() method is overloaded and its meaning depends on the type
+     * of ID.
+     *
+     */
+    bool HasPlane(geo::PlaneID const& planeid) const
       {
-        geo::CryostatGeo const* pCryo = CryostatPtr(planeid);
-        return pCryo? pCryo->HasTPC(planeid): false;
+        geo::TPCGeo const* pTPC = TPCPtr(planeid);
+        return pTPC? pTPC->HasPlane(planeid): false;
       }
-    
-    /// Returns whether we have the specified TPC
-    bool HasElement(geo::PlaneID const& planeid) const { return HasTPC(planeid); }
-    
+    bool HasElement(geo::PlaneID const& planeid) const
+      { return HasPlane(planeid); }
+    //@}
     
     ///@{
     /**
-     * @brief Returns the specified TPC
-     * @param planeid ID of the tpc
+     * @brief Returns the specified wire
+     * @param planeid ID of the plane
      * @param p plane number within the TPC
      * @param tpc TPC number within the cryostat
      * @param cstat number of cryostat
-     * @return a constant reference to the specified TPC
+     * @return a constant reference to the specified plane
+     * 
+     * The GetElement() method is overloaded and its return depends on the type
+     * of ID.
      * 
      * @todo remove the version with integers
      * @todo what happens if it does not exist?
@@ -1565,7 +1775,10 @@ namespace geo {
     /**
      * @brief Returns the specified plane
      * @param planeid plane ID
-     * @return a constant pointer to the specified plane, or nullptr id none
+     * @return a constant pointer to the specified plane, or nullptr if none
+     * 
+     * The GetElementPtr() method is overloaded and its return depends on the
+     * type of ID.
      */
     PlaneGeo const* PlanePtr(geo::PlaneID const& planeid) const
       {
@@ -1643,7 +1856,31 @@ namespace geo {
      * @todo what happens if it does not exist?
      */
     unsigned int Nwires
-      (unsigned int p, unsigned int tpc   = 0, unsigned int cstat = 0) const;
+      (unsigned int p, unsigned int tpc   = 0, unsigned int cstat = 0) const
+      { return Nwires(geo::PlaneID(cstat, tpc, p)); }
+    
+    
+    //@{
+    /**
+     * @brief Returns the total number of wires in the specified plane
+     * @param planeid plane ID
+     * @return number of wires in specified plane, or 0 if no plane found
+     *
+     * The NElements() and NSiblingElements() methods are overloaded and their
+     * return depends on the type of ID.
+     * 
+     * @todo Change return type to size_t
+     */
+    unsigned int Nwires(geo::PlaneID const& planeid) const
+      {
+        PlaneGeo const* pPlane = GetElementPtr(planeid);
+        return pPlane? pPlane->NElements(): 0;
+      }
+    unsigned int NElements(geo::PlaneID const& planeid) const
+      { return Nwires(planeid); }
+    unsigned int NSiblingElements(geo::WireID const& wireid) const
+      { return Nwires(wireid); }
+    //@}
     
     
     //
@@ -1652,16 +1889,53 @@ namespace geo {
     
     //@{
     /**
+     * @brief Returns whether we have the specified wire
+     *
+     * The HasElement() method is overloaded and its meaning depends on the type
+     * of ID.
+     */
+    bool HasWire(geo::WireID const& wireid) const
+      {
+        geo::PlaneGeo const* pPlane = PlanePtr(wireid);
+        return pPlane? pPlane->HasWire(wireid): false;
+      }
+    bool HasElement(geo::WireID const& wireid) const { return HasWire(wireid); }
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns the specified wire
+     * @param wireid wire ID
+     * @return a constant pointer to the specified wire, or nullptr if none
+     * 
+     * The GetElementPtr() method is overloaded and its return depends on the
+     * type of ID.
+     */
+    WireGeo const* WirePtr(geo::WireID const& wireid) const
+      {
+        geo::PlaneGeo const* pPlane = PlanePtr(wireid);
+        return pPlane? pPlane->WirePtr(wireid): nullptr;
+      } // WirePtr()
+    WireGeo const* GetElementPtr(geo::WireID const& wireid) const
+      { return WirePtr(wireid); }
+    //@}
+    
+    //@{
+    /**
      * @brief Returns the specified wire
      * @param wireid ID of the wire
      * @return a constant reference to the specified wire
+     * @throw cet::exception if not found
      * 
-     * @todo what happens if it does not exist?
-     * @todo rename this to Wire()
+     * The GetElement() method is overloaded and its return depends on the type
+     * of ID.
      */
-    WireGeo const& WireIDToWireGeo(geo::WireID const& wireid) const;
+    WireGeo const& Wire(geo::WireID const& wireid) const
+      { return Plane(wireid).Wire(wireid); }
+    WireGeo const& WireIDToWireGeo(geo::WireID const& wireid) const
+      { return Wire(wireid); }
     WireGeo const& GetElement(geo::WireID const& wireid) const
-      { return WireIDToWireGeo(wireid); }
+      { return Wire(wireid); }
     //@}
     
     
@@ -2465,7 +2739,7 @@ namespace geo {
 //
 template <typename GEOID>
 inline geo::details::cryostat_iterator_base<GEOID>::operator bool() const
-  { return geometry()->HasElement(localID()); }
+  { return geometry() && geometry()->HasElement(localID()); }
 
 template <typename GEOID>
 inline auto geo::details::cryostat_iterator_base<GEOID>::get() const
@@ -2487,7 +2761,7 @@ inline void geo::details::cryostat_iterator_base<GEOID>::set_end()
 template <typename GEOID>
 void geo::details::cryostat_iterator_base<GEOID>::next() {
   if (at_end()) return;
-  if (++index() < limit) return;
+  if (++local_index() < limit) return;
   localID().isValid = false;
 } // geo::cryostat_iterator_base<GEOID>::next()
 
@@ -2496,8 +2770,11 @@ void geo::details::cryostat_iterator_base<GEOID>::next() {
 // geo::details::TPC_iterator_base<>
 //
 template <typename GEOID>
-inline geo::details::TPC_iterator_base<GEOID>::operator bool() const
-  { return upper_iterator::geometry()->HasElement(localID()); }
+inline geo::details::TPC_iterator_base<GEOID>::operator bool() const {
+  return upper_iterator::geometry()
+    && upper_iterator::geometry()->HasElement(localID());
+} // geo::details::TPC_iterator_base<>::operator bool()
+
 
 template <typename GEOID>
 inline auto geo::details::TPC_iterator_base<GEOID>::get() const -> ElementPtr_t
@@ -2515,13 +2792,13 @@ inline void geo::details::TPC_iterator_base<GEOID>::next() {
   if (upper_iterator::at_end()) return;
   
   // if after incrementing we haven't reached the limit, we are done
-  if (++index() < limit) return;
+  if (++local_index() < limit) return;
   
   // we reached the end of the current elements list, we need to escalate:
   // - go to the next parent; if that becomes invalid, too bad, but we go on
   upper_iterator::next();
   // - set the index to the first element of the new parent
-  index() = 0;
+  local_index() = 0;
   // - update how many elements there are
   //   (expect 0 if it is now at_end() -- and it does not even matter)
   set_local_limits();
@@ -2532,8 +2809,11 @@ inline void geo::details::TPC_iterator_base<GEOID>::next() {
 // geo::details::plane_iterator_base<>
 //
 template <typename GEOID>
-inline geo::details::plane_iterator_base<GEOID>::operator bool() const
-  { return upper_iterator::geometry()->HasElement(localID()); }
+inline geo::details::plane_iterator_base<GEOID>::operator bool() const {
+  return upper_iterator::geometry()
+    && upper_iterator::geometry()->HasElement(localID());
+} // geo::details::plane_iterator_base<>::operator bool()
+
 
 template <typename GEOID>
 inline auto geo::details::plane_iterator_base<GEOID>::get() const
@@ -2552,17 +2832,56 @@ inline void geo::details::plane_iterator_base<GEOID>::next() {
   if (upper_iterator::at_end()) return;
   
   // if after incrementing we haven't reached the limit, we are done
-  if (++index() < limit) return;
+  if (++local_index() < limit) return;
   
   // we reached the end of the current elements list, we need to escalate:
   // - go to the next parent; if that becomes invalid, too bad, but we go on
   upper_iterator::next();
   // - set the index to the first element of the new parent
-  index() = 0;
+  local_index() = 0;
   // - update how many elements there are
   //   (expect 0 if it is now at_end() -- and it does not even matter)
   set_local_limits();
 } // geo::details::plane_iterator_base<GEOID>::next()
+
+
+//
+// geo::details::wire_iterator_base<>
+//
+template <typename GEOID>
+inline geo::details::wire_iterator_base<GEOID>::operator bool() const {
+  return upper_iterator::geometry()
+    && upper_iterator::geometry()->HasElement(localID());
+} // geo::details::wire_iterator_base<>::operator bool()
+
+template <typename GEOID>
+inline auto geo::details::wire_iterator_base<GEOID>::get() const
+  -> ElementPtr_t
+  { return upper_iterator::geometry()->GetElementPtr(localID()); }
+
+template <typename GEOID>
+inline void geo::details::wire_iterator_base<GEOID>::set_local_limits() {
+  // limit is how many sibling wires there are
+  limit = upper_iterator::geometry()->NSiblingElements(localID());
+} // geo::details::wire_iterator_base<>::set_local_limits()
+
+template <typename GEOID>
+inline void geo::details::wire_iterator_base<GEOID>::next() {
+  // if at end (checked in the inherited context), do nothing
+  if (upper_iterator::at_end()) return;
+  
+  // if after incrementing we haven't reached the limit, we are done
+  if (++local_index() < limit) return;
+  
+  // we reached the end of the current elements list, we need to escalate:
+  // - go to the next parent; if that becomes invalid, too bad, but we go on
+  upper_iterator::next();
+  // - set the index to the first element of the new parent
+  local_index() = 0;
+  // - update how many elements there are
+  //   (expect 0 if it is now at_end() -- and it does not even matter)
+  set_local_limits();
+} // geo::details::wire_iterator_base<>::next()
 
 
 //******************************************************************************

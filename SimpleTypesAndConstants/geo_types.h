@@ -150,7 +150,7 @@ namespace geo {
         if (cmp_res == 0) // same cryostat: compare TPC
           return ThreeWayComparison(TPC, other.TPC);
         else              // return the order of cryostats
-          return cmp_res < 0;
+          return cmp_res;
       } // cmp()
     
   }; // struct TPCID
@@ -231,7 +231,7 @@ namespace geo {
         if (cmp_res == 0) // same TPC: compare plane
           return ThreeWayComparison(Plane, other.Plane);
         else              // return the order of TPC
-          return cmp_res < 0;
+          return cmp_res;
       } // cmp()
     
   }; // struct PlaneID
@@ -330,7 +330,7 @@ namespace geo {
         if (cmp_res == 0) // same plane: compare wire
           return ThreeWayComparison(Wire, other.Wire);
         else              // return the order of planes
-          return cmp_res < 0;
+          return cmp_res;
       } // cmp()
     
     

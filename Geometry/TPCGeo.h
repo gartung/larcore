@@ -74,7 +74,7 @@ namespace geo {
     //@{
     /**
      * @brief Returns whether the plane in planeid is present in this TPC
-     * @param tpcid full TPC ID
+     * @param planeid full plane ID
      * @return whether the plane in planeid is present in this TPC
      *
      * The cryostat and TPC numbers in planeid are ignored, as it is ignored

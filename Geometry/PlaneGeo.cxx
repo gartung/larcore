@@ -78,6 +78,17 @@ namespace geo{
   }
 
   //......................................................................
+  
+  geo::WireGeo const& PlaneGeo::Wire(unsigned int iwire) const {
+    geo::WireGeo const* pWire = WirePtr(iwire);
+    if (!pWire) {
+      throw cet::exception("WireOutOfRange")
+        << "Request for non-existant wire " << iwire << "\n";
+    }
+    return *pWire;
+  } // PlaneGeo::Wire(int)
+  
+  //......................................................................
 
   void PlaneGeo::FindWire(std::vector<const TGeoNode*>& path,
 			  unsigned int depth) 

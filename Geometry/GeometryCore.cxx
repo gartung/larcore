@@ -181,22 +181,6 @@ namespace geo {
     return fChannelMapAlg->IsValidOpChannel(opChannel, this->NOpDets());
   }
 
-  
-  //......................................................................
-  unsigned int GeometryCore::Nplanes(unsigned int tpc,
-                                 unsigned int cstat) const
-  {
-    return this->Cryostat(cstat).TPC(tpc).Nplanes();
-  }
-
-  //......................................................................
-  unsigned int GeometryCore::Nwires(unsigned int p, 
-                                unsigned int tpc,
-                                unsigned int cstat) const 
-  {
-    return this->Cryostat(cstat).TPC(tpc).Plane(p).Nwires();
-  }
-
   //......................................................................
   unsigned int Geometry::NAuxDetSensitive(size_t const& aid) const
   {
@@ -1268,17 +1252,6 @@ namespace geo {
     return OpDetFromCryo(o, c);
   }
   
-  //--------------------------------------------------------------------
-  WireGeo const& GeometryCore::WireIDToWireGeo(geo::WireID const& CodeWire) const
-  {
-    unsigned int cryo  = CodeWire.Cryostat;
-    unsigned int tpc   = CodeWire.TPC;
-    unsigned int plane = CodeWire.Plane;
-    unsigned int wire  = CodeWire.Wire;
-    
-    return this->Cryostat(cryo).TPC(tpc).Plane(plane).Wire(wire);
-  }
-  
   
   //--------------------------------------------------------------------
   constexpr details::geometry_iterator_types::BeginPos_t
@@ -1289,82 +1262,5 @@ namespace geo {
     details::geometry_iterator_types::undefined_pos;
   
   //--------------------------------------------------------------------
-  wire_iterator& wire_iterator::operator++() {
-    if (!wireid.isValid) return *this;
-    
-    ++wireid.Wire;
-    while (true) {
-      if (wireid.Wire < limits.Wire) return *this;
-      wireid.Wire = 0;
-      if (++wireid.Plane >= limits.Plane) {
-        wireid.Plane = 0;
-        if (++wireid.TPC >= limits.TPC) {
-          wireid.TPC = 0;
-          if (++wireid.Cryostat >= limits.Cryostat) break;
-          new_cryostat();
-        } // if new cryostat
-        new_tpc();
-      } // if new TPC
-      new_plane();
-    } // while
-    wireid.isValid = false;
-    return *this;
-  } // wire_iterator::operator++()
-  
-  
-  const WireGeo* wire_iterator::get() const {
-    return wireid.isValid? &(getPlane()->Wire(wireid.Wire)): nullptr;
-  } // wire_iterator::get()
-  
-  
-  const PlaneGeo* wire_iterator::getPlane() const {
-    return wireid.isValid?
-      &(pGeo->Plane(wireid.Plane, wireid.TPC, wireid.Cryostat)): nullptr;
-  } // wire_iterator::get()
-  
-  
-  const TPCGeo* wire_iterator::getTPC() const {
-    return wireid.isValid? &(pGeo->TPC(wireid.TPC, wireid.Cryostat)): nullptr;
-  } // wire_iterator::getTPC()
-  
-  
-  const CryostatGeo* wire_iterator::getCryostat() const {
-    return wireid.isValid? &(pGeo->Cryostat(wireid.Cryostat)): nullptr;
-  } // wire_iterator::getCryostat()
-  
-  
-  void wire_iterator::set_limits_and_validity() {
-    wireid.isValid = false;
-    limits.Cryostat = pGeo->Ncryostats();
-    if (wireid.Cryostat >= limits.Cryostat) return;
-    const CryostatGeo& cryo = pGeo->Cryostat(wireid.Cryostat);
-    limits.TPC = cryo.NTPC();
-    if (wireid.TPC >= limits.TPC) return;
-    const TPCGeo& TPC = cryo.TPC(wireid.TPC);
-    limits.Plane = TPC.Nplanes();
-    if (wireid.Plane >= limits.Plane) return;
-    const PlaneGeo& Plane = TPC.Plane(wireid.Plane);
-    limits.Wire = Plane.Nwires();
-    if (wireid.Wire >= limits.Wire) return;
-    wireid.isValid = true;
-  } // wire_iterator::set_limits_and_validity()
-  
-  
-  void wire_iterator::new_cryostat() {
-    wireid.TPC = 0;
-    limits.TPC = pGeo->NTPC(wireid.Cryostat);
-  } // wire_iterator::new_cryostat()
-  
-  
-  void wire_iterator::new_tpc() {
-    wireid.Plane = 0;
-    limits.Plane = pGeo->Nplanes(wireid.TPC, wireid.Cryostat);
-  } // wire_iterator::new_tpc()
-  
-  void wire_iterator::new_plane() {
-    wireid.Wire = 0;
-    limits.Wire = pGeo->Nwires(wireid.Plane, wireid.TPC, wireid.Cryostat);
-  } // wire_iterator::new_plane()
-  
   
 } // namespace geo

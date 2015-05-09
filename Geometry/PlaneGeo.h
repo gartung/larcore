@@ -52,11 +52,81 @@ namespace geo {
     /// @{
     /// @name Wire access
     
+    //@{
     /// Number of wires in this plane
     unsigned int Nwires()                                     const { return fWire.size();   }
-
-    /// Return the iwire'th wire in the plane. 
-    const WireGeo& Wire(unsigned int iwire)                   const { return *fWire[iwire];  }
+    unsigned int NElements()                                  const { return Nwires();       }
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns whether a wire with index iwire is present in this plane
+     * @param iwire index of wire in this plane
+     * @return whether the wire with index iwire is present in this plane
+     */
+    bool HasWire(unsigned int iwire) const { return iwire < Nwires(); }
+    bool HasElement(unsigned int iwire) const { return HasWire(iwire); }
+    //@}
+    
+    //@{
+    /**
+     * @brief Returns whether the wire in wireid is present in this plane
+     * @param wireid full wire ID
+     * @return whether the wire in wireid is present in this plane
+     *
+     * The cryostat, TPC and plane numbers in wireid are ignored, as it is
+     * ignored whether wireid is invalid.
+     */
+    bool HasWire(geo::WireID const& wireid) const
+      { return HasWire(wireid.Wire); }
+    bool HasElement(geo::WireID const& wireid) const
+      { return HasWire(wireid); }
+    //@}
+    
+    /// Return the iwire'th wire in the plane.
+    /// @throws cet::exception (category "WireOutOfRange") if no such wire
+    /// @note In the past, no check was performed.
+    WireGeo const& Wire(unsigned int iwire) const;
+    
+    //@{
+    /**
+     * @brief Returns the wire in wireid from this plane
+     * @param wireid full wire ID
+     * @return a constant reference to the wire in wireid
+     * @throws cet::exception (category "WireOutOfRange") if no such wire
+     *
+     * The cryostat, TPC and plane numbers in wireid are ignored, as it is
+     * ignored whether wireid is invalid.
+     */
+    WireGeo const& Wire(WireID const& wireid) const
+      { return Wire(wireid.Wire); }
+    WireGeo const& GetElement(WireID const& wireid) const
+      { return Wire(wireid); }
+    //@}
+    
+    /**
+     * @brief Returns the wire number iwire from this plane
+     * @param iwire the number of local wire
+     * @return a constant pointer to the wire, or nullptr if it does not exist
+     */
+    WireGeo const* WirePtr(unsigned int iwire) const
+      { return HasWire(iwire)? fWire[iwire]: nullptr; }
+    
+    //@{
+    /**
+     * @brief Returns the wire in wireid from this plane
+     * @param wireid full wire ID
+     * @return a constant pointer to the wire, or nullptr if it does not exist
+     *
+     * The cryostat, TPC and plane numbers in wireid are ignored, as it is
+     * ignored whether wireid is invalid.
+     */
+    WireGeo const* WirePtr(WireID const& wireid) const
+      { return WirePtr(wireid.Wire); }
+    WireGeo const* GetElementPtr(WireID const& wireid) const
+      { return WirePtr(wireid); }
+    //@}
+    
     
     /// Return the first wire in the plane.
     const WireGeo& FirstWire()                                const { return Wire(0);        }

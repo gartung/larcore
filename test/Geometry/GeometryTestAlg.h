@@ -64,11 +64,14 @@ namespace geo {
       public:
     explicit GeometryTestAlg(fhicl::ParameterSet const& pset);
     
+    /// Virtual destructor
+    virtual ~GeometryTestAlg() = default;
+    
     /// Runs the test
-    void Configure(geo::GeometryCore const* pGeom) { geom = pGeom; }
+    virtual void Setup(geo::GeometryCore const& new_geo) { geom = &new_geo; }
 
     /// Runs the test, returns a number of errors (very unlikely!)
-    unsigned int Run();
+    virtual unsigned int Run();
 
     /// Returns the direction on plane orthogonal to wires where wire number increases
     static std::array<double, 3> GetIncreasingWireDirection

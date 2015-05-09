@@ -1,7 +1,20 @@
 cet_enable_asserts()
 
+# test libraries
+art_make_library( LIBRARY_NAME GeometryTestLib
+                  SOURCE GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx
+                  LIBRARIES Geometry
+                        ${MF_MESSAGELOGGER}
+                        ${MF_UTILITIES}
+                        ${FHICLCPP}
+                        ${CETLIB}
+          )
+
+
+# test modules
 simple_plugin ( GeometryIteratorTest "module"
                     Geometry
+                    GeometryTestLib
                     Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
@@ -12,6 +25,7 @@ simple_plugin ( GeometryIteratorTest "module"
 
 simple_plugin ( GeometryTest "module"
                     Geometry
+                    GeometryTestLib
                     Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
@@ -24,9 +38,35 @@ simple_plugin ( GeometryTest "module"
 # geometry test on "standard" geometry
 
 # unit test (use the hard-coded configuration for "standard" LArTPCdetector)
-cet_test(Geometry_test
-  SOURCES Geometry_test.cxx GeometryTestAlg.cxx
+# this uses BOOST for the test, and it has not yet been moved into a test
+# algorithm
+cet_test(geometry_iterator_test
+  SOURCES geometry_iterator_test.cxx
   LIBRARIES Geometry
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+  USE_BOOST_UNIT
+)
+
+# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
+cet_test(geometry_test
+  SOURCES geometry_test.cxx
+  LIBRARIES Geometry
+            GeometryTestLib
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+  USE_BOOST_UNIT
+)
+
+# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
+cet_test(geometry_iterator_loop_test
+  SOURCES geometry_iterator_loop_test.cxx
+  LIBRARIES Geometry
+            GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
@@ -38,6 +78,8 @@ cet_test(Geometry_test
 # they are fast and always run.
 # FCL files need to be copied to the test area (DATAFILES directive) since they
 # are not installed.
+# 
+# This test is equivalent to geometry_test, but run in art environment
 cet_test(geometry HANDBUILT
   DATAFILES test_geometry.fcl
   TEST_EXEC lar
@@ -46,6 +88,8 @@ cet_test(geometry HANDBUILT
 
 # FCL files need to be copied to the test area (DATAFILES directive) since they
 # are not installed.
+# 
+# This test is equivalent to geometry_iterator_loop_test, but run in art environment
 cet_test(geometry_iterator HANDBUILT
   DATAFILES test_geometry_iterators.fcl
   TEST_EXEC lar
