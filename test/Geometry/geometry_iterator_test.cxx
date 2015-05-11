@@ -22,6 +22,7 @@
 
 // C/C++ standard libraries
 #include <string>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 //---  The test environment
