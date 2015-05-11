@@ -8,6 +8,9 @@
  * Refactored by Gianluca Petrillo on May 5th, 2015.
  */
 
+#ifndef GEO_GEOMETRYTESTALG_H
+#define GEO_GEOMETRYTESTALG_H
+
 // LArSoft includes
 #include "SimpleTypesAndConstants/geo_types.h"
 
@@ -112,3 +115,5 @@ namespace geo {
       (const TPCID& tpcid, double x, double y, double z) const;
   };
 } // namespace geo
+
+#endif // GEO_GEOMETRYTESTALG_H

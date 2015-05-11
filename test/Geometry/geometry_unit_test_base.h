@@ -14,6 +14,9 @@
  */
 
 
+#ifndef TEST_GEOMETRY_UNIT_TEST_BASE_H
+#define TEST_GEOMETRY_UNIT_TEST_BASE_H
+
 // LArSoft libraries
 #include "Geometry/GeometryCore.h"
 #include "Geometry/ChannelMapAlg.h"
@@ -57,14 +60,23 @@ namespace testing {
       {
         SetApplicationName("GeometryTest");
         SetGeometryParameterSetPath("services.Geometry");
+        SetDefaultGeometryConfiguration(R"(
+            services: {
+              Geometry: {
+                SurfaceY:        200.  # in cm, vertical distance to the surface
+                Name:            "lartpcdetector"
+                GDML:            "LArTPCdetector.gdml"
+                ROOT:            "LArTPCdetector.gdml"
+                SortingParameters: {}  # empty parameter set for default
+              } # Geometry
+            } # services
+          )");
       } // BasicGeometryFixtureConfigurer()
     
     /// Constructor; accepts the name as parameter
-    BasicGeometryFixtureConfigurer(std::string name)
-      {
-        SetApplicationName(name);
-        SetGeometryParameterSetPath("services.Geometry");
-      } // BasicGeometryFixtureConfigurer()
+    BasicGeometryFixtureConfigurer(std::string name):
+      BasicGeometryFixtureConfigurer()
+      { SetApplicationName(name); }
     
     /// @{
     /// @name Access to configuration
@@ -76,6 +88,9 @@ namespace testing {
     
     /// FHiCL path for the geometry configuration
     std::string GeometryParameterSetPath() const { return geo_pset; }
+    
+    /// A string describing the default parameter set to configure geometry
+    std::string DefaultGeometryConfiguration() const { return geo_default_cfg; }
     
     /// FHiCL path for the configuration of the test algorithm
     std::string TesterParameterSetPath() const { return test_pset; }
@@ -94,6 +109,10 @@ namespace testing {
     /// Sets the FHiCL path for the geometry configuration
     void SetGeometryParameterSetPath(std::string path) { geo_pset = path; }
     
+    /// Sets a string describing the default parameter set to configure geometry
+    void SetDefaultGeometryConfiguration(std::string cfg)
+      { geo_default_cfg = cfg; }
+    
     /// Sets the FHiCL path for the configuration of the test algorithm
     void SetTesterParameterSetPath(std::string path) { test_pset = path; }
     
@@ -104,7 +123,9 @@ namespace testing {
     std::string appl_name; ///< name of the application
     std::string config_path; ///< configuration file path
     std::string geo_pset; ///< FHiCL path to geometry configuration
-    std::string test_pset; ///< FHiCL path to test configuration
+    std::string geo_default_cfg; ///< default geometry configuration as string
+    std::string test_pset; ///< FHiCL path to test algorithm configuration
+    
   }; // class BasicGeometryFixtureConfigurer<>
   
   
@@ -285,18 +306,9 @@ namespace testing {
   fhicl::ParameterSet
   GeometryTesterFixture<ConfigurerClass>::DefaultConfiguration() const
   {
-    
-    const std::string GeometryConfigurationString = R"(
-      services: {
-        Geometry: {
-          SurfaceY:        200.  # in cm, vertical distance to the surface
-          Name:            "lartpcdetector"
-          GDML:            "LArTPCdetector.gdml"
-          ROOT:            "LArTPCdetector.gdml"
-          SortingParameters: {}  # empty parameter set for default
-        } # Geometry
-      } # services
-    )";
+    // get the default configuration from the configurer
+    const std::string GeometryConfigurationString
+      = Configurer.DefaultGeometryConfiguration();
     
     fhicl::ParameterSet global_pset;
     fhicl::make_ParameterSet(GeometryConfigurationString, global_pset);
@@ -522,3 +534,5 @@ namespace testing {
   
   
 } // namespace testing
+
+#endif // TEST_GEOMETRY_UNIT_TEST_BASE_H
