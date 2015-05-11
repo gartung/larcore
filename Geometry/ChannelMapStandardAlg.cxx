@@ -25,11 +25,6 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  ChannelMapStandardAlg::~ChannelMapStandardAlg()
-  {
-  }
-
-  //----------------------------------------------------------------------------
   void ChannelMapStandardAlg::Initialize( GeometryData_t& geodata )
   {
     // start over:

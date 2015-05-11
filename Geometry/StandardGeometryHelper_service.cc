@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 /// \file StandardGeometryHelper_service.cc
 ///
-/// \version $Id
 /// \author  rs@fnal.gov
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -12,6 +11,8 @@
 #include "Geometry/ChannelMapStandardAlg.h"
 #include "Geometry/GeometryCore.h"
 
+// C/C++ libraries
+#include <string>
 
 namespace geo
 {

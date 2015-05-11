@@ -13,16 +13,6 @@ namespace geo{
 
 
   //----------------------------------------------------------------------------
-  ChannelMapAlg::ChannelMapAlg()
-  {
-  }
-
-  ChannelMapAlg::~ChannelMapAlg()
-  {
-  }
-
-
-  //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::NearestWire(const TVector3& worldPos,
                                           unsigned int    PlaneNo,
                                           unsigned int    TPCNo,

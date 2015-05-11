@@ -48,13 +48,12 @@ namespace geo{
 
  public:
 
-   ChannelMapAlg();
-   virtual ~ChannelMapAlg();
+   virtual ~ChannelMapAlg() = default;
 
    virtual void                     Initialize(GeometryData_t& geodata) = 0;
-   virtual void                            Uninitialize() = 0;
-   virtual std::vector<WireID>             ChannelToWire(raw::ChannelID_t channel)   const = 0;
-   virtual unsigned int                    Nchannels()                               const = 0;
+   virtual void                     Uninitialize() = 0;
+   virtual std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)   const = 0;
+   virtual unsigned int             Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
    virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
    

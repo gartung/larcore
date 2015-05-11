@@ -23,7 +23,6 @@ namespace geo{
   public:
 
     ChannelMapStandardAlg(fhicl::ParameterSet const& p);
-    ~ChannelMapStandardAlg();
     
     void                     Initialize( GeometryData_t& geodata ) override;
     void                     Uninitialize();
