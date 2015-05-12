@@ -502,25 +502,7 @@ namespace geo {
   //......................................................................
   unsigned int Geometry::FindAuxDetAtPosition(double const  worldPos[3]) const
   {
-
-    double local[3] = {0.};
-    for(unsigned int a = 0; a < this->NAuxDets(); ++a) {
-
-      this->AuxDet(a).WorldToLocal(worldPos, local);      
-      double HalfCenterWidth = (this->AuxDet(a).HalfWidth1() + this->AuxDet(a).HalfWidth2()) / 2;
-
-      if( local[2] >= - this->AuxDet(a).Length()/2       &&
-	  local[2] <=   this->AuxDet(a).Length()/2       &&
-	  local[1] >= - this->AuxDet(a).HalfHeight()     &&
-	  local[1] <=   this->AuxDet(a).HalfHeight()     &&
-	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
-	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2) &&
-	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2)
-        )  return a;
-
-    }// for loop over AudDet a
-
-    return UINT_MAX;
+    fChannelMapAlg->NearestAuxDet(worldPos, fAuxDets);
   } // Geometry::FindAuxDetAtPosition()
   
 
@@ -528,15 +510,9 @@ namespace geo {
   //......................................................................
   const AuxDetGeo& Geometry::PositionToAuxDet(double const  worldLoc[3],
                                               unsigned int &ad) const
-  {
-    
+  {    
     // locate the desired Auxiliary Detector
-    ad = FindAuxDetAtPosition(worldLoc);
-    if(ad == UINT_MAX)
-    throw cet::exception("Geometry") << "Can't find AuxDet for position ("
-      << worldLoc[0] << ","
-      << worldLoc[1] << ","
-      << worldLoc[2] << ")\n";
+    ad = this->FindAuxDetAtPosition(worldLoc);
     
     return this->AuxDet(ad);
   }
@@ -546,35 +522,8 @@ namespace geo {
 					       size_t     & adg,
 					       size_t     & sv) const
   {
-    adg = UINT_MAX;
-    sv  = UINT_MAX;
-
-    double local[3] = {0.};
-    for(unsigned int a = 0; a < this->NAuxDets(); ++a) {
-
-      this->AuxDet(a).WorldToLocal(worldPos, local);      
-      double HalfCenterWidth = (this->AuxDet(a).HalfWidth1() + this->AuxDet(a).HalfWidth2()) / 2;
-
-      if( local[2] >= - this->AuxDet(a).Length()/2       &&
-	  local[2] <=   this->AuxDet(a).Length()/2       &&
-	  local[1] >= - this->AuxDet(a).HalfHeight()     &&
-	  local[1] <=   this->AuxDet(a).HalfHeight()     &&
-	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
-	  local[0] >= - HalfCenterWidth + local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2) &&
-	  local[0] <=   HalfCenterWidth - local[2]*(HalfCenterWidth-this->AuxDet(a).HalfWidth2())/(this->AuxDet(a).Length()/2)
-	  ){
-	// found the correct AuxDet, now get the sensitive volume
-	adg = a;
-	sv = this->AuxDet(a).FindSensitiveVolume(worldPos);
-	return;
-      }
-    }// for loop over AudDet a
-
-    // throw an exception because we couldn't find the sensitive volume
-    throw cet::exception("Geometry") << "Can't find AuxDetSensitive for position ("
-				     << worldPos[0] << ","
-				     << worldPos[1] << ","
-				     << worldPos[2] << ")\n";
+    adg = this->FindAuxDetAtPosition(worldPos, fAuxDets);
+    sv  = fChannelMapAlg->NearestSensitiveAuxDet(worldPos, fAuxDets);
 
     return;
   } // Geometry::FindAuxDetAtPosition()

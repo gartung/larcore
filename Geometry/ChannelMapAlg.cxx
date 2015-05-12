@@ -84,4 +84,75 @@ namespace geo{
     return true;
   }
 
+  //----------------------------------------------------------------------------
+  size_t ChannelMapAlg::NearestAuxDet(const double* point, 
+				      std::vector<geo::AuxDetGeo*> const& auxDets) const
+  {
+    double HalfCenterWidth = 0.;
+    double localPoint[3] = {0.};
+
+    for(size_t a = 0; a < auxDets.size(); ++a) {
+
+      auxDets[a]->WorldToLocal(point, localPoint);
+
+      double HalfCenterWidth = 0.5 * (auxDets[a]->HalfWidth1() + auxDets[a]->HalfWidth2());
+
+      if( localPoint[2] >= - auxDets[a]->Length()/2       &&
+	  localPoint[2] <=   auxDets[a]->Length()/2       &&
+	  localPoint[1] >= - auxDets[a]->HalfHeight()     &&
+	  localPoint[1] <=   auxDets[a]->HalfHeight()     &&
+	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
+	  localPoint[0] >= - HalfCenterWidth + localPoint[2]*(HalfCenterWidth - auxDets[a]->HalfWidth2())/(0.5 * auxDets[a]->Length()) &&
+	  localPoint[0] <=   HalfCenterWidth - localPoint[2]*(HalfCenterWidth - auxDets[a]->HalfWidth2())/(0.5 * auxDets[a]->Length())
+	  ) return a;
+
+    }// for loop over AudDet a
+
+    // throw an exception because we couldn't find the sensitive volume
+    throw cet::exception("ChannelMapLArIAT") << "Can't find AuxDet for position ("
+					     << point[0] << ","
+					     << point[1] << ","
+					     << point[2] << ")\n";
+
+    return UINT_MAX;
+
+  }
+
+  //----------------------------------------------------------------------------
+  size_t ChannelMapAlg::NearestSensitiveAuxDet(const double* point, 
+					       std::vector<geo::AuxDetGeo*> const& auxDets) const
+  {
+    double HalfCenterWidth = 0.;
+    double localPoint[3] = {0.};
+
+    size_t auxDetIdx = this->NearestAuxDet(point, auxDets);
+    
+    geo::AuxDetGeo* adg = auxDets[auxDetIdx];
+
+    for(size_t a = 0; a < adg->NSensitiveVolume(); ++a) {
+
+      geo::AuxDetSensitiveGeo const& adsg = adg->SensitiveVolume(a);
+      adsg.WorldToLocal(worldPos, local);    
+  
+      double HalfCenterWidth = 0.5 * (adsg.HalfWidth1() + adsg.HalfWidth2());
+
+      if( localPoint[2] >= - adsg.Length()/2       &&
+	  localPoint[2] <=   adsg.Length()/2       &&
+	  localPoint[1] >= - adsg.HalfHeight()     &&
+	  localPoint[1] <=   adsg.HalfHeight()     &&
+	  // if AuxDet a is a box, then HalfSmallWidth = HalfWidth
+	  localPoint[0] >= - HalfCenterWidth + localPoint[2]*(HalfCenterWidth - adsg.HalfWidth2())/(0.5 * adsg.Length()) &&
+	  localPoint[0] <=   HalfCenterWidth - localPoint[2]*(HalfCenterWidth - adsg.HalfWidth2())/(0.5 * adsg.Length())
+	  ) return a;
+    }// for loop over AuxDetSensitive a
+
+    // throw an exception because we couldn't find the sensitive volume
+    throw cet::exception("Geometry") << "Can't find AuxDetSensitive for position ("
+				     << worldPos[0] << ","
+				     << worldPos[1] << ","
+				     << worldPos[2] << ")\n";
+
+    return UINT_MAX;
+  }
+
 }

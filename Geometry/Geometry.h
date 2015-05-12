@@ -84,8 +84,7 @@ namespace geo {
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,
 			    unsigned int const cstat = 0)         const;
-    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const
-      { return TPC(tpcid.TPC, tpcid.Cryostat); }
+    const TPCGeo&       TPC(const geo::TPCID& tpcid)              const { return TPC(tpcid.TPC, tpcid.Cryostat); }
 
 
     /**
@@ -123,6 +122,8 @@ namespace geo {
      * @param worldLoc 3D coordinates of the point (world reference frame)
      * @return the index of the detector, or UINT_MAX if no detector is there
      */
+    std::vector<AuxDetGeo*> const& AuxDetGeoVec() const { return fAuxDets; }
+
     unsigned int     FindAuxDetAtPosition(double const worldLoc[3]) const;
     
     const AuxDetGeo& PositionToAuxDet(double const  worldLoc[3],

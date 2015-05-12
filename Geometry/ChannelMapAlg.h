@@ -100,6 +100,16 @@ namespace geo{
    const std::vector<std::vector<std::vector<raw::ChannelID_t>>> FirstChannelInThisPlane() const
    { return fFirstChannelInNextPlane; }
 
+      // methods for the auxiliary detectors
+
+   // method returns the entry in the sorted AuxDetGeo vector so that the 
+   // Geometry in turn can return that object
+   size_t  NearestAuxDet         (const double* point, 
+	   			   std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   size_t  NearestSensitiveAuxDet(const double* point, 
+	   			   std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   size_t  NSensitiveAuxDet(std::string const& auxDetName) const;
+
  protected:
 
    // These 3D vectors are used in initializing the Channel map.

@@ -47,7 +47,7 @@ namespace geo {
     
     size_t             const  FindSensitiveVolume      (double const worldLoc[3])  const;
     AuxDetSensitiveGeo const& PositionToSensitiveVolume(double const worldLoc[3],
-						     size_t     & sv)           const;
+							size_t     & sv)           const;
     AuxDetSensitiveGeo const& SensitiveVolume(size_t sv) const { return *fSensitive[sv];   }
     size_t             const  NSensitiveVolume()         const { return fSensitive.size(); }
 
