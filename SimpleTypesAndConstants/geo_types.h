@@ -195,6 +195,15 @@ namespace geo {
       else return false;
     }
 
+    /// Returns 0 if equal to wid, < 0 if smaller, > 0 if larger
+    int cmp(WireID const& wid) const {
+      if (Cryostat != wid.Cryostat) return (Cryostat < wid.Cryostat)? -1: +1;
+      if (TPC != wid.TPC) return (TPC < wid.TPC)? -1: +1;
+      if (Plane != wid.Plane) return (Plane < wid.Plane)? -1: +1;
+      if (Wire != wid.Wire) return (Wire < wid.Wire)? -1: +1;
+      return 0;
+    } // cmp()
+
   };
 
 

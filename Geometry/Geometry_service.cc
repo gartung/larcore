@@ -557,6 +557,14 @@ namespace geo {
   }
 
   //......................................................................
+  WireGeo const& Geometry::Wire(
+    unsigned int const w, unsigned int const p,
+    unsigned int const tpc /* = 0 */, unsigned int const cstat /* = 0 */
+  ) const {
+    return Plane(p, tpc, cstat).Wire(w);
+  } // Geometry::Wire()
+  
+  //......................................................................
   SigType_t Geometry::SignalType(raw::ChannelID_t const channel) const
   {
     return fChannelMapAlg->SignalType(channel);
@@ -1141,6 +1149,7 @@ namespace geo {
     return;
   }
    
+  //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
   //......................................................................
   bool Geometry::ChannelsIntersect(raw::ChannelID_t c1, 
 				   raw::ChannelID_t c2, 
@@ -1159,92 +1168,28 @@ namespace geo {
 					  << "channel 2 " << c2 << std::endl;
       return false;
     }
-
-    unsigned int cs1, tpc1, plane1, wire1;
-    unsigned int cs2, tpc2, plane2, wire2;
-
-    cs1 = chan1wires[0].Cryostat;
-    tpc1 = chan1wires[0].TPC;
-    plane1 = chan1wires[0].Plane;
-    wire1 = chan1wires[0].Wire;
-
-    cs2 = chan2wires[0].Cryostat;
-    tpc2 = chan2wires[0].TPC;
-    plane2 = chan2wires[0].Plane;
-    wire2 = chan2wires[0].Wire;
-
-    if( cs1 != cs2 || tpc1 != tpc2 ) {
-      mf::LogWarning("ChannelsIntersect") << "attempting to find intersection between wires"
-					  << " from different TPCs or Cryostats, return false";
-      return false;
-    }
-
-    double wire1_Start[3] = {0.};
-    double wire1_End[3]   = {0.};
-    double wire2_Start[3] = {0.};
-    double wire2_End[3]   = {0.};
-	
-    this->WireEndPoints(cs1, tpc1, plane1, wire1, wire1_Start, wire1_End);
-    this->WireEndPoints(cs2, tpc1, plane2, wire2, wire2_Start, wire2_End);
-
-    if(plane1 == plane2){
-      mf::LogWarning("ChannelsIntersect") << "You are comparing two wires in the same plane!";
-      return false;
-    }
-
-    // if endpoint of one input wire is within range of other input wire in 
-    // BOTH y AND z, wires overlap 
-    bool overlapY = this->ValueInRange(wire1_Start[1], wire2_Start[1], wire2_End[1]) ||
-      this->ValueInRange(wire1_End[1], wire2_Start[1], wire2_End[1]);
     
-    bool overlapZ = this->ValueInRange(wire1_Start[2], wire2_Start[2], wire2_End[2]) ||
-      this->ValueInRange(wire1_End[2], wire2_Start[2], wire2_End[2]);
-    
-    // reverse ordering of wires...this is necessitated for now due to precision 
-    // of placement of wires 
-    bool overlapY_reverse = this->ValueInRange(wire2_Start[1], wire1_Start[1], wire1_End[1]) ||
-      this->ValueInRange(wire2_End[1], wire1_Start[1], wire1_End[1]);
-    
-    bool overlapZ_reverse = this->ValueInRange(wire2_Start[2], wire1_Start[2], wire1_End[2]) ||
-      this->ValueInRange(wire2_End[2], wire1_Start[2], wire1_End[2]);
- 
-    // override y overlap checks if a vertical plane exists:
-    if( this->Cryostat(cs1).TPC(tpc1).Plane(plane1).Wire(wire1).isVertical() || 
-	this->Cryostat(cs2).TPC(tpc1).Plane(plane2).Wire(wire2).isVertical() ){
-      overlapY         = true;	
-      overlapY_reverse = true;
-    }
-
-    //catch to get vertical wires, where the standard overlap might not work, Andrzej
-    if(std::abs(wire2_Start[2] - wire2_End[2]) < 0.01) overlapZ = overlapZ_reverse;
-
-    if(overlapY && overlapZ){
-      this->IntersectionPoint(wire1, wire2, 
-			      plane1, plane2, 
-			      cs1, tpc1,
-			      wire1_Start, wire1_End, 
-			      wire2_Start, wire2_End, 
-			      y, z);
+    geo::WireIDIntersection widIntersect;
+    if (this->WireIDsIntersect(chan1wires[0],chan2wires[0],widIntersect)){
+      y = widIntersect.y;
+      z = widIntersect.z;
       return true;
     }
-    else if(overlapY_reverse && overlapZ_reverse){
-      this->IntersectionPoint(wire2, wire1, 
-			      plane2, plane1, 
-			      cs1, tpc1,
-			      wire2_Start, wire2_End, 
-			      wire1_Start, wire1_End, 
-			      y, z);
-      return true;
+    else{
+      y = widIntersect.y;
+      z = widIntersect.z;
+      return false;
     }
-    
-    return false;    
   }
 
-
+  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false. T.Yang
   //......................................................................
   bool Geometry::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
 				   geo::WireIDIntersection & widIntersect   ) const
   {
+    widIntersect.y = -9999;
+    widIntersect.z = -9999;
+    widIntersect.TPC = 9999;
 
     double w1_Start[3] = {0.};
     double w1_End[3]   = {0.};
@@ -1252,14 +1197,23 @@ namespace geo {
     double w2_End[3]   = {0.};
 
     if( wid1.Plane == wid2.Plane ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in the same plane, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in the same plane, return false";
       return false;     }
     if( wid1.TPC != wid2.TPC ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in different TPCs, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different TPCs, return false";
       return false;     }
     if( wid1.Cryostat != wid2.Cryostat ){
-      mf::LogWarning("APAChannelsIntersect") << "Comparing two wires in different Cryostats, return false";
+      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different Cryostats, return false";
       return false;     }
+    if( wid1.Wire<0 || wid1.Wire>=this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat)){
+      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid1.Wire<< "max wire number = "<< this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat);
+      return false;
+    }
+    if( wid2.Wire<0 || wid2.Wire>=this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat)){
+      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid2.Wire<< "max wire number = "<< this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat);
+      return false;
+    }
+  
 
     // get the endpoints to see if i1 and i2 even intersect
     this->WireEndPoints(wid1.Cryostat, wid1.TPC, wid1.Plane, wid1.Wire, w1_Start, w1_End);
@@ -1284,13 +1238,13 @@ namespace geo {
     double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
     double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
 
+    widIntersect.y = x;
+    widIntersect.z = y;
+    widIntersect.TPC = wid1.TPC;
     if (this->ValueInRange(x,x1,x2) &&
 	this->ValueInRange(x,x3,x4) &&
 	this->ValueInRange(y,y1,y2) &&
 	this->ValueInRange(y,y3,y4)){
-      widIntersect.y = x;
-      widIntersect.z = y;
-      widIntersect.TPC = wid1.TPC;
       return true;
     }
     else{
@@ -1302,6 +1256,9 @@ namespace geo {
 
   // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
   // B. Baller August 2014
+  // Rewritten by T. Yang Apr 2015 using the equation in H. Greenlee's talk:
+  // https://cdcvs.fnal.gov/redmine/attachments/download/1821/larsoft_apr20_2011.pdf
+  // slide 2
   double Geometry::ThirdPlaneSlope(unsigned int plane1, double slope1, 
                                    unsigned int plane2, double slope2, 
                                    unsigned int tpc, unsigned int cstat)
@@ -1310,63 +1267,32 @@ namespace geo {
 
     if(Nplanes(tpc,cstat) != 3) return 999;
     if(plane1 > 2 || plane2 > 2) return 999;
-    
+    if(plane1==plane2) return 999;
     // Can't resolve very small slopes
     if(fabs(slope1) < 0.001 && fabs(slope2) < 0.001) return 0.001;
 
     // Calculate static variables on the first call
-    // Cosines are needed for later calls. Sines are not.
     static bool first = true;
-    static double c0, c1, c2;
-    static double d01, d12, d20;
+    // We need the "wire coordinate direction" for each plane. This is perpendicular
+    // to the wire orientation. 
+    static double angle[3];
     if(first) {
       first = false;
-      double angle0 = this->Cryostat(cstat).TPC(tpc).Plane(0).Wire(0).ThetaZ();
-      double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(1).Wire(0).ThetaZ();
-      double angle2 = this->Cryostat(cstat).TPC(tpc).Plane(2).Wire(0).ThetaZ();
-      // We need the "wire coordinate direction" for each plane. This is perpendicular
-      // to the wire orientation. 
-              c0 = TMath::Cos(angle0 - M_PI/2);
-      double  s0 = TMath::Sin(angle0 - M_PI/2);
-              c1 = TMath::Cos(angle1 - M_PI/2);
-      double  s1 = TMath::Sin(angle1 - M_PI/2);
-              c2 = TMath::Cos(angle2 - M_PI/2);
-      double  s2 = TMath::Sin(angle2 - M_PI/2);
-      // "Denominator" variables
-      d01 = 1 / (s0 * c1 - s1 * c0);
-      d12 = 1 / (s1 * c2 - s2 * c1);
-      d20 = 1 / (s2 * c0 - s0 * c2);
+      for (size_t i = 0; i<3; ++i){
+	angle[i] = this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).ThetaZ();
+	//We need to subtract pi/2 to make those 'wire coordinate directions'.
+	//But what matters is the difference between angles so we don't do that.
+      }
     } // first
-    
-    unsigned int lopln = plane1;
-    unsigned int hipln = plane2;
-    double loplnslp = slope1;
-    double hiplnslp = slope2;
-    // re-order if the user didn't pass it in the expected order
-    if(plane1 > plane2) {
-      lopln = plane2;
-      hipln = plane1;
-      loplnslp = slope2;
-      hiplnslp = slope1;
-    }
-
-    double slope3 = 0;
-    double rfact = 0;
-
-    // Three cases
-    if(lopln == 0 && hipln == 1) {
-      double r01 = hiplnslp / loplnslp;
-      rfact = (d12 * c2 + d01 * c0 - d01 * r01 * c1) / (d12 * c1);
-      slope3 = hiplnslp / rfact;
-    } else if(lopln == 1 && hipln == 2) {
-      double r12 = hiplnslp / loplnslp;
-      rfact = (d20 * c0 + d12 * c1 - d12 * r12 * c2) / (d20 * c2);
-      slope3 = hiplnslp / rfact;
-    } else {
-      double r20 = loplnslp / hiplnslp;
-      rfact = (d01 * c1 + d20 * c2 - d20 * r20 * c0) / (d01 * c0);
-      slope3 = loplnslp / rfact;
-    }
+    unsigned int plane3 = 10;
+    if ((plane1 == 0 && plane2 == 1)||(plane1 == 1 && plane2 == 0)) plane3 = 2;
+    if ((plane1 == 0 && plane2 == 2)||(plane1 == 2 && plane2 == 0)) plane3 = 1;
+    if ((plane1 == 1 && plane2 == 2)||(plane1 == 2 && plane2 == 1)) plane3 = 0;
+    if (plane3>2) return 999;
+    double slope3 = 0.001;
+    if (fabs(slope1) > 0.001 && fabs(slope2) > 0.001) slope3 = ((1./slope1)*TMath::Sin(angle[plane3]-angle[plane2])-(1./slope2)*TMath::Sin(angle[plane3]-angle[plane1]))/TMath::Sin(angle[plane1]-angle[plane2]);
+    if (slope3) slope3 = 1./slope3;
+    else slope3 = 999;
 
     return slope3;
 
@@ -1380,6 +1306,7 @@ namespace geo {
   // inner dimensions of the TPC frame.
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
+  // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
   void Geometry::IntersectionPoint(unsigned int wire1, 
 				   unsigned int wire2, 
 				   unsigned int plane1, 
@@ -1392,82 +1319,13 @@ namespace geo {
 				   double end_w2[3], 
                                    double &y, double &z)
   {
-
-    //angle of wire1 wrt z-axis in Y-Z plane...in radians
-    double angle1 = this->Cryostat(cstat).TPC(tpc).Plane(plane1).Wire(wire1).ThetaZ();
-    //angle of wire2 wrt z-axis in Y-Z plane...in radians
-    double angle2 = this->Cryostat(cstat).TPC(tpc).Plane(plane2).Wire(wire2).ThetaZ();
-    
-    if(angle1 == angle2) return;//comparing two wires in the same plane...pointless.
-
-    //coordinates of "upper" endpoints...(z1,y1) = (a,b) and (z2,y2) = (c,d) 
-    double a = 0.;
-    double b = 0.;
-    double c = 0.; 
-    double d = 0.;
-    double angle = 0.;
-    double anglex = 0.;
-    
-    // below is a special case of calculation when one of the planes is vertical. 
-    angle1 < angle2 ? angle = angle1 : angle = angle2;//get angle closest to the z-axis
-    
-    // special case, one plane is vertical
-    if(angle1 == M_PI/2 || angle2 == M_PI/2){
-      if(angle1 == M_PI/2){
-		
-	anglex = (angle2-M_PI/2);
-	a = end_w1[2];
-	b = end_w1[1];
-	c = end_w2[2];
-	d = end_w2[1];
-	// the if below can in principle be replaced by the sign of anglex (inverted) 
-	// in the formula for y below. But until the geometry is fully symmetric in y I'm 
-	// leaving it like this. Andrzej
-	if((anglex) > 0 ) b = start_w1[1];
-		    
-      }
-      else if(angle2 == M_PI/2){
-	anglex = (angle1-M_PI/2);
-	a = end_w2[2];
-	b = end_w2[1];
-	c = end_w1[2];
-	d = end_w1[1];
-	// the if below can in principle be replaced by the sign of anglex (inverted) 
-	// in the formula for y below. But until the geometry is fully symmetric in y I'm 
-	// leaving it like this. Andrzej
-	if((anglex) > 0 ) b = start_w2[1];  
-      }
-
-      y = b + ((c-a) - (b-d)*tan(anglex))/tan(anglex);
-      z = a;   // z is defined by the wire in the vertical plane
-      
-      return;
-    }
-
-    // end of vertical case
-   
-    z = 0;y = 0;
-                                                                      
-    if(angle1 < (TMath::Pi()/2.0)){
-      c = end_w1[2];
-      d = end_w1[1];
-      a = start_w2[2];
-      b = start_w2[1];
-    }
-    else{
-      c = end_w2[2];
-      d = end_w2[1];
-      a = start_w1[2];
-      b = start_w1[1];
-    }
-    
-    //Intersection point of two wires in the yz plane is completely
-    //determined by wire endpoints and angle of inclination.
-    z = 0.5 * ( c + a + (b-d)/TMath::Tan(angle) );
-    y = 0.5 * ( b + d + (a-c)*TMath::Tan(angle) );
-    
+    geo::WireID wid1(cstat,tpc,plane1,wire1);
+    geo::WireID wid2(cstat,tpc,plane2,wire2);
+    geo::WireIDIntersection widIntersect;
+    this->WireIDsIntersect(wid1,wid2,widIntersect);
+    y = widIntersect.y;
+    z = widIntersect.z;
     return;
-
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
@@ -1603,6 +1461,12 @@ namespace geo {
   
   
   //--------------------------------------------------------------------
+  void Geometry::geometry_iteratorbase::init_geometry(Geometry const* geom) {
+    pGeo = geom? geom: &*(art::ServiceHandle<Geometry>());
+  } // Geometry::geometry_iteratorbase::init_geometry()
+
+  
+  //--------------------------------------------------------------------
   Geometry::cryostat_iterator& Geometry::cryostat_iterator::operator++() {
     if (!isValid) return *this;
     if (++cryoid < limits) return *this;
@@ -1623,8 +1487,13 @@ namespace geo {
     { return isValid? &(pGeo->Cryostat(cryoid)): nullptr; }
   
   
-  void Geometry::cryostat_iterator::init_geometry()
-    { pGeo = &*(art::ServiceHandle<Geometry>()); }
+  void Geometry::cryostat_iterator::set_end() {
+    cryoid = limits;
+  } // // Geometry::cryostat_iterator::set_end()
+  
+  bool Geometry::cryostat_iterator::is_end() const {
+    return cryoid == limits;
+  } // // Geometry::cryostat_iterator::is_end()
   
   
   void Geometry::cryostat_iterator::set_limits_and_validity() {
@@ -1640,6 +1509,7 @@ namespace geo {
     ++tpcid.TPC;
     while (true) {
       if (tpcid.TPC < limits.TPC) return *this;
+      tpcid.TPC = 0;
       if (++tpcid.Cryostat >= limits.Cryostat) break;
       new_cryostat();
     } // while
@@ -1657,8 +1527,15 @@ namespace geo {
   } // Geometry::TPC_iterator::getCryostat()
   
   
-  void Geometry::TPC_iterator::init_geometry()
-    { pGeo = &*(art::ServiceHandle<Geometry>()); }
+  void Geometry::TPC_iterator::set_end() {
+    tpcid.Cryostat = limits.Cryostat;
+    tpcid.TPC = 0;
+    tpcid.isValid = false;
+  } // // Geometry::TPC_iterator::set_end()
+  
+  bool Geometry::TPC_iterator::is_end() const {
+    return tpcid == limits;
+  } // // Geometry::TPC_iterator::is_end()
   
   
   void Geometry::TPC_iterator::set_limits_and_validity() {
@@ -1672,7 +1549,6 @@ namespace geo {
   
   
   void Geometry::TPC_iterator::new_cryostat() {
-    tpcid.TPC = 0;
     limits.TPC = pGeo->NTPC(tpcid.Cryostat);
   } // Geometry::TPC_iterator::new_cryostat()
   
@@ -1684,7 +1560,9 @@ namespace geo {
     ++planeid.Plane;
     while (true) {
       if (planeid.Plane < limits.Plane) return *this;
+      planeid.Plane = 0;
       if (++planeid.TPC >= limits.TPC) {
+        planeid.TPC = 0;
         if (++planeid.Cryostat >= limits.Cryostat) break;
         new_cryostat();
       }
@@ -1712,8 +1590,16 @@ namespace geo {
   } // Geometry::plane_iterator::getCryostat()
   
   
-  void Geometry::plane_iterator::init_geometry()
-    { pGeo = &*(art::ServiceHandle<Geometry>()); }
+  void Geometry::plane_iterator::set_end() {
+    planeid.Cryostat = limits.Cryostat;
+    planeid.TPC = 0;
+    planeid.Plane = 0;
+    planeid.isValid = false;
+  } // // Geometry::plane_iterator::set_end()
+  
+  bool Geometry::plane_iterator::is_end() const {
+    return planeid == limits;
+  } // // Geometry::plane_iterator::is_end()
   
   
   void Geometry::plane_iterator::set_limits_and_validity() {
@@ -1731,13 +1617,11 @@ namespace geo {
   
   
   void Geometry::plane_iterator::new_cryostat() {
-    planeid.TPC = 0;
     limits.TPC = pGeo->NTPC(planeid.Cryostat);
   } // Geometry::plane_iterator::new_cryostat()
   
   
   void Geometry::plane_iterator::new_tpc() {
-    planeid.Plane = 0;
     limits.Plane = pGeo->Nplanes(planeid.TPC, planeid.Cryostat);
   } // Geometry::plane_iterator::new_tpc()
   
@@ -1749,8 +1633,11 @@ namespace geo {
     ++wireid.Wire;
     while (true) {
       if (wireid.Wire < limits.Wire) return *this;
+      wireid.Wire = 0;
       if (++wireid.Plane >= limits.Plane) {
+        wireid.Plane = 0;
         if (++wireid.TPC >= limits.TPC) {
+          wireid.TPC = 0;
           if (++wireid.Cryostat >= limits.Cryostat) break;
           new_cryostat();
         } // if new cryostat
@@ -1784,8 +1671,17 @@ namespace geo {
   } // Geometry::wire_iterator::getCryostat()
   
   
-  void Geometry::wire_iterator::init_geometry()
-    { pGeo = &*(art::ServiceHandle<Geometry>()); }
+  void Geometry::wire_iterator::set_end() {
+    wireid.Cryostat = limits.Cryostat;
+    wireid.TPC = 0;
+    wireid.Plane = 0;
+    wireid.Wire = 0;
+    wireid.isValid = false;
+  } // // Geometry::wire_iterator::set_end()
+  
+  bool Geometry::wire_iterator::is_end() const {
+    return wireid == limits;
+  } // // Geometry::wire_iterator::is_end()
   
   
   void Geometry::wire_iterator::set_limits_and_validity() {
@@ -1806,18 +1702,15 @@ namespace geo {
   
   
   void Geometry::wire_iterator::new_cryostat() {
-    wireid.TPC = 0;
     limits.TPC = pGeo->NTPC(wireid.Cryostat);
   } // Geometry::wire_iterator::new_cryostat()
   
   
   void Geometry::wire_iterator::new_tpc() {
-    wireid.Plane = 0;
     limits.Plane = pGeo->Nplanes(wireid.TPC, wireid.Cryostat);
   } // Geometry::wire_iterator::new_tpc()
   
   void Geometry::wire_iterator::new_plane() {
-    wireid.Wire = 0;
     limits.Wire = pGeo->Nwires(wireid.Plane, wireid.TPC, wireid.Cryostat);
   } // Geometry::wire_iterator::new_plane()
   

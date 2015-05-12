@@ -115,6 +115,14 @@ namespace geo {
     const PlaneGeo&     Plane(const geo::PlaneID& pid)            const
       { return Plane(pid.Plane, pid.TPC, pid.Cryostat); }
 
+    WireGeo const&      Wire(
+      unsigned int const w, unsigned int const p,
+      unsigned int const tpc   = 0, unsigned int const cstat = 0)
+      const;
+    
+    const WireGeo&      Wire(const geo::WireID& wid) const
+      { return Wire(wid.Wire, wid.Plane, wid.TPC, wid.Cryostat); }
+
     const AuxDetGeo&    AuxDet(unsigned int const ad = 0)         const;
     
     /**
@@ -212,12 +220,20 @@ namespace geo {
     const TGeoMaterial* Material(double x,
 				 double y,
 				 double z)                        const;
-    double              DetHalfWidth(unsigned int tpc = 0,
-				     unsigned int cstat = 0)      const; // half width of the TPC
-    double              DetHalfHeight(unsigned int tpc = 0,
-				      unsigned int cstat = 0)     const; // half height of the TPC
-    double              DetLength(unsigned int tpc = 0,
-				  unsigned int cstat = 0)         const; // length of the TPC
+    
+    /// half width of the TPC
+    double DetHalfWidth(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetHalfWidth(geo::TPCID const& tpcid) const
+      { return DetHalfWidth(tpcid.TPC, tpcid.Cryostat); }
+    /// half height of the TPC
+    double DetHalfHeight(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetHalfHeight(geo::TPCID const& tpcid) const
+      { return DetHalfHeight(tpcid.TPC, tpcid.Cryostat); }
+     /// length of the TPC
+    double DetLength(unsigned int tpc = 0, unsigned int cstat = 0) const;
+    double DetLength(geo::TPCID const& tpcid) const
+      { return DetLength(tpcid.TPC, tpcid.Cryostat); }
+    
     double              CryostatHalfWidth(unsigned int cstat = 0) const; // half width of the cryostat
     double              CryostatHalfHeight(unsigned int cstat = 0)const; // half height of the cryostat
     double              CryostatLength(unsigned int cstat = 0)    const; // length of the cryostat
@@ -232,6 +248,15 @@ namespace geo {
 				  unsigned int plane = 0,
 				  unsigned int tpc = 0,
 				  unsigned int cstat = 0)         const; // w1 < w2
+    // distance between wires on the same plane (w1 < w2)
+    double              WirePitch(unsigned int w1,
+                                  unsigned int w2,
+                                  geo::PlaneID const& plane
+                                  ) const
+      { return WirePitch(w1, w2, plane.Plane, plane.TPC, plane.Cryostat); }
+    double              WirePitch(geo::PlaneID const& planeid) const
+      { return WirePitch(0, 1, planeid); }
+
     double              WirePitch(geo::View_t view)               const; // assumes all planes in
                                                                          // a view have the same pitch
     double              WireAngleToVertical(geo::View_t view, int TPC=0, int Cryo=0)     const; // assumes all wires in the
@@ -302,6 +327,12 @@ namespace geo {
     // in the TPC intersect or not, and if they do then
     // determine the coordinates of the intersection.
     // Starting point of wire is end with lower z-coordinate.
+    // Please note the differences between functions:
+    // ChannelsIntersect(), WireIDsIntersect() and IntersectionPoint()
+    // all calculate wires intersection using the same equation.
+    // ChannelsIntersect() and WireIdsIntersect() will return true
+    // if the two wires cross, return false if they don't.
+    // IntersectionPoint() does not check if the two wires cross.
     bool ValueInRange(double value,
 		      double min,
 		      double max) const;
@@ -385,6 +416,55 @@ namespace geo {
     const WireGeo& WireIDToWireGeo(WireID CodeWire) const;
 
     
+      protected:
+    /// Base class for geometry iterators
+    class geometry_iteratorbase {
+        public:
+      
+      /// Default constructor: points to the first cryostat
+      geometry_iteratorbase(Geometry const* geom = nullptr)
+        { init_geometry(geom); }
+      
+        protected:
+      const Geometry* pGeo; ///< pointer to the geometry
+      
+      void init_geometry(Geometry const* geom);
+    }; // geometry_iteratorbase
+    
+    
+    /**
+     * @brief Convenience object for range-for loops
+     * @tparam GeoIter a geometry iterator
+     * 
+     * GeoIter class must support a default constructor setting the iterator
+     * to a valid begin position, and a set_end() method setting it to
+     * past-the-end.
+     * For the iterator to be usable in range-for loops, it also needs to define
+     * a operator++(), a operator*() and operator==().
+     */
+    template <class GeoIter>
+    class GeoIteratorBox {
+        public:
+      using iterator_t = GeoIter;
+      
+      /// Constructor: specify which geometry to use
+      GeoIteratorBox(Geometry const* geom): pGeo(geom) {}
+      
+      iterator_t cbegin() const { return iterator_t(pGeo); }
+      iterator_t begin() const { return cbegin(); }
+      
+      iterator_t cend() { iterator_t e(pGeo); e.set_end(); return e; }
+      iterator_t end() { return cend(); }
+      
+        protected:
+      geo::Geometry const* pGeo;
+    }; // class GeoIteratorBox<>
+    
+    
+      public:
+    
+    /// @{
+    /// @name Iteration through geometry elements
     
     /** ************************************************************************
      * @brief Forward iterator browsing all cryostats in the detector
@@ -400,16 +480,20 @@ namespace geo {
      * } // while
      * @endcode
      */
-    class cryostat_iterator: public std::forward_iterator_tag {
+    class cryostat_iterator:
+      public std::forward_iterator_tag, protected geometry_iteratorbase
+    {
         public:
       typedef unsigned int CryoID; /// type of cryostat ID
       
       /// Default constructor: points to the first cryostat
-      cryostat_iterator() { init_geometry(); set_limits_and_validity(); }
+      cryostat_iterator(Geometry const* geom = nullptr):
+        geometry_iteratorbase(geom)
+        { set_limits_and_validity(); }
       
       /// Constructor: points to the specified cryostat
       cryostat_iterator(CryoID start_from): cryoid(start_from)
-        { init_geometry(); set_limits_and_validity(); }
+        { set_limits_and_validity(); }
       
       bool operator== (const cryostat_iterator& as) const
         { return cryoid == as.cryoid; }
@@ -442,14 +526,17 @@ namespace geo {
       /// Returns a pointer to cryostat, or nullptr if the iterator is not valid
       const CryostatGeo* get() const;
       
-        protected:
-      const Geometry* pGeo; ///< pointer to the geometry
+      /// Sets this iterator to the end iterator (past-last cryostat)
+      void set_end();
       
+      /// Returns whether this iterator matches the "end iterator" (set_end())
+      bool is_end() const;
+      
+        protected:
       bool isValid = false;  ///< whether the current iterator position is valid
       CryoID cryoid = { 0 }; ///< current cryostat
       CryoID limits = { 0 }; ///< maxima of the indices
       
-      void init_geometry();
       void set_limits_and_validity();
     }; // class cryostat_iterator
     
@@ -470,14 +557,18 @@ namespace geo {
      * } // while
      * @endcode
      */
-    class TPC_iterator: public std::forward_iterator_tag {
+    class TPC_iterator:
+      public std::forward_iterator_tag, protected geometry_iteratorbase
+    {
         public:
       /// Default constructor: points to the first TPC
-      TPC_iterator() { init_geometry(); set_limits_and_validity(); }
+      TPC_iterator(Geometry const* geom = nullptr):
+        geometry_iteratorbase(geom)
+        { set_limits_and_validity(); }
       
       /// Constructor: points to the specified TPC
       TPC_iterator(TPCID start_from): tpcid(start_from)
-        { init_geometry(); set_limits_and_validity(); }
+        { set_limits_and_validity(); }
       
       bool operator== (const TPC_iterator& as) const
         { return tpcid == as.tpcid; }
@@ -509,18 +600,21 @@ namespace geo {
       /// Returns a pointer to the cryostat the plane belongs to
       const CryostatGeo* getCryostat() const;
       
-        protected:
-      const Geometry* pGeo; ///< pointer to the geometry
+      /// Sets this iterator to the end iterator (past-last TPC)
+      void set_end();
       
+      /// Returns whether this iterator matches the "end iterator" (set_end())
+      bool is_end() const;
+      
+        protected:
       TPCID tpcid = { 0, 0 }; ///< current TPC
       TPCID limits = { 0, 0 }; ///< maxima of the indices
       
-      void init_geometry();
       void set_limits_and_validity();
       void new_cryostat();
     }; // class TPC_iterator
-  
-  
+    
+    
     /** ************************************************************************
      * @brief Forward iterator browsing all planes in the detector
      * 
@@ -536,14 +630,18 @@ namespace geo {
      * } // while
      * @endcode
      */
-    class plane_iterator: public std::forward_iterator_tag {
+    class plane_iterator:
+      public std::forward_iterator_tag, protected geometry_iteratorbase
+    {
         public:
       /// Default constructor: points to the first plane
-      plane_iterator() { init_geometry(); set_limits_and_validity(); }
+      plane_iterator(Geometry const* geom = nullptr):
+        geometry_iteratorbase(geom)
+        { set_limits_and_validity(); }
       
       /// Constructor: points to the specified plane
       plane_iterator(PlaneID start_from): planeid(start_from)
-        { init_geometry(); set_limits_and_validity(); }
+        { set_limits_and_validity(); }
       
       bool operator== (const plane_iterator& as) const
         { return planeid == as.planeid; }
@@ -578,13 +676,16 @@ namespace geo {
       /// Returns a pointer to the cryostat the plane belongs to
       const CryostatGeo* getCryostat() const;
       
-        protected:
-      const Geometry* pGeo; ///< pointer to the geometry
+      /// Sets this iterator to the end iterator (past-last plane)
+      void set_end();
       
+      /// Returns whether this iterator matches the "end iterator" (set_end())
+      bool is_end() const;
+      
+        protected:
       PlaneID planeid = { 0, 0, 0 }; ///< current plane
       PlaneID limits = { 0, 0, 0 }; ///< maxima of the indices
       
-      void init_geometry();
       void set_limits_and_validity();
       void new_cryostat();
       void new_tpc();
@@ -607,14 +708,18 @@ namespace geo {
      * } // while
      * @endcode
      */
-    class wire_iterator: public std::forward_iterator_tag {
+    class wire_iterator:
+      public std::forward_iterator_tag, protected geometry_iteratorbase
+    {
         public:
       /// Default constructor: points to the first wire
-      wire_iterator() { init_geometry(); set_limits_and_validity(); }
+      wire_iterator(Geometry const* geom = nullptr):
+        geometry_iteratorbase(geom)
+        { set_limits_and_validity(); }
       
       /// Constructor: points to the specified wire
       wire_iterator(WireID start_from): wireid(start_from)
-        { init_geometry(); set_limits_and_validity(); }
+        { set_limits_and_validity(); }
       
       bool operator== (const wire_iterator& as) const
         { return wireid == as.wireid; }
@@ -652,13 +757,16 @@ namespace geo {
       /// Returns a pointer to the cryostat the wire belongs to
       const CryostatGeo* getCryostat() const;
       
-        protected:
-      const Geometry* pGeo; ///< pointer to the geometry
+      /// Sets this iterator to the end iterator (past-last wire)
+      void set_end();
       
+      /// Returns whether this iterator matches the "end iterator" (set_end())
+      bool is_end() const;
+      
+        protected:
       WireID wireid = { 0, 0, 0, 0 }; ///< current wire
       WireID limits = { 0, 0, 0, 0 }; ///< maxima of the indices
       
-      void init_geometry();
       void set_limits_and_validity();
       void new_cryostat();
       void new_tpc();
@@ -666,6 +774,82 @@ namespace geo {
     }; // class wire_iterator
     
     
+    /**
+     * @brief Allow range-for loop through cryostats
+     * 
+     * The iteration will go through all cryostats in the detector, in a defined
+     * order.
+     * Use it as:
+     *     
+     *     
+     *     for (unsigned int cstat: geom->IterateCryostats()) {
+     *       geo::CryostatGeo const& cryo = geom->Cryostat(cstat);
+     *       // ...
+     *     } // for cryostats
+     *     
+     * Note that changes in the geometry inside the loop will not be noticed.
+     */
+    GeoIteratorBox<cryostat_iterator> IterateCryostats() const
+      { return { this }; }
+    
+    
+    /**
+     * @brief Allow range-for loop through all TPCs in the detector
+     * 
+     * The iteration will go through all TPCs in the detector, in a defined
+     * order.
+     * Use it as:
+     *     
+     *     
+     *     for (geo::TPCID tpcid: geom->IterateTPCs()) {
+     *       geo::TPCGeo const& TPC = geom->TPC(tpcid);
+     *       // ...
+     *     } // for TPCs
+     *     
+     * Note that changes in the geometry inside the loop will not be noticed.
+     */
+    GeoIteratorBox<TPC_iterator> IterateTPCs() const
+      { return { this }; }
+    
+    
+    /**
+     * @brief Allow range-for loop through all planes in the detector
+     * 
+     * The iteration will go through all planes in the detector, in a defined
+     * order.
+     * Use it as:
+     *     
+     *     
+     *     for (geo::PlaneID planeid: geom->IteratePlanes()) {
+     *       geo::PlaneGeo const& plane = geom->Plane(planeid);
+     *       // ...
+     *     } // for planes
+     *     
+     * Note that changes in the geometry inside the loop will not be noticed.
+     */
+    GeoIteratorBox<plane_iterator> IteratePlanes() const
+      { return { this }; }
+    
+    
+    /**
+     * @brief Allow range-for loop through all wires in the detector
+     * 
+     * The iteration will go through all wires in the detector, in a defined
+     * order.
+     * Use it as:
+     *     
+     *     
+     *     for (geo::WireID wireid: geom->IterateWires()) {
+     *       geo::WireGeo const& wire = geom->Wire(wireid);
+     *       // ...
+     *     } // for wires
+     *     
+     * Note that changes in the geometry inside the loop will not be noticed.
+     */
+    GeoIteratorBox<wire_iterator> IterateWires() const
+      { return { this }; }
+    
+    /// @}
     
   private:
 

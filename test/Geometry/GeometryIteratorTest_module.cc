@@ -89,9 +89,15 @@ namespace geo{
     geo::Geometry::plane_iterator iPlane;
     geo::Geometry::wire_iterator iWire;
     
+    unsigned int TotalCryostats = 0;
+    unsigned int TotalTPCs = 0;
+    unsigned int TotalPlanes = 0;
+    unsigned int TotalWires = 0;
+    
     for(unsigned int c = 0; c < nCryo; ++c) {
       const CryostatGeo& cryo(geom->Cryostat(c));
       const unsigned int nTPC = cryo.NTPC();
+      ++TotalCryostats;
     
       LOG_DEBUG("GeometryIteratorTest") << "  C=" << c
         << " (" << nTPC << " TPCs)";
@@ -119,6 +125,7 @@ namespace geo{
       for(unsigned int t = 0; t < nTPC; ++t){
         const TPCGeo& TPC(cryo.TPC(t));
         const unsigned int NPlanes = TPC.Nplanes();
+        ++TotalTPCs;
         
         LOG_DEBUG("GeometryIteratorTest") << "    C=" << c << " T=" << t
           << " (" << NPlanes << " planes)";
@@ -149,6 +156,7 @@ namespace geo{
         for(unsigned int p = 0; p < NPlanes; ++p) {
           const PlaneGeo& Plane(TPC.Plane(p));
           const unsigned int NWires = Plane.Nwires();
+          ++TotalPlanes;
           
           LOG_DEBUG("GeometryIteratorTest") << "    C=" << c << " T=" << t
             << " P=" << p << " (" << NWires << " wires)";
@@ -186,6 +194,7 @@ namespace geo{
           
           for(unsigned int w = 0; w < NWires; ++w) {
             const WireGeo& Wire(Plane.Wire(w));
+            ++TotalWires;
             
             LOG_DEBUG("GeometryIteratorTest") << "    C=" << c << " T=" << t
               << " P=" << p << " W=" << w;
@@ -264,6 +273,88 @@ namespace geo{
         << ", but we are already over";
       ++nErrors;
     }
+    
+    
+    mf::LogInfo("GeometryIteratorTest")
+      << "Testing range-for cryostat loop over " << TotalCryostats
+      << " cryostats";
+    // test cryostat boxed iterator
+    unsigned int TotalCryostatsFromRangeLoop = 0;
+    for (unsigned int cstat: geom->IterateCryostats()) {
+      if (cstat == std::numeric_limits<unsigned int>::max()) { // do something
+        throw art::Exception(art::errors::LogicError)
+          << "Range loop over cryostats transverses an invalid one (" << cstat
+          << ")!\n";
+      }
+      ++TotalCryostatsFromRangeLoop;
+    } // for cryostats
+    
+    if (TotalCryostatsFromRangeLoop != TotalCryostats) {
+      ++nErrors;
+      LOG_ERROR("GeometryIteratorTest")
+        << "Cryostat box iterator traversed " << TotalCryostatsFromRangeLoop
+        << " cryostats out of " << TotalCryostats;
+    } // if loop count mismatch
+    
+    mf::LogInfo("GeometryIteratorTest")
+      << "Testing range-for TPC loop over " << TotalTPCs << " TPCs";
+    // test TPC boxed iterator
+    unsigned int TotalTPCsFromRangeLoop = 0;
+    for (geo::TPCID tpcid: geom->IterateTPCs()) {
+      if (!tpcid.isValid) {
+        LOG_ERROR("GeometryIteratorTest") << "TPC ID is invalid: " << tpcid;
+        throw art::Exception(art::errors::LogicError)
+          << "Range loop over TPCs transverses an invalid one!\n";
+      }
+      ++TotalTPCsFromRangeLoop;
+    } // for TPCs
+    
+    if (TotalTPCsFromRangeLoop != TotalTPCs) {
+      ++nErrors;
+      LOG_ERROR("GeometryIteratorTest")
+        << "TPC box iterator traversed " << TotalTPCsFromRangeLoop
+        << " TPCs out of " << TotalTPCs;
+    } // if loop count mismatch
+    
+    mf::LogInfo("GeometryIteratorTest")
+      << "Testing range-for plane loop over " << TotalPlanes << " wire planes";
+    // test plane boxed iterator
+    unsigned int TotalPlanesFromRangeLoop = 0;
+    for (geo::PlaneID planeid: geom->IteratePlanes()) {
+      if (!planeid.isValid) {
+        LOG_ERROR("GeometryIteratorTest") << "Plane ID is invalid: " << planeid;
+        throw art::Exception(art::errors::LogicError)
+          << "Range loop over wire planes transverses an invalid one!\n";
+      }
+      ++TotalPlanesFromRangeLoop;
+    } // for planes
+    
+    if (TotalPlanesFromRangeLoop != TotalPlanes) {
+      ++nErrors;
+      LOG_ERROR("GeometryIteratorTest")
+        << "Wire plane box iterator traversed " << TotalPlanesFromRangeLoop
+        << " planes out of " << TotalPlanes;
+    } // if loop count mismatch
+    
+    mf::LogInfo("GeometryIteratorTest")
+      << "Testing range-for wire loop over " << TotalWires << " wires";
+    // test wire boxed iterator
+    unsigned int TotalWiresFromRangeLoop = 0;
+    for (geo::WireID wireid: geom->IterateWires()) {
+      if (!wireid.isValid) {
+        LOG_ERROR("GeometryIteratorTest") << "Wire ID is invalid: " << wireid;
+        throw art::Exception(art::errors::LogicError)
+          << "Range loop over wires transverses an invalid one!\n";
+      }
+      ++TotalWiresFromRangeLoop;
+    } // for wires
+    
+    if (TotalWiresFromRangeLoop != TotalWires) {
+      ++nErrors;
+      LOG_ERROR("GeometryIteratorTest")
+        << "Wire box iterator traversed " << TotalWiresFromRangeLoop
+        << " wires out of " << TotalWires;
+    } // if loop count mismatch
     
     return nErrors;
   } // GeometryIteratorTest::testTPCiterator()
