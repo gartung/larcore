@@ -502,7 +502,7 @@ namespace geo {
   //......................................................................
   unsigned int Geometry::FindAuxDetAtPosition(double const  worldPos[3]) const
   {
-    fChannelMapAlg->NearestAuxDet(worldPos, fAuxDets);
+    return fChannelMapAlg->NearestAuxDet(worldPos, fAuxDets);
   } // Geometry::FindAuxDetAtPosition()
   
 
@@ -522,7 +522,7 @@ namespace geo {
 					       size_t     & adg,
 					       size_t     & sv) const
   {
-    adg = this->FindAuxDetAtPosition(worldPos, fAuxDets);
+    adg = this->FindAuxDetAtPosition(worldPos);
     sv  = fChannelMapAlg->NearestSensitiveAuxDet(worldPos, fAuxDets);
 
     return;

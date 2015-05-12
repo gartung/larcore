@@ -95,7 +95,7 @@ namespace geo{
 
       auxDets[a]->WorldToLocal(point, localPoint);
 
-      double HalfCenterWidth = 0.5 * (auxDets[a]->HalfWidth1() + auxDets[a]->HalfWidth2());
+      HalfCenterWidth = 0.5 * (auxDets[a]->HalfWidth1() + auxDets[a]->HalfWidth2());
 
       if( localPoint[2] >= - auxDets[a]->Length()/2       &&
 	  localPoint[2] <=   auxDets[a]->Length()/2       &&
@@ -132,9 +132,9 @@ namespace geo{
     for(size_t a = 0; a < adg->NSensitiveVolume(); ++a) {
 
       geo::AuxDetSensitiveGeo const& adsg = adg->SensitiveVolume(a);
-      adsg.WorldToLocal(worldPos, local);    
+      adsg.WorldToLocal(point, localPoint);    
   
-      double HalfCenterWidth = 0.5 * (adsg.HalfWidth1() + adsg.HalfWidth2());
+      HalfCenterWidth = 0.5 * (adsg.HalfWidth1() + adsg.HalfWidth2());
 
       if( localPoint[2] >= - adsg.Length()/2       &&
 	  localPoint[2] <=   adsg.Length()/2       &&
@@ -148,9 +148,9 @@ namespace geo{
 
     // throw an exception because we couldn't find the sensitive volume
     throw cet::exception("Geometry") << "Can't find AuxDetSensitive for position ("
-				     << worldPos[0] << ","
-				     << worldPos[1] << ","
-				     << worldPos[2] << ")\n";
+				     << point[0] << ","
+				     << point[1] << ","
+				     << point[2] << ")\n";
 
     return UINT_MAX;
   }
