@@ -120,13 +120,18 @@ namespace geo{
     
     
     try{
+      geo::WireGeo const& testWire = geom->Wire(geo::WireID(0, 0, 1, 10));
       mf::LogVerbatim("GeometryTest")
-        <<   "Wire Rmax  "         << geom->Plane(1).Wire(10).RMax()
-        << "\nWire length "        << 2.*geom->Plane(1).Wire(10).HalfL()
-        << "\nWire Rmin  "         << geom->Plane(1).Wire(10).RMin()
+        <<   "Wire Rmax  "         << testWire.RMax()
+        << "\nWire length "        << 2.*testWire.HalfL()
+        << "\nWire Rmin  "         << testWire.RMin()
         << "\nTotal mass "         << geom->TotalMass()
         << "\nNumber of views "    << geom->Nviews()
         << "\nNumber of channels " << geom->Nchannels()
+        << "\nMaximum number of:"
+        << "\n  TPC in a cryostat: " << geom->MaxTPCs()
+        << "\n  planes in a TPC:   " << geom->MaxPlanes()
+        << "\n  wires in a plane:  " << geom->MaxWires()
         ;
 
       //LOG_DEBUG("GeometryTest") << "print channel information ...";

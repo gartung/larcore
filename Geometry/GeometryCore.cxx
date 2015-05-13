@@ -256,11 +256,22 @@ namespace geo {
   
   
   //......................................................................
+  const TPCGeo& GeometryCore::PositionToTPC
+    (double const  worldLoc[3], geo::TPCID& tpcid) const
+  {
+    return PositionToCryostat(worldLoc, tpcid.Cryostat)
+      .PositionToTPC(worldLoc, tpcid.TPC, 1.+fPositionWiggle);
+  }
+
   const TPCGeo& GeometryCore::PositionToTPC(double const  worldLoc[3],
                                         unsigned int &tpc,
                                         unsigned int &cstat) const
   {
-    return this->PositionToCryostat(worldLoc,cstat).PositionToTPC(worldLoc,tpc, 1.+fPositionWiggle);
+    geo::TPCID tpcid;
+    TPCGeo const& TPC = PositionToTPC(worldLoc, tpcid);
+    cstat = tpcid.Cryostat;
+    tpc = tpcid.TPC;
+    return TPC;
   }
 
   //......................................................................
@@ -305,24 +316,32 @@ namespace geo {
         return c;
       }
     }
-    return UINT_MAX;
+    return geo::CryostatID::InvalidID;
   } // GeometryCore::FindCryostatAtPosition()
 
   //......................................................................
-  const CryostatGeo& GeometryCore::PositionToCryostat(double const  worldLoc[3],
-                                                  unsigned int &cstat) const
+  const CryostatGeo& GeometryCore::PositionToCryostat
+    (double const  worldLoc[3], geo::CryostatID& cid) const
   {
-    cstat = FindCryostatAtPosition(worldLoc);
+    geo::CryostatID::ID_t cstat = FindCryostatAtPosition(worldLoc);
     
-    if(cstat == UINT_MAX)
+    if(cstat == geo::CryostatID::InvalidID)
       throw cet::exception("GeometryCore") << "Can't find Cryostat for position (" 
                                        << worldLoc[0] << ","
                                        << worldLoc[1] << "," 
                                        << worldLoc[2] << ")\n";
-                        
-    return this->Cryostat(cstat);
+    cid = geo::CryostatID(cstat);
+    return Cryostat(cid);
   }
-    
+  
+  const CryostatGeo& GeometryCore::PositionToCryostat
+    (double const worldLoc[3], unsigned int &cstat) const
+  {
+    geo::CryostatID cid;
+    geo::CryostatGeo const& cryo = PositionToCryostat(worldLoc, cid);
+    cstat = cid.Cryostat;
+    return cryo;
+  }
   
   //......................................................................
   unsigned int GeometryCore::FindAuxDetAtPosition(double const  worldPos[3]) const
@@ -372,9 +391,9 @@ namespace geo {
   }
 
   //......................................................................
-  SigType_t GeometryCore::SignalType(geo::PlaneID const pid) const
+  SigType_t GeometryCore::SignalType(geo::PlaneID const& pid) const
   {
-    return this->Cryostat(pid.Cryostat).TPC(pid.TPC).Plane(pid.Plane).SignalType();
+    return Plane(pid.Plane).SignalType();
   }
 
 
@@ -385,9 +404,9 @@ namespace geo {
   }
 
   //......................................................................
-  View_t GeometryCore::View(geo::PlaneID const pid) const
+  View_t GeometryCore::View(geo::PlaneID const& pid) const
   {
-    return this->Cryostat(pid.Cryostat).TPC(pid.TPC).Plane(pid.Plane).View();
+    return Plane(pid.Plane).View();
   }
 
   //......................................................................
@@ -411,56 +430,51 @@ namespace geo {
   }
 
   //......................................................................
-  const std::string GeometryCore::GetLArTPCVolumeName(unsigned int const tpc,
-                                                  unsigned int const cstat) const
+  std::string GeometryCore::GetLArTPCVolumeName(geo::TPCID const& tpcid) const
   {
-
-    return std::string(this->Cryostat(cstat).TPC(tpc).ActiveVolume()->GetName()); 
+    return std::string(TPC(tpcid).ActiveVolume()->GetName());
   }
 
   //......................................................................
-  const std::string GeometryCore::GetCryostatVolumeName(unsigned int const cstat) const
+  std::string GeometryCore::GetCryostatVolumeName(geo::CryostatID const& cid) const
   {
-    return this->Cryostat(cstat).Volume()->GetName();
+    return std::string(Cryostat(cid).Volume()->GetName());
   }
 
   //......................................................................
-  double GeometryCore::DetHalfWidth(unsigned int tpc,
-                                unsigned int cstat)  const 
+  double GeometryCore::DetHalfWidth(geo::TPCID const& tpcid)  const 
   {
-    return this->Cryostat(cstat).TPC(tpc).ActiveHalfWidth();
+    return TPC(tpcid).ActiveHalfWidth();
   }
 
   //......................................................................
-  double GeometryCore::DetHalfHeight(unsigned int tpc,
-                                 unsigned int cstat) const 
+  double GeometryCore::DetHalfHeight(geo::TPCID const& tpcid) const 
   {
-    return this->Cryostat(cstat).TPC(tpc).ActiveHalfHeight();
+    return TPC(tpcid).ActiveHalfHeight();
   }
 
   //......................................................................
-  double GeometryCore::DetLength(unsigned int tpc,
-                             unsigned int cstat) const
+  double GeometryCore::DetLength(geo::TPCID const& tpcid) const
   { 
-    return this->Cryostat(cstat).TPC(tpc).ActiveLength();
+    return TPC(tpcid).ActiveLength();
   }
 
   //......................................................................
-  double GeometryCore::CryostatHalfWidth(unsigned int cstat) const
+  double GeometryCore::CryostatHalfWidth(geo::CryostatID const& cid) const
   {
-    return this->Cryostat(cstat).HalfWidth();
+    return Cryostat(cid).HalfWidth();
   }
 
   //......................................................................
-  double GeometryCore::CryostatHalfHeight(unsigned int cstat) const
+  double GeometryCore::CryostatHalfHeight(geo::CryostatID const& cid) const
   {
-    return this->Cryostat(cstat).HalfHeight();
+    return Cryostat(cid).HalfHeight();
   }
 
   //......................................................................
-  double GeometryCore::CryostatLength(unsigned int cstat) const
+  double GeometryCore::CryostatLength(geo::CryostatID const& cid) const
   {
-    return this->Cryostat(cstat).Length();
+    return Cryostat(cid).Length();
   }
 
   //......................................................................
@@ -472,20 +486,22 @@ namespace geo {
   // [4]: -z
   // [5]: +z
   void GeometryCore::CryostatBoundaries(double* boundaries,
-                                    unsigned int cstat) const
+                                    geo::CryostatID const& cid) const
   {
+    geo::CryostatGeo const& cryo = Cryostat(cid);
+    TGeoBBox const* CryoShape = ((TGeoBBox*) cryo.Volume()->GetShape());
     // get the half width, height, etc of the cryostat
-    double halflength = ((TGeoBBox*)this->Cryostat(cstat).Volume()->GetShape())->GetDZ();
-    double halfwidth  = ((TGeoBBox*)this->Cryostat(cstat).Volume()->GetShape())->GetDX();
-    double halfheight = ((TGeoBBox*)this->Cryostat(cstat).Volume()->GetShape())->GetDY();
+    const double halflength = CryoShape->GetDZ();
+    const double halfwidth  = CryoShape->GetDX();
+    const double halfheight = CryoShape->GetDY();
     
     double posW[3] = {0.};
     double negW[3] = {0.};
     double pos[3]  = { halfwidth,  halfheight,  halflength};
     double neg[3]  = {-halfwidth, -halfheight, -halflength};
     
-    this->Cryostat(cstat).LocalToWorld(pos, posW);
-    this->Cryostat(cstat).LocalToWorld(neg, negW);
+    cryo.LocalToWorld(pos, posW);
+    cryo.LocalToWorld(neg, negW);
 
     boundaries[0] = negW[0];
     boundaries[1] = posW[0];
@@ -500,24 +516,37 @@ namespace geo {
   //......................................................................
   // This method returns the distance between the specified planes.
   // p1 < p2
+  double GeometryCore::PlanePitch
+    (geo::TPCID const& tpcid, geo::PlaneID::ID_t p1, geo::PlaneID::ID_t p2) const
+  {
+    return TPC(tpcid).PlanePitch(p1, p2);
+  }
+  
+  double GeometryCore::PlanePitch
+    (geo::PlaneID const& pid1, geo::PlaneID const& pid2) const
+  {
+    return PlanePitch
+      (static_cast<geo::TPCID const&>(pid1), pid1.Plane, pid2.Plane);
+  }
+  
   double GeometryCore::PlanePitch(unsigned int p1, 
                               unsigned int p2, 
                               unsigned int tpc,
                               unsigned int cstat) const
   { 
-    return this->Cryostat(cstat).TPC(tpc).PlanePitch(p1, p2);
+    return PlanePitch(geo::TPCID(cstat, tpc), p1, p2);
   }
-      
+  
   //......................................................................
   // This method returns the distance between the specified wires.
   // w1 < w2.  The wires are assumed to be on the same plane
-  double GeometryCore::WirePitch(unsigned int w1,  
-                             unsigned int w2,  
-                             unsigned int plane,
-                             unsigned int tpc,
-                             unsigned int cstat) const
-  { 
-    return this->Cryostat(cstat).TPC(tpc).WirePitch(w1,w2,plane);    
+  double GeometryCore::WirePitch(
+    geo::PlaneID const& planeid,
+    unsigned int w1 /* = 0 */, unsigned int w2 /* = 1 */
+    )
+    const
+  {
+    return Plane(planeid).WirePitch();
   }
 
   //......................................................................
@@ -537,16 +566,19 @@ namespace geo {
   //......................................................................
   // This method returns the distance between wires in the specified view
   // it assumes all planes of a given view have the same pitch
-  double GeometryCore::WireAngleToVertical(geo::View_t view, int TPC, int Cryo) const
-  { 
+  double GeometryCore::WireAngleToVertical
+    (geo::View_t view, geo::TPCID const& tpcid) const
+  {
     // loop over the planes in cryostat 0, tpc 0 to find the plane with the 
     // specified view
-    unsigned int p = 0;
-    for(p = 0; p < this->Cryostat(Cryo).TPC(TPC).Nplanes(); ++p)
-      if( this->Cryostat(Cryo).TPC(TPC).Plane(p).View() == view ) break;
-
-    return this->Cryostat(Cryo).TPC(TPC).Plane(p).Wire(0).ThetaZ(false);
-  }
+    geo::TPCGeo const& TPC = this->TPC(tpcid);
+    for (unsigned int p = 0; p < TPC.Nplanes(); ++p) {
+      geo::PlaneGeo const& plane = TPC.Plane(p);
+      if (plane.View() == view) return plane.ThetaZ();
+    } // for
+    throw cet::exception("GeometryCore") << "WireAngleToVertical(): no view #"
+      << ((int) view) << " in " << std::string(tpcid);
+  } // GeometryCore::WireAngleToVertical()
 
   //......................................................................
   unsigned int GeometryCore::MaxTPCs() const {
@@ -617,10 +649,9 @@ namespace geo {
   }
 
   //......................................................................
-  const TVector3 GeometryCore::GetTPCFrontFaceCenter(unsigned int tpc,
-                                                   unsigned int cstat) const
+  TVector3 GeometryCore::GetTPCFrontFaceCenter(geo::TPCID const& tpcid) const
   {
-    return TVector3( 0.5 * this->DetHalfWidth(tpc, cstat), 0 , 0 );
+    return TVector3( 0.5 * DetHalfWidth(tpcid), 0 , 0 );
   }
 
   //......................................................................
@@ -815,12 +846,10 @@ namespace geo {
   }
 
   //----------------------------------------------------------------------------
-  double GeometryCore::WireCoordinate(double YPos, double ZPos,
-                                 unsigned int PlaneNo,
-                                 unsigned int TPCNo,
-                                 unsigned int cstat) const
+  double GeometryCore::WireCoordinate
+    (double YPos, double ZPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->WireCoordinate(YPos, ZPos, PlaneNo, TPCNo, cstat);
+    return fChannelMapAlg->WireCoordinate(YPos, ZPos, planeid);
   }
 
   //----------------------------------------------------------------------------
@@ -830,119 +859,88 @@ namespace geo {
   // valid assuming the wireplanes are comprised of straight,
   // parallel wires with constant pitch across the entire plane, with
   // a hierarchical numbering scheme - Ben J Oct 2011
-  unsigned int GeometryCore::NearestWire(const TVector3& worldPos, 
-                                     unsigned int const PlaneNo, 
-                                     unsigned int const TPCNo,
-                                     unsigned int const cstat) const
+  unsigned int GeometryCore::NearestWire
+    (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWire(worldPos, PlaneNo, TPCNo, cstat);
+    return fChannelMapAlg->NearestWire(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
-  unsigned int GeometryCore::NearestWire(const double worldPos[3], 
-                                     unsigned int const PlaneNo, 
-                                     unsigned int const TPCNo,
-                                     unsigned int const cstat) const
+  unsigned int GeometryCore::NearestWire
+    (const double worldPos[3], geo::PlaneID const& planeid) const
   {
-    TVector3 wp(worldPos);
-    return this->NearestWire(wp, PlaneNo, TPCNo, cstat);
+    return NearestWire(TVector3(worldPos), planeid);
   }
 
   //----------------------------------------------------------------------------
-  unsigned int GeometryCore::NearestWire(std::vector<double> const worldPos, 
-                                     unsigned int const PlaneNo, 
-                                     unsigned int const TPCNo,
-                                     unsigned int const cstat) const
+  unsigned int GeometryCore::NearestWire
+    (std::vector<double> const& worldPos, geo::PlaneID const& planeid) const
   {
     if(worldPos.size() > 3) throw cet::exception("GeometryCore") << "bad size vector for "
                                                              << "worldPos: " 
                                                              << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
-    return this->NearestWire(wp, PlaneNo, TPCNo, cstat);
+    return NearestWire(wp, planeid);
   }
 
   //----------------------------------------------------------------------------
-  const geo::WireID GeometryCore::NearestWireID(const TVector3& worldPos, 
-                                            unsigned int const PlaneNo, 
-                                            unsigned int const TPCNo,
-                                            unsigned int const cstat) const
+  geo::WireID GeometryCore::NearestWireID
+    (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWireID(worldPos,PlaneNo,TPCNo,cstat);
+    return fChannelMapAlg->NearestWireID(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
-  const geo::WireID GeometryCore::NearestWireID(std::vector<double> worldPos, 
-                                            unsigned int const  PlaneNo, 
-                                            unsigned int const  TPCNo,
-                                            unsigned int const  cstat) const
+  geo::WireID GeometryCore::NearestWireID
+    (std::vector<double> const& worldPos, geo::PlaneID const& planeid) const
   {
     if(worldPos.size() > 3) throw cet::exception("GeometryCore") << "bad size vector for "
                                                              << "worldPos: " 
                                                              << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
-    return this->NearestWireID(wp,PlaneNo,TPCNo,cstat);
+    return NearestWireID(wp, planeid);
   }
 
   //----------------------------------------------------------------------------
-  const geo::WireID GeometryCore::NearestWireID(const double        worldPos[3], 
-                                            unsigned int const  PlaneNo, 
-                                            unsigned int const  TPCNo,
-                                            unsigned int const  cstat) const
+  geo::WireID GeometryCore::NearestWireID
+    (const double worldPos[3], geo::PlaneID const& planeid) const
   {
-    TVector3 wp(worldPos);
-    return this->NearestWireID(wp,PlaneNo,TPCNo,cstat);
+    return NearestWireID(TVector3(worldPos), planeid);
   }
 
   //----------------------------------------------------------------------------
-  raw::ChannelID_t GeometryCore::NearestChannel(const double worldPos[3], 
-                                    unsigned int const PlaneNo, 
-                                    unsigned int const TPCNo,
-                                    unsigned int const cstat) const
+  raw::ChannelID_t GeometryCore::NearestChannel
+    (const double worldPos[3], geo::PlaneID const& planeid) const
   {
-    TVector3 wp(worldPos);
-    return this->NearestChannel(wp, PlaneNo, TPCNo, cstat);
+    return NearestChannel(TVector3(worldPos), planeid);
   }
 
   //----------------------------------------------------------------------------
-  raw::ChannelID_t GeometryCore::NearestChannel(std::vector<double> const worldPos, 
-                                    unsigned int const PlaneNo, 
-                                    unsigned int const TPCNo,
-                                    unsigned int const cstat) const
+  raw::ChannelID_t GeometryCore::NearestChannel
+    (std::vector<double> const& worldPos, geo::PlaneID const& planeid) const
   {
     if(worldPos.size() > 3) throw cet::exception("GeometryCore") << "bad size vector for "
                                                              << "worldPos: " 
                                                              << worldPos.size() << "\n";
     TVector3 wp(&(worldPos[0]));
-    return this->NearestChannel(wp, PlaneNo, TPCNo, cstat);
+    return NearestChannel(wp, planeid);
   }
 
   //----------------------------------------------------------------------------
-  raw::ChannelID_t GeometryCore::NearestChannel(const TVector3& worldPos, 
-                                    unsigned int const PlaneNo, 
-                                    unsigned int const TPCNo,
-                                    unsigned int const cstat) const
+  raw::ChannelID_t GeometryCore::NearestChannel
+    (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
     
     // This method is supposed to return a channel number rather than
     //  a wire number.  Perform the conversion here (although, maybe
     //  faster if we deal in wire numbers rather than channel numbers?)
-    unsigned int nearestWire = this->NearestWire(worldPos, PlaneNo, TPCNo, cstat);
-    return this->PlaneWireToChannel(PlaneNo, nearestWire, TPCNo, cstat);
+    return PlaneWireToChannel(NearestWireID(worldPos, planeid));
   }
 
   //--------------------------------------
-  raw::ChannelID_t GeometryCore::PlaneWireToChannel(unsigned int const plane,
-                                        unsigned int const wire,
-                                        unsigned int const tpc,
-                                        unsigned int const cstat) const
-  {
-    return fChannelMapAlg->PlaneWireToChannel(plane, wire, tpc, cstat);
-  }
-
-  //......................................................................
   raw::ChannelID_t GeometryCore::PlaneWireToChannel(WireID const& wireid) const
   {
-    return this->PlaneWireToChannel(wireid.Plane, wireid.Wire, wireid.TPC, wireid.Cryostat);   
+    return fChannelMapAlg->PlaneWireToChannel(wireid);
   }
 
   // Functions to allow determination if two wires intersect, and if so where.
@@ -956,16 +954,13 @@ namespace geo {
   }
 
   //......................................................................
-  void GeometryCore::WireEndPoints(unsigned int cstat,
-                               unsigned int tpc,
-                               unsigned int plane, 
-                               unsigned int wire, 
-                               double *xyzStart, 
-                               double *xyzEnd) const
-  {  
-    double halfL = this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).HalfL();//half-length of wire
-    this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).GetCenter(xyzStart,halfL);
-    this->Cryostat(cstat).TPC(tpc).Plane(plane).Wire(wire).GetCenter(xyzEnd,-1.0*halfL);
+  void GeometryCore::WireEndPoints
+    (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const
+  {
+    geo::WireGeo const& wire = Wire(wireid);
+    const double halfL = wire.HalfL();//half-length of wire
+    wire.GetCenter(xyzStart,halfL);
+    wire.GetCenter(xyzEnd,-halfL);
     
     if(xyzEnd[2]<xyzStart[2]){
       //ensure that "End" has higher z-value than "Start"
@@ -980,7 +975,6 @@ namespace geo {
       std::swap(xyzStart[2],xyzEnd[2]);
     }
     
-    return;
   }
    
   //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
@@ -1092,41 +1086,62 @@ namespace geo {
   // Rewritten by T. Yang Apr 2015 using the equation in H. Greenlee's talk:
   // https://cdcvs.fnal.gov/redmine/attachments/download/1821/larsoft_apr20_2011.pdf
   // slide 2
-  double Geometry::ThirdPlaneSlope(unsigned int plane1, double slope1, 
-                                   unsigned int plane2, double slope2, 
-                                   unsigned int tpc, unsigned int cstat)
-  
-  {
-
-    if(Nplanes(tpc,cstat) != 3) return 999;
-    if(plane1 > 2 || plane2 > 2) return 999;
-    if(plane1==plane2) return 999;
+  double GeometryCore::ThirdPlaneSlope(
+    geo::PlaneID const& pid1, double slope1,
+    geo::PlaneID const& pid2, double slope2
+  ) const {
+    
+    const unsigned int nPlanes = Nplanes(pid1);
+    if(nPlanes != 3) { // was: return 999;
+      throw cet::exception("GeometryCore")
+        << "ThirdPlaneSlope() supports only TPCs with 3 planes, and I see "
+        << nPlanes << "\n";
+    }
+    if(static_cast<geo::TPCID const&>(pid1) != static_cast<geo::TPCID const&>(pid2)) {
+      throw cet::exception("GeometryCore")
+        << "ThirdPlaneSlope() needs two planes on the same TPC (got "
+        << std::string(pid1) << " and " << std::string(pid2) << ")\n";
+    }
+    if(pid1 == pid2) { // was: return 999;
+      throw cet::exception("GeometryCore")
+        << "ThirdPlaneSlope() needs two different planes, got "
+        << std::string(pid1) << " twice\n";
+    }
+    
     // Can't resolve very small slopes
     if(fabs(slope1) < 0.001 && fabs(slope2) < 0.001) return 0.001;
+    
+    geo::TPCGeo const& TPC = this->TPC(pid1);
 
-    // Calculate static variables on the first call
-    static bool first = true;
-    // We need the "wire coordinate direction" for each plane. This is perpendicular
-    // to the wire orientation. 
-    static double angle[3];
-    if(first) {
-      first = false;
-      for (size_t i = 0; i<3; ++i){
-	angle[i] = this->Cryostat(cstat).TPC(tpc).Plane(i).Wire(0).ThetaZ();
-	//We need to subtract pi/2 to make those 'wire coordinate directions'.
-	//But what matters is the difference between angles so we don't do that.
-      }
-    } // first
-    unsigned int plane3 = 10;
-    if ((plane1 == 0 && plane2 == 1)||(plane1 == 1 && plane2 == 0)) plane3 = 2;
-    if ((plane1 == 0 && plane2 == 2)||(plane1 == 2 && plane2 == 0)) plane3 = 1;
-    if ((plane1 == 1 && plane2 == 2)||(plane1 == 2 && plane2 == 1)) plane3 = 0;
-    if (plane3>2) return 999;
+    // We need the "wire coordinate direction" for each plane.
+    // This is perpendicular to the wire orientation. 
+    double angle[3];
+    std::array<bool, 3> outputPlane;
+    outputPlane.fill(true);
+    for (size_t i = 0; i < nPlanes; ++i){
+      angle[i] = TPC(pid1).Plane(i).ThetaZ();
+      outputPlane[i] = false;
+      //We need to subtract pi/2 to make those 'wire coordinate directions'.
+      //But what matters is the difference between angles so we don't do that.
+    } // for
+    auto iOutput = std::find(outputPlane.begin(), outputPlane.end(), true);
+    if (iOutput == outputPlane.end()) { // was: return 999;
+      throw cet::exception("GeometryCore")
+        << "ThirdPlaneSlope() can't find which plane to output the slope for!\n";
+    }
+    const unsigned int plane3 = *iOutput;
     double slope3 = 0.001;
-    if (fabs(slope1) > 0.001 && fabs(slope2) > 0.001) slope3 = ((1./slope1)*TMath::Sin(angle[plane3]-angle[plane2])-(1./slope2)*TMath::Sin(angle[plane3]-angle[plane1]))/TMath::Sin(angle[plane1]-angle[plane2]);
+    if (std::abs(slope1) > 0.001 && std::abs(slope2) > 0.001) {
+      slope3
+        = (
+          + (1./slope1)*std::sin(angle[plane3]-angle[plane2])
+          - (1./slope2)*std::sin(angle[plane3]-angle[plane1])
+        ) / std::sin(angle[plane1]-angle[plane2])
+        ;
+    }
     if (slope3) slope3 = 1./slope3;
-    else slope3 = 999;
-
+    else slope3 = 999.;
+    
     return slope3;
   } // ThirdPlaneSlope
   
@@ -1138,25 +1153,87 @@ namespace geo {
   // inner dimensions of the TPC frame.
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
-  // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
-  void Geometry::IntersectionPoint(unsigned int wire1, 
-                                   unsigned int wire2, 
-                                   unsigned int plane1, 
-                                   unsigned int plane2,
-                                   unsigned int cstat,
-                                   unsigned int tpc,
+  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
+                                   geo::WireID const& wid2,
                                    double start_w1[3], 
                                    double end_w1[3], 
                                    double start_w2[3], 
                                    double end_w2[3], 
                                    double &y, double &z)
   {
-    geo::WireID wid1(cstat,tpc,plane1,wire1);
-    geo::WireID wid2(cstat,tpc,plane2,wire2);
-    geo::WireIDIntersection widIntersect;
-    this->WireIDsIntersect(wid1,wid2,widIntersect);
-    y = widIntersect.y;
-    z = widIntersect.z;
+
+    //angle of wire1 wrt z-axis in Y-Z plane...in radians
+    const double angle1 = Wire(wid1).ThetaZ();
+    //angle of wire2 wrt z-axis in Y-Z plane...in radians
+    const double angle2 = Wire(wid2).ThetaZ();
+    
+    if(angle1 == angle2) return;//comparing two wires in the same plane...pointless.
+
+    //coordinates of "upper" endpoints...(z1,y1) = (a,b) and (z2,y2) = (c,d) 
+    double a = 0.;
+    double b = 0.;
+    double c = 0.; 
+    double d = 0.;
+    double anglex = 0.;
+    
+    // special case, one plane is vertical
+    if(angle1 == (util::pi<double>() / 2.) || angle2 == (util::pi<double>() / 2.)) {
+      if(angle1 == util::pi<double>() / 2.){
+                
+        anglex = (angle2 - util::pi<double>() / 2.);
+        a = end_w1[2];
+        b = end_w1[1];
+        c = end_w2[2];
+        d = end_w2[1];
+        // the if below can in principle be replaced by the sign of anglex (inverted) 
+        // in the formula for y below. But until the geometry is fully symmetric in y I'm 
+        // leaving it like this. Andrzej
+        if((anglex) > 0 ) b = start_w1[1];
+                    
+      }
+      else if(angle2 == util::pi<double>() / 2.){
+        anglex = (angle1 - util::pi<double>() / 2.);
+        a = end_w2[2];
+        b = end_w2[1];
+        c = end_w1[2];
+        d = end_w1[1];
+        // the if below can in principle be replaced by the sign of anglex (inverted) 
+        // in the formula for y below. But until the geometry is fully symmetric in y I'm 
+        // leaving it like this. Andrzej
+        if((anglex) > 0 ) b = start_w2[1];  
+      }
+
+      y = b + ((c-a) - (b-d)*tan(anglex))/tan(anglex);
+      z = a;   // z is defined by the wire in the vertical plane
+      
+      return;
+    }
+
+    // end of vertical case
+    
+    z = 0;y = 0;
+    
+    if(angle1 < (util::pi<double>() / 2.)){
+      c = end_w1[2];
+      d = end_w1[1];
+      a = start_w2[2];
+      b = start_w2[1];
+    }
+    else{
+      c = end_w2[2];
+      d = end_w2[1];
+      a = start_w1[2];
+      b = start_w1[1];
+    }
+    
+    // below is a special case of calculation when one of the planes is vertical. 
+    const double angle = std::min(angle1, angle2);//get angle closest to the z-axis (FIXME not necessarily)
+    
+    //Intersection point of two wires in the yz plane is completely
+    //determined by wire endpoints and angle of inclination.
+    z = 0.5 * ( c + a + (b-d)/std::tan(angle) );
+    y = 0.5 * ( b + d + (a-c)*std::tan(angle) );
+    
     return;
     
   }
@@ -1165,12 +1242,8 @@ namespace geo {
   //  - whether to use this or the full function depends on optimization of your
   //    particular algorithm.  Ben J, Oct 2011
   //--------------------------------------------------------------------
-  void GeometryCore::IntersectionPoint(unsigned int wire1, 
-                                   unsigned int wire2, 
-                                   unsigned int plane1, 
-                                   unsigned int plane2,
-                                   unsigned int cstat,
-                                   unsigned int tpc, 
+  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
+                                   geo::WireID const& wid2,
                                    double &y, double &z)
   {
     double WireStart1[3] = {0.};
@@ -1178,10 +1251,10 @@ namespace geo {
     double WireEnd1[3]   = {0.};
     double WireEnd2[3]   = {0.};
 
-    this->WireEndPoints(cstat, tpc, plane1, wire1, WireStart1, WireEnd1);
-    this->WireEndPoints(cstat, tpc, plane2, wire2, WireStart2, WireEnd2);
-    this->IntersectionPoint(wire1, wire2, plane1, plane2, cstat, tpc,
-                            WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);                     
+    WireEndPoints(wid1, WireStart1, WireEnd1);
+    WireEndPoints(wid2, WireStart2, WireEnd2);
+    this->IntersectionPoint
+      (wid1, wid2, WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);
   }
 
 
@@ -1274,11 +1347,11 @@ namespace geo {
   //--------------------------------------------------------------------
   // Find the closest OpChannel to this point, in the appropriate cryostat  
   unsigned int GeometryCore::GetClosestOpDet(double * xyz) const
-  {        
-    unsigned int c;
-    PositionToCryostat(xyz, c);
-    int o = Cryostat(c).GetClosestOpDet(xyz);
-    return OpDetFromCryo(o, c);
+  {
+    geo::CryostatID cid;
+    PositionToCryostat(xyz, cid);
+    int o = Cryostat(cid).GetClosestOpDet(xyz);
+    return OpDetFromCryo(o, cid.Cryostat);
   }
   
   

@@ -198,25 +198,21 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  double ChannelMapStandardAlg::WireCoordinate(double YPos, double ZPos,
-                                               unsigned int PlaneNo,
-                                               unsigned int TPCNo,
-                                               unsigned int cstat) const
+  double ChannelMapStandardAlg::WireCoordinate
+    (double YPos, double ZPos, geo::PlaneID const& planeID) const
   {
     // Returns the wire number corresponding to a (Y,Z) position in PlaneNo 
     // with float precision.
     // B. Baller August 2014
-    return YPos*fOrthVectorsY[cstat][TPCNo][PlaneNo] 
-         + ZPos*fOrthVectorsZ[cstat][TPCNo][PlaneNo]      
-         - fFirstWireProj[cstat][TPCNo][PlaneNo];
+    return YPos*AccessElement(fOrthVectorsY, planeID) 
+         + ZPos*AccessElement(fOrthVectorsZ, planeID)
+         - AccessElement(fFirstWireProj, planeID);
   }
 
   
   //----------------------------------------------------------------------------
-  WireID ChannelMapStandardAlg::NearestWireID(const TVector3& worldPos,
-                                              unsigned int    PlaneNo,
-                                              unsigned int    TPCNo,
-                                              unsigned int    cstat) const
+  WireID ChannelMapStandardAlg::NearestWireID
+    (const TVector3& worldPos, geo::PlaneID const& planeID) const
   {
 
     // This part is the actual calculation of the nearest wire number, where we assume
@@ -224,29 +220,27 @@ namespace geo{
     
     // add 0.5 to have the correct rounding
     int NearestWireNumber = int
-      (0.5 + WireCoordinate(worldPos.Y(), worldPos.Z(), PlaneNo, TPCNo, cstat));
+      (0.5 + WireCoordinate(worldPos.Y(), worldPos.Z(), planeID));
     
     // If we are outside of the wireplane range, throw an exception
     // (this response maintains consistency with the previous
     // implementation based on geometry lookup)
     if(NearestWireNumber < 0 ||
-       NearestWireNumber >= fWireCounts[cstat][TPCNo][PlaneNo])
+       (unsigned int) NearestWireNumber >= WireCount(planeID))
     {
       int wireNumber = NearestWireNumber; // save for the output
       
       if(NearestWireNumber < 0 ) NearestWireNumber = 0;
-      else                       NearestWireNumber = fWireCounts[cstat][TPCNo][PlaneNo] - 1;
+      else                       NearestWireNumber = WireCount(planeID) - 1;
       
       throw InvalidWireIDError("Geometry", wireNumber, NearestWireNumber)
         << "Can't Find Nearest Wire for position (" 
         << worldPos[0] << "," << worldPos[1] << "," << worldPos[2] << ")"
-        << " approx wire number # " << wireNumber
-        << " (capped from " << NearestWireNumber << ")\n";
+        << " in plane " << std::string(planeID) << " approx wire number # "
+        << wireNumber << " (capped from " << NearestWireNumber << ")\n";
     }
 
-    WireID wid(cstat, PlaneNo, TPCNo, (unsigned int)NearestWireNumber);
-    return wid;
-
+    return geo::WireID(planeID, (geo::WireID::ID_t) NearestWireNumber);
   }
   
   //----------------------------------------------------------------------------
@@ -262,23 +256,20 @@ namespace geo{
   //           Plane2 { Wire1     | 6
   //                    Wire2     v 7
   //
-  raw::ChannelID_t ChannelMapStandardAlg::PlaneWireToChannel(unsigned int plane,
-                                                     unsigned int wire,
-                                                     unsigned int tpc,
-                                                     unsigned int cstat) const
+  raw::ChannelID_t ChannelMapStandardAlg::PlaneWireToChannel
+    (geo::WireID const& wireID) const
   {
+    unsigned int const* pBaseLine = GetElementPtr(fPlaneBaselines, wireID);
     // This is the actual lookup part - first make sure coordinates are legal
-    if(tpc   < fNTPC[cstat] &&
-       plane < fWiresPerPlane[cstat][tpc].size() &&
-       wire  < fWiresPerPlane[cstat][tpc][plane] ){
+    if (pBaseLine) {
       // if the channel has legal coordinates, its ID is given by the wire
       // number above the number of wires in lower planes, tpcs and cryostats
-      return fPlaneBaselines[cstat][tpc][plane] + wire;
+      return *pBaseLine + wireID.Wire;
     }
     else{  
       // if the coordinates were bad, throw an exception
-      throw cet::exception("ChannelMapStandardAlg") << "NO CHANNEL FOUND for cryostat,tpc,plane,wire: "
-                                                    << cstat << "," << tpc << "," << plane << "," << wire;
+      throw cet::exception("ChannelMapStandardAlg")
+        << "NO CHANNEL FOUND for " << std::string(wireID);
     }
     
     // made it here, that shouldn't happen, return raw::InvalidChannelID

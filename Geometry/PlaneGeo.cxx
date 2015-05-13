@@ -205,7 +205,7 @@ namespace geo{
   
   
   //......................................................................
-  inline double PlaneGeo::ThetaZ() const { return FirstWire().ThetaZ(); }
+  double PlaneGeo::ThetaZ() const { return FirstWire().ThetaZ(); }
   
   
   //......................................................................

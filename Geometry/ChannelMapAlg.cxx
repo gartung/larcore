@@ -14,13 +14,9 @@ namespace geo{
 
   //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::NearestWire(const TVector3& worldPos,
-                                          unsigned int    PlaneNo,
-                                          unsigned int    TPCNo,
-                                          unsigned int    cstat) const
+                                          geo::PlaneID const& planeID) const
   {
-    
-    return this->NearestWireID(worldPos, PlaneNo, TPCNo, cstat).Wire;
-
+    return NearestWireID(worldPos, planeID.Plane, planeID.TPC, planeID.Cryostat).Wire;
   }
 
   //----------------------------------------------------------------------------
