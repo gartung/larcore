@@ -3,9 +3,18 @@
 
 #include <climits>
 #include <cmath>
+#include <string>
+#include <sstream>
 // #include <limits> // std::numeric_limits<>
 
 namespace geo {
+  namespace details {
+    /// Write the argument into a string
+    template <typename T>
+    std::string writeToString(T const& value);
+  } // namespace details
+  
+  
   typedef enum coordinates {
     kXCoord, ///< X coordinate
     kYCoord, ///< Y coordinate
@@ -84,6 +93,10 @@ namespace geo {
     
     // comparison operators are out of class
     
+    /// Human-readable representation of the cryostat ID
+    explicit operator std::string() const
+      { return details::writeToString(*this); }
+    
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(CryostatID const& other) const
       { return ThreeWayComparison(Cryostat, other.Cryostat); }
@@ -93,40 +106,8 @@ namespace geo {
       { return (a == b)? 0: ((a < b)? -1: +1); }
     
   }; // struct CryostatID
-
-#if 0
-  // The data type to uniquely identify a TPC
-  struct TPCID { 
-    TPCID(): isValid(false), Cryostat(UINT_MAX), TPC(UINT_MAX) {}
-
-    TPCID(unsigned int c, unsigned int t): isValid(true), Cryostat(c), TPC(t) {}
-
-    bool         isValid;  ///< whether this ID points to a valid TPC
-    unsigned int Cryostat; ///< index of cryostat the TPC belongs
-    unsigned int TPC;      ///< index of the TPC within its cryostat
-
-    /// Returns true if the ID is valid
-    operator bool() const { return isValid; }
-    
-    /// Returns true if the ID is not valid
-    bool operator! () const { return !isValid; }
-    
-    bool operator== (const TPCID& pid) const
-      { return ((Cryostat == pid.Cryostat) && (TPC == pid.TPC)); }
-
-    bool operator!= (const TPCID& pid) const
-      { return ((Cryostat != pid.Cryostat) || (TPC != pid.TPC)); }
-
-    // Order TPCID in increasing Cryo, then TPC
-    bool operator<( const TPCID& tpcid ) const
-      {
-        if(      Cryostat != tpcid.Cryostat ) return Cryostat < tpcid.Cryostat;
-        else if(      TPC != tpcid.TPC      ) return TPC      < tpcid.TPC;
-        else return false;
-      } // operator<
-
-  }; // struct TPCID
-#else
+  
+  
   /// The data type to uniquely identify a TPC
   struct TPCID: public CryostatID {
     
@@ -143,6 +124,10 @@ namespace geo {
 
     // comparison operators are out of class
     
+    /// Human-readable representation of the TPC ID
+    explicit operator std::string() const
+      { return details::writeToString(*this); }
+    
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(TPCID const& other) const
       {
@@ -154,60 +139,8 @@ namespace geo {
       } // cmp()
     
   }; // struct TPCID
-#endif
-
-#if 0
-  // The data type to uniquely identify a Plane
-  struct PlaneID { 
-    PlaneID()
-    : Cryostat(UINT_MAX)
-    , TPC(UINT_MAX)
-    , Plane(UINT_MAX)
-    , isValid(false)
-    {}
-
-    PlaneID(unsigned int c, 
-	    unsigned int t,
-	    unsigned int p)
-    : Cryostat(c)
-    , TPC(t)
-    , Plane(p)
-    , isValid(true)
-    {}
-
-    PlaneID(const TPCID& tpcid, unsigned int p)
-      : Cryostat(tpcid.Cryostat), TPC(tpcid.TPC), Plane(p)
-      , isValid(tpcid.isValid)
-      {}
-
-    unsigned int Cryostat;
-    unsigned int TPC;
-    unsigned int Plane;
-    bool         isValid;
-
-    bool operator==( const PlaneID& pid ) const {
-      return ( Cryostat == pid.Cryostat &&
-	       TPC      == pid.TPC      &&
-	       Plane    == pid.Plane      );
-    }
-
-    bool operator!=( const PlaneID& pid ) const {
-      return ( Cryostat != pid.Cryostat ||
-	       TPC      != pid.TPC      ||
-	       Plane    != pid.Plane      );
-    }
-
-    // Order WireIDs in increasing Cryo, 
-    // TPC, Plane, Wire number direction
-    bool operator<( const PlaneID& pid ) const {
-      if(      Cryostat != pid.Cryostat ) return Cryostat < pid.Cryostat;
-      else if(      TPC != pid.TPC      ) return TPC      < pid.TPC;
-      else if(    Plane != pid.Plane    ) return Plane    < pid.Plane;
-      else return false;
-    }
-
-  };
-#else
+  
+  
   /// The data type to uniquely identify a Plane
   struct PlaneID: public TPCID {
     
@@ -224,6 +157,10 @@ namespace geo {
 
     // comparison operators are out of class
     
+    /// Human-readable representation of the plane ID
+    explicit operator std::string() const
+      { return details::writeToString(*this); }
+    
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(PlaneID const& other) const
       {
@@ -235,79 +172,8 @@ namespace geo {
       } // cmp()
     
   }; // struct PlaneID
-#endif // 0
   
-#if 0
-  // The data type to uniquely identify a code wire segment.
-  struct WireID { 
-    WireID()
-    : Cryostat(UINT_MAX)
-    , TPC(UINT_MAX)
-    , Plane(UINT_MAX)
-    , Wire(UINT_MAX)
-    , isValid(false)
-    {}
-
-    WireID(unsigned int c, 
-	   unsigned int t,
-	   unsigned int p,
-	   unsigned int w)
-    : Cryostat(c)
-    , TPC(t)
-    , Plane(p)
-    , Wire(w)
-    , isValid(true)
-    {}
-
-    WireID(const PlaneID& planeid, unsigned int w)
-      : Cryostat(planeid.Cryostat), TPC(planeid.TPC), Plane(planeid.Plane)
-      , Wire(w)
-      , isValid(planeid.isValid)
-      {}
-
-    unsigned int Cryostat;
-    unsigned int TPC;
-    unsigned int Plane;
-    unsigned int Wire;
-    bool         isValid;
-
-    PlaneID planeID() const { return PlaneID(Cryostat, TPC, Plane); }
-
-    bool operator==( const WireID& wid ) const {
-      return ( Cryostat == wid.Cryostat &&
-	       TPC      == wid.TPC      &&
-	       Plane    == wid.Plane    &&
-	       Wire     == wid.Wire        );
-    }
-
-    bool operator!=( const WireID& wid ) const {
-      return ( Cryostat != wid.Cryostat ||
-	       TPC      != wid.TPC      ||
-	       Plane    != wid.Plane    ||
-	       Wire     != wid.Wire        );
-    }
-
-    // Order WireIDs in increasing Cryo, 
-    // TPC, Plane, Wire number direction
-    bool operator<( const WireID& wid ) const {
-      if(      Cryostat != wid.Cryostat ) return Cryostat < wid.Cryostat;
-      else if(      TPC != wid.TPC      ) return TPC      < wid.TPC;
-      else if(    Plane != wid.Plane    ) return Plane    < wid.Plane;
-      else if(     Wire != wid.Wire     ) return Wire     < wid.Wire;
-      else return false;
-    }
-
-    /// Returns 0 if equal to wid, < 0 if smaller, > 0 if larger
-    int cmp(WireID const& wid) const {
-      if (Cryostat != wid.Cryostat) return (Cryostat < wid.Cryostat)? -1: +1;
-      if (TPC != wid.TPC) return (TPC < wid.TPC)? -1: +1;
-      if (Plane != wid.Plane) return (Plane < wid.Plane)? -1: +1;
-      if (Wire != wid.Wire) return (Wire < wid.Wire)? -1: +1;
-      return 0;
-    } // cmp()
-
-  };
-#else
+  
   // The data type to uniquely identify a code wire segment.
   struct WireID: public PlaneID {
     
@@ -323,6 +189,10 @@ namespace geo {
     /// plane index p
     WireID(ID_t c, ID_t t, ID_t p, ID_t w): PlaneID(c, t, p), Wire(w) {}
 
+    /// Human-readable representation of the wire ID
+    explicit operator std::string() const
+      { return details::writeToString(*this); }
+    
     /// Returns < 0 if this is smaller than tpcid, 0 if equal, > 0 if larger
     int cmp(WireID const& other) const
       {
@@ -339,7 +209,7 @@ namespace geo {
     PlaneID const& planeID() const { return *this; }
     
   }; // struct WireID
-#endif // 0
+  
 
   struct WireIDIntersection{
     double y;                  ///< y position of intersection
@@ -480,7 +350,18 @@ namespace geo {
     out << ((PlaneID const&) wid) << " W:" << wid.Wire;
     return out;
   } // operator<< (Stream, WireID)
+  
+  
+  namespace details {
+    
+    template <typename T>
+    inline std::string writeToString(T const& value) {
+      std::ostringstream sstr;
+      sstr << value;
+      return sstr.str();
+    } // writeToString()
+    
+  } // namespace details
 
-
-}
+} // namespace geo
 #endif
