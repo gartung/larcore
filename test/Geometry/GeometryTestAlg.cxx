@@ -344,7 +344,8 @@ namespace geo{
     tpc.LocalToWorld(Origin, TPCpos);
     mf::LogVerbatim("GeometryTest") << indent << "TPC at ("
       << TPCpos[0] << ", " << TPCpos[1] << ", " << TPCpos[2]
-      << ") cm has " << nPlanes << " wire planes:";
+      << ") cm has " << nPlanes << " wire planes (max wires: " << tpc.MaxWires()
+      << "):";
     for(unsigned int p = 0; p < nPlanes; ++p) {
       const geo::PlaneGeo& plane = tpc.Plane(p);
       const unsigned int nWires = plane.Nwires();

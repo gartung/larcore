@@ -286,6 +286,28 @@ namespace geo{
   }
 
   //......................................................................
+  unsigned int CryostatGeo::MaxPlanes() const {
+    unsigned int maxPlanes = 0;
+    for (geo::TPCGeo const* pTPC: fTPCs) {
+      if (!pTPC) continue;
+      unsigned int maxPlanesInTPC = pTPC->Nplanes();
+      if (maxPlanesInTPC > maxPlanes) maxPlanes = maxPlanesInTPC;
+    } // for
+    return maxPlanes;
+  } // CryostatGeo::MaxPlanes()
+  
+  //......................................................................
+  unsigned int CryostatGeo::MaxWires() const {
+    unsigned int maxWires = 0;
+    for (geo::TPCGeo const* pTPC: fTPCs) {
+      if (!pTPC) continue;
+      unsigned int maxWiresInTPC = pTPC->MaxWires();
+      if (maxWiresInTPC > maxWires) maxWires = maxWiresInTPC;
+    } // for
+    return maxWires;
+  } // CryostatGeo::MaxWires()
+  
+  //......................................................................
   double CryostatGeo::HalfWidth()  const 
   {
     return ((TGeoBBox*)fVolume->GetShape())->GetDX();

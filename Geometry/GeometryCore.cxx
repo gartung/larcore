@@ -193,12 +193,9 @@ namespace geo {
 
   //......................................................................
   // Number of different views, or wire orientations
-  // The function assumes that all TPCs in all cryostats of
-  // a detector have the same number of planes, which should be 
-  // a safe assumption
   unsigned int GeometryCore::Nviews() const
   {
-    return this->Cryostat(0).TPC(0).Nplanes();
+    return MaxPlanes();
   }
 
   //......................................................................
@@ -551,6 +548,39 @@ namespace geo {
     return this->Cryostat(Cryo).TPC(TPC).Plane(p).Wire(0).ThetaZ(false);
   }
 
+  //......................................................................
+  unsigned int GeometryCore::MaxTPCs() const {
+    unsigned int maxTPCs = 0;
+    for (geo::CryostatGeo const* pCryo: Cryostats()) {
+      if (!pCryo) continue;
+      unsigned int maxTPCsInCryo = pCryo->NTPC();
+      if (maxTPCsInCryo > maxTPCs) maxTPCs = maxTPCsInCryo;
+    } // for
+    return maxTPCs;
+  } // GeometryCore::MaxTPCs()
+  
+  //......................................................................
+  unsigned int GeometryCore::MaxPlanes() const {
+    unsigned int maxPlanes = 0;
+    for (geo::CryostatGeo const* pCryo: Cryostats()) {
+      if (!pCryo) continue;
+      unsigned int maxPlanesInCryo = pCryo->MaxPlanes();
+      if (maxPlanesInCryo > maxPlanes) maxPlanes = maxPlanesInCryo;
+    } // for
+    return maxPlanes;
+  } // GeometryCore::MaxPlanes()
+  
+  //......................................................................
+  unsigned int GeometryCore::MaxWires() const {
+    unsigned int maxWires = 0;
+    for (geo::CryostatGeo const* pCryo: Cryostats()) {
+      if (!pCryo) continue;
+      unsigned int maxWiresInCryo = pCryo->MaxWires();
+      if (maxWiresInCryo > maxWires) maxWires = maxWiresInCryo;
+    } // for
+    return maxWires;
+  } // GeometryCore::MaxWires()
+  
   //......................................................................
   //
   // Return the ranges of x,y and z for the "world volume" that the
@@ -1098,10 +1128,9 @@ namespace geo {
     else slope3 = 999;
 
     return slope3;
-
   } // ThirdPlaneSlope
-
-   
+  
+  
   //......................................................................
   // This function is called if it is determined that two wires in a single TPC must overlap.
   // To determine the yz coordinate of the wire intersection, we need to know the 

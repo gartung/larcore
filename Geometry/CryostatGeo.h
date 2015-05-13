@@ -142,6 +142,13 @@ namespace geo {
     const TPCGeo&     PositionToTPC(double const  worldLoc[3],
 				    unsigned int &tpc,
 				    double const &wiggle)       const;
+    
+    /// Returns the largest number of planes among the TPCs in this cryostat
+    unsigned int MaxPlanes() const;
+    
+    /// Returns the largest number of wires among the TPCs in this cryostat
+    unsigned int MaxWires() const;
+    
     /// @}
     
     

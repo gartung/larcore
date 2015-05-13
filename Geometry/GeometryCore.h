@@ -1434,6 +1434,9 @@ namespace geo {
     unsigned int NTPC(unsigned int cstat = 0) const
       { return NTPC(geo::CryostatID(cstat)); }
     
+    /// Returns the largest number of TPCs a cryostat in the detector has
+    unsigned int MaxTPCs() const;
+    
     /**
      * @brief Returns the total number of TPCs in the specified cryostat
      * @param cryoid cryostat number
@@ -1676,6 +1679,8 @@ namespace geo {
     unsigned int Nplanes(unsigned int tpc   = 0, unsigned int cstat = 0) const
       { return Nplanes(geo::TPCID(cstat, tpc)); }
     
+    /// Returns the largest number of planes among all TPCs in this detector
+    unsigned int MaxPlanes() const;
     
     //@{
     /**
@@ -1880,6 +1885,10 @@ namespace geo {
       { return Nwires(planeid); }
     unsigned int NSiblingElements(geo::WireID const& wireid) const
       { return Nwires(wireid); }
+    
+    /// Returns the largest number of wires among all planes in this detector
+    unsigned int MaxWires() const;
+    
     //@}
     
     

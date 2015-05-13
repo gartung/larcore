@@ -4,8 +4,6 @@
 /// \version $Id: TPCGeo.cxx,v 1.12 2010/03/05 19:47:51 bpage Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
-#include <iostream>
-#include <cmath>
 
 
 // ROOT includes
@@ -24,6 +22,12 @@
 #include "Geometry/TPCGeo.h"
 #include "Geometry/PlaneGeo.h"
 #include "Geometry/WireGeo.h"
+
+// C/C++ standard libraries
+#include <cmath>
+#include <map>
+#include <algorithm> // std::max()
+
 
 namespace geo{
 
@@ -228,6 +232,18 @@ namespace geo{
     return *fPlanes[sViewToPlaneNumber[view]];
   }
 
+  //......................................................................
+  unsigned int TPCGeo::MaxWires() const {
+    unsigned int maxWires = 0;
+    for (geo::PlaneGeo const* pPlane: fPlanes) {
+      if (!pPlane) continue;
+      unsigned int maxWiresInPlane = pPlane->Nwires();
+      if (maxWiresInPlane > maxWires) maxWires = maxWiresInPlane;
+    } // for
+    return maxWires;
+  } // TPCGeo::MaxWires()
+  
+  
   //......................................................................
   // returns distance between plane 0 to each of the remaining planes 
   // not the distance between two consecutive planes  

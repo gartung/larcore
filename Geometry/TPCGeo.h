@@ -9,7 +9,6 @@
 #define GEO_TPCGEO_H
 #include <vector>
 #include <array>
-#include <algorithm>
 
 #include "TGeoVolume.h"
 
@@ -133,9 +132,10 @@ namespace geo {
       { return PlanePtr(planeid); }
     //@}
     
+    /// @brief Returns the largest number of wires amongthe planes in this TPC
+    unsigned int MaxWires() const;
     
     /// @}
-    
     
     /// @{
     /// @name TPC geometry properties
