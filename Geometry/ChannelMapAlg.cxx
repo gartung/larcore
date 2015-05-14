@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "Geometry/ChannelMapAlg.h"
-#include "Geometry/Geometry.h"
+#include "Geometry/AuxDetGeo.h"
 
 namespace geo{
 

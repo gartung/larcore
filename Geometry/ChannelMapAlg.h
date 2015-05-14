@@ -27,6 +27,7 @@ namespace geo{
   
   // forward-declaration from geometry
   class GeometryData_t;
+  class AuxDetGeo;
   
   
   /// Exception thrown on invalid wire number (e.g. NearestWireID())
@@ -152,6 +153,15 @@ namespace geo{
    PlaneInfoMap_t<raw::ChannelID_t> fFirstChannelInThisPlane;
    PlaneInfoMap_t<raw::ChannelID_t> fFirstChannelInNextPlane;
    
+   /**
+    * @name Internal structure data access
+    *
+    * These functions allow access to the XxxInfoMap_t types based on geometry
+    * element IDs.
+    * They are strictly internal.
+    */
+   /// @{
+   
    /// Returns the specified element of the TPC map
    template <typename T>
    T const& AccessElement
@@ -227,6 +237,7 @@ namespace geo{
      } // GetElementPtr()
    //@}
    
+   ///@} Internal structure data access
    
  };
 }

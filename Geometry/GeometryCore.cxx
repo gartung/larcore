@@ -71,7 +71,7 @@ namespace geo {
   {
     pChannelMap->Initialize(fGeoData);
     fChannelMapAlg = pChannelMap;
-  } // Geometry::ApplyChannelMap()
+  } // GeometryCore::ApplyChannelMap()
 
   //......................................................................
   void GeometryCore::LoadGeometryFile
@@ -346,7 +346,7 @@ namespace geo {
   //......................................................................
   unsigned int GeometryCore::FindAuxDetAtPosition(double const  worldPos[3]) const
   {
-    return fChannelMapAlg->NearestAuxDet(worldPos, fAuxDets);
+    return fChannelMapAlg->NearestAuxDet(worldPos, AuxDets());
   } // GeometryCore::FindAuxDetAtPosition()
   
 
@@ -362,20 +362,20 @@ namespace geo {
   }
 
   //......................................................................
-  void Geometry::FindAuxDetSensitiveAtPosition(double const worldPos[3],
+  void GeometryCore::FindAuxDetSensitiveAtPosition(double const worldPos[3],
 					       size_t     & adg,
 					       size_t     & sv) const
   {
     adg = this->FindAuxDetAtPosition(worldPos);
-    sv  = fChannelMapAlg->NearestSensitiveAuxDet(worldPos, fAuxDets);
+    sv  = fChannelMapAlg->NearestSensitiveAuxDet(worldPos, AuxDets());
 
     return;
-  } // Geometry::FindAuxDetAtPosition()
+  } // GeometryCore::FindAuxDetAtPosition()
   
 
   
   //......................................................................
-  const AuxDetSensitiveGeo& Geometry::PositionToAuxDetSensitive(double const worldLoc[3],
+  const AuxDetSensitiveGeo& GeometryCore::PositionToAuxDetSensitive(double const worldLoc[3],
 								size_t      &ad,
 								size_t      &sv) const
   {    
@@ -1119,7 +1119,7 @@ namespace geo {
     std::array<bool, 3> outputPlane;
     outputPlane.fill(true);
     for (size_t i = 0; i < nPlanes; ++i){
-      angle[i] = TPC(pid1).Plane(i).ThetaZ();
+      angle[i] = TPC.Plane(i).ThetaZ();
       outputPlane[i] = false;
       //We need to subtract pi/2 to make those 'wire coordinate directions'.
       //But what matters is the difference between angles so we don't do that.
@@ -1129,6 +1129,8 @@ namespace geo {
       throw cet::exception("GeometryCore")
         << "ThirdPlaneSlope() can't find which plane to output the slope for!\n";
     }
+    const unsigned int plane1 = pid1.Plane;
+    const unsigned int plane2 = pid2.Plane;
     const unsigned int plane3 = *iOutput;
     double slope3 = 0.001;
     if (std::abs(slope1) > 0.001 && std::abs(slope2) > 0.001) {

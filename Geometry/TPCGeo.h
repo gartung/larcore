@@ -148,18 +148,6 @@ namespace geo {
                                 unsigned int w2=1,
                                 unsigned int p=0)               const;
     
-    /**
-     * @brief Returns whether this TPC contains the specified world coordinate
-     * @param worldLoc the absolute ("world") coordinate (x, y, z)
-     * @param wiggle expansion factor for the range
-     * @return whether the specified coordinate is in this TPC
-     *
-     * If the wiggle is larger than 1, each size of the TPC is expanded by the
-     * wiggle factor.
-     * If the wiggle is less than 1, each size is shrinked.
-     */
-    bool ContainsPosition(double const worldLoc[3], double const wiggle) const;
-    
     /// @}
     
     

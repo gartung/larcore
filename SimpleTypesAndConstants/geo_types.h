@@ -93,9 +93,11 @@ namespace geo {
     
     // comparison operators are out of class
     
+#ifndef __GCCXML__
     /// Human-readable representation of the cryostat ID
     explicit operator std::string() const
       { return details::writeToString(*this); }
+#endif // __GCCXML__
     
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(CryostatID const& other) const
@@ -123,10 +125,12 @@ namespace geo {
     TPCID(ID_t c, ID_t t): CryostatID(c), TPC(t) {}
 
     // comparison operators are out of class
-    
+
+#ifndef __GCCXML__
     /// Human-readable representation of the TPC ID
     explicit operator std::string() const
       { return details::writeToString(*this); }
+#endif // __GCCXML__
     
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(TPCID const& other) const
@@ -157,9 +161,11 @@ namespace geo {
 
     // comparison operators are out of class
     
+#ifndef __GCCXML__
     /// Human-readable representation of the plane ID
     explicit operator std::string() const
       { return details::writeToString(*this); }
+#endif // __GCCXML__
     
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(PlaneID const& other) const
@@ -189,9 +195,11 @@ namespace geo {
     /// plane index p
     WireID(ID_t c, ID_t t, ID_t p, ID_t w): PlaneID(c, t, p), Wire(w) {}
 
+#ifndef __GCCXML__
     /// Human-readable representation of the wire ID
     explicit operator std::string() const
       { return details::writeToString(*this); }
+#endif // __GCCXML__
     
     /// Returns < 0 if this is smaller than tpcid, 0 if equal, > 0 if larger
     int cmp(WireID const& other) const
