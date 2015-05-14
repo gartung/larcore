@@ -1,32 +1,32 @@
 /**
- * @file   GeometryIteratorTestAlg.h
+ * @file   GeometryIteratorLoopTestAlg.h
  * @brief  Tests the correct iteration of the geo::Geometry iterators
  * @author Gianluca Petrillo (petrillo@fnal.gov)
  * @date   May 7th, 2015
  */
 
-#ifndef GEO_GEOMETRYITERATORTESTALG_H
-#define GEO_GEOMETRYITERATORTESTALG_H
+#ifndef GEO_GEOMETRYITERATORLOOPTESTALG_H
+#define GEO_GEOMETRYITERATORLOOPTESTALG_H
 
 
 namespace fhicl {
   class ParameterSet;
 }
 
-namespace geo{
+namespace geo {
   
   class GeometryCore; // forward declaration
   
   //----------------------------------------------------------------------------
   
-  class GeometryIteratorTestAlg {
+  class GeometryIteratorLoopTestAlg {
       public:
     
     /// Constructor: reads configuration, does nothing
-    GeometryIteratorTestAlg(fhicl::ParameterSet const& /* pset */) {}
+    GeometryIteratorLoopTestAlg(fhicl::ParameterSet const& /* pset */) {}
     
     /// Virtual destructor
-    virtual ~GeometryIteratorTestAlg() = default;
+    virtual ~GeometryIteratorLoopTestAlg() = default;
     
     /// Algorithm set up
     virtual void Setup(geo::GeometryCore const& new_geo) { geom = &new_geo; }
@@ -37,10 +37,10 @@ namespace geo{
       protected:
     GeometryCore const* geom = nullptr; ///< pointer to the geometry description
     
-  }; // class GeometryIteratorTestAlg
+  }; // class GeometryIteratorLoopTestAlg
   
 
 } // namespace geo
 
 
-#endif // GEO_GEOMETRYITERATORTESTALG_H
+#endif // GEO_GEOMETRYITERATORLOOPTESTALG_H

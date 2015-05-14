@@ -1,12 +1,12 @@
 /**
- * @file   GeometryIteratorTest_module.cc
+ * @file   GeometryIteratorLoopTest_module.cc
  * @brief  Tests the correct iteration of the geo::Geometry iterators
  * @author Gianluca Petrillo (petrillo@fnal.gov)
  * @date   August 25, 2014
  */
 
 // LArSoft includes
-#include "test/Geometry/GeometryIteratorTestAlg.h"
+#include "test/Geometry/GeometryIteratorLoopTestAlg.h"
 #include "Geometry/Geometry.h"
 
 // Framework includes
@@ -28,20 +28,20 @@ namespace geo {
    * Configuration parameters
    * =========================
    * 
-   * See GeometryIteratorTestAlg.
+   * See GeometryIteratorLoopTestAlg.
    */
-  class GeometryIteratorTest: public art::EDAnalyzer {
+  class GeometryIteratorLoopTest: public art::EDAnalyzer {
       public:
-    explicit GeometryIteratorTest(fhicl::ParameterSet const& pset);
+    explicit GeometryIteratorLoopTest(fhicl::ParameterSet const& pset);
     
     virtual void analyze(art::Event const&) {}
     virtual void beginJob();
     
       private:
     
-    std::unique_ptr<geo::GeometryIteratorTestAlg> tester; ///< the test algorithm
+    std::unique_ptr<geo::GeometryIteratorLoopTestAlg> tester; ///< the test algorithm
     
-  }; // class GeometryIteratorTest
+  }; // class GeometryIteratorLoopTest
 } // namespace geo
 
 
@@ -49,15 +49,15 @@ namespace geo {
 namespace geo {
   
   //......................................................................
-  GeometryIteratorTest::GeometryIteratorTest(fhicl::ParameterSet const& pset)
+  GeometryIteratorLoopTest::GeometryIteratorLoopTest(fhicl::ParameterSet const& pset)
     : EDAnalyzer(pset)
-    , tester(new geo::GeometryIteratorTestAlg(pset))
+    , tester(new geo::GeometryIteratorLoopTestAlg(pset))
   {
-  } // GeometryIteratorTest::GeometryIteratorTest()
+  } // GeometryIteratorLoopTest::GeometryIteratorLoopTest()
   
   
   //......................................................................
-  void GeometryIteratorTest::beginJob()
+  void GeometryIteratorLoopTest::beginJob()
   {
     art::ServiceHandle<geo::Geometry> geom;
     
@@ -71,6 +71,6 @@ namespace geo {
   
   
   //......................................................................
-  DEFINE_ART_MODULE(GeometryIteratorTest)
+  DEFINE_ART_MODULE(GeometryIteratorLoopTest)
   
 } // namespace geo
