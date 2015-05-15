@@ -2,7 +2,7 @@ cet_enable_asserts()
 
 # test libraries
 art_make_library( LIBRARY_NAME GeometryTestLib
-                  SOURCE GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx
+                  SOURCE GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
                   LIBRARIES Geometry
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
@@ -12,7 +12,7 @@ art_make_library( LIBRARY_NAME GeometryTestLib
 
 
 # test modules
-simple_plugin ( GeometryIteratorTest "module"
+simple_plugin ( GeometryIteratorLoopTest "module"
                     Geometry
                     GeometryTestLib
                     Geometry_service
@@ -43,6 +43,7 @@ simple_plugin ( GeometryTest "module"
 cet_test(geometry_iterator_test
   SOURCES geometry_iterator_test.cxx
   LIBRARIES Geometry
+            GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}

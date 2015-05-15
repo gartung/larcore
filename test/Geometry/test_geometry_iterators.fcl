@@ -56,7 +56,7 @@ physics: {
 
   analyzers: {
     geoitertest: {
-      module_type: "GeometryIteratorTest"
+      module_type: "GeometryIteratorLoopTest"
     }
   }
 

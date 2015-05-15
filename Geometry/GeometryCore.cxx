@@ -323,7 +323,7 @@ namespace geo {
   const CryostatGeo& GeometryCore::PositionToCryostat
     (double const  worldLoc[3], geo::CryostatID& cid) const
   {
-    geo::CryostatID::ID_t cstat = FindCryostatAtPosition(worldLoc);
+    geo::CryostatID::CryostatID_t cstat = FindCryostatAtPosition(worldLoc);
     
     if(cstat == geo::CryostatID::InvalidID)
       throw cet::exception("GeometryCore") << "Can't find Cryostat for position (" 
@@ -516,8 +516,10 @@ namespace geo {
   //......................................................................
   // This method returns the distance between the specified planes.
   // p1 < p2
-  double GeometryCore::PlanePitch
-    (geo::TPCID const& tpcid, geo::PlaneID::ID_t p1, geo::PlaneID::ID_t p2) const
+  double GeometryCore::PlanePitch(
+    geo::TPCID const& tpcid,
+    geo::PlaneID::PlaneID_t p1, geo::PlaneID::PlaneID_t p2
+    ) const
   {
     return TPC(tpcid).PlanePitch(p1, p2);
   }

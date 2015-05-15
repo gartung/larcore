@@ -111,15 +111,13 @@ void test_CryostatID_directConstructor() {
   
   std::cout << "Testing cryostat ID constructed with an integer" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::CryostatID cid(1);
   
   // an explicitly constructed ID is valid:
   TestIDvalidity(cid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(cid.Cryostat, ID_t(1));
+  BOOST_CHECK_EQUAL(cid.Cryostat, geo::CryostatID::CryostatID_t(1));
   
   // test comparison operators
   // (exercise copy constructor too)
@@ -135,7 +133,7 @@ void test_CryostatID_directConstructor() {
   TestIDvalidity(cid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(first_cid.Cryostat, ID_t(0));
+  BOOST_CHECK_EQUAL(first_cid.Cryostat, geo::CryostatID::CryostatID_t(0));
   
 } // test_CryostatID_directConstructor()
 
@@ -157,8 +155,6 @@ void test_TPCID_nestedConstructor() {
   
   std::cout << "Testing ID-constructed TPC ID" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::CryostatID cid(1);
   geo::TPCID tid(cid, 15);
   
@@ -166,8 +162,8 @@ void test_TPCID_nestedConstructor() {
   TestIDvalidity(tid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(tid.Cryostat, ID_t(1));
-  BOOST_CHECK_EQUAL(tid.TPC, ID_t(15));
+  BOOST_CHECK_EQUAL(tid.Cryostat, geo::CryostatID::CryostatID_t( 1));
+  BOOST_CHECK_EQUAL(tid.TPC,                geo::TPCID::TPCID_t(15));
   
   // test comparison operators (exercise copy constructor too)
   // - with TPC ID
@@ -183,8 +179,6 @@ void test_TPCID_nestedConstructor() {
 void test_TPCID_directConstructor() {
   
   std::cout << "Testing TPC ID constructed with indices" << std::endl;
-  
-  using ID_t = geo::CryostatID::ID_t;
   
   geo::TPCID tid(1, 15);
   
@@ -208,8 +202,8 @@ void test_TPCID_directConstructor() {
   TestIDvalidity(first_tid, true);
   
   // - check the ID value
-  BOOST_CHECK_EQUAL(first_tid.Cryostat, ID_t(0));
-  BOOST_CHECK_EQUAL(first_tid.TPC, ID_t(0));
+  BOOST_CHECK_EQUAL(first_tid.Cryostat, geo::CryostatID::CryostatID_t(0));
+  BOOST_CHECK_EQUAL(first_tid.TPC,                geo::TPCID::TPCID_t(0));
   
   
 } // test_TPCID_directConstructor()
@@ -232,8 +226,6 @@ void test_PlaneID_nestedConstructor() {
   
   std::cout << "Testing ID-constructed plane ID" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::TPCID tid(1, 15);
   geo::PlaneID pid(tid, 32);
   
@@ -241,9 +233,9 @@ void test_PlaneID_nestedConstructor() {
   TestIDvalidity(pid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(pid.Cryostat, ID_t( 1));
-  BOOST_CHECK_EQUAL(pid.TPC,      ID_t(15));
-  BOOST_CHECK_EQUAL(pid.Plane,    ID_t(32));
+  BOOST_CHECK_EQUAL(pid.Cryostat, geo::CryostatID::CryostatID_t( 1));
+  BOOST_CHECK_EQUAL(pid.TPC,                geo::TPCID::TPCID_t(15));
+  BOOST_CHECK_EQUAL(pid.Plane,          geo::PlaneID::PlaneID_t(32));
   
   // test comparison operators (exercise copy constructor too)
   std::cout << "Testing comparison with plane ID" << std::endl;
@@ -259,17 +251,15 @@ void test_PlaneID_directConstructor() {
   
   std::cout << "Testing plane ID constructed with indices" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::PlaneID pid(1, 15, 32);
   
   // an explicitly constructed ID is valid:
   TestIDvalidity(pid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(pid.Cryostat, ID_t( 1));
-  BOOST_CHECK_EQUAL(pid.TPC,      ID_t(15));
-  BOOST_CHECK_EQUAL(pid.Plane,    ID_t(32));
+  BOOST_CHECK_EQUAL(pid.Cryostat, geo::CryostatID::CryostatID_t( 1));
+  BOOST_CHECK_EQUAL(pid.TPC,                geo::TPCID::TPCID_t(15));
+  BOOST_CHECK_EQUAL(pid.Plane,          geo::PlaneID::PlaneID_t(32));
   
   std::cout << "Testing comparison with same TPC ID" << std::endl;
   
@@ -302,9 +292,9 @@ void test_PlaneID_directConstructor() {
   TestIDvalidity(first_pid, true);
   
   // - check the ID value
-  BOOST_CHECK_EQUAL(first_pid.Cryostat, ID_t(0));
-  BOOST_CHECK_EQUAL(first_pid.TPC,      ID_t(0));
-  BOOST_CHECK_EQUAL(first_pid.Plane,    ID_t(0));
+  BOOST_CHECK_EQUAL(first_pid.Cryostat, geo::CryostatID::CryostatID_t(0));
+  BOOST_CHECK_EQUAL(first_pid.TPC,                geo::TPCID::TPCID_t(0));
+  BOOST_CHECK_EQUAL(first_pid.Plane,          geo::PlaneID::PlaneID_t(0));
   
 } // test_PlaneID_directConstructor()
 
@@ -326,8 +316,6 @@ void test_WireID_nestedConstructor() {
   
   std::cout << "Testing ID-constructed wire ID" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::PlaneID pid(1, 15, 32);
   geo::WireID wid(pid, 27);
   
@@ -335,10 +323,10 @@ void test_WireID_nestedConstructor() {
   TestIDvalidity(wid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(wid.Cryostat, ID_t( 1));
-  BOOST_CHECK_EQUAL(wid.TPC,      ID_t(15));
-  BOOST_CHECK_EQUAL(wid.Plane,    ID_t(32));
-  BOOST_CHECK_EQUAL(wid.Wire,     ID_t(27));
+  BOOST_CHECK_EQUAL(wid.Cryostat, geo::CryostatID::CryostatID_t( 1));
+  BOOST_CHECK_EQUAL(wid.TPC,                geo::TPCID::TPCID_t(15));
+  BOOST_CHECK_EQUAL(wid.Plane,          geo::PlaneID::PlaneID_t(32));
+  BOOST_CHECK_EQUAL(wid.Wire,             geo::WireID::WireID_t(27));
   
   // test comparison operators (exercise copy constructor too)
   // - with TPC ID
@@ -355,18 +343,16 @@ void test_WireID_directConstructor() {
   
   std::cout << "Testing wire ID constructed with indices" << std::endl;
   
-  using ID_t = geo::CryostatID::ID_t;
-  
   geo::WireID wid(1, 15, 32, 27);
   
   // an explicitly constructed ID is valid:
   TestIDvalidity(wid, true);
   
   // check the ID value
-  BOOST_CHECK_EQUAL(wid.Cryostat, ID_t( 1));
-  BOOST_CHECK_EQUAL(wid.TPC,      ID_t(15));
-  BOOST_CHECK_EQUAL(wid.Plane,    ID_t(32));
-  BOOST_CHECK_EQUAL(wid.Wire,     ID_t(27));
+  BOOST_CHECK_EQUAL(wid.Cryostat, geo::CryostatID::CryostatID_t( 1));
+  BOOST_CHECK_EQUAL(wid.TPC,                geo::TPCID::TPCID_t(15));
+  BOOST_CHECK_EQUAL(wid.Plane,          geo::PlaneID::PlaneID_t(32));
+  BOOST_CHECK_EQUAL(wid.Wire,             geo::WireID::WireID_t(27));
   
   std::cout << "Testing comparison with same TPC ID" << std::endl;
   
@@ -409,10 +395,10 @@ void test_WireID_directConstructor() {
   TestIDvalidity(first_wid, true);
   
   // - check the ID value
-  BOOST_CHECK_EQUAL(first_wid.Cryostat, ID_t(0));
-  BOOST_CHECK_EQUAL(first_wid.TPC,      ID_t(0));
-  BOOST_CHECK_EQUAL(first_wid.Plane,    ID_t(0));
-  BOOST_CHECK_EQUAL(first_wid.Wire,     ID_t(0));
+  BOOST_CHECK_EQUAL(first_wid.Cryostat, geo::CryostatID::CryostatID_t(0));
+  BOOST_CHECK_EQUAL(first_wid.TPC,                geo::TPCID::TPCID_t(0));
+  BOOST_CHECK_EQUAL(first_wid.Plane,          geo::PlaneID::PlaneID_t(0));
+  BOOST_CHECK_EQUAL(first_wid.Wire,             geo::WireID::WireID_t(0));
   
 } // test_WireID_directConstructor()
 

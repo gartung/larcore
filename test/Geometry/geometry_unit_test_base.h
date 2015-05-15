@@ -36,11 +36,12 @@
 #include <iostream> // for output before message facility is set up
 #include <string>
 #include <memory> // std::unique_ptr<>
+#include <map>
 
 
 namespace testing {
   
-  /**
+  /** **************************************************************************
    * @brief Class holding a configuration for a fixture
    * @tparam CHANNELMAP the class used for channel mapping
    * @see GeometryTesterFixture
@@ -146,6 +147,145 @@ namespace testing {
   
   
   
+  /** **************************************************************************
+   * @brief Utility class providing singleton objects to the derived classes
+   * @tparam RES the type of object (include constantness if needed)
+   * 
+   * The object is expected to be shared.
+   */
+  template <typename RES>
+  class TestSharedGlobalResource {
+     using Resource_t = RES;
+     
+       public:
+     using ResourcePtr_t = std::shared_ptr<Resource_t>;
+     
+     /// @name Add and share resources
+     /// @{
+     
+     /// Adds a shared resource to the resource registry
+     static void AddSharedResource(std::string res_name, ResourcePtr_t res_ptr)
+       { Resources.emplace(res_name, res_ptr); }
+     
+     /// Adds a shared resource to the resource registry (empty name)
+     static void AddDefaultSharedResource(ResourcePtr_t res_ptr)
+       { AddSharedResource(std::string(), res_ptr); }
+     
+     /// Registers a shared resource only if none exists yet
+     template <typename... Args>
+     static ResourcePtr_t ProvideSharedResource
+       (std::string res_name, ResourcePtr_t res_ptr)
+       {
+         if (hasResource(res_name)) return ResourcePtr_t();
+         AddSharedResource(res_name, res_ptr);
+         return res_ptr;
+       }
+     
+     /// Creates a shared resource as default only if none exists yet
+     template <typename... Args>
+     static ResourcePtr_t ProvideDefaultSharedResource(ResourcePtr_t res_ptr)
+       { return ProvideSharedResource(std::string(), res_ptr); }
+     
+     //@{
+     /// Adds a shared resource only if it is old_res_ptr
+     static bool ReplaceSharedResource(
+       std::string res_name,
+       Resource_t const* old_res_ptr, ResourcePtr_t res_ptr
+       )
+       {
+         ResourcePtr_t current_res_ptr = ShareResource();
+         if (current_res_ptr.get() != old_res_ptr) return false;
+         AddSharedResource(res_name, res_ptr);
+         return true;
+       }
+     static bool ReplaceSharedResource
+       (std::string res_name, ResourcePtr_t old_res_ptr, ResourcePtr_t res_ptr)
+       { return ReplaceSharedResource(res_name, old_res_ptr.get(), res_ptr); }
+     //@}
+     
+     //@{
+     /// Adds a shared resource as default resource only if it is old_res_ptr
+     static bool ReplaceDefaultSharedResource
+       (Resource_t const* old_res_ptr, ResourcePtr_t res_ptr)
+       { return ReplaceSharedResource(std::string(), old_res_ptr, res_ptr); }
+     static bool ReplaceDefaultSharedResource
+       (ResourcePtr_t old_res_ptr, ResourcePtr_t res_ptr)
+       { return ReplaceSharedResource(std::string(), old_res_ptr, res_ptr); }
+     //@}
+     
+     /// Constructs and registers a new resource with a specified name
+     template <typename... Args>
+     static ResourcePtr_t CreateResource(std::string res_name, Args&&... args)
+       {
+         ResourcePtr_t res_ptr(new Resource_t(std::forward<Args>(args)...));
+         AddSharedResource(res_name, res_ptr);
+         return res_ptr;
+       }
+     
+     /// Constructs and registers a new resource with no name
+     template <typename... Args>
+     static void CreateDefaultResource(Args&&... args)
+       { CreateResource(std::string(), std::forward<Args>(args)...); }
+     
+     
+     /// Creates a shared resource only if none exists yet
+     template <typename... Args>
+     static ResourcePtr_t ProposeSharedResource
+       (std::string res_name, Args&&... args)
+       {
+         return hasResource(res_name)?
+           ResourcePtr_t():
+           CreateResource(res_name, std::forward<Args>(args)...);
+       }
+     
+     /// Creates a shared resource as default only if none exists yet
+     template <typename... Args>
+     static ResourcePtr_t ProposeDefaultSharedResource(Args&&... args)
+       {
+         return ProposeSharedResource
+           (std::string(), std::forward<Args>(args)...);
+       }
+     
+     /// @}
+     
+     /// @name Resource access
+     /// @{
+     
+     /// Returns whether a resource exists
+     /// @throws std::out_of_range if not available
+     static bool hasResource(std::string name = "")
+       {
+         auto iRes = Resources.find(name);
+         return (iRes != Resources.end()) && bool(iRes->second);
+       }
+     
+     /// Retrieves the specified resource for sharing (nullptr if none)
+     static ResourcePtr_t ShareResource(std::string name = "")
+       {
+         auto iRes = Resources.find(name);
+         return (iRes == Resources.end())? ResourcePtr_t(): iRes->second;
+       }
+     
+     /// Retrieves the specified resource, or throws if not available
+     static Resource_t& Resource(std::string name = "")
+       { return *(Resources.at(name).get()); }
+     
+     /// @}
+     
+     /// Destroys the specified resource (does nothing if no such resource)
+     static Resource_t& DestroyResource(std::string name = "")
+       { Resources.erase(name); }
+     
+       private:
+     static std::map<std::string, ResourcePtr_t> Resources;
+     
+  }; // class TestSharedGlobalResource<>
+  
+  
+  template <typename RES>
+  std::map<std::string, typename TestSharedGlobalResource<RES>::ResourcePtr_t>
+  TestSharedGlobalResource<RES>::Resources;
+  
   
   
   /** **************************************************************************
@@ -196,7 +336,12 @@ namespace testing {
    */
   template <typename ConfigurerClass>
   class GeometryTesterFixture {
+    
+    /// this implements the singleton interface
+    using GeoResources_t = TestSharedGlobalResource<geo::GeometryCore const>;
+    
       public:
+    using SharedGeoPtr_t = GeoResources_t::ResourcePtr_t;
     
     /**
      * @brief Constructor: sets everything up and declares the test started
@@ -204,7 +349,7 @@ namespace testing {
      * The configuration is from a default-constructed ConfigurerClass.
      * This is suitable for use as Boost unit test fixture.
      */
-    GeometryTesterFixture() { Setup(); }
+    GeometryTesterFixture(bool bSetup = true) { if (bSetup) Setup(); }
     
     //@{
     /**
@@ -219,20 +364,23 @@ namespace testing {
      * 
      * In the r-value-reference constructor, the configurer is moved.
      */
-    GeometryTesterFixture(ConfigurerClass const& cfg_obj):
+    GeometryTesterFixture(ConfigurerClass const& cfg_obj, bool bSetup = true):
       Configurer(cfg_obj)
-      { Setup(); }
-    GeometryTesterFixture(ConfigurerClass&& cfg_obj):
+      { if (bSetup) Setup(); }
+    GeometryTesterFixture(ConfigurerClass&& cfg_obj, bool bSetup = true):
       Configurer(cfg_obj)
-      { Setup(); }
+      { if (bSetup) Setup(); }
     //@}
     
     /// Destructor: closing remarks
     virtual ~GeometryTesterFixture();
     
     
+    //@{
     /// Returns a pointer to the geometry
     geo::GeometryCore const* Geometry() const { return geom.get(); }
+    SharedGeoPtr_t SharedGeometry() const { return geom; }
+    //@}
     
     /// Returns the full configuration
     fhicl::ParameterSet const& Configuration() const { return geometry_cfg; }
@@ -241,39 +389,21 @@ namespace testing {
     fhicl::ParameterSet const& TesterConfiguration() const
       { return tester_cfg; }
     
-    /// Returns the current global geometry instance (may be nullptr)
+    
+    /// Returns the current global geometry instance
+    /// @throws std::out_of_range if not present
     static geo::GeometryCore const* GlobalGeometry()
-      { return global_geometry.get(); }
+      { return &GeoResources_t::Resource(); }
+    
+    /// Returns the current global geometry instance (may be nullptr if none)
+    static SharedGeoPtr_t SharedGlobalGeometry()
+      { return GeoResources_t::ShareResource(); }
     
     
       protected:
     
-    typedef struct {} DoNotSetUp_t;
-    
-    /**
-     * @brief Constructor: does not perform setup
-     * 
-     * This constructor is thought for derived classes.
-     * A derived class will need to use this constructor for the base class,
-     * and then call explicitly the setup in the constructor body.
-     * 
-     * It's easy to misuse polymorphism in this situation, so be very sure you
-     * understand this class and its context of use.
-     */
-    GeometryTesterFixture(DoNotSetUp_t) {}
-    
-    /// A handy constant for specifying the special constructor
-    static DoNotSetUp_t const no_setup;
-    
-    
-      private:
-    //
-    // The non-public interface is set to private
-    // because Boost unit test fixtures derive the environment from the
-    // fixture itself, and they would gain access to all the implementation.
-    // This admittedly makes harder to derive fixtures from this one.
-    //
     using ChannelMapClass = typename ConfigurerClass::ChannelMapClass;
+    
     
     /// The complete initialization, ran at construction by default
     virtual void Setup();
@@ -293,19 +423,24 @@ namespace testing {
     //@}
     
     /// Creates a new geometry
-    virtual geo::GeometryCore const* CreateNewGeometry() const;
+    virtual SharedGeoPtr_t CreateNewGeometry() const;
     
-    /// Getw ownership of the specified geometry and registers it as global
-    void RegisterGeometry(geo::GeometryCore const* new_geom);
+    //@{
+    /// Get ownership of the specified geometry and registers it as global
+    virtual void RegisterGeometry(SharedGeoPtr_t new_geom);
+    virtual void RegisterGeometry(geo::GeometryCore const* new_geom)
+      { RegisterGeometry(SharedGeoPtr_t(new_geom)); }
+    //@}
     
     /// Sets up the geometry (creates and registers it)
-    void SetupGeometry();
+    virtual void SetupGeometry();
     
     /// Fills the test configuration from file or from default
     void ExtractTestConfiguration();
     
     /// Creates a full configuration for the test
     virtual fhicl::ParameterSet DefaultTestConfiguration() const;
+    
     
     /**
      * @brief Fills the test configuration from file or from default
@@ -317,29 +452,17 @@ namespace testing {
     /// Parses from file and returns a FHiCL data structure
     static fhicl::ParameterSet ParseConfiguration(std::string config_path);
     
-    /// A global instance of geometry
-    static std::shared_ptr<const geo::GeometryCore> global_geometry;
-    
       private:
     
     ConfigurerClass Configurer; ///< instance of the configurer
     
-    std::shared_ptr<const geo::GeometryCore> geom; ///< pointer to the geometry
+    SharedGeoPtr_t geom; ///< pointer to the geometry
     
     fhicl::ParameterSet geometry_cfg; ///< full configuration of the test
     fhicl::ParameterSet tester_cfg; ///< configuration of the test
     
   }; // class GeometryTesterFixture<>
   
-  
-  // we are abusing templates here... this should be "extern"
-  template <typename ConfigurerClass>
-  std::shared_ptr<const geo::GeometryCore>
-  GeometryTesterFixture<ConfigurerClass>::global_geometry = nullptr;
-  
-  template <typename ConfigurerClass>
-  typename GeometryTesterFixture<ConfigurerClass>::DoNotSetUp_t const
-    GeometryTesterFixture<ConfigurerClass>::no_setup;
   
   
   //****************************************************************************
@@ -357,8 +480,7 @@ namespace testing {
    */
   template <typename ConfigurerClass>
   fhicl::ParameterSet
-  GeometryTesterFixture<ConfigurerClass>::DefaultConfiguration() const
-  {
+  GeometryTesterFixture<ConfigurerClass>::DefaultConfiguration() const {
     // get the default configuration from the configurer
     const std::string GeometryConfigurationString
       = Configurer.DefaultGeometryConfiguration();
@@ -462,7 +584,7 @@ namespace testing {
    * 
    */
   template <typename ConfigurerClass>
-  geo::GeometryCore const*
+  typename GeometryTesterFixture<ConfigurerClass>::SharedGeoPtr_t
   GeometryTesterFixture<ConfigurerClass>::CreateNewGeometry() const
   {
     
@@ -513,23 +635,23 @@ namespace testing {
     // (we give up ours at the end of this method)
     new_geom->ApplyChannelMap(pChannelMap);
     
-    return new_geom;
+    return SharedGeoPtr_t(new_geom);
   } // GeometryTesterFixture<>::CreateNewGeometry()
   
   
   template <typename ConfigurerClass>
   void GeometryTesterFixture<ConfigurerClass>::RegisterGeometry
-    (geo::GeometryCore const* new_geom)
+    (SharedGeoPtr_t new_geom)
   {
-
     // update the current geometry, that becomes owner;
     // also update the global one if it happens to be already our previous
     // (in this case, it becomes co-owner)
-    const bool bUpdateGlobal = !global_geometry || (global_geometry == geom);
-    geom.reset(new_geom);
-    if (bUpdateGlobal) global_geometry = geom;
-    
-  } // GeometryTesterFixture<>::SetupGeometry()
+    SharedGeoPtr_t my_old_geom = geom;
+    geom = new_geom;
+    // if the global geometry is already the one we register, don't bother
+    if (SharedGlobalGeometry() != new_geom)
+      GeoResources_t::ReplaceDefaultSharedResource(my_old_geom, new_geom);
+  } // GeometryTesterFixture<>::RegisterGeometry()
   
   
   
@@ -615,6 +737,57 @@ namespace testing {
     mf::LogInfo("Test") << Configurer.ApplicationName() << " setup complete.";
     
   } // GeometryTesterFixture<>::Setup()
+  
+  
+  
+  /** **************************************************************************
+   * @brief Environment for a shared geometry test
+   * @tparam ConfigurerClass a class providing compile-time configuration
+   * 
+   * This class is derived from GeometryTesterFixture.
+   * 
+   * It redefines the way the geometry is created: a new instance will reuse
+   * the default geometry if it exists already.
+   * This is suited for Boost unit test fixtures for multiple test suites,
+   * when the caller does not want to reinitialize the geometry on each suite,
+   * accepting that there will always be only one and the same geometry.
+   * 
+   * The environment provides just everything the base class does;
+   * the requirements are also the same as for the base class.
+   */
+  template <typename ConfigurerClass>
+  class SharedGeometryTesterFixture:
+    public GeometryTesterFixture<ConfigurerClass>
+  {
+    using Base_t = GeometryTesterFixture<ConfigurerClass>;
+    using SharedGeoPtr_t = typename Base_t::SharedGeoPtr_t;
+    
+      public:
+    
+    //@{
+    /// Reimplement the constructors to delay Setup(),
+    /// so that it's aware of the overridden virtual functions
+    SharedGeometryTesterFixture(bool bSetup = true): Base_t(false)
+      { if (bSetup) Base_t::Setup(); }
+    SharedGeometryTesterFixture
+      (ConfigurerClass const& cfg_obj, bool bSetup = true):
+      Base_t(cfg_obj, false)
+      { if (bSetup) Base_t::Setup(); }
+    SharedGeometryTesterFixture(ConfigurerClass&& cfg_obj, bool bSetup = true):
+      Base_t(cfg_obj, false)
+      { if (bSetup) Base_t::Setup(); }
+    //@}
+    
+    
+    /// Creates a new geometry
+    virtual SharedGeoPtr_t CreateNewGeometry() const override
+      {
+        SharedGeoPtr_t geo_ptr = Base_t::SharedGlobalGeometry();
+        return geo_ptr? geo_ptr: Base_t::CreateNewGeometry();
+      }
+    
+  }; // class SharedGeometryTesterFixture<>
+  
   
   
 } // namespace testing

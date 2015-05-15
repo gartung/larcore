@@ -240,7 +240,7 @@ namespace geo{
         << wireNumber << " (capped from " << NearestWireNumber << ")\n";
     }
 
-    return geo::WireID(planeID, (geo::WireID::ID_t) NearestWireNumber);
+    return geo::WireID(planeID, (geo::WireID::WireID_t) NearestWireNumber);
   }
   
   //----------------------------------------------------------------------------

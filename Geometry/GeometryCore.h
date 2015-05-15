@@ -219,7 +219,7 @@ namespace geo {
       
         protected:
       using GeoID_t = GEOID; ///< type of the actual ID stored in the iterator
-      using ID_t = typename GeoID_t::ID_t;
+      using ID_t = typename LocalID_t::CryostatID_t;
       
       /// Constructor: does not set the current ID
       cryostat_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
@@ -300,7 +300,6 @@ namespace geo {
       using iterator = TPC_iterator_base<GEOID>; ///< type of this iterator
       
       // import all the useful types from the base templated class
-      using typename upper_iterator::ID_t;
       using typename upper_iterator::UndefinedPos_t;
       using typename upper_iterator::BeginPos_t;
       using typename upper_iterator::EndPos_t;
@@ -363,6 +362,8 @@ namespace geo {
       ElementPtr_t get() const;
       
         protected:
+      
+      using ID_t = typename LocalID_t::TPCID_t; ///< specific type for TPC ID
       
       /// Constructor: position undefined (meaning undefined local limits too)
       TPC_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
@@ -433,7 +434,6 @@ namespace geo {
       using iterator = plane_iterator_base<GEOID>; ///< type of this iterator
       
       // import all the useful types from the base templated class
-      using typename upper_iterator::ID_t;
       using typename upper_iterator::UndefinedPos_t;
       using typename upper_iterator::BeginPos_t;
       using typename upper_iterator::EndPos_t;
@@ -496,6 +496,8 @@ namespace geo {
       ElementPtr_t get() const;
       
         protected:
+      
+      using ID_t = typename LocalID_t::PlaneID_t; ///< specific type for plane ID
       
       /// Constructor: position undefined (meaning undefined local limits too)
       plane_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
@@ -566,7 +568,6 @@ namespace geo {
       using iterator = wire_iterator_base<GEOID>; ///< type of this iterator
       
       // import all the useful types from the base templated class
-      using typename upper_iterator::ID_t;
       using typename upper_iterator::UndefinedPos_t;
       using typename upper_iterator::BeginPos_t;
       using typename upper_iterator::EndPos_t;
@@ -629,6 +630,8 @@ namespace geo {
       ElementPtr_t get() const;
       
         protected:
+      
+      using ID_t = typename LocalID_t::WireID_t; ///< specific type for wire ID
       
       /// Constructor: position undefined (meaning undefined local limits too)
       wire_iterator_base(geo::GeometryCore const* geom, UndefinedPos_t):
@@ -1801,7 +1804,7 @@ namespace geo {
      */
     double PlanePitch(
       geo::TPCID const& tpcid,
-      geo::PlaneID::ID_t p1 = 0, geo::PlaneID::ID_t p2 = 1
+      geo::PlaneID::PlaneID_t p1 = 0, geo::PlaneID::PlaneID_t p2 = 1
       )
       const;
     double PlanePitch(geo::PlaneID const& pid1, geo::PlaneID const& pid2) const;
@@ -2359,8 +2362,8 @@ namespace geo {
      */
     double ThirdPlaneSlope(geo::PlaneID const& pid1, double slope1, 
                            geo::PlaneID const& pid2, double slope2) const;
-    double ThirdPlaneSlope(geo::PlaneID::ID_t plane1, double slope1, 
-                           geo::PlaneID::ID_t plane2, double slope2,
+    double ThirdPlaneSlope(geo::PlaneID::PlaneID_t plane1, double slope1, 
+                           geo::PlaneID::PlaneID_t plane2, double slope2,
                            geo::TPCID const& tpcid) const
       {
         return ThirdPlaneSlope(

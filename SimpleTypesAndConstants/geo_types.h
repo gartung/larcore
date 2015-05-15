@@ -65,25 +65,25 @@ namespace geo {
 
   /// The data type to uniquely identify a cryostat
   struct CryostatID {
-    typedef unsigned int ID_t; ///< type for the ID number
+    typedef unsigned int CryostatID_t; ///< type for the ID number
     
-    bool isValid;  ///< whether this ID points to a valid element
-    ID_t Cryostat; ///< index of cryostat
+    bool         isValid;  ///< whether this ID points to a valid element
+    CryostatID_t Cryostat; ///< index of cryostat
     
     // not constexpr because we would need an implementation file to define the
     // constant (and because ROOT 5 does not understand that)
-  //  static constexpr ID_t InvalidID = std::numeric_limits<ID_t>::max();
+  //  static constexpr CryostatID_t InvalidID = std::numeric_limits<CryostatID_t>::max();
     /// Special code for an invalid ID
-    static const ID_t InvalidID = UINT_MAX;
+    static const CryostatID_t InvalidID = UINT_MAX;
     
     /// Default constructor: an invalid cryostat
     CryostatID(): isValid(false), Cryostat(InvalidID) {}
     
     /// Constructor: valid ID of cryostat with index c
-    explicit CryostatID(unsigned int c): isValid(true), Cryostat(c) {}
+    explicit CryostatID(CryostatID_t c): isValid(true), Cryostat(c) {}
     
     /// Constructor: valid ID of cryostat with index c
-    CryostatID(unsigned int c, bool valid): isValid(valid), Cryostat(c) {}
+    CryostatID(CryostatID_t c, bool valid): isValid(valid), Cryostat(c) {}
     
     /// Returns true if the ID is valid
     operator bool() const { return isValid; }
@@ -103,8 +103,12 @@ namespace geo {
     int cmp(CryostatID const& other) const
       { return ThreeWayComparison(Cryostat, other.Cryostat); }
     
+    /// Return the value of the invalid ID as a r-value
+    static CryostatID_t getInvalidID() { return CryostatID::InvalidID; }
+    
     /// Returns < 0 if a < b, 0 if a == b, > 0 if a > b
-    static int ThreeWayComparison(ID_t a, ID_t b)
+    template <typename T>
+    static int ThreeWayComparison(T a, T b)
       { return (a == b)? 0: ((a < b)? -1: +1); }
     
   }; // struct CryostatID
@@ -112,17 +116,24 @@ namespace geo {
   
   /// The data type to uniquely identify a TPC
   struct TPCID: public CryostatID {
+    typedef unsigned int TPCID_t; ///< type for the ID number
     
-    ID_t TPC; ///< index of the TPC within its cryostat
+    // not constexpr because we would need an implementation file to define the
+    // constant (and because ROOT 5 does not understand that)
+  //  static constexpr TPCID_t InvalidID = std::numeric_limits<TPCID_t>::max();
+    /// Special code for an invalid ID
+    static const TPCID_t InvalidID = UINT_MAX;
+    
+    TPCID_t TPC; ///< index of the TPC within its cryostat
     
     /// Default constructor: an invalid TPC ID
     TPCID(): CryostatID(), TPC(InvalidID) {}
 
     /// Constructor: TPC with index t in the cryostat identified by cryoid
-    TPCID(CryostatID const& cryoid, ID_t t): CryostatID(cryoid), TPC(t) {}
+    TPCID(CryostatID const& cryoid, TPCID_t t): CryostatID(cryoid), TPC(t) {}
 
     /// Constructor: TPC with index t in the cryostat index c
-    TPCID(ID_t c, ID_t t): CryostatID(c), TPC(t) {}
+    TPCID(CryostatID_t c, TPCID_t t): CryostatID(c), TPC(t) {}
 
     // comparison operators are out of class
 
@@ -142,22 +153,32 @@ namespace geo {
           return cmp_res;
       } // cmp()
     
+    /// Return the value of the invalid TPC ID as a r-value
+    static TPCID_t getInvalidID() { return TPCID::InvalidID; }
+    
   }; // struct TPCID
   
   
   /// The data type to uniquely identify a Plane
   struct PlaneID: public TPCID {
+    typedef unsigned int PlaneID_t; ///< type for the ID number
     
-    ID_t Plane; ///< index of the plane within its TPC
+    // not constexpr because we would need an implementation file to define the
+    // constant (and because ROOT 5 does not understand that)
+  //  static constexpr PlaneID_t InvalidID = std::numeric_limits<PlaneID_t>::max();
+    /// Special code for an invalid ID
+    static const PlaneID_t InvalidID = UINT_MAX;
+    
+    PlaneID_t Plane; ///< index of the plane within its TPC
     
     /// Default constructor: an invalid plane ID
     PlaneID(): TPCID(), Plane(InvalidID) {}
 
     /// Constructor: plane with index p in the TPC identified by tpcid
-    PlaneID(TPCID const& tpcid, ID_t p): TPCID(tpcid), Plane(p) {}
+    PlaneID(TPCID const& tpcid, PlaneID_t p): TPCID(tpcid), Plane(p) {}
 
     /// Constructor: plane with index p in the cryostat index c, TPC index t
-    PlaneID(ID_t c, ID_t t, ID_t p): TPCID(c, t), Plane(p) {}
+    PlaneID(CryostatID_t c, TPCID_t t, PlaneID_t p): TPCID(c, t), Plane(p) {}
 
     // comparison operators are out of class
     
@@ -177,23 +198,34 @@ namespace geo {
           return cmp_res;
       } // cmp()
     
+    /// Return the value of the invalid plane ID as a r-value
+    static PlaneID_t getInvalidID() { return PlaneID::InvalidID; }
+    
   }; // struct PlaneID
   
   
   // The data type to uniquely identify a code wire segment.
   struct WireID: public PlaneID {
+    typedef unsigned int WireID_t;
     
-    ID_t Wire; ///< index of the wire within its plane
+    // not constexpr because we would need an implementation file to define the
+    // constant (and because ROOT 5 does not understand that)
+  //  static constexpr WireID_t InvalidID = std::numeric_limits<WireID_t>::max();
+    /// Special code for an invalid ID
+    static const WireID_t InvalidID = UINT_MAX;
+    
+    WireID_t Wire; ///< index of the wire within its plane
     
     /// Default constructor: an invalid TPC ID
     WireID(): PlaneID(), Wire(InvalidID) {}
 
     /// Constructor: wire with index w in the plane identified by planeid
-    WireID(PlaneID const& planeid, ID_t w): PlaneID(planeid), Wire(w) {}
+    WireID(PlaneID const& planeid, WireID_t w): PlaneID(planeid), Wire(w) {}
 
     /// Constructor: wire with index w in cryostat index c, TPC index t,
     /// plane index p
-    WireID(ID_t c, ID_t t, ID_t p, ID_t w): PlaneID(c, t, p), Wire(w) {}
+    WireID(CryostatID_t c, TPCID_t t, PlaneID_t p, WireID_t w):
+      PlaneID(c, t, p), Wire(w) {}
 
 #ifndef __GCCXML__
     /// Human-readable representation of the wire ID
@@ -216,6 +248,9 @@ namespace geo {
     /// @todo Remove the instances of geo::WireID::planeID() in the code
     PlaneID const& planeID() const { return *this; }
     
+    /// Return the value of the invalid wire ID as a r-value
+    static WireID_t getInvalidID() { return WireID::InvalidID; }
+        
   }; // struct WireID
   
 
