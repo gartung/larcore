@@ -26,14 +26,16 @@ namespace geo {
   //......................................................................
   unsigned int GeometryIteratorLoopTestAlg::Run() {
     const unsigned int nCryo = geom->Ncryostats(); 
-    LOG_VERBATIM("GeometryIteratorLoopTest") << "We have " << nCryo << " cryostats";
+    LOG_VERBATIM("GeometryIteratorLoopTest")
+      << "We have " << nCryo << " cryostats";
     
     unsigned int nErrors = 0;
     unsigned int nCryostats = 0, nTPCs = 0, nPlanes = 0, nWires = 0;
-    geo::GeometryCore::cryostat_iterator iCryostat = geom->begin_cryostat();
-    geo::GeometryCore::TPC_iterator iTPC(geom);
-    geo::GeometryCore::plane_iterator iPlane(geom);
-    geo::GeometryCore::wire_iterator iWire(geom);
+    geo::GeometryCore::cryostat_id_iterator iCryostat
+      = geom->begin_cryostat_id();
+    geo::GeometryCore::TPC_id_iterator iTPC = geom->begin_TPC_id();
+    geo::GeometryCore::plane_id_iterator iPlane = geom->begin_plane_id();
+    geo::GeometryCore::wire_id_iterator iWire = geom->begin_wire_id();
     
     for(unsigned int c = 0; c < nCryo; ++c) {
       const CryostatGeo& cryo(geom->Cryostat(c));
@@ -196,13 +198,13 @@ namespace geo {
     unsigned int nLoopedCryostats = 0;
     LOG_DEBUG("GeometryIteratorsDump")
       << "Looping though " << nCryostats << " cryostats";
-    for (geo::CryostatID const& cID: geom->IterateCryostats()) {
+    for (geo::CryostatID const& cID: geom->IterateCryostatIDs()) {
       LOG_TRACE("GeometryIteratorsDump") << cID;
       if (nLoopedCryostats >= nCryostats) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "After all " << nLoopedCryostats
           << " cryostats, iterator has not reached the end ("
-          << *(geom->end_cryostat()) << ") but it's still at " << cID;
+          << *(geom->end_cryostat_id()) << ") but it's still at " << cID;
         ++nErrors;
         break;
       }
@@ -226,13 +228,13 @@ namespace geo {
     unsigned int nLoopedTPCs = 0;
     LOG_DEBUG("GeometryIteratorsDump")
       << "Looping though " << nTPCs << " TPCs";
-    for (geo::TPCID const& tID: geom->IterateTPCs()) {
+    for (geo::TPCID const& tID: geom->IterateTPCIDs()) {
       LOG_TRACE("GeometryIteratorsDump") << tID;
       if (nLoopedTPCs >= nTPCs) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "After all " << nLoopedTPCs
           << " TPCs, iterator has not reached the end ("
-          << *(geom->end_TPC()) << ") but it's still at " << tID;
+          << *(geom->end_TPC_id()) << ") but it's still at " << tID;
         ++nErrors;
         break;
       }
@@ -257,13 +259,13 @@ namespace geo {
     unsigned int nLoopedPlanes = 0;
     LOG_DEBUG("GeometryIteratorsDump")
       << "Looping though " << nPlanes << " planes";
-    for (geo::PlaneID const& pID: geom->IteratePlanes()) {
+    for (geo::PlaneID const& pID: geom->IteratePlaneIDs()) {
       LOG_TRACE("GeometryIteratorsDump") << pID;
       if (nLoopedPlanes >= nPlanes) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "After all " << nLoopedPlanes
           << " planes, iterator has not reached the end ("
-          << *(geom->end_plane()) << ") but it's still at " << pID;
+          << *(geom->end_plane_id()) << ") but it's still at " << pID;
         ++nErrors;
         break;
       }
@@ -288,13 +290,13 @@ namespace geo {
     unsigned int nLoopedWires = 0;
     LOG_DEBUG("GeometryIteratorsDump")
       << "Looping though " << nWires << " wires";
-    for (geo::WireID const& wID: geom->IterateWires()) {
+    for (geo::WireID const& wID: geom->IterateWireIDs()) {
       LOG_TRACE("GeometryIteratorsDump") << wID;
       if (nLoopedWires >= nWires) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "After all " << nLoopedWires
           << " wires, iterator has not reached the end ("
-          << *(geom->end_wire()) << ") but it's still at " << wID;
+          << *(geom->end_wire_id()) << ") but it's still at " << wID;
         ++nErrors;
         break;
       }
