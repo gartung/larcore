@@ -100,7 +100,8 @@ int main(int argc, char const** argv) {
   //
   
   // 1. we initialize it from the configuration in the environment,
-  geo::GeometryIteratorLoopTestAlg Tester(TestEnvironment.TesterConfiguration());
+  geo::GeometryIteratorLoopTestAlg Tester
+    (TestEnvironment.TesterConfiguration());
   
   // 2. we set it up with the geometry from the environment
   Tester.Setup(*TestEnvironment.Geometry());
