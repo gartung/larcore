@@ -78,8 +78,10 @@ namespace geo {
     unsigned int Nwires(unsigned int p,
 			unsigned int tpc   = 0,
 			unsigned int cstat = 0)                   const;
-    // Number of scintillator paddles (Auxiliary Detectors aka AuxDet) outside of the cryostat
+    // Number of detectors outside of the cryostat
     unsigned int NAuxDets()                                       const { return fAuxDets.size(); }
+    // Number of sensitive volumes in an AuxDet
+    unsigned int NAuxDetSensitive(size_t const& aid)               const;
 
     const CryostatGeo&  Cryostat(unsigned int const cstat = 0)    const;
     const TPCGeo&       TPC(unsigned int const tpc   = 0,

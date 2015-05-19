@@ -104,11 +104,10 @@ namespace geo{
 
    // method returns the entry in the sorted AuxDetGeo vector so that the 
    // Geometry in turn can return that object
-   size_t  NearestAuxDet         (const double* point, 
-	   			   std::vector<geo::AuxDetGeo*> const& auxDets) const;
-   size_t  NearestSensitiveAuxDet(const double* point, 
-	   			   std::vector<geo::AuxDetGeo*> const& auxDets) const;
-   size_t  NSensitiveAuxDet(std::string const& auxDetName) const;
+   virtual size_t  NearestAuxDet         (const double* point, 
+					  std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   virtual size_t  NearestSensitiveAuxDet(const double* point, 
+					  std::vector<geo::AuxDetGeo*> const& auxDets) const;
 
  protected:
 

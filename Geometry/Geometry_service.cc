@@ -347,6 +347,16 @@ namespace geo {
   }
 
   //......................................................................
+  unsigned int Geometry::NAuxDetSensitive(size_t const& aid) const
+  {
+    if( aid > fAuxDets.size() - 1)
+      throw cet::exception("Geometry") << "Requested AuxDet index " << aid 
+				       << " is out of range: " << fAuxDets.size();
+
+    return fAuxDets[aid]->NSensitiveVolume();
+  }
+
+  //......................................................................
   // Number of different views, or wire orientations
   // The function assumes that all TPCs in all cryostats of
   // a detector have the same number of planes, which should be 
