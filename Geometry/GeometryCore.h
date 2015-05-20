@@ -963,7 +963,12 @@ namespace geo {
     
     /// Destructor
     ~GeometryCore();
-    
+   
+    // You shall not copy or move or assign me!
+    GeometryCore(GeometryCore const&) = delete;
+    GeometryCore(GeometryCore&&) = delete;
+    GeometryCore& operator= (GeometryCore const&) = delete;
+    GeometryCore& operator= (GeometryCore&&) = delete;
     
     
     /**
