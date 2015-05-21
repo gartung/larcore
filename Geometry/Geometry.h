@@ -285,6 +285,9 @@ namespace geo {
     // Access to the ROOT geometry description.
     TGeoManager*        ROOTGeoManager()                          const;
 
+    // Access to the Channel Map Algorithm
+    std::shared_ptr<const geo::ChannelMapAlg> GetChannelMapAlg() const { return fChannelMapAlg; };
+
     // The full directory path to the GDML file that was the source
     // of the detector geometry.
     std::string         ROOTFile()                                const { return fROOTfile; }
