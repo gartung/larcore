@@ -1257,11 +1257,11 @@ namespace geo{
     // loop over all planes and wires to be sure the pitch is consistent
     unsigned int nPitchErrors = 0;
 
-    // hard code the value we think it should be for each detector;
-    // if these become outdated, ***PLEASE*** remove this legacy code for that
-    // detector and add the parameter ExpectedWirePitches into the FHiCL file
     if (fExpectedWirePitches.empty()) {
-      if(geom->DetectorName().find("bo") != std::string::npos){	
+      // hard code the value we think it should be for each detector;
+      // this is legacy and you should not add anything:
+      // add the expectation to the FHiCL configuration of the test instead
+      if(geom->DetectorName() == "bo") {
         fExpectedWirePitches = { 0.46977, 0.46977, 0.46977 };
       }
       if (!fExpectedWirePitches.empty()) {
