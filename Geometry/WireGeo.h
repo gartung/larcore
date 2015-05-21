@@ -66,6 +66,10 @@ namespace geo {
     /// Returns if this wire is vertical (theta_z ~ pi/2)
     bool isVertical() const { return std::abs(CosThetaZ()) < 1e-5; }
     
+    /// Returns if this wire is parallel to another (projected in y/z plane)
+    bool isParallelTo(geo::WireGeo const& wire) const
+      { return std::abs(wire.ThetaZ() - ThetaZ()) < 1e-5; }
+    
     /// Returns the wire direction as a norm-one vector
     TVector3 Direction() const;
 
@@ -75,7 +79,34 @@ namespace geo {
     void WorldToLocalVect(const double* world, double* local) const;
 
     const TGeoNode*     Node() const { return fWireNode; }
-
+    
+    /// Returns the z coordinate, in centimetres, at the point where y = 0.
+    /// Assumes the wire orthogonal to x axis and the wire not parallel to z.
+    double ComputeZatY0() const
+      { return fCenter[2] - fCenter[1] / TanThetaZ(); }
+    
+    /**
+     * @brief Returns distance, projected on y/z plane, from the specified wire
+     * @return the signed distance in centimetres (0 if wires are not parallel)
+     * 
+     * If the specified wire is "ahead" in z respect to this, the distance is
+     * returned negative.
+     */
+    double DistanceFrom(geo::WireGeo const& wire) const
+      {
+        return isParallelTo(wire)
+          ? std::abs(
+            + (wire.fCenter[2] - fCenter[2]) * SinThetaZ()
+            - (wire.fCenter[1] - fCenter[1]) * CosThetaZ()
+            )
+          : 0;
+      } // DistanceFrom()
+    
+    
+    /// Returns the pitch (distance on y/z plane) between two wires, in cm
+    static double WirePitch(geo::WireGeo const& w1, geo::WireGeo const& w2)
+      { return std::abs(w2.DistanceFrom(w1)); }
+    
   private:
     const TGeoNode*    fWireNode;  ///< Pointer to the wire node
     double             fThetaZ;    ///< angle of the wire with respect to the z direction

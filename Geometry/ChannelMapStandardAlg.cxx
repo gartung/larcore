@@ -108,12 +108,7 @@ namespace geo{
           // Overall we are trying to build an expression that looks like
           //  int NearestWireNumber = round((worldPos.OrthVector - FirstWire.OrthVector)/WirePitch);     
           // That runs as fast as humanly possible.
-          //
-          // Casting to an int is much faster than c rounding commands like floor().  We have to add 0.5
-          // to account for rounding up as well as down.  floor(A) ~ (int)(A+0.5).  We account for the
-          // 0.5 in the first wire constant to avoid adding it every time.
-          //
-          // We can also predivide everything by the wire pitch so we don't do this in the loop
+          // We predivide everything by the wire pitch so we don't do this in the loop.
           //
           // Putting this together into the useful constants we will use later per plane and tpc:
           fOrthVectorsY[cs][TPCCount][PlaneCount] = OrthY / ThisWirePitch;

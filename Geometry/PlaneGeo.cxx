@@ -44,24 +44,7 @@ namespace geo{
 
     // determine the pitch of wires in this plane
     // assumes same pitch between all wires in this plane
-    double xyz[3]  = {0.};
-    double xyz1[3] = {0.};
-
-    double halfL1 = this->Wire(0).HalfL();
-    double halfL2 = this->Wire(1).HalfL();
-
-    this->Wire(0).GetCenter(xyz,  halfL1);
-    this->Wire(1).GetCenter(xyz1, halfL2);
-
-    if(xyz1[2] - xyz[2] < 0.01){
-      this->Wire(0).GetCenter(xyz,  -halfL1);
-      this->Wire(1).GetCenter(xyz1, -halfL2);
-    }
-
-    const geo::WireGeo& wire = Wire(1);
-    fWirePitch    = std::abs((xyz1[2]-xyz[2])*wire.SinThetaZ() 
-			     -(xyz1[1]-xyz[1])*wire.CosThetaZ());
-
+    fWirePitch = geo::WireGeo::WirePitch(Wire(0), Wire(1));
   }
 
   //......................................................................
