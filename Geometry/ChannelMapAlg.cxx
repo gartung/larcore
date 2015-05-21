@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////
-/// \file  ChannelMapStandardAlg.cxx
+/// \file  ChannelMapAlg.cxx
 /// \brief Interface to algorithm class for a specific detector channel mapping
 ///
 /// \version $Id:  $
@@ -16,7 +16,7 @@ namespace geo{
   unsigned int ChannelMapAlg::NearestWire(const TVector3& worldPos,
                                           geo::PlaneID const& planeID) const
   {
-    return NearestWireID(worldPos, planeID.Plane, planeID.TPC, planeID.Cryostat).Wire;
+    return NearestWireID(worldPos, planeID).Wire;
   }
 
   //----------------------------------------------------------------------------
