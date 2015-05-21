@@ -42,6 +42,13 @@ namespace geo {
    * 
    * - **DisableWireBoundaryCheck** (boolean, default: false): the exceptions
    *   thrown when checking wire boundaries are not fatal
+   * - **ExpectedWirePitches** (list of reals, default: empty):
+   *   if specified, marks the expected uniform wire pitch, one entry for each
+   *   plane; if there are more planes than elements, the missing pitches are
+   *   assumed the same as the one in the last plane; if the parameter is
+   *   not specified or empty, no expectation is taken, but the spacing is still
+   *   checked to be uniform; exception: for legacy behaviour, default pitches
+   *   are provided for some experiments
    * - **ForgiveExceptions** (list of strings, default: empty): the categories
    *   of exceptions in this list are "forgiven" (non-fatal)
    * - **RunTests** (string list): marks which tests to run;
@@ -88,6 +95,7 @@ namespace geo {
     bool fDisableValidWireIDcheck;  ///< disable test on out-of-world NearestWire()
     std::set<std::string> fNonFatalExceptions;
     std::set<std::string> fRunTests; ///< which tests to run (empty runs all)
+    std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     
     void printChannelSummary();
     void printVolBounds();

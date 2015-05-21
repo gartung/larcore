@@ -73,6 +73,7 @@ namespace geo{
   GeometryTestAlg::GeometryTestAlg(fhicl::ParameterSet const& pset) 
     : geom(nullptr)
     , fDisableValidWireIDcheck( pset.get<bool>("DisableWireBoundaryCheck", false) )
+    , fExpectedWirePitches( pset.get<std::vector<double>>("ExpectedWirePitches", {}) )
   {
     // initialize the list of non-fatal exceptions
     std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
@@ -1254,58 +1255,81 @@ namespace geo{
   void GeometryTestAlg::testWirePitch()
   {
     // loop over all planes and wires to be sure the pitch is consistent
+    unsigned int nPitchErrors = 0;
 
-    // hard code the value we think it should be for each detector
-    double shouldbe[3];
-    if(geom->DetectorName().find("argoneut") != std::string::npos){
-      shouldbe[0] = 0.4;
-      shouldbe[1] = 0.4;
-      shouldbe[2] = 0.4; 
+    // hard code the value we think it should be for each detector;
+    // if these become outdated, ***PLEASE*** remove this legacy code for that
+    // detector and add the parameter ExpectedWirePitches into the FHiCL file
+    if (fExpectedWirePitches.empty()) {
+      if(geom->DetectorName().find("bo") != std::string::npos){	
+        fExpectedWirePitches = { 0.46977, 0.46977, 0.46977 };
+      }
+      if (!fExpectedWirePitches.empty()) {
+        mf::LogInfo("WirePitch")
+          << "Using legacy wire pitch parameters hard-coded for the detector '"
+          << geom->DetectorName() << "'";
+      }
     }
-    else if ((geom->DetectorName().find("microboone") != std::string::npos)
-      || (geom->DetectorName().find("icarus") != std::string::npos)
-      || (geom->DetectorName() == "lartpcdetector"))
-    {
-      shouldbe[0] = 0.3;
-      shouldbe[1] = 0.3;
-      shouldbe[2] = 0.3; 
-    }
-    else if(geom->DetectorName().find("lbne") != std::string::npos){
-      shouldbe[0] = 0.49;
-      shouldbe[1] = 0.5;
-      shouldbe[2] = 0.45;  
-    }
-    else if(geom->DetectorName().find("bo") != std::string::npos){	
-      shouldbe[0] = 0.46977;
-      shouldbe[1] = 0.46977;
-      shouldbe[2] = 0.46977; 
+    if (fExpectedWirePitches.empty()) {
+      mf::LogWarning("WirePitch")
+        << "no expected wire pitch; I'll just check that they are all the same";
     }
     else {
-      throw cet::exception("UnexpectedWirePitch")
-        << "Can't check wire pitch for detector '" << geom->DetectorName()
-        << "', since I don't know what to expect.";
+      mf::LogInfo log("WirePitch");
+      log << "Expected wire pitch per plane, in centimetres:";
+      for (double pitch: fExpectedWirePitches) log << " " << pitch;
+      log << " [...]";
     }
-
-    for(size_t c = 0; c < geom->Ncryostats(); ++c){
-      for(size_t t = 0; t < geom->Cryostat(c).NTPC(); ++t){
-        for(size_t p = 0; p < geom->Cryostat(c).TPC(t).Nplanes(); ++p){
-	  for(size_t w = 0; w < geom->Cryostat(c).TPC(t).Plane(p).Nwires()-1; ++w){
-	    // get the wire pitch
-	    double pitch = geom->Cryostat(c).TPC(t).WirePitch(w, w+1, p);
-	    if(std::abs(pitch - shouldbe[p]) > 0.01*shouldbe[p]){
-	      throw cet::exception("UnexpectedWirePitch") << "\n\tpitch is " 
-	 						  << pitch << " instead of " << shouldbe[p] 
-							  << " for cryostat " << c
-							  << ", tpc " << t
-							  << ", plane " << p
-							  << "; wires: " << w << ", " << w+1 << "\n";
-	    }// end if pitch is wrong
-	  }// end loop over wires
-        }// end loop over planes
-      }// end loop over TPCs
-    }// end loop over cryostats
-
-  }
+    
+    for (geo::PlaneID const& planeid: geom->IteratePlaneIDs()) {
+      
+      geo::PlaneGeo const& plane = geom->Plane(planeid);
+      const unsigned int nWires = plane.Nwires();
+      if (nWires < 2) continue;
+      
+      geo::WireGeo const* pWire = &(plane.Wire(0));
+      
+      // which pitch to expect:
+      // - if they did not tell us anything:
+      //     get the one from the first two wires
+      // - if they did tell something, but not for this plane:
+      //     get the last pitch they told us
+      // - if they told us about this plane: well, then use it!
+      double expectedPitch = 0.;
+      if (fExpectedWirePitches.empty()) {
+        geo::WireGeo const& wire1 = plane.Wire(1); // pWire now points to wire0
+        expectedPitch = geo::WireGeo::WirePitch(*pWire, wire1);
+        LOG_DEBUG("WirePitch")
+          << "Wire pitch on " << planeid << ": " << expectedPitch << " cm";
+      }
+      else if (planeid.Plane < fExpectedWirePitches.size())
+        expectedPitch = fExpectedWirePitches[planeid.Plane];
+      else
+        expectedPitch = fExpectedWirePitches.back();
+      
+      geo::WireID::WireID_t w = 0; // wire number
+      while (++w < nWires) {
+        geo::WireGeo const* pPrevWire = pWire;
+        pWire = &(plane.Wire(w));
+        
+        const double thisPitch = std::abs(pWire->DistanceFrom(*pPrevWire));
+        if (std::abs(thisPitch - expectedPitch) > 1e-5) {
+          mf::LogProblem("WirePitch") << "ERROR: on plane " << planeid
+            << " pitch between wires W:" << (w-1) << " and W:" << w
+            << " is " << thisPitch << " cm, not " << expectedPitch
+            << " as expected!";
+          ++nPitchErrors;
+        } // if unexpected pitch
+      } // while
+      
+    } // for
+    
+    if (nPitchErrors > 0) {
+      throw cet::exception("UnexpectedWirePitch")
+        << "unexpected pitches between " << nPitchErrors << " wires!";
+    } // end loop over planes
+    
+  } // GeometryTestAlg::testWirePitch()
 
   //......................................................................
   void GeometryTestAlg::testPlanePitch()
