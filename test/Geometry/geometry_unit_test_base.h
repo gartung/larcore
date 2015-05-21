@@ -30,7 +30,9 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // CET libraries
+#include "cetlib/filesystem.h" // cet::is_absolute_filepath()
 #include "cetlib/filepath_maker.h"
+#include "cetlib/search_path.h"
 
 // C/C++ standard libraries
 #include <iostream> // for output before message facility is set up
@@ -287,7 +289,6 @@ namespace testing {
   TestSharedGlobalResource<RES>::Resources;
   
   
-  
   /** **************************************************************************
    * @brief Environment for a geometry test
    * @tparam ConfigurerClass a class providing compile-time configuration
@@ -466,6 +467,44 @@ namespace testing {
   
   
   //****************************************************************************
+  namespace details {
+    // Class to implement FHiCL file search.
+    // This is badly ripped off from ART, but we need to stay out of it
+    // so I have to replicate that functionality.
+    // I used the same class name.
+    class FirstAbsoluteOrLookupWithDotPolicy: public cet::filepath_maker {
+        public:
+      FirstAbsoluteOrLookupWithDotPolicy(std::string const& paths):
+        first(true), after_paths(paths)
+        {}
+      
+      virtual std::string operator() (std::string const& filename);
+      
+      void reset() { first = true; }
+      
+        private:
+      bool first; ///< whether we are waiting for the first query
+      cet::search_path after_paths; ///< path for the other queries
+      
+    }; // class FirstAbsoluteOrLookupWithDotPolicy
+  
+  
+    std::string FirstAbsoluteOrLookupWithDotPolicy::operator()
+      (std::string const &filename)
+    {
+      if (first) {
+        first = false;
+        if (cet::is_absolute_filepath(filename)) return filename;
+        return cet::search_path("./:" + after_paths.to_string())
+          .find_file(filename);
+      } else {
+        return after_paths.find_file(filename);
+      }
+    } // FirstAbsoluteOrLookupWithDotPolicy::operator()
+  } // namespace details
+  
+  
+  //****************************************************************************
   template <typename ConfigurerClass>
   GeometryTesterFixture<ConfigurerClass>::~GeometryTesterFixture() {
     
@@ -501,8 +540,10 @@ namespace testing {
   fhicl::ParameterSet GeometryTesterFixture<ConfigurerClass>::ParseConfiguration
     (std::string config_path)
   {
-    // simple file lookup policy: assume the file name specification is complete
-    cet::filepath_maker policy;
+    // configuration file lookup policy
+    char const* fhicl_env = getenv("FHICL_FILE_PATH");
+    std::string search_path = fhicl_env? std::string(fhicl_env) + ":": ".:";
+    details::FirstAbsoluteOrLookupWithDotPolicy policy(search_path);
     
     // parse a configuration file; obtain intermediate form
     fhicl::intermediate_table table;
@@ -547,6 +588,7 @@ namespace testing {
     if (!pset.get_if_present("services.message", mf_pset)) {
       // a destination which will react to all messages from DEBUG up
       std::string MessageFacilityConfiguration = R"(
+      debugModules: [ '*' ]
       destinations : {
         stdout: {
           type:      cout
@@ -568,6 +610,12 @@ namespace testing {
     mf::StartMessageFacility(mf::MessageFacilityService::SingleThread, mf_pset);
     if (!appl_name.empty()) mf::SetApplicationName(appl_name);
     mf::SetContext("Initialization");
+  //  mf::LogProblem("MessageFacility") << "Error messages are shown.";
+  //  mf::LogPrint("MessageFacility") << "Warning messages are shown.";
+  //  mf::LogVerbatim("MessageFacility") << "Info messages are shown.";
+  //  mf::LogTrace("MessageFacility") << "Debug messages are shown.";
+  //  LOG_TRACE("MessageFacility")
+  //    << "LOG_TRACE/LOG_DEBUG messages are not compiled away.";
     mf::LogInfo("MessageFacility") << "MessageFacility started.";
     mf::SetModuleName("main");
   } // GeometryTesterFixture::SetupMessageFacility()
@@ -626,8 +674,8 @@ namespace testing {
     //
     // create the new channel map
     //
-    fhicl::ParameterSet SortingParameters
-      = GeoConfig.get<fhicl::ParameterSet>("SortingParameters");
+    fhicl::ParameterSet SortingParameters = GeoConfig.get<fhicl::ParameterSet>
+      ("SortingParameters", fhicl::ParameterSet());
     std::shared_ptr<geo::ChannelMapAlg> pChannelMap
       (new ChannelMapClass(SortingParameters));
     

@@ -54,6 +54,8 @@ cet_test(geometry_iterator_test
 # unit test (use the hard-coded configuration for "standard" LArTPCdetector)
 cet_test(geometry_test
   SOURCES geometry_test.cxx
+  DATAFILES test_geometry.fcl
+  TEST_ARGS ./test_geometry.fcl
   LIBRARIES Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
