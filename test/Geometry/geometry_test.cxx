@@ -34,7 +34,7 @@
 // we use an existing class provided for this purpose, since our test
 // environment allows us to tailor it at run time.
 using StandardGeometryConfiguration
-  = testing::BasicGeometryFixtureConfigurer<geo::ChannelMapStandardAlg>;
+  = testing::BasicGeometryEnvironmentConfiguration<geo::ChannelMapStandardAlg>;
 
 /*
  * GeometryTesterFixture, configured with the object above, is used in a
@@ -44,7 +44,7 @@ using StandardGeometryConfiguration
  * - `geo::GeometryCore const* GlobalGeometry()` (static member)
  */
 using StandardGeometryTestEnvironment
-  = testing::GeometryTesterFixture<StandardGeometryConfiguration>;
+  = testing::GeometryTesterEnvironment<StandardGeometryConfiguration>;
 
 
 //------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ int main(int argc, char const** argv) {
   //
   
   // 1. we initialize it from the configuration in the environment,
-  geo::GeometryTestAlg Tester(TestEnvironment.TesterConfiguration());
+  geo::GeometryTestAlg Tester(TestEnvironment.TesterParameters());
   
   // 2. we set it up with the geometry from the environment
   Tester.Setup(*TestEnvironment.Geometry());

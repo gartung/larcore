@@ -37,9 +37,8 @@ simple_plugin ( GeometryTest "module"
 
 # geometry test on "standard" geometry
 
-# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
-# this uses BOOST for the test, and it has not yet been moved into a test
-# algorithm
+# unit test (use geometry configuration from config file, the rest is ignored)
+# this uses BOOST for the test
 cet_test(geometry_iterator_test
   SOURCES geometry_iterator_test.cxx
   LIBRARIES Geometry
@@ -49,9 +48,11 @@ cet_test(geometry_iterator_test
             ${FHICLCPP}
             ${CETLIB}
   USE_BOOST_UNIT
+  DATAFILES test_geometry.fcl
+  TEST_ARGS test_geometry.fcl
 )
 
-# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
+# unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
 cet_test(geometry_test
   SOURCES geometry_test.cxx
   DATAFILES test_geometry.fcl
@@ -65,9 +66,11 @@ cet_test(geometry_test
   USE_BOOST_UNIT
 )
 
-# unit test (use the hard-coded configuration for "standard" LArTPCdetector)
+# unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
 cet_test(geometry_iterator_loop_test
   SOURCES geometry_iterator_loop_test.cxx
+  DATAFILES test_geometry_iterator_loop.fcl
+  TEST_ARGS ./test_geometry_iterator_loop.fcl
   LIBRARIES Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
@@ -94,9 +97,9 @@ cet_test(geometry HANDBUILT
 # 
 # This test is equivalent to geometry_iterator_loop_test, but run in art environment
 cet_test(geometry_iterator HANDBUILT
-  DATAFILES test_geometry_iterators.fcl
+  DATAFILES test_geometry_iterator_loop.fcl
   TEST_EXEC lar
-  TEST_ARGS --rethrow-all --config ./test_geometry_iterators.fcl
+  TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
 
 # set FHICL_FILE_PATH and FW_SEARCH_PATH for the case where building without mrb

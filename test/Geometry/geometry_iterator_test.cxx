@@ -8,18 +8,18 @@
  * Boost unit testing environment keeps the arguments secret anyway.
  */
 
+// Boost test libraries; we want to define this stuff as soon as possible
+#define BOOST_TEST_MODULE GeometryIteratorTest
+#include <boost/test/included/unit_test.hpp>
+
 // LArSoft libraries
-#include "test/Geometry/geometry_unit_test_base.h"
+#include "test/Geometry/geometry_boost_unit_test_base.h"
 #include "test/Geometry/GeometryIteratorTestAlg.h"
 #include "Geometry/GeometryCore.h"
 #include "Geometry/ChannelMapStandardAlg.h"
 
 // utility libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
-
-// Boost libraries
-#define BOOST_TEST_MODULE GeometryIteratorTest
-#include <boost/test/included/unit_test.hpp>
 
 // C/C++ standard libraries
 #include <string>
@@ -30,11 +30,14 @@
 
 // we define here all the configuration that is needed;
 // in the specific, the type of the channel mapping and a proper test name,
-// used for output only; we use BasicGeometryFixtureConfigurer as base class
-// because it's easy, but we could use any new unrelated class as long as it
-// provides what testing::GeometryTesterFixture needs.
+// used for output only; BasicGeometryFixtureConfiguration can read the
+// configuration file name from command line, and
+// BoostCommandLineConfiguration<> makes it initialize in time for Boost
+// to catch it when instanciating the fixture.
 struct StandardGeometryConfiguration:
-  public testing::BasicGeometryFixtureConfigurer<geo::ChannelMapStandardAlg>
+  public testing::BoostCommandLineConfiguration<
+    testing::BasicGeometryEnvironmentConfiguration<geo::ChannelMapStandardAlg>
+    >
 {
   /// Constructor: overrides the application name
   StandardGeometryConfiguration()
@@ -62,7 +65,7 @@ struct StandardGeometryConfiguration:
  * tester depends on Boost unit test implementation.
  */
 class GeometryIteratorTestFixture:
-  private testing::GeometryTesterFixture<StandardGeometryConfiguration>
+  private testing::GeometryTesterEnvironment<StandardGeometryConfiguration>
 {
   using Tester_t = geo::GeometryIteratorTestAlg;
   
@@ -74,7 +77,7 @@ class GeometryIteratorTestFixture:
   GeometryIteratorTestFixture()
     {
       // create a new tester
-      tester_ptr = std::make_shared<Tester_t>(TesterConfiguration());
+      tester_ptr = std::make_shared<Tester_t>(TesterParameters());
       tester_ptr->Setup(*Geometry()); // Geometry() is inherited
       // if no tester is default yet, share ours:
       TesterRegistry_t::ProvideDefaultSharedResource(tester_ptr);
