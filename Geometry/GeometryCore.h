@@ -1004,8 +1004,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Detector information
+    /// @{
     
     //
     // global features
@@ -1118,8 +1118,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Cryostat access and information
+    /// @{
     
     //
     // group features
@@ -1333,8 +1333,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name TPC access and information
+    /// @{
     
     //
     // group features
@@ -1616,8 +1616,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Plane access and information
+    /// @{
     
     //
     // group features
@@ -1846,8 +1846,8 @@ namespace geo {
     /// @} Plane access and information
     
     
-    /// @{
     /// @name Wire access and information
+    /// @{
     
     //
     // group features
@@ -2066,7 +2066,6 @@ namespace geo {
     
     
     
-    /// @{
     /**
      * @name Wire geometry queries
      * 
@@ -2077,6 +2076,7 @@ namespace geo {
      * if the two wires cross, return false if they don't.
      * IntersectionPoint() does not check if the two wires cross.
      */
+    /// @{
     
     //
     // simple geometry queries
@@ -2392,8 +2392,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Optical detector access and information
+    /// @{
     
     //
     // group features
@@ -2442,8 +2442,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Auxiliary detectors access and information
+    /// @{
     
     /// @todo use a AutDetID_t instead of unsigned int?
     
@@ -2525,8 +2525,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name TPC readout channels and views
+    /// @{
     
     //
     // group features
@@ -2664,9 +2664,9 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Optical readout channels
     /// @todo add explanation of the different IDs
+    /// @{
     
     //
     // group features
@@ -2722,8 +2722,8 @@ namespace geo {
     
     
     
-    /// @{
     /// @name Geometry initialization
+    /// @{
     
     /**
      * @brief Loads the geometry information from the specified files
