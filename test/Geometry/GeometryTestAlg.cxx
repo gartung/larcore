@@ -55,6 +55,91 @@ namespace {
 } // local namespace
 
 
+namespace simple_geo {
+  
+  struct Point2D {
+    double y = 0.;
+    double z = 0.;
+    
+    Point2D() = default;
+    Point2D(double new_y, double new_z): y(new_y), z(new_z) {}
+  }; // struct Point2D
+  
+  Point2D operator+ (Point2D const& a, Point2D const& b)
+    { return { a.y + b.y, a.z + b.z }; }
+  Point2D operator* (Point2D const& p, double f)
+    { return { p.y * f, p.z * f }; }
+  Point2D operator/ (Point2D const& p, double f)
+    { return { p.y / f, p.z / f }; }
+  template <typename Stream>
+  Stream& operator<< (Stream& out, Point2D const& p)
+    { out << "( " << p.y << " ; " << p.z << " )"; return out; }
+  
+  class Area {
+      public:
+    Area() = default;
+    
+    Area(Point2D const& a, Point2D const& b)
+      {
+        set_sorted(min.y, max.y, a.y, b.y);
+        set_sorted(min.z, max.z, a.z, b.z);
+      } // Area(Point2D x2)
+    
+    Point2D const& Min() const { return min; }
+    Point2D const& Max() const { return max; }
+    Point2D Center() const { return (min + max) / 2; }
+    double DeltaY() const { return Max().y - Min().y; }
+    double DeltaZ() const { return Max().z - Min().z; }
+    bool isEmpty() const { return (DeltaY() == 0) || (DeltaZ() == 0); }
+    
+    void IncludePoint(Point2D const& point)
+      {
+        set_min_max(min.y, max.y, point.y);
+        set_min_max(min.z, max.z, point.z);
+      } // Include()
+    
+    void Include(Area const& area)
+      { IncludePoint(area.min); IncludePoint(area.max); }
+    
+    void Intersect(Area const& area)
+      {
+        set_max(min.y, area.min.y);
+        set_min(max.y, area.max.y);
+        set_max(min.z, area.min.z);
+        set_min(max.z, area.max.z);
+      }
+    
+      protected:
+    Point2D min, max;
+    
+    void set_min(double& var, double val) { if (val < var) var = val; }
+    void set_max(double& var, double val) { if (val > var) var = val; }
+    void set_min_max(double& min_var, double& max_var, double val)
+      { set_min(min_var, val); set_max(max_var, val); }
+    void set_sorted(double& min_var, double& max_var, double a, double b)
+      {
+        if (a > b) { min_var = b; max_var = a; }
+        else       { min_var = a; max_var = b; }
+      }
+  }; // class Area
+  
+  
+  simple_geo::Area PlaneCoverage(geo::PlaneGeo const& plane) {
+    simple_geo::Area plane_area;
+    // add both coordinates of first and last wire
+    std::array<double, 3> end;
+    geo::WireGeo const& first_wire = plane.FirstWire();
+    first_wire.GetStart(end.data());
+    plane_area.IncludePoint({ end[1], end[2] });
+    geo::WireGeo const& last_wire = plane.LastWire();
+    last_wire.GetEnd(end.data());
+    plane_area.IncludePoint({ end[1], end[2] });
+    return plane_area;
+  } // PlaneCoverage()
+  
+} // namespace simple_geo
+
+
 namespace geo{
 
   const std::vector<std::string> GeometryTestAlg::DefaultTests = {
@@ -352,6 +437,7 @@ namespace geo{
       << TPCpos[0] << ", " << TPCpos[1] << ", " << TPCpos[2]
       << ") cm has " << nPlanes << " wire planes (max wires: " << tpc.MaxWires()
       << "):";
+    
     for(unsigned int p = 0; p < nPlanes; ++p) {
       const geo::PlaneGeo& plane = tpc.Plane(p);
       const unsigned int nWires = plane.Nwires();
@@ -371,9 +457,15 @@ namespace geo{
         case geo::kVertical:   orientation = "vertical"; break;
         default:               orientation = "unexpected"; break;
       }
+      
+      // get the area spanned by the wires
+      simple_geo::Area plane_area = simple_geo::PlaneCoverage(plane);
+      
       mf::LogVerbatim("GeometryTest") << indent << "  plane #" << p << " at ("
-        << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2] << ") cm"
-        " has " << orientation << " orientation and "
+        << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2]
+        << ") cm, covers " << plane_area.DeltaY() << " x "
+        << plane_area.DeltaZ() << " cm around " << plane_area.Center()
+        << ", has " << orientation << " orientation and "
         << nWires << " wires measuring " << coord << ":";
       for(unsigned int w = 0;  w < nWires; ++w) {
         const geo::WireGeo& wire = plane.Wire(w);
@@ -1083,42 +1175,44 @@ namespace geo{
         } // if intersect
       } // for all planes
       
-      // detect which plane has wires along z
-      unsigned int planeZindex = 0;
-      while (planeZindex < nPlanes) {
-        if (TPC.Plane(planeZindex).View() == geo::kZ) break;
-        ++planeZindex;
-      } // while
-      if (planeZindex == nPlanes) {
+      
+      // sample the area covered by all planes, split into SplitY and SplitZ
+      // rectangles; x is chosen in the middle of the TPC
+      constexpr unsigned int SplitZ = 19, SplitY = 17;
+      // get the area spanned by the wires
+      simple_geo::Area covered_area;
+      for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
+        simple_geo::Area plane_area = simple_geo::PlaneCoverage(TPC.Plane(p));
+        if (covered_area.isEmpty()) covered_area = plane_area;
+        else covered_area.Intersect(plane_area);
+      } // for
+      
+      if (covered_area.isEmpty()) { // if so, debugging is needed
         throw cet::exception("GeometryTestAlg")
-          << "No plane with wires along z in " << to_string(*iTPC);
+          << "testWireIntersection(): failed to find plane coverage";
       }
-      const geo::PlaneGeo& planeZ = TPC.Plane(planeZindex);
-      const unsigned int NWiresZ = planeZ.Nwires();
+      
+      std::array<double, 3> origin, TPC_center;
+      origin.fill(0);
+      TPC.LocalToWorld(origin.data(), TPC_center.data());
+      const double x = TPC_center[0];
       
       // let's pick a point:
-      constexpr unsigned int SplitZ = 19, SplitY = 17;
       for (unsigned int iZ = 0; iZ < SplitZ; ++iZ) {
-        // pick the wire in the middle of the iZ-th region:
-        unsigned int wireZindex = NWiresZ * (2*iZ + 1) / (2*SplitZ);
-        const geo::WireGeo& wire = planeZ.Wire(wireZindex);
-        double WireCoord[3];
-        wire.GetCenter(WireCoord);
         
-        const double x = WireCoord[0];
-        const double min_y = WireCoord[1] - wire.HalfL(),
-          max_y = WireCoord[1] + wire.HalfL();
-        const double z = WireCoord[2];
+        // pick the coordinate in the middle of the iZ-th region:
+        const double z = covered_area.Min().z
+          + covered_area.DeltaZ() * (2*iZ + 1) / (2*SplitZ);
         
         for (unsigned int iY = 0; iY < SplitY; ++iY) {
           // pick the coordinate in the middle of the iY-th region:
-          const double y = min_y + (max_y - min_y) * (2*iY + 1) / (2*SplitY);
+          const double y = covered_area.Min().y
+            + covered_area.DeltaY() * (2*iY + 1) / (2*SplitY);
           
           // finally, let's test this point...
           nErrors += testWireIntersectionAt(*iTPC, x, y, z);
         } // for y
       } // for z
-      
     } // while iTPC
     
     if (nErrors > 0) {
@@ -1153,7 +1247,7 @@ namespace geo{
     std::vector<double> ThetaZ(NPlanes), WirePitch(NPlanes); // for convenience
     std::vector<geo::WireID> WireIDs; // ID of the closest wire
     WireIDs.reserve(NPlanes);
-    std::vector<float> WireDistances(NPlanes); // distance from the closest wire
+    std::vector<double> WireDistances(NPlanes); // distance from the closest wire
     for (unsigned int iPlane = 0; iPlane < NPlanes; ++iPlane) {
       const geo::PlaneGeo& plane = TPC.Plane(iPlane);
       ThetaZ[iPlane] = plane.FirstWire().ThetaZ();
@@ -1206,23 +1300,11 @@ namespace geo{
         // intersection point is geometrically determined, given the distances
         // of the probe point from the two wires and the angle between the wires
         // the formula is a mix between the Carnot theorem and sine definition;
-        // this value is quite sensitive to rounding errors, hence the way it's
-        // coded is not how one would write it in mathematic notation
         const double dTheta = ThetaZ[iPlane1] - ThetaZ[iPlane2],
-          d1 = std::abs(WireDistances[iPlane1]),
-          d2 = std::abs(WireDistances[iPlane2]);
-        // a bit of trick here: the angle in Carnot formula is the one between
-        // the wires on the quadrant the test point falls in; that can be dTheta
-        // or pi - dTheta (if the point is on the same "z size" for both the
-        // wires), changing the sign of cosine
-        const bool bSupplement
-          = (WireDistances[iPlane1] > 0) == (WireDistances[iPlane2] > 0);
-        const double expected_d = (d1 + d2)
-          * std::sqrt(1. - 2. * 
-            (1. - (bSupplement? -1.: 1.) * std::cos(dTheta))
-            * d1 * d2 / sqr(d1 + d2))
+          d1 = WireDistances[iPlane1], d2 = WireDistances[iPlane2];
+        const double expected_d = 
+          std::sqrt(sqr(d1) + sqr(d2) - 2. * d1 * d2 * std::cos(dTheta))
           / std::abs(std::sin(dTheta));
-        
         // the actual distance we have found:
         const double d = std::sqrt(sqr(xing.y - y) + sqr(xing.z - z));
         LOG_DEBUG("GeometryTest")
