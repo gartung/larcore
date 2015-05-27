@@ -182,13 +182,13 @@ namespace geo {
   }
 
   //......................................................................
-  unsigned int Geometry::NAuxDetSensitive(size_t const& aid) const
+  unsigned int GeometryCore::NAuxDetSensitive(size_t const& aid) const
   {
-    if( aid > fAuxDets.size() - 1)
+    if( aid > NAuxDets() - 1)
       throw cet::exception("Geometry") << "Requested AuxDet index " << aid 
-				       << " is out of range: " << fAuxDets.size();
+				       << " is out of range: " << NAuxDets();
 
-    return fAuxDets[aid]->NSensitiveVolume();
+    return AuxDets()[aid]->NSensitiveVolume();
   }
 
   //......................................................................

@@ -2461,6 +2461,14 @@ namespace geo {
      */
     unsigned int NAuxDets() const { return AuxDets().size(); }
     
+    /**
+     * @brief Returns the number of sensitive components of auxiliary detector
+     * @param aid ID of the auxiliary detector
+     * @return number of sensitive components in the auxiliary detector aid
+     * @thrws cet::exception (category "Geometry") if aid does not exist
+     */
+    unsigned int NAuxDetSensitive(size_t const& aid) const;
+    
     //
     // access
     //
