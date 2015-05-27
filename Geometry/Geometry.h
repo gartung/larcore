@@ -148,17 +148,25 @@ namespace geo {
 							size_t     & ad,
 							size_t     & sv) const;  // return the AuxDetGeo object containing
                                                                                  // the world position worldLoc
+    const AuxDetGeo&         ChannelToAuxDet(std::string const& auxDetName,
+					     uint32_t    const& channel) const; // return the AuxDetGeo for the given detector 
+                                                                                // name and channel
+
+    const AuxDetSensitiveGeo& ChannelToAuxDetSensitive(std::string const& auxDetName,
+						       uint32_t    const& channel) const; // return the AuxDetSensitiveGeo for the given
+                                                                                          // detector name and channel
+    
 
     std::vector< geo::WireID > ChannelToWire(raw::ChannelID_t const channel) const; // convert channel number to
-                                                                            // list of possible
-                                                                            // WireIDs
+                                                                                    // list of possible
+                                                                                    // WireIDs
 
-    SigType_t         SignalType(raw::ChannelID_t const channel)    const; // return the signal type for a given channel
-    SigType_t         SignalType(geo::PlaneID const pid)        const; // return the signal type for a given channel
-    View_t            View(raw::ChannelID_t const channel)            const; // return the view type for a given channel
-    View_t            View(geo::PlaneID const pid)              const; // return the view type for a given channel
-    std::set<View_t>  const& Views()                              const; // return vector of possible views in the detector
-    std::set<PlaneID> const& PlaneIDs()                           const; // return vector of possible PlaneIDs in the detector
+    SigType_t         SignalType(raw::ChannelID_t const channel) const; // return the signal type for a given channel
+    SigType_t         SignalType(geo::PlaneID const pid)         const; // return the signal type for a given channel
+    View_t            View(raw::ChannelID_t const channel)       const; // return the view type for a given channel
+    View_t            View(geo::PlaneID const pid)               const; // return the view type for a given channel
+    std::set<View_t>  const& Views()                             const; // return vector of possible views in the detector
+    std::set<PlaneID> const& PlaneIDs()                          const; // return vector of possible PlaneIDs in the detector
 
     raw::ChannelID_t  PlaneWireToChannel(unsigned int const plane,
 					   unsigned int const wire,

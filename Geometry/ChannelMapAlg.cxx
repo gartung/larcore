@@ -155,4 +155,49 @@ namespace geo{
     return UINT_MAX;
   }
 
+  //----------------------------------------------------------------------------
+  size_t ChannelMapAlg::ChannelToAuxDet(std::vector<geo::AuxDetGeo*> const& auxDets,
+					std::string                  const& detName,
+					uint32_t                     const& /*channel*/) const
+  {
+    // loop over the map of AuxDet names to Geo object numbers to determine which auxdet 
+    // we have.  If no name in the map matches the provided string, throw an exception
+    for(auto itr : fADNameToGeo)
+      if( itr.first.compare(detName) == 0 ) return itr.second;
+
+    
+    throw cet::exception("Geometry") << "No AuxDetGeo matching name: " << detName;
+
+    return UINT_MAX;
+  }
+
+  //----------------------------------------------------------------------------
+  // the first member of the pair is the index in the auxDets vector for the AuxDetGeo,
+  // the second member is the index in the vector of AuxDetSensitiveGeos for that AuxDetGeo
+  std::pair<size_t, size_t> ChannelMapAlg::ChannelToSensitiveAuxDet(std::vector<geo::AuxDetGeo*> const& auxDets,
+								    std::string                  const& detName,
+								    uint32_t                     const& channel) const
+  {
+    size_t adGeoIdx     = this->ChannelToAuxDet(auxDets, detName, channel);
+
+    // look for the index of the sensitive volume for the given channel
+    if( fADChannelToSensitiveGeo.count(adGeoIdx) > 0 ){
+
+      auto itr = fADChannelToSensitiveGeo.find(adGeoIdx);
+      
+      // get the vector of channels to AuxDetSensitiveGeo index
+      if( channel < itr->second.size() )
+	return std::make_pair(adGeoIdx, itr->second[channel]);
+
+      throw cet::exception("Geometry") << "Given AuxDetSensitive channel, " << channel 
+				       << ", cannot be found in vector associated to AuxDetGeo index: "
+				       << adGeoIdx << ". Vector has size " << itr->second.size();
+    }
+
+    throw cet::exception("Geometry") << "Given AuxDetGeo with index " << adGeoIdx 
+				     << " does not correspond to any vector of sensitive volumes";
+
+    return std::make_pair(adGeoIdx, UINT_MAX);
+  }
+
 }

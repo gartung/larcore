@@ -549,6 +549,23 @@ namespace geo {
     this->FindAuxDetSensitiveAtPosition(worldLoc, ad, sv);    
     return this->AuxDet(ad).SensitiveVolume(sv);
   }
+
+  //......................................................................
+  const AuxDetGeo& Geometry::ChannelToAuxDet(std::string const& auxDetName,
+					     uint32_t    const& channel) const
+  {
+    size_t adIdx = fChannelMapAlg->ChannelToAuxDet(fAuxDets, auxDetName, channel);
+    return this->AuxDet(adIdx);
+  }
+
+  //......................................................................
+  const AuxDetSensitiveGeo& Geometry::ChannelToAuxDetSensitive(std::string const& auxDetName,
+						      uint32_t    const& channel) const
+  {
+    auto idx = fChannelMapAlg->ChannelToSensitiveAuxDet(fAuxDets, auxDetName, channel);
+    return this->AuxDet(idx.first).SensitiveVolume(idx.second);
+  }
+
   
   //......................................................................
   //

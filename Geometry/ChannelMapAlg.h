@@ -9,6 +9,7 @@
 #define GEO_CHANNELMAPALG_H
 
 #include <vector>
+#include <map>
 #include <set>
 
 #include "cetlib/exception.h"
@@ -104,10 +105,16 @@ namespace geo{
 
    // method returns the entry in the sorted AuxDetGeo vector so that the 
    // Geometry in turn can return that object
-   virtual size_t  NearestAuxDet         (const double* point, 
-					  std::vector<geo::AuxDetGeo*> const& auxDets) const;
-   virtual size_t  NearestSensitiveAuxDet(const double* point, 
-					  std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   virtual size_t  NearestAuxDet          (const double* point, 
+					   std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   virtual size_t  NearestSensitiveAuxDet (const double* point, 
+					   std::vector<geo::AuxDetGeo*> const& auxDets) const;
+   virtual size_t  ChannelToAuxDet        (std::vector<geo::AuxDetGeo*> const& auxDets,
+					   std::string                  const& detName,
+					   uint32_t                     const& channel) const;
+   virtual std::pair<size_t, size_t>  ChannelToSensitiveAuxDet(std::vector<geo::AuxDetGeo*> const& auxDets,
+							       std::string                  const& detName,
+							       uint32_t                     const& channel) const;
 
  protected:
 
@@ -116,6 +123,9 @@ namespace geo{
    std::vector< std::vector<std::vector<raw::ChannelID_t> > > fFirstChannelInThisPlane;
    std::vector< std::vector<std::vector<raw::ChannelID_t> > > fFirstChannelInNextPlane;
 
+   std::map<std::string, size_t>          fADNameToGeo;             ///< map the names of the dets to the AuxDetGeo objects
+   std::map<size_t, std::vector<size_t> > fADChannelToSensitiveGeo; ///< map the AuxDetGeo index to a vector of 
+                                                                    ///< indices corresponding to the AuxDetSensitiveGeo index
  };
 }
 #endif // GEO_CHANNELMAPALG_H
