@@ -159,6 +159,7 @@ namespace geo{
     : geom(nullptr)
     , fDisableValidWireIDcheck( pset.get<bool>("DisableWireBoundaryCheck", false) )
     , fExpectedWirePitches( pset.get<std::vector<double>>("ExpectedWirePitches", {}) )
+    , fExpectedPlanePitches( pset.get<std::vector<double>>("ExpectedPlanePitches", {}) )
   {
     // initialize the list of non-fatal exceptions
     std::vector<std::string> NonFatalErrors(pset.get<std::vector<std::string>>
@@ -1418,31 +1419,79 @@ namespace geo{
   {
     // loop over all planes to be sure the pitch is consistent
 
-    // hard code the value we think it should be for each detector
-    double shouldbe = 0.4; // true for ArgoNeuT
-    if((geom->DetectorName().find("microboone") != std::string::npos)
-      || (geom->DetectorName() == "lartpcdetector"))
-      shouldbe = 0.3;
-    else if(geom->DetectorName().find("lbne") != std::string::npos)   shouldbe = 0.5;
-    else if(geom->DetectorName().find("bo") != std::string::npos)     shouldbe = 0.65;
-    else if(geom->DetectorName().find("icarus") != std::string::npos) shouldbe = 0.476;
-    else {
-      throw cet::exception("UnexpectedPlanePitch")
-        << "Can't check plane pitch for detector '" << geom->DetectorName()
-        << "', since I don't know what to expect.";
+    if (fExpectedPlanePitches.empty()) {
+      // hard code the value we think it should be for each detector;
+      // this is legacy and you should not add anything:
+      // add the expectation to the FHiCL configuration of the test instead
+      if(geom->DetectorName() == "bo") {
+        fExpectedPlanePitches = { 0.65 };
+      }
+      if (!fExpectedPlanePitches.empty()) {
+        mf::LogInfo("PlanePitch")
+          << "Using legacy plane pitch parameters hard-coded for the detector '"
+          << geom->DetectorName() << "'";
+      }
     }
-
-    for(size_t t = 0; t < geom->NTPC(); ++t){
-      for(size_t p = 0; p < geom->TPC(t).Nplanes()-1; ++p){
-	double pitch = std::abs(geom->TPC(t).PlanePitch(p, p+1));
-	if(std::abs(pitch - shouldbe) > 0.1*shouldbe){
-	  throw cet::exception("UnexpectedPlanePitch") << "\n\tunexpected pitch: " 
-						       << pitch << "/" << shouldbe << "\n"; 
-	}// end if wrong pitch
-      }// end loop over planes
-    }// end loop over TPCs
-
-  }
+    if (fExpectedPlanePitches.empty()) {
+      mf::LogWarning("PlanePitch")
+        << "no expected plane pitch;"
+        " I'll just check that they are all the same";
+    }
+    else {
+      mf::LogInfo log("PlanePitch");
+      log << "Expected plane pitch per plane pair, in centimetres:";
+      for (double pitch: fExpectedPlanePitches) log << " " << pitch;
+      log << " [...]";
+    }
+    
+    unsigned int nPitchErrors = 0;
+    for (geo::TPCID const& tpcid: geom->IterateTPCIDs()) {
+      
+      geo::TPCGeo const& TPC = geom->TPC(tpcid);
+      const unsigned int nPlanes = TPC.Nplanes();
+      if (nPlanes < 2) continue;
+      
+      double expectedPitch = 0.;
+      if (fExpectedPlanePitches.empty()) {
+        expectedPitch = TPC.PlanePitch(0, 1);
+        LOG_DEBUG("PlanePitch")
+          << "Plane pitch between the first two planes of " << tpcid << ": "
+          << expectedPitch << " cm";
+      }
+      
+      geo::PlaneID::PlaneID_t p = 0; // plane number
+      while (++p < nPlanes) {
+        // which pitch to expect:
+        // - if they did not tell us anything:
+        //     use the one from the first two planes (already in expectedPitch)
+        // - if they did tell something, but not for this plane:
+        //     get the last pitch they told us
+        // - if they told us about this plane: well, then use it!
+        if (!fExpectedPlanePitches.empty()) {
+          if (p - 1 < fExpectedPlanePitches.size())
+            expectedPitch = fExpectedPlanePitches[p - 1];
+          else
+            expectedPitch = fExpectedPlanePitches.back();
+        } // if we have directions about plane pitch
+        
+        const double thisPitch = std::abs(TPC.PlanePitch(p - 1, p));
+        if (std::abs(thisPitch - expectedPitch) > 1e-5) {
+          mf::LogProblem("PlanePitch") << "ERROR: pitch of planes P:" << (p - 1)
+            << " and P: " << p << " in " << tpcid 
+            << " is " << thisPitch << " cm, not " << expectedPitch
+            << " as expected!";
+          ++nPitchErrors;
+        } // if unexpected pitch
+      } // while planes
+      
+    } // for TPCs
+    
+    if (nPitchErrors > 0) {
+      throw cet::exception("UnexpectedPlanePitch")
+        << "unexpected pitches between " << nPitchErrors << " planes!";
+    } // end loop over planes
+    
+  } // GeometryTestAlg::testPlanePitch()
 
   //......................................................................
 

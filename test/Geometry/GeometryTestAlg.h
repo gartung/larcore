@@ -49,6 +49,9 @@ namespace geo {
    *   not specified or empty, no expectation is taken, but the spacing is still
    *   checked to be uniform; exception: for legacy behaviour, default pitches
    *   are provided for some experiments
+   * - **ExpectedPlanePitches** (list of reals, default: empty):
+   *   if specified, marks the expected uniform plane pitch, one entry for each
+   *   plane vs. the following. It works as /ExpectedWirePitches/
    * - **ForgiveExceptions** (list of strings, default: empty): the categories
    *   of exceptions in this list are "forgiven" (non-fatal)
    * - **RunTests** (string list): marks which tests to run;
@@ -96,6 +99,7 @@ namespace geo {
     std::set<std::string> fNonFatalExceptions;
     std::set<std::string> fRunTests; ///< which tests to run (empty runs all)
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
+    std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
     
     void printChannelSummary();
     void printVolBounds();
