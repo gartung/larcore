@@ -385,6 +385,23 @@ namespace geo {
   }
   
   //......................................................................
+  const AuxDetGeo& GeometryCore::ChannelToAuxDet(std::string const& auxDetName,
+					     uint32_t    const& channel) const
+  {
+    size_t adIdx = fChannelMapAlg->ChannelToAuxDet(AuxDets(), auxDetName, channel);
+    return this->AuxDet(adIdx);
+  }
+
+  //......................................................................
+  const AuxDetSensitiveGeo& GeometryCore::ChannelToAuxDetSensitive(std::string const& auxDetName,
+						      uint32_t    const& channel) const
+  {
+    auto idx = fChannelMapAlg->ChannelToSensitiveAuxDet(AuxDets(), auxDetName, channel);
+    return this->AuxDet(idx.first).SensitiveVolume(idx.second);
+  }
+
+  
+  //......................................................................
   SigType_t GeometryCore::SignalType(raw::ChannelID_t const channel) const
   {
     return fChannelMapAlg->SignalType(channel);

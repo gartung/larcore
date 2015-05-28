@@ -2529,6 +2529,13 @@ namespace geo {
                                                         size_t     & ad,
                                                         size_t     & sv) const;
     
+    const AuxDetGeo&         ChannelToAuxDet(std::string const& auxDetName,
+					     uint32_t    const& channel) const; // return the AuxDetGeo for the given detector 
+                                                                                // name and channel
+
+    const AuxDetSensitiveGeo& ChannelToAuxDetSensitive(std::string const& auxDetName,
+						       uint32_t    const& channel) const; // return the AuxDetSensitiveGeo for the given
+    
     /// @} Auxiliary detectors access and information
     
     
