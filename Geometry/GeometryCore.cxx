@@ -1174,6 +1174,7 @@ namespace geo {
   // inner dimensions of the TPC frame.
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
+  // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
   void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
                                    geo::WireID const& wid2,
                                    double start_w1[3], 
@@ -1182,81 +1183,11 @@ namespace geo {
                                    double end_w2[3], 
                                    double &y, double &z)
   {
-
-    //angle of wire1 wrt z-axis in Y-Z plane...in radians
-    const double angle1 = Wire(wid1).ThetaZ();
-    //angle of wire2 wrt z-axis in Y-Z plane...in radians
-    const double angle2 = Wire(wid2).ThetaZ();
-    
-    if(angle1 == angle2) return;//comparing two wires in the same plane...pointless.
-
-    //coordinates of "upper" endpoints...(z1,y1) = (a,b) and (z2,y2) = (c,d) 
-    double a = 0.;
-    double b = 0.;
-    double c = 0.; 
-    double d = 0.;
-    double anglex = 0.;
-    
-    // special case, one plane is vertical
-    if(angle1 == (util::pi<double>() / 2.) || angle2 == (util::pi<double>() / 2.)) {
-      if(angle1 == util::pi<double>() / 2.){
-                
-        anglex = (angle2 - util::pi<double>() / 2.);
-        a = end_w1[2];
-        b = end_w1[1];
-        c = end_w2[2];
-        d = end_w2[1];
-        // the if below can in principle be replaced by the sign of anglex (inverted) 
-        // in the formula for y below. But until the geometry is fully symmetric in y I'm 
-        // leaving it like this. Andrzej
-        if((anglex) > 0 ) b = start_w1[1];
-                    
-      }
-      else if(angle2 == util::pi<double>() / 2.){
-        anglex = (angle1 - util::pi<double>() / 2.);
-        a = end_w2[2];
-        b = end_w2[1];
-        c = end_w1[2];
-        d = end_w1[1];
-        // the if below can in principle be replaced by the sign of anglex (inverted) 
-        // in the formula for y below. But until the geometry is fully symmetric in y I'm 
-        // leaving it like this. Andrzej
-        if((anglex) > 0 ) b = start_w2[1];  
-      }
-
-      y = b + ((c-a) - (b-d)*tan(anglex))/tan(anglex);
-      z = a;   // z is defined by the wire in the vertical plane
-      
-      return;
-    }
-
-    // end of vertical case
-    
-    z = 0;y = 0;
-    
-    if(angle1 < (util::pi<double>() / 2.)){
-      c = end_w1[2];
-      d = end_w1[1];
-      a = start_w2[2];
-      b = start_w2[1];
-    }
-    else{
-      c = end_w2[2];
-      d = end_w2[1];
-      a = start_w1[2];
-      b = start_w1[1];
-    }
-    
-    // below is a special case of calculation when one of the planes is vertical. 
-    const double angle = std::min(angle1, angle2);//get angle closest to the z-axis (FIXME not necessarily)
-    
-    //Intersection point of two wires in the yz plane is completely
-    //determined by wire endpoints and angle of inclination.
-    z = 0.5 * ( c + a + (b-d)/std::tan(angle) );
-    y = 0.5 * ( b + d + (a-c)*std::tan(angle) );
-    
-    return;
-    
+    geo::WireIDIntersection widIntersect;
+    this->WireIDsIntersect(wid1,wid2,widIntersect);
+    y = widIntersect.y;
+    z = widIntersect.z;
+    return;    
   }
     
   // Added shorthand function where start and endpoints are looked up automatically
