@@ -1139,7 +1139,7 @@ namespace geo {
     outputPlane.fill(true);
     for (size_t i = 0; i < nPlanes; ++i){
       angle[i] = TPC.Plane(i).ThetaZ();
-      outputPlane[i] = false;
+      outputPlane[i] = (i!=pid1.Plane)&&(i!=pid2.Plane);
       //We need to subtract pi/2 to make those 'wire coordinate directions'.
       //But what matters is the difference between angles so we don't do that.
     } // for
