@@ -2356,7 +2356,10 @@ namespace geo {
      * @param slope2 slope as seen on the second plane
      * @param tpc tpc number within the cryostat where the planes belong
      * @param cstat cryostat number
-     * @return the slope on the third plane
+     * @return the slope on the third plane, or -999. if slope would be infinity
+     * @throws cet::exception (category: "GeometryCore") if different TPC
+     * @throws cet::exception (category: "GeometryCore") if same plane
+     * @throws cet::exception (category: "GeometryCore") if other than 3 planes
      *
      * Given a slope as projected in two planes, returns the slope as projected
      * in the third plane.
@@ -2366,7 +2369,6 @@ namespace geo {
      * 
      * @todo Probably the math is good for any number of planes though
      * @todo Check the correctness of the definition of the slopes
-     * @todo What happens if it's infinite?
      */
     double ThirdPlaneSlope(geo::PlaneID const& pid1, double slope1, 
                            geo::PlaneID const& pid2, double slope2) const;
@@ -2387,6 +2389,23 @@ namespace geo {
           (plane1, slope1, plane2, slope2, geo::TPCID(cstat, tpc));
       }
     //@}
+    
+    /**
+     * @brief Returns the slope on the third plane, given it in the other two
+     * @param angle1 angle or the wires on the first plane
+     * @param slope1 slope as observed on the first plane
+     * @param angle2 angle or the wires on the second plane
+     * @param slope2 slope as observed on the second plane
+     * @param angle_target angle or the wires on the target plane
+     * @return the slope as measure on the third plane, or 999 if infinity
+     * 
+     * This function will return a small slope if both input slopes are small.
+     */
+    static double ComputeThirdPlaneSlope(
+      double angle1, double slope1,
+      double angle2, double slope2,
+      double angle_target
+      );
 
     /// @} Wire geometry queries
     

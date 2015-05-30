@@ -1100,11 +1100,6 @@ namespace geo {
     return false;
   }
 
-  // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
-  // B. Baller August 2014
-  // Rewritten by T. Yang Apr 2015 using the equation in H. Greenlee's talk:
-  // https://cdcvs.fnal.gov/redmine/attachments/download/1821/larsoft_apr20_2011.pdf
-  // slide 2
   double GeometryCore::ThirdPlaneSlope(
     geo::PlaneID const& pid1, double slope1,
     geo::PlaneID const& pid2, double slope2
@@ -1127,44 +1122,64 @@ namespace geo {
         << std::string(pid1) << " twice\n";
     }
     
-    // Can't resolve very small slopes
-    if(fabs(slope1) < 0.001 && fabs(slope2) < 0.001) return 0.001;
-    
     geo::TPCGeo const& TPC = this->TPC(pid1);
 
     // We need the "wire coordinate direction" for each plane.
     // This is perpendicular to the wire orientation. 
     double angle[3];
-    std::array<bool, 3> outputPlane;
-    outputPlane.fill(true);
-    for (size_t i = 0; i < nPlanes; ++i){
-      angle[i] = TPC.Plane(i).ThetaZ();
-      outputPlane[i] = (i!=pid1.Plane)&&(i!=pid2.Plane);
+    geo::PlaneID::PlaneID_t target_plane = nPlanes;
+    for (geo::PlaneID::PlaneID_t iPlane = 0; iPlane < nPlanes; ++iPlane){
+      angle[iPlane] = TPC.Plane(iPlane).ThetaZ();
+      if ((iPlane != pid1.Plane) && (iPlane != pid2.Plane)) {
+        if (target_plane != nPlanes) {
+          throw cet::exception("GeometryCore")
+            << "ThirdPlaneSlope() found too many planes to output slope for!"
+            << " (first " << target_plane << ", then " << iPlane << ")\n";
+        }
+        target_plane = iPlane;
+      } // if not an input plane
       //We need to subtract pi/2 to make those 'wire coordinate directions'.
       //But what matters is the difference between angles so we don't do that.
     } // for
-    auto iOutput = std::find(outputPlane.begin(), outputPlane.end(), true);
-    if (iOutput == outputPlane.end()) { // was: return 999;
+    if (target_plane == nPlanes) { // was: return 999;
       throw cet::exception("GeometryCore")
         << "ThirdPlaneSlope() can't find which plane to output the slope for!\n";
     }
-    const unsigned int plane1 = pid1.Plane;
-    const unsigned int plane2 = pid2.Plane;
-    const unsigned int plane3 = *iOutput;
+    
+    return ComputeThirdPlaneSlope(
+      angle[pid1.Plane], slope1, angle[pid2.Plane], slope2, angle[target_plane]
+      );
+  } // ThirdPlaneSlope
+  
+  
+  // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
+  // B. Baller August 2014
+  // Rewritten by T. Yang Apr 2015 using the equation in H. Greenlee's talk:
+  // https://cdcvs.fnal.gov/redmine/attachments/download/1821/larsoft_apr20_2011.pdf
+  // slide 2
+  double GeometryCore::ComputeThirdPlaneSlope
+    (double angle1, double slope1, double angle2, double slope2, double angle3)
+  {
+    
+    // Can't resolve very small slopes
+    if ((std::abs(slope1) < 0.001) && (std::abs(slope2)) < 0.001) return 0.001;
+    
+    // We need the "wire coordinate direction" for each plane.
+    // This is perpendicular to the wire orientation. 
     double slope3 = 0.001;
     if (std::abs(slope1) > 0.001 && std::abs(slope2) > 0.001) {
       slope3
         = (
-          + (1./slope1)*std::sin(angle[plane3]-angle[plane2])
-          - (1./slope2)*std::sin(angle[plane3]-angle[plane1])
-        ) / std::sin(angle[plane1]-angle[plane2])
+          + (1./slope1)*std::sin(angle3-angle2)
+          - (1./slope2)*std::sin(angle3-angle1)
+        ) / std::sin(angle1-angle2)
         ;
     }
-    if (slope3) slope3 = 1./slope3;
+    if (slope3 != 0.) slope3 = 1./slope3;
     else slope3 = 999.;
     
     return slope3;
-  } // ThirdPlaneSlope
+  } // GeometryCore::ComputeThirdPlaneSlope()
   
   
   //......................................................................
