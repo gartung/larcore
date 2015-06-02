@@ -12,6 +12,7 @@
 
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/AuxDetSensitiveGeo.h"
+#include "Geometry/GeoObjectSorter.h"
 
 class TGeoNode;
 class TGeoHMatrix;
@@ -50,6 +51,8 @@ namespace geo {
 							size_t     & sv)           const;
     AuxDetSensitiveGeo const& SensitiveVolume(size_t sv) const { return *fSensitive[sv];   }
     size_t             const  NSensitiveVolume()         const { return fSensitive.size(); }
+
+    void                      SortSubVolumes(geo::GeoObjectSorter const& sorter);
 
   private:
 
