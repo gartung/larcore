@@ -221,5 +221,13 @@ namespace geo{
     return this->SensitiveVolume(sv);
   }
 
+  //......................................................................  
+  void AuxDetGeo::SortSubVolumes(GeoObjectSorter const& sorter)
+  {
+    sorter.SortAuxDetSensitive(fSensitive);
+
+    return;
+  }
+
 }
 ////////////////////////////////////////////////////////////////////////

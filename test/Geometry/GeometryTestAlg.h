@@ -64,6 +64,7 @@ namespace geo {
    *   + `WirePos`: currently disabled
    *   + `NearestWire` (default): tests `WireCoordinate()` and `NearestWire()`
    *   + `WireIntersection` (default): tests `WireIDsIntersect()`
+   *   + `ThirdPlaneSlope` (default): tests `ThirdPlaneSlope()`
    *   + `WirePitch` (default):
    *   + `PlanePitch` (default):
    *   + `Stepping` (default):
@@ -118,6 +119,7 @@ namespace geo {
     void testAPAWirePos();
     void testNearestWire();
     void testWireIntersection() const;
+    void testThirdPlaneSlope() const;
     void testStepping();
 
     bool shouldRunTests(std::string test_name) const;
@@ -125,6 +127,13 @@ namespace geo {
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
       (const TPCID& tpcid, double x, double y, double z) const;
+    
+    
+    /// Performs the third plane slope test with a single configuration
+    unsigned int testThirdPlaneSlopeAt(
+      geo::PlaneID const& pid1, double slope1,
+      geo::PlaneID const& pid2, double slope2
+      ) const;
   };
 } // namespace geo
 
