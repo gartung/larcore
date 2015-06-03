@@ -80,6 +80,21 @@ cet_test(geometry_iterator_loop_test
 )
 
 
+# simple unit test
+# this uses BOOST for the test
+cet_test(geometry_thirdplaneslope_test
+  SOURCES geometry_thirdplaneslope_test.cxx
+  LIBRARIES Geometry
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+  USE_BOOST_UNIT
+  DATAFILES test_geometry.fcl
+  TEST_ARGS test_geometry.fcl
+)
+
+
 # these tests run a FCL file and fail only if lar exits with a bad exit code;
 # they are fast and always run.
 # FCL files need to be copied to the test area (DATAFILES directive) since they
