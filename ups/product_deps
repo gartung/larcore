@@ -26,7 +26,7 @@ art		v1_14_02
 geant4		v4_9_6_p04a
 gcc		v4_9_2
 
-cetbuildtools	v4_10_02	-	only_for_build
+cetbuildtools	v4_11_01	-	only_for_build
 end_product_list
 
   
