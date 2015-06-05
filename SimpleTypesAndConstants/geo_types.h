@@ -85,8 +85,10 @@ namespace geo {
     /// Constructor: valid ID of cryostat with index c
     CryostatID(CryostatID_t c, bool valid): isValid(valid), Cryostat(c) {}
     
+#ifndef __GCCXML__
     /// Returns true if the ID is valid
-    operator bool() const { return isValid; }
+    explicit operator bool() const { return isValid; }
+#endif // __GCCXML__
     
     /// Returns true if the ID is not valid
     bool operator! () const { return !isValid; }
