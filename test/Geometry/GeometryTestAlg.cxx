@@ -53,6 +53,15 @@ namespace {
     sstr << v;
     return sstr.str();
   } // ::to_string()
+  
+  
+  /// Returns whether the CET exception e contains the specified category cat
+  bool hasCategory(cet::exception const& e, std::string const& cat) {
+    for (auto const& e_category: e.history())
+      if (e_category == cat) return true;
+    return false;
+  } // hasCategory()
+  
 } // local namespace
 
 
@@ -150,6 +159,7 @@ namespace geo{
    "Projection",
    "NearestWire",
    "WireIntersection",
+   "ThirdPlane",
    "ThirdPlaneSlope",
    "WirePitch",
    "PlanePitch",
@@ -289,6 +299,12 @@ namespace geo{
       if (shouldRunTests("ThirdPlaneSlope")) {
         LOG_DEBUG("GeometryTest") << "testThirdPlaneSlope...";
         testThirdPlaneSlope();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("ThirdPlane")) {
+        LOG_DEBUG("GeometryTest") << "testThirdPlane...";
+        testThirdPlane();
         LOG_DEBUG("GeometryTest") << "complete.";
       }
 
@@ -974,14 +990,13 @@ namespace geo{
                   (wire_shifted[1], wire_shifted[2], p, t, cs);
               }
               catch (cet::exception& e) {
-                for (const cet::exception::Category& cat: e.history()) {
-                  if (cat != "NotImplemented") continue;
+                if (hasCategory(e, "NotImplemented")) {
                   LOG_ERROR("WireCoordinateNotImplemented")
                     << "WireCoordinate() is not implemented for your ChannelMap;"
                     " skipping the test";
                   bTestWireCoordinate = false;
                 }
-                if (bTestWireCoordinate) throw;
+                else if (bTestWireCoordinate) throw;
               }
             }
             if (bTestWireCoordinate) {
@@ -1222,7 +1237,7 @@ namespace geo{
           nErrors += testWireIntersectionAt(*iTPC, x, y, z);
         } // for y
       } // for z
-    } // while iTPC
+    } // for iTPC
     
     if (nErrors > 0) {
       throw cet::exception("GeoTestWireIntersection")
@@ -1343,6 +1358,362 @@ namespace geo{
 
 
   //......................................................................
+  void GeometryTestAlg::testThirdPlane() const {
+    /*
+     * This is a test for ThirdPlane() function, that returns the plane that is
+     * not specified in the input.
+     * Currently, the only implemented signature is designed for TPCs with 3
+     * planes.
+     *
+     * The test strategy is to check all the TPC one by one:
+     * - for all combinations of two planes, if the result is the expected one
+     * 
+     * All tests are performed; at the end, the test is considered a failure
+     * if any of the single tests failed.
+     */
+    
+    unsigned int nErrors = 0;
+    for (geo::GeometryCore::TPC_id_iterator iTPC(&*geom); iTPC; ++iTPC) {
+      const geo::TPCID tpcid = *iTPC;
+      const geo::TPCGeo& TPC = geom->TPC(tpcid);
+      
+      const unsigned int nPlanes = TPC.Nplanes();
+      LOG_DEBUG("GeometryTest") << tpcid << " (" << nPlanes << " planes)";
+      
+      
+      for (geo::PlaneID::PlaneID_t iPlane1 = 0; iPlane1 < nPlanes; ++iPlane1) {
+        geo::PlaneID pid1(tpcid, iPlane1);
+        
+        for (geo::PlaneID::PlaneID_t iPlane2 = 0; iPlane2 < nPlanes; ++iPlane2)
+        {
+          geo::PlaneID pid2(tpcid, iPlane2);
+          
+          const bool isValidInput = (nPlanes == 3) && (iPlane1 != iPlane2);
+          bool bError = false;
+          geo::PlaneID third_plane;
+          try {
+            third_plane = geom->ThirdPlane(pid1, pid2);
+          }
+          catch (cet::exception const& e) {
+            if (isValidInput) throw;
+            // we have gotten the error we were looking for
+            // if "GeometryCore" is included in the categories of the exception
+            bError = hasCategory(e, "GeometryCore");
+          } // try...catch
+          
+          LOG_TRACE("GeometryTest")
+            << "  [" << pid1 << "], [" << pid2 << "] => "
+            << (bError? "error": std::string(third_plane));
+          if (bError) continue; // we got what we wanted
+          
+          if (!bError && !isValidInput) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned " << third_plane
+              << ", while should have thrown an exception";
+            ++nErrors;
+            continue;
+          } // if no error
+          
+          if (third_plane != tpcid) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned " << third_plane
+              << ", on a different TPC!!!";
+            ++nErrors;
+          }
+          else if (!third_plane.isValid) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned an invalid " << third_plane;
+            ++nErrors;
+          }
+          else if (third_plane.Plane >= nPlanes) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned " << third_plane
+              << " with plane out of range";
+            ++nErrors;
+          }
+          else if (third_plane == pid1) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned " << third_plane
+              << ", same as the first input";
+            ++nErrors;
+          }
+          else if (third_plane == pid2) {
+            LOG_ERROR("GeometryTest") << "ThirdPlane() on " << pid1
+              << " and " << pid2 << " returned " << third_plane
+              << ", same as the second input";
+            ++nErrors;
+          }
+          
+        } // for plane 2
+        
+      } // for plane 1
+      
+    } // for TPC
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeoTestThirdPlane")
+        << "Accumulated " << nErrors << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testThirdPlane()
+  
+  
+  //......................................................................
+  void GeometryTestAlg::testThirdPlaneSlope() const {
+    /*
+     * This is a test for ThirdPlaneSlope() function, that returns the apparent
+     * slope on a wire plane, given the ones observed on other two planes.
+     *
+     * The test strategy is to check all the TPC one by one:
+     * - if a query for planes on different cryostats fails TODO
+     * - if a query for planes on different TPCs fails TODO
+     * - for selected 3D points, compute the three slopes and verify them by 
+     *   test these slopes by testThirdPlaneSlopeAt() function (see)
+     * 
+     * All tests are performed; at the end, the test is considered a failure
+     * if any of the single tests failed.
+     */
+    
+    unsigned int nErrors = 0;
+    for (geo::GeometryCore::TPC_id_iterator iTPC(&*geom); iTPC; ++iTPC) {
+      const geo::TPCID tpcid = *iTPC;
+      const geo::TPCGeo& TPC = geom->TPC(tpcid);
+      
+      const unsigned int NPlanes = TPC.Nplanes();
+      LOG_DEBUG("GeometryTest") << tpcid << " (" << NPlanes << " planes)";
+      
+      // sanity: planes on different cryostats
+      if (tpcid.Cryostat < geom->Ncryostats() - 1) {
+        geo::PlaneID p1 { tpcid, 0 }, p2 { tpcid.Cryostat + 1, tpcid.TPC, 1 };
+        bool bError = false;
+        double slope;
+        try {
+          slope = geom->ThirdPlaneSlope(p1, +1.0, p2, -1.0);
+        }
+        catch (cet::exception const& e) {
+          // we have gotten the error we were looking for
+          // if "GeometryCore" is included in the categories of the exception
+          bError = hasCategory(e, "GeometryCore");
+        } // try...catch
+        if (!bError) {
+          LOG_ERROR("GeometryTest") << "ThirdPlaneSlope() on " << p1
+            << " and " << p2 << " returned " << slope
+            << ", while should have thrown an exception";
+          ++nErrors;
+        } // if no error
+      } // if not the last cryostat
+      
+      // sanity: planes on different TPC
+      if (tpcid.TPC < geom->NTPC(tpcid.Cryostat) - 1) {
+        geo::PlaneID p1 { tpcid, 0 }, p2 { tpcid.Cryostat, tpcid.TPC + 1, 1 };
+        bool bError = false;
+        double slope;
+        try {
+          slope = geom->ThirdPlaneSlope(p1, +1.0, p2, -1.0);
+        }
+        catch (cet::exception const& e) {
+          // we have gotten the error we were looking for
+          // if "GeometryCore" is included in the categories of the exception
+          bError = hasCategory(e, "GeometryCore");
+        } // try...catch
+        if (!bError) {
+          LOG_ERROR("GeometryTest") << "ThirdPlaneSlope() on " << p1
+            << " and " << p2 << " returned " << slope
+            << ", while should have thrown an exception";
+          ++nErrors;
+        } // if no error
+      } // if not the last TPC in its cryostat
+      
+      
+      // pick a point in the very middle of the TPC:
+      const std::array<double, 3> A
+        = { TPC.CenterX(), TPC.CenterY(), TPC.CenterZ() };
+      // pick a radius half the way to the closest border
+      const double radius
+        = std::min({ TPC.HalfWidth(), TPC.HalfHeight(), TPC.Length()/2. }) / 2.;
+      
+      // I arbitrary decide that the second point will have 
+      const double dX = radius;
+      
+      // sample a circle of SplitAngles directions around A
+      constexpr unsigned int NAngles = 19;
+      const double start_angle = 0.05; // radians
+      const double step_angle = 2. * util::pi<double>() / NAngles; // radians
+      
+      for (unsigned int iAngle = 0; iAngle < NAngles; ++iAngle) {
+        const double angle = start_angle + iAngle * step_angle;
+        
+        // define B as a point "radius" far from A in the angle direction,
+        // with some arbitrary and fixed dx offset
+        std::array<double, 3> B = {
+          A[0] + dX,
+          A[1] + radius * std::sin(angle),
+          A[2] + radius * std::cos(angle)
+          };
+        
+        // get the expectation; this function assumes a drift velocity of
+        // 1 mm per tick by default; for the test, it does not matter
+        std::vector<std::pair<geo::PlaneID, double>> slopes
+          = ExpectedPlaneSlopes(A, B);
+        
+        if (mf::isDebugEnabled()) {
+          mf::LogTrace log("GeometryTest");
+          log << "Expected slopes:";
+          for (auto const& slope_info: slopes)
+            log << "  " << slope_info.first << " slope:" << slope_info.second;
+        } // if debug
+        
+        // run the test
+        nErrors += testThirdPlaneSlopeAt(slopes);
+        
+      } // for angle
+      
+    } // for TPC
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeoTestThirdPlaneSlope")
+        << "Accumulated " << nErrors << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testThirdPlaneSlope()
+  
+  
+  std::vector<std::pair<geo::PlaneID, double>>
+  GeometryTestAlg::ExpectedPlaneSlopes(
+    std::array<double, 3> const& A, std::array<double, 3> const& B,
+    const double driftVelocity /* = 0.1 */
+    ) const
+  {
+    // This function returns a list of entries, one for each plane:
+    // - plane ID
+    // - slope of the projection of AB from the plane, in dt/dw units
+    
+    // find which TPC we are taking about
+    geo::TPCID tpcid = geom->FindTPCAtPosition(A.data());
+    
+    if (!tpcid.isValid) {
+      throw cet::exception("GeometryTestAlg")
+        << "ExpectedPlaneSlopes(): can't find any TPC containing point A ("
+        << A[0] << "; " << A[1] << "; " << A[2] << ")";
+    }
+    
+    if (geom->FindTPCAtPosition(B.data()) != tpcid) {
+      throw cet::exception("GeometryTestAlg")
+        << "ExpectedPlaneSlopes(): point A ("
+        << A[0] << "; " << A[1] << "; " << A[2] << ") is in "
+        << std::string(tpcid)
+        << " while point B (" << B[0] << "; " << B[1] << "; " << B[2]
+        << ") is in " << std::string(geom->FindTPCAtPosition(B.data()));
+    }
+    
+    geo::TPCGeo const& TPC = geom->TPC(tpcid);
+    
+    // conversion from X coordinate to tick coordinate
+    double dT_over_dX = 1. / driftVelocity;
+    switch (TPC.DriftDirection()) {
+      case geo::kPosX:
+        // if the drift direction is toward positive x, higher x will reach the
+        // plane earlier and have smaller t, hence the flip in sign
+        dT_over_dX = -dT_over_dX;
+        break;
+      case geo::kNegX: break;
+      default:
+        throw cet::exception("InternalError")
+          << "GeometryTestAlg::ExpectedPlaneSlopes(): drift direction #"
+          << ((int) TPC.DriftDirection()) << " of " << std::string(tpcid)
+          << " not supported.\n";
+    } // switch drift direction
+    
+    const unsigned int nPlanes = TPC.Nplanes();
+    std::vector<std::pair<geo::PlaneID, double>> slopes(nPlanes);
+    
+    for (geo::PlaneID::PlaneID_t iPlane = 0; iPlane < nPlanes; ++iPlane) {
+      geo::PlaneID pid(tpcid, iPlane);
+      const double wA = geom->WireCoordinate(A[1], A[2], pid);
+      const double wB = geom->WireCoordinate(B[1], B[2], pid);
+      
+      slopes[iPlane]
+        = std::make_pair(pid, ((B[0] - A[0]) * dT_over_dX) / (wB - wA));
+      
+    } // for iPlane
+    
+    return slopes;
+  }  // GeometryTestAlg::ExpectedPlaneSlopes()
+  
+  
+  unsigned int GeometryTestAlg::testThirdPlaneSlopeAt
+    (std::vector<std::pair<geo::PlaneID, double>> const& plane_slopes) const
+  {
+    /*
+     * This function tests that for every combination of planes, the expected
+     * slope is returned within some tolerance.
+     * It returns the number of mistakes found.
+     * 
+     * The parameter is a list if pair of expected slope on the paired plane.
+     *
+     */
+    
+    unsigned int nErrors = 0;
+    for (std::pair<geo::PlaneID, double> const& input1: plane_slopes) {
+      for (std::pair<geo::PlaneID, double> const& input2: plane_slopes) {
+        
+        const bool bValidInput = input1.first != input2.first;
+        
+        for (std::pair<geo::PlaneID, double> const& output: plane_slopes) {
+          bool bError = false;
+          double output_slope = 0.;
+          try {
+            output_slope = geom->ThirdPlaneSlope(
+              input1.first, input1.second,
+              input2.first, input2.second,
+              output.first
+              );
+          }
+          catch (cet::exception const& e) {
+            // catch only "GeometryCore" category, and only if input is faulty;
+            // otherwise, rethrow
+            if (bValidInput) throw;
+            bError = hasCategory(e, "GeometryCore");
+            if (!bError) throw;
+            LOG_TRACE("GeometryTest")
+              << input1.first << " slope:" << input1.second
+              << "  " << input2.first << " slope:" << input2.second
+              << "  => exception";
+            continue;
+          }
+          
+          if (!bValidInput && !bError) {
+            LOG_ERROR("GeometryTest")
+              << "GeometryCore::ThirdPlaneSlope() on "
+              << input1.first << " and " << input2.first
+              << " should have thrown an exception, it returned "
+              << output_slope << " instead";
+            ++nErrors;
+            continue;
+          } // if faulty input and no error
+          
+          LOG_TRACE("GeometryTest")
+            << input1.first << " slope:" << input1.second
+            << "  " << input2.first << " slope:" << input2.second
+            << "  => " << output.first << " slope:" << output_slope;
+          if (std::abs(output.second - output_slope) > 1e-3) {
+            LOG_ERROR("testThirdPlaneSlopeAt")
+              << "GeometryCore::ThirdPlaneSlope(): "
+              << input1.first << " slope:" << input1.second
+              << "  " << input2.first << " slope:" << input2.second
+              << "  => " << output.first << " slope:" << output_slope
+              << "  (expected: " << output.second << ")";
+          } // if too far
+          
+          // now test the automatic detection of the other plane
+          
+        } // for output
+      } // for second input
+    } // for first input
+    return nErrors;
+  }  // GeometryTestAlg::testThirdPlaneSlopeAt()
+  
+#if 0
   void GeometryTestAlg::testThirdPlaneSlope() const {
     /*
      * This is a test for ThirdPlaneSlope() function, that returns the apparent
@@ -1568,7 +1939,7 @@ namespace geo{
     
     return nErrors;
   } // GeometryTestAlg::testWireIntersectionAt()
-
+#endif // 0
 
   //......................................................................
   void GeometryTestAlg::testWirePitch()

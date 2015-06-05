@@ -2347,15 +2347,50 @@ namespace geo {
       }
     //@}
     
-    //@{
+    
+    /**
+     * @brief Returns the plane that is not in the specified arguments
+     * @param pid1 a plane
+     * @param pid2 another plane
+     * @return the ID to the third plane
+     * @throws cet::exception (category: "GeometryCore") if other than 3 planes
+     * @throws cet::exception (category: "GeometryCore") if pid1 and pid2 match
+     *
+     * This function requires a geometry with exactly three planes.
+     * If the two input planes are not on the same TPC, the result is undefined.
+     */
+    geo::PlaneID ThirdPlane
+      (geo::PlaneID const& pid1, geo::PlaneID const& pid2) const;
+
+    
     /**
      * @brief Returns the slope on the third plane, given it in the other two
-     * @param plane1 plane index of the first slope
+     * @param pid1 ID of the plane of the first slope
      * @param slope1 slope as seen on the first plane
-     * @param plane2 plane index of the second slope
+     * @param pid2 ID of the plane of the second slope
      * @param slope2 slope as seen on the second plane
-     * @param tpc tpc number within the cryostat where the planes belong
-     * @param cstat cryostat number
+     * @param output_plane ID of the plane on which to calculate the slope
+     * @return the slope on the third plane, or -999. if slope would be infinity
+     * @throws cet::exception (category: "GeometryCore") if different TPC
+     * @throws cet::exception (category: "GeometryCore") if input planes match
+     *
+     * Given a slope as projected in two planes, returns the slope as projected
+     * in the specified output plane.
+     * The slopes are defined in uniform units; they should be computed as
+     * distance ratios (or tangent of a geometrical angle; the formula is still
+     * valid using dt/dw directly in case of equal wire pitch in all planes
+     * and uniform drift velocity.
+     */
+    double ThirdPlaneSlope(geo::PlaneID const& pid1, double slope1, 
+                           geo::PlaneID const& pid2, double slope2,
+                           geo::PlaneID const& output_plane) const;
+    
+    /**
+     * @brief Returns the slope on the third plane, given it in the other two
+     * @param pid1 ID of the plane of the first slope
+     * @param slope1 slope as seen on the first plane
+     * @param pid2 ID of the plane of the second slope
+     * @param slope2 slope as seen on the second plane
      * @return the slope on the third plane, or -999. if slope would be infinity
      * @throws cet::exception (category: "GeometryCore") if different TPC
      * @throws cet::exception (category: "GeometryCore") if same plane
@@ -2363,15 +2398,29 @@ namespace geo {
      *
      * Given a slope as projected in two planes, returns the slope as projected
      * in the third plane.
-     * The slopes are defined in dTime/dWire units, that assumes equal wire
-     * pitch in all planes and a uniform drift velocity.
-     * This method assumes the presence of three planes.
-     * 
-     * @todo Probably the math is good for any number of planes though
-     * @todo Check the correctness of the definition of the slopes
+     * This function is a shortcut assuming exactly three wire planes in the
+     * TPC, in which case the output plane is chosen as the one that is neither
+     * of the input planes.
      */
     double ThirdPlaneSlope(geo::PlaneID const& pid1, double slope1, 
                            geo::PlaneID const& pid2, double slope2) const;
+    
+    //@{
+    /**
+     * @brief Returns the slope on the third plane, given it in the other two
+     * @param plane1 index of the plane of the first slope
+     * @param slope1 slope as seen on the first plane
+     * @param plane2 index of the plane of the second slope
+     * @param slope2 slope as seen on the second plane
+     * @param tpcid TPC where the two planes belong
+     * @return the slope on the third plane, or -999. if slope would be infinity
+     * @throws cet::exception (category: "GeometryCore") if different TPC
+     * @throws cet::exception (category: "GeometryCore") if same plane
+     * @throws cet::exception (category: "GeometryCore") if other than 3 planes
+     *
+     * Given a slope as projected in two planes, returns the slope as projected
+     * in the third plane.
+     */
     double ThirdPlaneSlope(geo::PlaneID::PlaneID_t plane1, double slope1, 
                            geo::PlaneID::PlaneID_t plane2, double slope2,
                            geo::TPCID const& tpcid) const
@@ -2405,6 +2454,28 @@ namespace geo {
       double angle1, double slope1,
       double angle2, double slope2,
       double angle_target
+      );
+    
+    /**
+     * @brief Returns the slope on the third plane, given it in the other two
+     * @param angle1 angle or the wires on the first plane
+     * @param pitch1 wire pitch on the first plane
+     * @param dTdW1 slope in dt/dw units as observed on the first plane
+     * @param angle2 angle or the wires on the second plane
+     * @param pitch2 wire pitch on the second plane
+     * @param dTdW2 slope in dt/dw units as observed on the second plane
+     * @param angle_target angle or the wires on the target plane
+     * @param pitch_target wire pitch on the target plane
+     * @return dt/dw slope as measured on the third plane, or 999 if infinity
+     *
+     * The input slope must be specified in dt/dw non-homogeneous coordinates.
+     * 
+     * This function will return a small slope if both input slopes are small.
+     */
+    static double ComputeThirdPlaneDtDw(
+      double angle1, double pitch1, double dTdW1,
+      double angle2, double pitch2, double dTdW2,
+      double angle_target, double pitch_target
       );
 
     /// @} Wire geometry queries

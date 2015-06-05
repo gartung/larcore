@@ -64,6 +64,7 @@ namespace geo {
    *   + `WirePos`: currently disabled
    *   + `NearestWire` (default): tests `WireCoordinate()` and `NearestWire()`
    *   + `WireIntersection` (default): tests `WireIDsIntersect()`
+   *   + `ThirdPlane` (default): tests `ThirdPlane()`
    *   + `ThirdPlaneSlope` (default): tests `ThirdPlaneSlope()`
    *   + `WirePitch` (default):
    *   + `PlanePitch` (default):
@@ -119,6 +120,7 @@ namespace geo {
     void testAPAWirePos();
     void testNearestWire();
     void testWireIntersection() const;
+    void testThirdPlane() const;
     void testThirdPlaneSlope() const;
     void testStepping();
 
@@ -128,12 +130,16 @@ namespace geo {
     unsigned int testWireIntersectionAt
       (const TPCID& tpcid, double x, double y, double z) const;
     
+    /// Returns the slopes expected from the specified segment A-to-B
+    std::vector<std::pair<geo::PlaneID, double>> ExpectedPlaneSlopes(
+      std::array<double, 3> const& A, std::array<double, 3> const& B,
+      const double driftVelocity = 0.1
+      ) const;
     
     /// Performs the third plane slope test with a single configuration
-    unsigned int testThirdPlaneSlopeAt(
-      geo::PlaneID const& pid1, double slope1,
-      geo::PlaneID const& pid2, double slope2
-      ) const;
+    unsigned int testThirdPlaneSlopeAt
+      (std::vector<std::pair<geo::PlaneID, double>> const& plane_slopes) const;
+    
   };
 } // namespace geo
 
