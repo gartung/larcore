@@ -114,6 +114,7 @@ namespace geo {
     void testChannelToWire();
     void testFindPlaneCenters();
     void testProject();
+    void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
     void testStandardWirePos();

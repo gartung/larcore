@@ -42,9 +42,10 @@ namespace geo{
     // view and signal are now set at TPC level with SetView and SetSignal
     fOrientation = kVertical;
 
-    // determine the pitch of wires in this plane
+    // perform initialization that is mapping-dependent;
+    // when the mapping changes, this will have to be repeated
     // assumes same pitch between all wires in this plane
-    fWirePitch = geo::WireGeo::WirePitch(Wire(0), Wire(1));
+    UpdateFromMapping();
   }
 
   //......................................................................
@@ -109,7 +110,7 @@ namespace geo{
   void PlaneGeo::SortWires(geo::GeoObjectSorter const& sorter )
   {
     sorter.SortWires(fWire);
-    return;
+    UpdateFromMapping();
   }
   
   
@@ -159,7 +160,11 @@ namespace geo{
   //......................................................................
   TVector3 PlaneGeo::GetIncreasingWireDirection() const {
     const unsigned int NWires = Nwires();
-    if (NWires < 2) return TVector3(); // why are we even here?
+    if (NWires < 2) {
+      // this likely means construction is not complete yet
+      throw cet::exception("NoWireInPlane")
+        << "GetIncreasingWireDirection() has only " << NWires << " wires.\n";
+    } // if
     
     // 1) get the direction of the middle wire
     TVector3 WireDir = Wire(NWires / 2).Direction();
@@ -250,5 +255,24 @@ namespace geo{
     fGeoMatrix->MasterToLocalVect(world,plane);
   }
 
+  //......................................................................
+  void PlaneGeo::UpdateWirePitch() {
+    fWirePitch = geo::WireGeo::WirePitch(Wire(0), Wire(1));
+  } // PlaneGeo::UpdateWirePitch()
+  
+  //......................................................................
+  void PlaneGeo::UpdatePhiZ() {
+    TVector3 wire_coord_dir = GetIncreasingWireDirection();
+    fCosPhiZ = wire_coord_dir.Z();
+    fSinPhiZ = wire_coord_dir.Y();
+  } // PlaneGeo::UpdatePhiZ()
+  
+  //......................................................................
+  void PlaneGeo::UpdateFromMapping() {
+    UpdateWirePitch();
+    UpdatePhiZ();
+  } // PlaneGeo::UpdateWirePitch()
+  
+  
 }
 ////////////////////////////////////////////////////////////////////////

@@ -156,6 +156,7 @@ namespace geo{
    "Cryostat",
    "ChannelToWire",
    "FindPlaneCenters",
+   "WireCoordAngle",
    "Projection",
    "NearestWire",
    "WireIntersection",
@@ -268,6 +269,12 @@ namespace geo{
       if (shouldRunTests("FindPlaneCenters")) {
         LOG_DEBUG("GeometryTest") << "test find plane centers...";
         testFindPlaneCenters();
+        LOG_DEBUG("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("WireCoordAngle")) {
+        LOG_DEBUG("GeometryTest") << "testWireCoordAngle...";
+        testWireCoordAngle();
         LOG_DEBUG("GeometryTest") << "complete.";
       }
 
@@ -491,7 +498,8 @@ namespace geo{
         << ") cm, covers " << plane_area.DeltaY() << " x "
         << plane_area.DeltaZ() << " cm around " << plane_area.Center()
         << ", has " << orientation << " orientation and "
-        << nWires << " wires measuring " << coord << ":";
+        << nWires << " wires measuring " << coord << " with a pitch of "
+        << plane.WirePitch() << " mm:";
       for(unsigned int w = 0;  w < nWires; ++w) {
         const geo::WireGeo& wire = plane.Wire(w);
         double xyz[3] = { 0. };
@@ -633,7 +641,8 @@ namespace geo{
                                         << tpc.Plane0Pitch(p) << "; \n\t\tOrientation "
                                         << plane.Orientation() << ", View "
                                         << plane.View() << ", Wire angle "
-                                        << plane.Wire(0).ThetaZ();
+                                        << plane.Wire(0).ThetaZ()
+                                        << ", Pitch " << plane.WirePitch();
       } // for plane
       geo::DriftDirection_t dir = tpc.DriftDirection();
       if     (dir == geo::kNegX) 
@@ -663,6 +672,91 @@ namespace geo{
   }
 
 
+  //......................................................................
+  void GeometryTestAlg::testWireCoordAngle() const {
+    /*
+     * Tests that the angle PhiZ() actually points to the next wire.
+     *
+     * The test, for each plane, performs the following:
+     * - pick the middle wire, verify that we can get the expected wire
+     *   coordinate for its centre
+     * - move one wire pitch away from the centre in the direction determined
+     *   by PhiZ(), verify that the coordinate increases by 1
+     */
+    
+    for (geo::PlaneID const& planeid: geom->IteratePlaneIDs()) {
+      
+      geo::PlaneGeo const& plane = geom->Plane(planeid);
+      
+      // define the wires to work with
+      const unsigned int nWires = plane.Nwires();
+      
+      geo::WireID middle_wire_id(planeid, nWires / 2);
+      geo::WireID next_wire_id(planeid, nWires / 2 + 1);
+      
+      if (next_wire_id.Wire >= nWires) {
+        throw cet::exception("WeirdGeometry")
+          << "Plane " << std::string(planeid) << " has only " << nWires
+          << " wires?!?\n";
+      }
+      
+      
+      geo::WireGeo const& middle_wire = geom->Wire(middle_wire_id);
+      std::array<double, 3> middle_wire_center;
+      middle_wire.GetCenter(middle_wire_center.data());
+      LOG_TRACE("GeometryTest")
+        << "Center of " << std::string(middle_wire_id) << " at ("
+          << middle_wire_center[0]
+          << "; " << middle_wire_center[1] << "; " << middle_wire_center[2]
+          << ")";
+      
+      // cross check: we can find the middle wire
+      const double middle_coord = geom->WireCoordinate
+        (middle_wire_center[1], middle_wire_center[2], planeid);
+      
+      if (std::abs(middle_coord - double(middle_wire_id.Wire)) > 1e-3) {
+        throw cet::exception("WireCoordAngle")
+          << "Center of " << std::string(middle_wire_id) << " at ("
+          << middle_wire_center[0]
+          << "; " << middle_wire_center[1] << "; " << middle_wire_center[2]
+          << ") has wire coordinate " << middle_coord
+          << " (" << middle_wire_id.Wire << " expected)\n";
+      } // if
+      
+      // the check: this coordinate should lie on the next wire
+      std::array<double, 3> on_next_wire = middle_wire_center;
+      const double pitch = plane.WirePitch();
+      
+      LOG_TRACE("GeometryTest")
+        << "  pitch: " << pitch << " cos(phi_z): " << plane.CosPhiZ()
+        << "  sin(phi_z): " << plane.SinPhiZ();
+    
+    /*
+      // this would test GeometryCore::GetIncreasingWireDirection()
+      TVector3 wire_coord_dir = plane.GetIncreasingWireDirection();
+      on_next_wire[0] += wire_coord_dir.X();
+      on_next_wire[1] += pitch * wire_coord_dir.Y();
+      on_next_wire[2] += pitch * wire_coord_dir.Z();
+    */
+      on_next_wire[1] += pitch * plane.SinPhiZ();
+      on_next_wire[2] += pitch * plane.CosPhiZ();
+      
+      const double next_coord
+        = geom->WireCoordinate(on_next_wire[1], on_next_wire[2], planeid);
+      
+      if (std::abs(next_coord - double(next_wire_id.Wire)) > 1e-3) {
+        throw cet::exception("WireCoordAngle")
+          << "Position (" << on_next_wire[0]
+          << "; " << on_next_wire[1] << "; " << on_next_wire[2]
+          << ") is expected to be on wire " << std::string(next_wire_id)
+          << " but it has wire coordinate " << next_coord << "\n";
+      } // if
+      
+    } // for
+    
+  } // GeometryTestAlg::testWireCoordAngle()
+  
+  
   //......................................................................
   void GeometryTestAlg::testChannelToWire()
   {
