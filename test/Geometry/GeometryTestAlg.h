@@ -122,7 +122,7 @@ namespace geo {
     void testNearestWire();
     void testWireIntersection() const;
     void testThirdPlane() const;
-    void testThirdPlaneSlope() const;
+    void testThirdPlane_dTdW() const;
     void testStepping();
 
     bool shouldRunTests(std::string test_name) const;
@@ -131,15 +131,15 @@ namespace geo {
     unsigned int testWireIntersectionAt
       (const TPCID& tpcid, double x, double y, double z) const;
     
-    /// Returns the slopes expected from the specified segment A-to-B
-    std::vector<std::pair<geo::PlaneID, double>> ExpectedPlaneSlopes(
+    /// Returns dT/dW expected from the specified segment A-to-B
+    std::vector<std::pair<geo::PlaneID, double>> ExpectedPlane_dTdW(
       std::array<double, 3> const& A, std::array<double, 3> const& B,
-      const double driftVelocity = 0.1
+      const double driftVelocity = -0.1
       ) const;
     
     /// Performs the third plane slope test with a single configuration
-    unsigned int testThirdPlaneSlopeAt
-      (std::vector<std::pair<geo::PlaneID, double>> const& plane_slopes) const;
+    unsigned int testThirdPlane_dTdW_at
+      (std::vector<std::pair<geo::PlaneID, double>> const& plane_dTdW) const;
     
   };
 } // namespace geo

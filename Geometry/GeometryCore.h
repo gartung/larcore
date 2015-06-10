@@ -2361,7 +2361,7 @@ namespace geo {
      */
     geo::PlaneID ThirdPlane
       (geo::PlaneID const& pid1, geo::PlaneID const& pid2) const;
-
+    
     
     /**
      * @brief Returns the slope on the third plane, given it in the other two
@@ -2439,6 +2439,48 @@ namespace geo {
       }
     //@}
     
+    
+    /**
+     * @brief Returns dT/dW on the third plane, given it in the other two
+     * @param pid1 ID of the plane of the first dT/dW
+     * @param dTdW1 dT/dW as seen on the first plane
+     * @param pid2 ID of the plane of the second dT/dW
+     * @param dTdW2 dT/dW  as seen on the second plane
+     * @param output_plane ID of the plane on which to calculate the slope
+     * @return dT/dW on the third plane, or -999. if dT/dW would be infinity
+     * @throws cet::exception (category: "GeometryCore") if different TPC
+     * @throws cet::exception (category: "GeometryCore") if same plane
+     * @throws cet::exception (category: "GeometryCore") if other than 3 planes
+     *
+     * Given a dT/dW as projected in two planes, returns the dT/dW as projected
+     * in the third plane.
+     * The dT/dW are defined in time ticks/wide number units.
+     */
+    double ThirdPlane_dTdW(geo::PlaneID const& pid1, double slope1, 
+                           geo::PlaneID const& pid2, double slope2,
+                           geo::PlaneID const& output_plane) const;
+    
+    /**
+     * @brief Returns dT/dW on the third plane, given it in the other two
+     * @param pid1 ID of the plane of the first dT/dW
+     * @param dTdW1 dT/dW as seen on the first plane
+     * @param pid2 ID of the plane of the second dT/dW
+     * @param dTdW2 dT/dW  as seen on the second plane
+     * @return dT/dW on the third plane, or -999. if dT/dW would be infinity
+     * @throws cet::exception (category: "GeometryCore") if different TPC
+     * @throws cet::exception (category: "GeometryCore") if same plane
+     * @throws cet::exception (category: "GeometryCore") if other than 3 planes
+     *
+     * Given a dT/dW as projected in two planes, returns the dT/dW as projected
+     * in the third plane.
+     * This function is a shortcut assuming exactly three wire planes in the
+     * TPC, in which case the output plane is chosen as the one that is neither
+     * of the input planes.
+     */
+    double ThirdPlane_dTdW(geo::PlaneID const& pid1, double slope1,
+                           geo::PlaneID const& pid2, double slope2) const;
+    
+    
     /**
      * @brief Returns the slope on the third plane, given it in the other two
      * @param angle1 angle or the wires on the first plane
@@ -2472,7 +2514,7 @@ namespace geo {
      * 
      * This function will return a small slope if both input slopes are small.
      */
-    static double ComputeThirdPlaneDtDw(
+    static double ComputeThirdPlane_dTdW(
       double angle1, double pitch1, double dTdW1,
       double angle2, double pitch2, double dTdW2,
       double angle_target, double pitch_target
@@ -2916,6 +2958,11 @@ namespace geo {
     /// Deletes the detector geometry structures
     void ClearGeometry();
     
+    
+    /// Throws an exception ("GeometryCore" category) unless pid1 and pid2
+    /// are on different planes of the same TPC (ID validity is not checked)
+    static void CheckIndependentPlanesOnSameTPC
+      (geo::PlaneID const& pid1, geo::PlaneID const& pid2, const char* caller);
     
     GeometryData_t fGeoData;        ///< The detector description data
     

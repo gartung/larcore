@@ -1134,38 +1134,39 @@ namespace geo {
   } // GeometryCore::ThirdPlane()
   
   
+  void GeometryCore::CheckIndependentPlanesOnSameTPC
+    (geo::PlaneID const& pid1, geo::PlaneID const& pid2, const char* caller)
+  {
+    if(static_cast<geo::TPCID const&>(pid1) != static_cast<geo::TPCID const&>(pid2)) {
+      throw cet::exception("GeometryCore")
+        << caller << " needs two planes on the same TPC (got "
+        << std::string(pid1) << " and " << std::string(pid2) << ")\n";
+    }
+    if(pid1 == pid2) { // was: return 999;
+      throw cet::exception("GeometryCore")
+        << caller << " needs two different planes, got "
+        << std::string(pid1) << " twice\n";
+    }
+  } // GeometryCore::CheckIndependentPlanesOnSameTPC()
+  
+  
   double GeometryCore::ThirdPlaneSlope(
     geo::PlaneID const& pid1, double slope1,
     geo::PlaneID const& pid2, double slope2,
     geo::PlaneID const& output_plane
   ) const {
     
-    const unsigned int nPlanes = Nplanes(pid1);
-    if(static_cast<geo::TPCID const&>(pid1) != static_cast<geo::TPCID const&>(pid2)) {
-      throw cet::exception("GeometryCore")
-        << "ThirdPlaneSlope() needs two planes on the same TPC (got "
-        << std::string(pid1) << " and " << std::string(pid2) << ")\n";
-    }
-    if(pid1 == pid2) { // was: return 999;
-      throw cet::exception("GeometryCore")
-        << "ThirdPlaneSlope() needs two different planes, got "
-        << std::string(pid1) << " twice\n";
-    }
+    CheckIndependentPlanesOnSameTPC(pid1, pid2, "ThirdPlaneSlope()");
     
     geo::TPCGeo const& TPC = this->TPC(pid1);
 
     // We need the "wire coordinate direction" for each plane.
-    // This is perpendicular to the wire orientation. 
-    double angle[3];
-    for (geo::PlaneID::PlaneID_t iPlane = 0; iPlane < nPlanes; ++iPlane){
-      angle[iPlane] = TPC.Plane(iPlane).ThetaZ();
-      //We need to subtract pi/2 to make those 'wire coordinate directions'.
-      //But what matters is the difference between angles so we don't do that.
-    } // for
-    
+    // This is perpendicular to the wire orientation.
+    // PlaneGeo::PhiZ() defines the right orientation too.
     return ComputeThirdPlaneSlope(
-      angle[pid1.Plane], slope1, angle[pid2.Plane], slope2,
-      angle[output_plane.Plane]
+      TPC.Plane(pid1).PhiZ(), slope1,
+      TPC.Plane(pid2).PhiZ(), slope2,
+      TPC.Plane(output_plane).PhiZ()
       );
   } // ThirdPlaneSlope()
   
@@ -1177,6 +1178,46 @@ namespace geo {
     geo::PlaneID target_plane = ThirdPlane(pid1, pid2);
     return ThirdPlaneSlope(pid1, slope1, pid2, slope2, target_plane);
   } // ThirdPlaneSlope()
+  
+  
+  double GeometryCore::ThirdPlane_dTdW(
+    geo::PlaneID const& pid1, double slope1,
+    geo::PlaneID const& pid2, double slope2,
+    geo::PlaneID const& output_plane
+  ) const {
+    
+    CheckIndependentPlanesOnSameTPC(pid1, pid2, "ThirdPlane_dTdW()");
+    
+    geo::TPCGeo const& TPC = this->TPC(pid1);
+    
+    double angle[3], pitch[3];
+    geo::PlaneGeo const* const planes[3]
+      = { &TPC.Plane(pid1), &TPC.Plane(pid2), &TPC.Plane(output_plane) };
+    
+    // We need wire pitch and "wire coordinate direction" for each plane.
+    // The latter is perpendicular to the wire orientation.
+    // PlaneGeo::PhiZ() defines the right orientation too.
+    for (size_t i = 0; i < 3; ++i) {
+      angle[i] = planes[i]->PhiZ();
+      pitch[i] = planes[i]->WirePitch();
+    } // for
+
+    return ComputeThirdPlane_dTdW(
+      angle[0], pitch[0], slope1,
+      angle[1], pitch[1], slope2,
+      angle[2], pitch[2]
+      );
+    
+  } // GeometryCore::ThirdPlane_dTdW()
+  
+
+  double GeometryCore::ThirdPlane_dTdW(
+    geo::PlaneID const& pid1, double slope1,
+    geo::PlaneID const& pid2, double slope2
+  ) const {
+    geo::PlaneID target_plane = ThirdPlane(pid1, pid2);
+    return ThirdPlane_dTdW(pid1, slope1, pid2, slope2, target_plane);
+  } // ThirdPlane_dTdW()
   
   
   // Given slopes dTime/dWire in two planes, return with the slope in the 3rd plane.
@@ -1212,7 +1253,7 @@ namespace geo {
   } // GeometryCore::ComputeThirdPlaneSlope()
   
   
-  double GeometryCore::ComputeThirdPlaneDtDw(
+  double GeometryCore::ComputeThirdPlane_dTdW(
     double angle1, double pitch1, double dTdW1,
     double angle2, double pitch2, double dTdW2,
     double angle_target, double pitch_target
@@ -1225,7 +1266,7 @@ namespace geo {
     // the same.
     return pitch_target * ComputeThirdPlaneSlope
       (angle1, dTdW1 / pitch1, angle2, dTdW2 / pitch2, angle_target);
-  } // GeometryCore::ComputeThirdPlaneDtDw()
+  } // GeometryCore::ComputeThirdPlane_dTdW()
   
   
   //......................................................................
