@@ -41,7 +41,7 @@ namespace geo {
       const CryostatGeo& cryo(geom->Cryostat(c));
       const unsigned int nTPC = cryo.NTPC();
     
-      LOG_DEBUG("GeometryIteratorLoopTest") << "  C=" << c
+      LOG_TRACE("GeometryIteratorLoopTest") << "  C=" << c
         << " (" << nTPC << " TPCs)";
       
       if (!iCryostat) {
@@ -68,7 +68,7 @@ namespace geo {
         const TPCGeo& TPC(cryo.TPC(t));
         const unsigned int NPlanes = TPC.Nplanes();
         
-        LOG_DEBUG("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
+        LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
           << " (" << NPlanes << " planes)";
         if (!iTPC) {
           LOG_ERROR("GeometryIteratorLoopTest")
@@ -98,7 +98,7 @@ namespace geo {
           const PlaneGeo& Plane(TPC.Plane(p));
           const unsigned int NWires = Plane.Nwires();
           
-          LOG_DEBUG("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
+          LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
             << " P=" << p << " (" << NWires << " wires)";
           if (!iPlane) {
             LOG_ERROR("GeometryIteratorLoopTest")
@@ -135,7 +135,7 @@ namespace geo {
           for(unsigned int w = 0; w < NWires; ++w) {
             const WireGeo& Wire(Plane.Wire(w));
             
-            LOG_DEBUG("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
+            LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
               << " P=" << p << " W=" << w;
             if (!iWire) {
               LOG_ERROR("GeometryIteratorLoopTest")
