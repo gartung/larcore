@@ -164,21 +164,177 @@ namespace simple_geo {
 
 
 namespace geo{
-
-  const std::vector<std::string> GeometryTestAlg::DefaultTests = {
-   "Cryostat",
-   "ChannelToWire",
-   "FindPlaneCenters",
-   "WireCoordAngle",
-   "Projection",
-   "NearestWire",
-   "WireIntersection",
-   "ThirdPlane",
-   "ThirdPlaneSlope",
-   "WirePitch",
-   "PlanePitch",
-   "Stepping"
-  }; // GeometryTestAlg::DefaultTests
+  
+  
+  namespace details {
+    
+    /// Checks the test and records the request
+    bool TestTrackerClassBase::operator() (std::string test_name)
+      { return Query(test_name); }
+    
+    TestTrackerClassBase::TestList_t TestTrackerClassBase::QueriedTests() const
+    {
+      TestList_t all;
+      std::set_union(SkippedTests().begin(), SkippedTests().end(),
+        RunTests().begin(), RunTests().end(),
+        std::inserter(all, all.end())
+        );
+      return all;
+    } // QueriedTests()
+    
+    bool TestTrackerClassBase::CheckQueriesRegistry() const
+      { return true; /* all fine */ }
+    
+    void TestTrackerClassBase::PrintConfiguration(std::ostream&) const {}
+    
+    void TestTrackerClassBase::RecordRequest(std::string test_name, bool bRun)
+      { (bRun? run: skipped).insert(test_name); }
+    
+    bool TestTrackerClassBase::Query(std::string test_name) {
+      bool bRun = ShouldRun(test_name);
+      RecordRequest(test_name, bRun);
+      return bRun;
+    }
+    
+    /// Adds a vector of tests into a test set
+    void TestTrackerClassBase::CopyList
+      (TestList_t& dest, std::vector<std::string> const& from)
+      { std::copy(from.begin(), from.end(), std::inserter(dest, dest.end())); }
+    
+    
+    /// Asks to run all the tests
+    class PassAllTestTrackerClass: public TestTrackerClassBase {
+        public:
+      
+      /// Returns whether the specified test should run
+      virtual bool ShouldRun(std::string test_name) const override
+        { return true; }
+      
+      // everything always runs already
+      virtual void PleaseRunAlso(std::string /* test_name */) override {}
+      
+    }; // class PassAllTestTrackerClass
+    
+    /// Asks to run only tests in a list
+    class WhiteListTestTrackerClass: public TestTrackerClassBase {
+        public:
+      using TestList_t = TestTrackerClassBase::TestList_t;
+      
+      //@{
+      /// Constructor: takes the list of tests to be skipped
+      WhiteListTestTrackerClass(TestList_t skip_these):
+        to_be_skipped(skip_these) {}
+      WhiteListTestTrackerClass(std::vector<std::string> const& skip_these):
+        to_be_skipped()
+        { CopyList(to_be_skipped, skip_these); }
+      //@}
+      
+      /// Returns whether the specified test should run
+      virtual bool ShouldRun(std::string test_name) const override
+        { return to_be_skipped.count(test_name) > 0; }
+      
+      // everything always runs already
+      virtual void PleaseRunAlso(std::string test_name) override
+        { to_be_skipped.erase(test_name); }
+      
+      virtual bool CheckQueriesRegistry() const override
+        {
+          TestList_t not_registered, queried = QueriedTests();
+          std::set_difference(
+            to_be_skipped.cbegin(), to_be_skipped.cend(),
+            queried.cbegin(), queried.cend(),
+            std::inserter(not_registered, not_registered.end())
+            );
+          if (!not_registered.empty()) {
+            auto iTest = not_registered.cbegin(), tend = not_registered.cend();
+            mf::LogError error("GeometryTestAlg");
+            error
+              << "The configuration presents " << not_registered.size()
+              << " tests that are not supported: " << *iTest;
+            while (++iTest != tend) error << ", " << *iTest;
+            return false;
+          }
+          return true;
+        } // CheckQueriesRegistry()
+      
+      /// Prints information about the configuration of the filter
+      virtual void PrintConfiguration(std::ostream& out) const override
+        {
+          auto iTest = to_be_skipped.cbegin(), tend = to_be_skipped.cend();
+          if (iTest == tend) {
+            out << "Will skip no tests.";
+            return;
+          }
+          out << "Will skip " << to_be_skipped.size() << " tests: " << *iTest;
+          while (++iTest != tend) out << ", " << *iTest;
+        } // PrintConfiguration()
+      
+        protected:
+      TestList_t to_be_skipped; ///< tests that should be skipped
+      
+    }; // class WhiteListTestTrackerClass
+    
+    /// Asks to run only tests in a list
+    class BlackListTestTrackerClass: public TestTrackerClassBase {
+        public:
+      using TestList_t = TestTrackerClassBase::TestList_t;
+      
+      //@{
+      /// Constructor: takes the list of tests to be skipped
+      BlackListTestTrackerClass(TestList_t run_these): to_be_run(run_these) {}
+      BlackListTestTrackerClass(std::vector<std::string> const& run_these):
+        to_be_run()
+        { CopyList(to_be_run, run_these); }
+      //@}
+      
+      /// Returns whether the specified test should run
+      virtual bool ShouldRun(std::string test_name) const override
+        { return to_be_run.count(test_name) == 0; }
+      
+      // everything always runs already
+      virtual void PleaseRunAlso(std::string test_name) override
+        { to_be_run.insert(test_name); }
+      
+      virtual bool CheckQueriesRegistry() const override
+        {
+          TestList_t not_registered, queried = QueriedTests();
+          std::set_difference(
+            to_be_run.cbegin(), to_be_run.cend(),
+            queried.cbegin(), queried.cend(),
+            std::inserter(not_registered, not_registered.end())
+            );
+          if (!not_registered.empty()) {
+            auto iTest = not_registered.cbegin(), tend = not_registered.cend();
+            mf::LogError error("GeometryTestAlg");
+            error
+              << "The configuration presents " << not_registered.size()
+              << " tests that are not supported: " << *iTest;
+            while (++iTest != tend) error << ", " << *iTest;
+            return false;
+          }
+          return true;
+        } // CheckQueriesRegistry()
+      
+      /// Prints information about the configuration of the filter
+      virtual void PrintConfiguration(std::ostream& out) const override
+        {
+          auto iTest = to_be_run.cbegin(), tend = to_be_run.cend();
+          if (iTest == tend) {
+            out << "Will run no tests.";
+            return;
+          }
+          out << "Will run only " << to_be_run.size() << " tests: " << *iTest;
+          while (++iTest != tend) out << ", " << *iTest;
+        } // PrintConfiguration()
+      
+        protected:
+      TestList_t to_be_run; ///< tests that should be run
+      
+    }; // class BlackListTestTrackerClass
+    
+  } // namespace details
+  
+  
   
   //......................................................................
   GeometryTestAlg::GeometryTestAlg(fhicl::ParameterSet const& pset) 
@@ -196,21 +352,29 @@ namespace geo{
     // initialize the list of tests to be run
     std::vector<std::string> RunTests(pset.get<std::vector<std::string>>
       ("RunTests", std::vector<std::string>()));
-    if (RunTests.empty()) RunTests = DefaultTests;
-    std::copy(RunTests.begin(), RunTests.end(),
-      std::inserter(fRunTests, fRunTests.end()));
+    std::vector<std::string> SkipTests(pset.get<std::vector<std::string>>
+      ("SkipTests", std::vector<std::string>()));
+    if (!RunTests.empty() && !SkipTests.empty()) {
+      throw cet::exception("GeometryTestAlg") << "Configuration error: "
+        "'RunTests' and 'SkipTests' can't be specified together.\n";
+    }
+    
+    if (!RunTests.empty())
+      fRunTests.reset(new details::WhiteListTestTrackerClass(RunTests));
+    else if (!SkipTests.empty())
+      fRunTests.reset(new details::BlackListTestTrackerClass(SkipTests));
+    else
+      fRunTests.reset(new details::PassAllTestTrackerClass());
     
     if (pset.get<bool>("CheckForOverlaps", false))
-      fRunTests.insert("CheckOverlaps");
+      fRunTests->PleaseRunAlso("CheckOverlaps");
     
     if (pset.get<bool>("PrintWires", false))
-      fRunTests.insert("PrintWires");
+      fRunTests->PleaseRunAlso("PrintWires");
     
     std::ostringstream sstr;
-    std::ostream_iterator<std::string> iOut(sstr, " ");
-    std::copy(fRunTests.begin(), fRunTests.end(), iOut);
-    mf::LogInfo("GeometryTestAlg") << "Will run " << fRunTests.size() << " tests: "
-      << sstr.str();
+    fRunTests->PrintConfiguration(sstr);
+    mf::LogInfo("GeometryTestAlg") << sstr.str();
     
   } // GeometryTestAlg::GeometryTestAlg()
 
@@ -230,7 +394,6 @@ namespace geo{
     
     mf::LogInfo("GeometryTestInfo")
       << "Running on detector: '" << geom->DetectorName() << "'";
-    
     
     try{
       geo::WireGeo const& testWire = geom->Wire(geo::WireID(0, 0, 1, 10));
@@ -261,104 +424,109 @@ namespace geo{
       //mf::LogVerbatim("GeometryTest") << "done printing.";
 
       if (shouldRunTests("CheckOverlaps")) {
-        LOG_DEBUG("GeometryTest") << "test for overlaps ...";
+        LOG_INFO("GeometryTest") << "test for overlaps ...";
         gGeoManager->CheckOverlaps(1e-5);
         gGeoManager->PrintOverlaps();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("Cryostat")) {
-        LOG_DEBUG("GeometryTest") << "test Cryostat methods ...";
+        LOG_INFO("GeometryTest") << "test Cryostat methods ...";
         testCryostat();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("ChannelToWire")) {
-        LOG_DEBUG("GeometryTest") << "test channel to plane wire and back ...";
+        LOG_INFO("GeometryTest") << "test channel to plane wire and back ...";
         testChannelToWire();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("FindPlaneCenters")) {
-        LOG_DEBUG("GeometryTest") << "test find plane centers...";
+        LOG_INFO("GeometryTest") << "test find plane centers...";
         testFindPlaneCenters();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("WireCoordAngle")) {
-        LOG_DEBUG("GeometryTest") << "testWireCoordAngle...";
+        LOG_INFO("GeometryTest") << "testWireCoordAngle...";
         testWireCoordAngle();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("Projection")) {
-        LOG_DEBUG("GeometryTest") << "testProject...";
+        LOG_INFO("GeometryTest") << "testProject...";
         testProject();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("WirePos")) {
-        LOG_DEBUG("GeometryTest") << "testWirePos...";
+        LOG_INFO("GeometryTest") << "testWirePos...";
         // There is a contradiction here, and these must be tested differently
         // Testing based on detector ID should NOT become common practice
-        LOG_DEBUG("GeometryTest") << "disabled.";
+        LOG_INFO("GeometryTest") << "disabled.";
       }
 
       if (shouldRunTests("NearestWire")) {
-        LOG_DEBUG("GeometryTest") << "testNearestWire...";
+        LOG_INFO("GeometryTest") << "testNearestWire...";
         testNearestWire();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("WireIntersection")) {
-        LOG_DEBUG("GeometryTest") << "testWireIntersection...";
+        LOG_INFO("GeometryTest") << "testWireIntersection...";
         testWireIntersection();
-        LOG_DEBUG("GeometryTest") << "testWireIntersection complete";
+        LOG_INFO("GeometryTest") << "testWireIntersection complete";
       }
 
       if (shouldRunTests("ThirdPlane")) {
-        LOG_DEBUG("GeometryTest") << "testThirdPlane...";
+        LOG_INFO("GeometryTest") << "testThirdPlane...";
         testThirdPlane();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("ThirdPlaneSlope")) {
-        LOG_DEBUG("GeometryTest") << "testThirdPlaneSlope...";
+        LOG_INFO("GeometryTest") << "testThirdPlaneSlope...";
         testThirdPlane_dTdW();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("WirePitch")) {
-        LOG_DEBUG("GeometryTest") << "testWirePitch...";
+        LOG_INFO("GeometryTest") << "testWirePitch...";
         testWirePitch();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("PlanePitch")) {
-        LOG_DEBUG("GeometryTest") << "testPlanePitch...";
+        LOG_INFO("GeometryTest") << "testPlanePitch...";
         testPlanePitch();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("Stepping")) {
-        LOG_DEBUG("GeometryTest") << "testStepping...";
+        LOG_INFO("GeometryTest") << "testStepping...";
         testStepping();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
 
       if (shouldRunTests("PrintWires")) {
-        LOG_DEBUG("GeometryTest") << "printAllGeometry...";
+        LOG_INFO("GeometryTest") << "printAllGeometry...";
         printAllGeometry();
-        LOG_DEBUG("GeometryTest") << "complete.";
+        LOG_INFO("GeometryTest") << "complete.";
       }
     }
     catch (cet::exception &e) {
       mf::LogWarning("GeometryTest") << "exception caught: \n" << e;
       if (fNonFatalExceptions.count(e.category()) == 0) throw;
     }
-      
+    
+    if (!fRunTests->CheckQueriesRegistry()) {
+      throw cet::exception("GeometryTest")
+        << "(postumous) configuration error detected!\n";
+    }
+    
     return nErrors;
-  }
+  } // GeometryTestAlg::Run()
 
 
 
@@ -2080,7 +2248,7 @@ namespace geo{
   //......................................................................
   
   inline bool GeometryTestAlg::shouldRunTests(std::string test_name) const {
-    return fRunTests.empty() || (fRunTests.count(test_name) > 0);
+    return (*fRunTests.get())(test_name);
   } // GeometryTestAlg::shouldRunTests()
 
 }//end namespace
