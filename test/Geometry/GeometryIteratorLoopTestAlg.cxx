@@ -31,11 +31,11 @@ namespace geo {
     
     unsigned int nErrors = 0;
     unsigned int nCryostats = 0, nTPCs = 0, nPlanes = 0, nWires = 0;
-    geo::GeometryCore::cryostat_id_iterator iCryostat
+    geo::GeometryCore::cryostat_id_iterator iCryostatID
       = geom->begin_cryostat_id();
-    geo::GeometryCore::TPC_id_iterator iTPC = geom->begin_TPC_id();
-    geo::GeometryCore::plane_id_iterator iPlane = geom->begin_plane_id();
-    geo::GeometryCore::wire_id_iterator iWire = geom->begin_wire_id();
+    geo::GeometryCore::TPC_id_iterator iTPCID = geom->begin_TPC_id();
+    geo::GeometryCore::plane_id_iterator iPlaneID = geom->begin_plane_id();
+    geo::GeometryCore::wire_id_iterator iWireID = geom->begin_wire_id();
     
     for(unsigned int c = 0; c < nCryo; ++c) {
       const CryostatGeo& cryo(geom->Cryostat(c));
@@ -44,21 +44,21 @@ namespace geo {
       LOG_TRACE("GeometryIteratorLoopTest") << "  C=" << c
         << " (" << nTPC << " TPCs)";
       
-      if (!iCryostat) {
+      if (!iCryostatID) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "Cryostat iterator thinks it's all over at C=" << c;
         ++nErrors;
       }
-      else if (iCryostat->Cryostat != c) {
+      else if (iCryostatID->Cryostat != c) {
         LOG_ERROR("GeometryIteratorLoopTest")
-          << "Cryostat iterator thinks it's at C=" << (*iCryostat)
+          << "Cryostat iterator thinks it's at C=" << (*iCryostatID)
           << " instead of " << c;
         ++nErrors;
       }
-      else if (iCryostat.get() != &cryo) {
+      else if (iCryostatID.get() != &cryo) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "Cryostat iterator retrieves CryostatGeo["
-          << ((void*) iCryostat.get())
+          << ((void*) iCryostatID.get())
           << "] instead of [" << ((void*) &cryo) << "]";
         ++nErrors;
       }
@@ -70,26 +70,26 @@ namespace geo {
         
         LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
           << " (" << NPlanes << " planes)";
-        if (!iTPC) {
+        if (!iTPCID) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "TPC iterator thinks it's all over at C=" << c << " T=" << t;
           ++nErrors;
         }
-        else if (iTPC->Cryostat != c) {
+        else if (iTPCID->Cryostat != c) {
           LOG_ERROR("GeometryIteratorLoopTest")
-            << "TPC iterator thinks it's at C=" << iTPC->Cryostat
+            << "TPC iterator thinks it's at C=" << iTPCID->Cryostat
             << " instead of " << c;
           ++nErrors;
         }
-        else if (iTPC->TPC != t) {
+        else if (iTPCID->TPC != t) {
           LOG_ERROR("GeometryIteratorLoopTest")
-            << "TPC iterator thinks it's at T=" << iTPC->TPC << " instead of "
+            << "TPC iterator thinks it's at T=" << iTPCID->TPC << " instead of "
             << t;
           ++nErrors;
         }
-        else if (iTPC.get() != &TPC) {
+        else if (iTPCID.get() != &TPC) {
           LOG_ERROR("GeometryIteratorLoopTest")
-            << "TPC iterator retrieves TPCGeo[" << ((void*) iTPC.get())
+            << "TPC iterator retrieves TPCGeo[" << ((void*) iTPCID.get())
             << "] instead of [" << ((void*) &TPC) << "]";
           ++nErrors;
         }
@@ -100,33 +100,33 @@ namespace geo {
           
           LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
             << " P=" << p << " (" << NWires << " wires)";
-          if (!iPlane) {
+          if (!iPlaneID) {
             LOG_ERROR("GeometryIteratorLoopTest")
               << "plane iterator thinks it's all over at C=" << c << " T=" << t
               << " P=" << p;
             ++nErrors;
           }
-          else if (iPlane->Cryostat != c) {
+          else if (iPlaneID->Cryostat != c) {
             LOG_ERROR("GeometryIteratorLoopTest")
-              << "plane iterator thinks it's at C=" << iPlane->Cryostat
+              << "plane iterator thinks it's at C=" << iPlaneID->Cryostat
               << " instead of " << c;
             ++nErrors;
           }
-          else if (iPlane->TPC != t) {
+          else if (iPlaneID->TPC != t) {
             LOG_ERROR("GeometryIteratorLoopTest")
-              << "plane iterator thinks it's at T=" << iPlane->TPC
+              << "plane iterator thinks it's at T=" << iPlaneID->TPC
               << " instead of " << t;
             ++nErrors;
           }
-          else if (iPlane->Plane != p) {
+          else if (iPlaneID->Plane != p) {
             LOG_ERROR("GeometryIteratorLoopTest")
-              << "plane iterator thinks it's at P=" << iPlane->Plane
+              << "plane iterator thinks it's at P=" << iPlaneID->Plane
               << " instead of " << p;
             ++nErrors;
           }
-          else if (iPlane.get() != &Plane) {
+          else if (iPlaneID.get() != &Plane) {
             LOG_ERROR("GeometryIteratorLoopTest")
-              << "plane iterator retrieves TPCGeo[" << ((void*) iPlane.get())
+              << "plane iterator retrieves TPCGeo[" << ((void*) iPlaneID.get())
               << "] instead of [" << ((void*) &Plane) << "]";
             ++nErrors;
           }
@@ -137,59 +137,59 @@ namespace geo {
             
             LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
               << " P=" << p << " W=" << w;
-            if (!iWire) {
+            if (!iWireID) {
               LOG_ERROR("GeometryIteratorLoopTest")
                 << "wire iterator thinks it's all over at C=" << c
                 << " T=" << t << " P=" << p << " W=" << w;
               ++nErrors;
             }
-            else if (iWire->Cryostat != c) {
+            else if (iWireID->Cryostat != c) {
               LOG_ERROR("GeometryIteratorLoopTest")
-                << "wire iterator thinks it's at C=" << iWire->Cryostat
+                << "wire iterator thinks it's at C=" << iWireID->Cryostat
                 << " instead of " << c;
               ++nErrors;
             }
-            else if (iWire->TPC != t) {
+            else if (iWireID->TPC != t) {
               LOG_ERROR("GeometryIteratorLoopTest")
-                << "wire iterator thinks it's at T=" << iWire->TPC
+                << "wire iterator thinks it's at T=" << iWireID->TPC
                 << " instead of " << t;
               ++nErrors;
             }
-            else if (iWire->Plane != p) {
+            else if (iWireID->Plane != p) {
               LOG_ERROR("GeometryIteratorLoopTest")
-                << "wire iterator thinks it's at P=" << iWire->Plane
+                << "wire iterator thinks it's at P=" << iWireID->Plane
                 << " instead of " << p;
               ++nErrors;
             }
-            else if (iWire->Wire != w) {
+            else if (iWireID->Wire != w) {
               LOG_ERROR("GeometryIteratorLoopTest")
-                << "wire iterator thinks it's at W=" << iWire->Wire
+                << "wire iterator thinks it's at W=" << iWireID->Wire
                 << " instead of " << w;
               ++nErrors;
             }
-            else if (iWire.get() != &Wire) {
+            else if (iWireID.get() != &Wire) {
               LOG_ERROR("GeometryIteratorLoopTest")
-                << "wire iterator retrieves TPCGeo[" << ((void*) iWire.get())
+                << "wire iterator retrieves TPCGeo[" << ((void*) iWireID.get())
                 << "] instead of [" << ((void*) &Plane) << "]";
               ++nErrors;
             }
           
-            ++iWire;
+            ++iWireID;
             ++nWires;
           } // end loop over wires
-          ++iPlane;
+          ++iPlaneID;
           ++nPlanes;
         } // end loop over planes
-        ++iTPC;
+        ++iTPCID;
         ++nTPCs;
       } // end loop over tpcs
-      ++iCryostat;
+      ++iCryostatID;
       ++nCryostats;
     } // end loop over cryostats
     
-    if (iCryostat) {
+    if (iCryostatID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "Cryostat iterator thinks it's still at " << *iCryostat
+        << "Cryostat iterator thinks it's still at " << *iCryostatID
         << ", but we are already over";
       ++nErrors;
     }
@@ -217,10 +217,10 @@ namespace geo {
       ++nErrors;
     } // if
     
-    if (iTPC) {
+    if (iTPCID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "TPC iterator thinks it's still at C=" << iTPC->Cryostat
-        << " T=" << iTPC->TPC << ", but we are already over";
+        << "TPC iterator thinks it's still at " << *iTPCID
+        << ", but we are already over";
       ++nErrors;
     }
     
@@ -247,10 +247,9 @@ namespace geo {
       ++nErrors;
     } // if
     
-    if (iPlane) {
+    if (iPlaneID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "plane iterator thinks it's still at C=" << iPlane->Cryostat
-        << " T=" << iPlane->TPC << " P=" << iPlane->Plane
+        << "plane iterator thinks it's still at " << *iPlaneID
         << ", but we are already over";
       ++nErrors;
     }
@@ -278,10 +277,9 @@ namespace geo {
       ++nErrors;
     } // if
     
-    if (iWire) {
+    if (iWireID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "wire iterator thinks it's still at C=" << iWire->Cryostat
-        << " T=" << iWire->TPC << " P=" << iWire->Plane << " W=" << iWire->Wire
+        << "wire iterator thinks it's still at " << *iWireID
         << ", but we are already over";
       ++nErrors;
     }

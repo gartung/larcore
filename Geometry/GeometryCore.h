@@ -141,7 +141,7 @@ namespace geo {
     
     
     /**
-     * @brief Base forward iterator browsing all cryostats in the detector
+     * @brief Base forward iterator browsing all cryostat IDs in the detector
      * @tparam GEOID ID type to be used
      * 
      * This iterator assumes that GEOID is derived from geo::CryostatID.
@@ -268,7 +268,7 @@ namespace geo {
     
     
     /**
-     * @brief Base forward iterator browsing all TPCs in the detector
+     * @brief Base forward iterator browsing all TPC IDs in the detector
      * @tparam GEOID ID type to be used
      * 
      * This iterator requires that GEOID is derived from geo::TPCID.
@@ -402,7 +402,7 @@ namespace geo {
     
     
     /**
-     * @brief Base forward iterator browsing all planes in the detector
+     * @brief Base forward iterator browsing all plane IDs in the detector
      * @tparam GEOID ID type to be used
      * 
      * This iterator requires that GEOID is derived from geo::PlaneID.
@@ -536,7 +536,7 @@ namespace geo {
     
     
     /**
-     * @brief Base forward iterator browsing all wires in the detector
+     * @brief Base forward iterator browsing all wire IDs in the detector
      * @tparam GEOID ID type to be used
      * 
      * This iterator requires that GEOID is derived from geo::WireID.
