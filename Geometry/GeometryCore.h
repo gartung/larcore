@@ -112,17 +112,6 @@ namespace geo {
     class geometry_iterator_base: public geometry_iterator_types {
         public:
       
-      //@{
-      /// Structures to distinguish the constructors
-      struct BeginPos_t {};
-      struct EndPos_t {};
-      struct UndefinedPos_t {};
-      
-      static constexpr BeginPos_t begin_pos = {};
-      static constexpr EndPos_t end_pos = {};
-      static constexpr UndefinedPos_t undefined_pos = {};
-      //@}
-      
       /// Constructor: associates with the specified geometry
       geometry_iterator_base(geo::GeometryCore const* geom): pGeo(geom) {}
       
@@ -181,7 +170,8 @@ namespace geo {
         { id = start_from; }
       
       /// Constructor: points to begin
-      cryostat_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+      cryostat_id_iterator_base
+        (geo::GeometryCore const* geom, BeginPos_t const):
         cryostat_id_iterator_base(geom, undefined_pos)
         { set_begin(); }
       
@@ -326,7 +316,7 @@ namespace geo {
         { set_local_limits(); }
       
       /// Constructor: points to begin
-      TPC_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+      TPC_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t const):
         upper_iterator(geom, begin_pos)
         { set_local_limits(); }
       
@@ -463,7 +453,7 @@ namespace geo {
         { set_local_limits(); }
       
       /// Constructor: points to begin
-      plane_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+      plane_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t const):
         upper_iterator(geom, begin_pos)
         { set_local_limits(); }
       
@@ -600,7 +590,7 @@ namespace geo {
         { set_local_limits(); }
       
       /// Constructor: points to begin
-      wire_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t):
+      wire_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t const):
         upper_iterator(geom, begin_pos)
         { set_local_limits(); }
       
@@ -681,34 +671,49 @@ namespace geo {
     /**
      * @brief Forward iterator browsing all geometry elements in the detector
      * @tparam GEOITER type of geometry ID iterator
-     * 
-     * This iterator works as the corresponding ID iterator it derives from.
-     * The difference is that this iterator has a different dereferenciation
-     * operator that obtains the cryostat directly, or throws on failure.
-     * The boolean conversion operator checks that it can obtain the pointer to
+     *
+     * This iterator works as the corresponding ID iterator in the template
+     * argument. The difference is the dereferenciation operator: this one
+     * obtains the geometry element directly, or throws on failure.
+     * The boolean conversion operator checks that it can obtain a pointer to
      * the geometry element.
      * 
      * In particular, get() and ID() methods still return the pointer to the
      * geometry element and its ID, respectively.
+     * 
+     * It can also be initialized and compare with the corresponding ID
+     * iterator.
      */
-    template <typename GEOITER>
-    class geometry_element_iterator: public GEOITER {
+    template <typename GEOIDITER>
+    class geometry_element_iterator:
+      public std::forward_iterator_tag, public geometry_iterator_types
+    {
+        public:
+      using id_iterator_t = GEOIDITER;
+      
       static_assert(
-        std::is_base_of<geometry_iterator_base, GEOITER>::value,
+        std::is_base_of<geometry_iterator_base, id_iterator_t>::value,
         "template class for geometry_element_iterator"
         " must be a geometry iterator"
         );
       
-      using id_iterator_t = GEOITER;
+      using iterator = geometry_element_iterator<id_iterator_t>; ///< this type
       
-        public:
       //@{
-      /// inherited types
+      /// types mirrored from the ID iterator
       using LocalID_t = typename id_iterator_t::LocalID_t;
       using GeoID_t = typename id_iterator_t::GeoID_t;
+      using UndefinedPos_t = typename id_iterator_t::UndefinedPos_t;
       using BeginPos_t = typename id_iterator_t::BeginPos_t;
       using EndPos_t = typename id_iterator_t::EndPos_t;
       using ElementPtr_t = typename id_iterator_t::ElementPtr_t;
+      //@}
+      
+      //@{
+      /// Expose inherited constants
+      using geometry_iterator_types::undefined_pos;
+      using geometry_iterator_types::begin_pos;
+      using geometry_iterator_types::end_pos;
       //@}
       
       /// Geometry class pointed by the iterator
@@ -719,50 +724,96 @@ namespace geo {
       
       /// Constructor: points to begin
       geometry_element_iterator(geo::GeometryCore const* geom):
-        id_iterator_t(geom) {}
+        id_iter(geom) {}
       
-      /// Constructor: points to the specified cryostat
+      //@{
+      /// Constructor: points to the same element as the specified ID iterator
+      geometry_element_iterator(id_iterator_t const& iter): id_iter(iter) {}
+      geometry_element_iterator(id_iterator_t&& iter): id_iter(iter) {}
+      //@}
+      
+      /// Constructor: points to the specified geometry element
       geometry_element_iterator
         (geo::GeometryCore const* geom, GeoID_t const& start_from):
-        id_iterator_t(geom, start_from)
+        id_iter(geom, start_from)
         {}
       
-      /// Constructor: points to begin
-      geometry_element_iterator(geo::GeometryCore const* geom, BeginPos_t pos):
-        id_iterator_t(geom, pos)
+      /// Constructor: points to beginning
+      geometry_element_iterator
+        (geo::GeometryCore const* geom, BeginPos_t const pos):
+        id_iter(geom, pos)
         {}
       
       /// Constructor: points to end
-      geometry_element_iterator(geo::GeometryCore const* geom, EndPos_t pos):
-        id_iterator_t(geom, pos)
+      geometry_element_iterator
+        (geo::GeometryCore const* geom, EndPos_t const pos):
+        id_iter(geom, pos)
         {}
       
-      /// Returns whether the iterator is pointing to a valid cryostat
-      operator bool() const
-        { return id_iterator_t::operator bool() && id_iterator_t::get(); }
+      /// Returns true if the two iterators point to the same object
+      bool operator== (iterator const& as) const
+        { return id_iterator() == as.id_iterator(); }
+      
+      /// Returns true if the two iterators point to the same object
+      bool operator== (id_iterator_t const& as) const
+        { return id_iterator() == as; }
+      
+      /// Returns true if the two iterators point to different objects
+      bool operator!= (iterator const& as) const
+        { return id_iterator != as.id_iterator(); }
+      
+      /// Returns true if the two iterators point to different objects
+      bool operator!= (id_iterator_t const& as) const
+        { return id_iterator() != as; }
       
       /**
-       * @brief Returns the cryostat the iterator points to
-       * @return a constant reference to the cryostat the iterator points to
+       * @brief Returns the geometry element the iterator points to
+       * @return a constant reference to the element the iterator points to
        * @throw cet::exception (category "geometry_iterator") if no valid
-       *   cryostat is currently pointed by the iterator
+       *   geometry element is currently pointed by the iterator
        */
       Element_t const& operator* () const
         {
-          ElementPtr_t ptr = id_iterator_t::get();
+          ElementPtr_t ptr = get();
           if (ptr) return *ptr;
           throw cet::exception("geometry_iterator")
-            << "iterator attempted to obtain cryostat "
-            << std::string(id_iterator_t::operator*());
+            << "iterator attempted to obtain geometry element "
+            << std::string(ID());
         } // operator*()
       
-      /// Returns a pointer to the cryostat the iterator points to (or nullptr)
-      Element_t const* operator-> () const { return id_iterator_t::get(); }
+      /// Returns a pointer to the element the iterator points to (or nullptr)
+      Element_t const* operator-> () const { return get(); }
       
-      /// Returns the ID of the pointed cryostat
-      LocalID_t const& ID() const { return id_iterator_t::operator*(); }
+      /// Prefix increment: returns this iterator pointing to the next element
+      iterator& operator++ () { ++id_iterator(); return *this; }
+      
+      /// Postfix increment: returns the current iterator, then increments it
+      iterator operator++ (int)
+        { iterator old(*this); ++id_iterator(); return old; }
+      
+      /// Returns whether the iterator is pointing to a valid geometry element
+      operator bool() const
+        { return bool(id_iterator()) && (id_iterator().get() != nullptr); }
+      
+      /// Returns a pointer to the geometry element, or nullptr if invalid
+      ElementPtr_t get() const { return id_iterator().get(); }
+      
+      /// Returns the ID of the pointed geometry element
+      LocalID_t const& ID() const { return *(id_iterator()); }
+      
+        protected:
+      
+      //@{
+      /// Access to the base ID iterator
+      id_iterator_t const& id_iterator() const { return id_iter; }
+      id_iterator_t& id_iterator() { return id_iter; }
+      //@}
+      
+        private:
+      id_iterator_t id_iter; ///< iterator performing the job
       
     }; // class geometry_element_iterator<>
+    
   } // namespace details
   
   
