@@ -666,8 +666,42 @@ namespace geo {
       ID_t& local_index() { return localID().Wire; }
       
     }; // class wire_id_iterator_base
+    
+    
+    // forward declarations:
+    template <typename GEOIDITER>
+    class geometry_element_iterator;
 
-
+    //@{
+    /// Comparison operator: geometry ID and element point to the same ID
+    template <typename GEOIDITER>
+    bool operator== (
+      geometry_element_iterator<GEOIDITER> const& iter,
+      GEOIDITER const& id_iter
+      );
+    template <typename GEOIDITER>
+    inline bool operator== (
+      GEOIDITER const& id_iter,
+      geometry_element_iterator<GEOIDITER> const& iter
+      )
+      { return iter == id_iter; }
+    //@}
+    
+    //@{
+    /// Comparison operator: geometry ID and element point to different IDs
+    template <typename GEOIDITER>
+    bool operator!= (
+      geometry_element_iterator<GEOIDITER> const& iter,
+      GEOIDITER const& id_iter
+      );
+    template <typename GEOIDITER>
+    inline bool operator!= (
+      GEOIDITER const& id_iter,
+      geometry_element_iterator<GEOIDITER> const& iter
+      )
+      { return iter != id_iter; }
+    //@}
+    
     /**
      * @brief Forward iterator browsing all geometry elements in the detector
      * @tparam GEOITER type of geometry ID iterator
@@ -754,17 +788,9 @@ namespace geo {
       bool operator== (iterator const& as) const
         { return id_iterator() == as.id_iterator(); }
       
-      /// Returns true if the two iterators point to the same object
-      bool operator== (id_iterator_t const& as) const
-        { return id_iterator() == as; }
-      
       /// Returns true if the two iterators point to different objects
       bool operator!= (iterator const& as) const
-        { return id_iterator != as.id_iterator(); }
-      
-      /// Returns true if the two iterators point to different objects
-      bool operator!= (id_iterator_t const& as) const
-        { return id_iterator() != as; }
+        { return id_iterator() != as.id_iterator(); }
       
       /**
        * @brief Returns the geometry element the iterator points to
@@ -802,6 +828,14 @@ namespace geo {
       LocalID_t const& ID() const { return *(id_iterator()); }
       
         protected:
+      friend bool geo::details::operator== <id_iterator_t>
+        (iterator const& iter, id_iterator_t const& id_iter);
+      friend bool geo::details::operator== <id_iterator_t>
+        (id_iterator_t const& id_iter, iterator const& iter);
+      friend bool geo::details::operator!= <id_iterator_t>
+        (iterator const& iter, id_iterator_t const& id_iter);
+      friend bool geo::details::operator!= <id_iterator_t>
+        (id_iterator_t const& id_iter, iterator const& iter);
       
       //@{
       /// Access to the base ID iterator
@@ -3511,6 +3545,25 @@ inline void geo::details::wire_id_iterator_base<GEOID>::next() {
   //   (expect 0 if it is now at_end() -- and it does not even matter)
   set_local_limits();
 } // geo::details::wire_id_iterator_base<>::next()
+
+
+//
+// comparison operators between ID iterators and element iterators
+//
+template <typename GEOIDITER>
+bool geo::details::operator==
+  (geometry_element_iterator<GEOIDITER> const& iter, GEOIDITER const& id_iter)
+{
+  return iter.id_iterator() == id_iter;
+} // operator==(iterator_t, id_iterator_t)
+
+template <typename GEOIDITER>
+bool geo::details::operator!=
+  (geometry_element_iterator<GEOIDITER> const& iter, GEOIDITER const& id_iter)
+{
+  return iter.id_iterator() != id_iter;
+} // operator!=(iterator_t, id_iterator_t)
+
 
 
 //******************************************************************************
