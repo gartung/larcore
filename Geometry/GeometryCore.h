@@ -678,6 +678,91 @@ namespace geo {
     }; // class wire_id_iterator_base
 
 
+    /**
+     * @brief Forward iterator browsing all geometry elements in the detector
+     * @tparam GEOITER type of geometry ID iterator
+     * 
+     * This iterator works as the corresponding ID iterator it derives from.
+     * The difference is that this iterator has a different dereferenciation
+     * operator that obtains the cryostat directly, or throws on failure.
+     * The boolean conversion operator checks that it can obtain the pointer to
+     * the geometry element.
+     * 
+     * In particular, get() and ID() methods still return the pointer to the
+     * geometry element and its ID, respectively.
+     */
+    template <typename GEOITER>
+    class geometry_element_iterator: public GEOITER {
+      static_assert(
+        std::is_base_of<geometry_iterator_base, GEOITER>::value,
+        "template class for geometry_element_iterator"
+        " must be a geometry iterator"
+        );
+      
+      using id_iterator_t = GEOITER;
+      
+        public:
+      //@{
+      /// inherited types
+      using LocalID_t = typename id_iterator_t::LocalID_t;
+      using GeoID_t = typename id_iterator_t::GeoID_t;
+      using BeginPos_t = typename id_iterator_t::BeginPos_t;
+      using EndPos_t = typename id_iterator_t::EndPos_t;
+      using ElementPtr_t = typename id_iterator_t::ElementPtr_t;
+      //@}
+      
+      /// Geometry class pointed by the iterator
+      using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
+      
+      /// Default constructor; effect not defined: assign to it before using!
+      geometry_element_iterator() = default;
+      
+      /// Constructor: points to begin
+      geometry_element_iterator(geo::GeometryCore const* geom):
+        id_iterator_t(geom) {}
+      
+      /// Constructor: points to the specified cryostat
+      geometry_element_iterator
+        (geo::GeometryCore const* geom, GeoID_t const& start_from):
+        id_iterator_t(geom, start_from)
+        {}
+      
+      /// Constructor: points to begin
+      geometry_element_iterator(geo::GeometryCore const* geom, BeginPos_t pos):
+        id_iterator_t(geom, pos)
+        {}
+      
+      /// Constructor: points to end
+      geometry_element_iterator(geo::GeometryCore const* geom, EndPos_t pos):
+        id_iterator_t(geom, pos)
+        {}
+      
+      /// Returns whether the iterator is pointing to a valid cryostat
+      operator bool() const
+        { return id_iterator_t::operator bool() && id_iterator_t::get(); }
+      
+      /**
+       * @brief Returns the cryostat the iterator points to
+       * @return a constant reference to the cryostat the iterator points to
+       * @throw cet::exception (category "geometry_iterator") if no valid
+       *   cryostat is currently pointed by the iterator
+       */
+      Element_t const& operator* () const
+        {
+          ElementPtr_t ptr = id_iterator_t::get();
+          if (ptr) return *ptr;
+          throw cet::exception("geometry_iterator")
+            << "iterator attempted to obtain cryostat "
+            << std::string(id_iterator_t::operator*());
+        } // operator*()
+      
+      /// Returns a pointer to the cryostat the iterator points to (or nullptr)
+      Element_t const* operator-> () const { return id_iterator_t::get(); }
+      
+      /// Returns the ID of the pointed cryostat
+      LocalID_t const& ID() const { return id_iterator_t::operator*(); }
+      
+    }; // class geometry_element_iterator<>
   } // namespace details
   
   
@@ -709,62 +794,10 @@ namespace geo {
    * 
    * The comments from cryostat_id_iterator are valid here as well.
    * This object has a different dereferenciation operator that obtains
-   * the cryostat directly, or throws on failure.
+   * the plane directly, or throws on failure.
    */
-  class cryostat_iterator: public cryostat_id_iterator {
-    using id_iterator_t = cryostat_id_iterator;
-    
-      public:
-    /// Geometry class pointed by the iterator
-    using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
-    
-    /// Default constructor; effect not defined: assign to it before using!
-    cryostat_iterator() = default;
-    
-    /// Constructor: points to begin
-    cryostat_iterator(geo::GeometryCore const* geom): id_iterator_t(geom) {}
-    
-    /// Constructor: points to the specified cryostat
-    cryostat_iterator(geo::GeometryCore const* geom, GeoID_t const& start_from):
-      id_iterator_t(geom, start_from)
-      {}
-    
-    /// Constructor: points to begin
-    cryostat_iterator(geo::GeometryCore const* geom, BeginPos_t pos):
-      id_iterator_t(geom, pos)
-      {}
-    
-    /// Constructor: points to end
-    cryostat_iterator(geo::GeometryCore const* geom, EndPos_t pos):
-      id_iterator_t(geom, pos)
-      {}
-    
-    /// Returns whether the iterator is pointing to a valid cryostat
-    operator bool() const
-      { return id_iterator_t::operator bool() && id_iterator_t::get(); }
-    
-    /**
-     * @brief Returns the cryostat the iterator points to
-     * @return a constant reference to the cryostat the iterator points to
-     * @throw cet::exception (category "cryostat_iterator_base") if no valid
-     *   cryostat is currently pointed by the iterator
-     */
-    Element_t const& operator* () const
-      {
-        ElementPtr_t ptr = id_iterator_t::get();
-        if (ptr) return *ptr;
-        throw cet::exception("cryostat_iterator_base")
-          << "iterator attempted to obtain cryostat "
-          << std::string(id_iterator_t::operator*());
-      } // operator*()
-    
-    /// Returns a pointer to the cryostat the iterator points to (or nullptr)
-    Element_t const* operator-> () const { return id_iterator_t::get(); }
-    
-    /// Returns the ID of the pointed cryostat
-    LocalID_t const& ID() const { return id_iterator_t::operator*(); }
-    
-  }; // class cryostat_iterator
+  using cryostat_iterator
+    = details::geometry_element_iterator<cryostat_id_iterator>;
   
   
   /**
@@ -795,42 +828,7 @@ namespace geo {
    * This object has a different dereferenciation operator that obtains
    * the TPC directly, or throws on failure.
    */
-  class TPC_iterator: public TPC_id_iterator {
-    using id_iterator_t = TPC_id_iterator;
-    
-      public:
-    /// Geometry class pointed by the iterator
-    using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
-    
-    /// Inherit all constructors
-    using id_iterator_t::id_iterator_t;
-    
-    /// Returns whether the iterator is pointing to a valid TPC
-    operator bool() const
-      { return id_iterator_t::operator bool() && id_iterator_t::get(); }
-    
-    /**
-     * @brief Returns the TPC the iterator points to
-     * @return a constant reference to the TPC the iterator points to
-     * @throw cet::exception (category "TPC_iterator_base") if no valid
-     *   TPC is currently pointed by the iterator
-     */
-    Element_t const& operator* () const
-      {
-        ElementPtr_t ptr = id_iterator_t::get();
-        if (ptr) return *ptr;
-        throw cet::exception("TPC_iterator_base")
-          << "iterator attempted to obtain TPC "
-          << std::string(id_iterator_t::operator*());
-      } // operator*()
-    
-    /// Returns a pointer to the TPC the iterator points to (or nullptr)
-    Element_t const* operator-> () const { return id_iterator_t::get(); }
-    
-    /// Returns the ID of the pointed TPC
-    LocalID_t const& ID() const { return id_iterator_t::operator*(); }
-    
-  }; // class TPC_iterator
+  using TPC_iterator = details::geometry_element_iterator<TPC_id_iterator>;
   
   
   /**
@@ -861,42 +859,7 @@ namespace geo {
    * This object has a different dereferenciation operator that obtains
    * the plane directly, or throws on failure.
    */
-  class plane_iterator: public plane_id_iterator {
-    using id_iterator_t = plane_id_iterator;
-    
-      public:
-    /// Geometry class pointed by the iterator
-    using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
-    
-    /// Inherit all constructors
-    using id_iterator_t::id_iterator_t;
-    
-    /// Returns whether the iterator is pointing to a valid plane
-    operator bool() const
-      { return id_iterator_t::operator bool() && id_iterator_t::get(); }
-    
-    /**
-     * @brief Returns the plane the iterator points to
-     * @return a constant reference to the plane the iterator points to
-     * @throw cet::exception (category "plane_iterator_base") if no valid
-     *   plane is currently pointed by the iterator
-     */
-    Element_t const& operator* () const
-      {
-        ElementPtr_t ptr = id_iterator_t::get();
-        if (ptr) return *ptr;
-        throw cet::exception("plane_iterator_base")
-          << "iterator attempted to obtain plane "
-          << std::string(id_iterator_t::operator*());
-      } // operator*()
-    
-    /// Returns a pointer to the plane the iterator points to (or nullptr)
-    Element_t const* operator-> () const { return id_iterator_t::get(); }
-    
-    /// Returns the ID of the pointed plane
-    LocalID_t const& ID() const { return id_iterator_t::operator*(); }
-    
-  }; // class plane_iterator
+  using plane_iterator = details::geometry_element_iterator<plane_id_iterator>;
   
   
   /**
@@ -926,42 +889,7 @@ namespace geo {
    * This object has a different dereferenciation operator that obtains
    * the wire directly, or throws on failure.
    */
-  class wire_iterator: public wire_id_iterator {
-    using id_iterator_t = wire_id_iterator;
-    
-      public:
-    /// Geometry class pointed by the iterator
-    using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
-    
-    /// Inherit all constructors
-    using id_iterator_t::id_iterator_t;
-    
-    /// Returns whether the iterator is pointing to a valid wire
-    operator bool() const
-      { return id_iterator_t::operator bool() && id_iterator_t::get(); }
-    
-    /**
-     * @brief Returns the wire the iterator points to
-     * @return a constant reference to the wire the iterator points to
-     * @throw cet::exception (category "wire_iterator_base") if no valid
-     *   wire is currently pointed by the iterator
-     */
-    Element_t const& operator* () const
-      {
-        ElementPtr_t ptr = id_iterator_t::get();
-        if (ptr) return *ptr;
-        throw cet::exception("wire_iterator_base")
-          << "iterator attempted to obtain wire "
-          << std::string(id_iterator_t::operator*());
-      } // operator*()
-    
-    /// Returns a pointer to the wire the iterator points to (or nullptr)
-    Element_t const* operator-> () const { return id_iterator_t::get(); }
-    
-    /// Returns the ID of the pointed wire
-    LocalID_t const& ID() const { return id_iterator_t::operator*(); }
-    
-  }; // class wire_iterator
+  using wire_iterator = details::geometry_element_iterator<wire_id_iterator>;
   
   
   
