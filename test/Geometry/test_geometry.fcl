@@ -58,6 +58,10 @@ physics: {
   analyzers: {
     geotest: {
       module_type: "GeometryTest"
+      SkipTests: [
+        # - CheckOverlaps disabled because it takes lot of time
+        "CheckOverlaps"
+      ]
       PrintWires:  true
     }
   }

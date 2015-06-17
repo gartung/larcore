@@ -118,10 +118,24 @@ BOOST_AUTO_TEST_CASE( AllTests )
 } // BOOST_AUTO_TEST_CASE( AllTests )
 */
 
+BOOST_AUTO_TEST_CASE( CryostatIDIteratorsTest )
+{
+  GeometryIteratorTestFixture::GlobalTester().CryostatIDIteratorsTest();
+} // BOOST_AUTO_TEST_CASE( CryostatIDIteratorsTest )
+
+
+
 BOOST_AUTO_TEST_CASE( CryostatIteratorsTest )
 {
   GeometryIteratorTestFixture::GlobalTester().CryostatIteratorsTest();
 } // BOOST_AUTO_TEST_CASE( CryostatIteratorsTest )
+
+
+
+BOOST_AUTO_TEST_CASE( TPCIDIteratorsTest )
+{
+  GeometryIteratorTestFixture::GlobalTester().TPCIDIteratorsTest();
+} // BOOST_AUTO_TEST_CASE( TPCIDIteratorsTest )
 
 
 
@@ -132,6 +146,13 @@ BOOST_AUTO_TEST_CASE( TPCIteratorsTest )
 
 
 
+BOOST_AUTO_TEST_CASE( PlaneIDIteratorsTest )
+{
+  GeometryIteratorTestFixture::GlobalTester().PlaneIDIteratorsTest();
+} // BOOST_AUTO_TEST_CASE( PlaneIDIteratorsTest )
+
+
+
 BOOST_AUTO_TEST_CASE( PlaneIteratorsTest )
 {
   GeometryIteratorTestFixture::GlobalTester().PlaneIteratorsTest();
@@ -139,9 +160,17 @@ BOOST_AUTO_TEST_CASE( PlaneIteratorsTest )
 
 
 
+BOOST_AUTO_TEST_CASE( WireIDIteratorsTest )
+{
+  GeometryIteratorTestFixture::GlobalTester().WireIDIteratorsTest();
+} // BOOST_AUTO_TEST_CASE( WireIDIteratorsTest )
+
+
+
 BOOST_AUTO_TEST_CASE( WireIteratorsTest )
 {
   GeometryIteratorTestFixture::GlobalTester().WireIteratorsTest();
 } // BOOST_AUTO_TEST_CASE( WireIteratorsTest )
+
 
 // BOOST_AUTO_TEST_SUITE_END()

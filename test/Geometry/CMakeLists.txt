@@ -39,6 +39,9 @@ simple_plugin ( GeometryTest "module"
 
 # unit test (use geometry configuration from config file, the rest is ignored)
 # this uses BOOST for the test
+# This test is temporary marked ONLY_SLF since on OSX it fails
+# for reasons unrelated to the geometry test itself
+# (untimely initialization of the Boost test framework)
 cet_test(geometry_iterator_test
   SOURCES geometry_iterator_test.cxx
   LIBRARIES Geometry
@@ -50,6 +53,7 @@ cet_test(geometry_iterator_test
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS test_geometry.fcl
+  OPTIONAL_GROUPS ONLY_SLF
 )
 
 # unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
@@ -77,6 +81,21 @@ cet_test(geometry_iterator_loop_test
             ${MF_UTILITIES}
             ${FHICLCPP}
             ${CETLIB}
+)
+
+
+# simple unit test
+# this uses BOOST for the test
+cet_test(geometry_thirdplaneslope_test
+  SOURCES geometry_thirdplaneslope_test.cxx
+  LIBRARIES Geometry
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+  USE_BOOST_UNIT
+  DATAFILES test_geometry.fcl
+  TEST_ARGS test_geometry.fcl
 )
 
 

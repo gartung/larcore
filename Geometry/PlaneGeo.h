@@ -13,6 +13,7 @@
 #include "Geometry/GeoObjectSorter.h"
 
 // C/C++ standard libraries
+#include <cmath> // std::atan2()
 #include <vector>
 
 class TGeoNode;
@@ -44,7 +45,18 @@ namespace geo {
     /// What is the signal type for the plane
     SigType_t SignalType()                                    const { return fSignalType;    }
 
+    /// Angle of the wires from positive z axis; @f$ \theta_{z} \in [ 0, \pi ]@f$.
     double ThetaZ()                                           const;
+    
+    /// Angle from positive z axis of the wire coordinate axis, in radians
+    double PhiZ()                                             const
+      { return std::atan2(fSinPhiZ, fCosPhiZ); }
+    
+    /// Sine of PhiZ()
+    double SinPhiZ()                                          const { return fSinPhiZ; }
+    
+    /// Cosine of PhiZ()
+    double CosPhiZ()                                          const { return fCosPhiZ; }
     
     /// @}
     
@@ -223,6 +235,15 @@ namespace geo {
     void MakeWire(std::vector<const TGeoNode*>& path, 
 		  int depth);
     
+    /// Updates the stored wire pitch
+    void UpdateWirePitch();
+    
+    /// Updates the stored phi_z
+    void UpdatePhiZ();
+    
+    /// Performs all the updates needed after mapping changes
+    void UpdateFromMapping();
+    
   private:
     TGeoHMatrix*          fGeoMatrix;   ///< Plane to world transform
     View_t                fView;        ///< Does this plane measure U,V, or W?
@@ -230,6 +251,8 @@ namespace geo {
     SigType_t             fSignalType;  ///< Is the plane induction or collection?
     std::vector<WireGeo*> fWire;        ///< List of wires in this plane
     double                fWirePitch;   ///< pitch of wires in this plane
+    double                fSinPhiZ;     ///< sine of phiZ
+    double                fCosPhiZ;     ///< cosine of phiZ
   };
 }
 

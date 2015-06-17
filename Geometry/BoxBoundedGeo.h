@@ -66,13 +66,16 @@ namespace geo {
     //@}
     
     
-    
-    //@{
+    /// @name Dimension queries
+    /// @{
     /// Returns the world x coordinate of the start of the box
     double MinX() const { return c_min[0]; }
     
     /// Returns the world x coordinate of the end of the box
     double MaxX() const { return c_max[0]; }
+    
+    /// Returns the world x coordinate of the center of the box
+    double CenterX() const { return (MinX() + MaxX()) / 2.; }
     
     /// Returns the world y coordinate of the start of the box
     double MinY() const { return c_min[1]; }
@@ -80,17 +83,24 @@ namespace geo {
     /// Returns the world y coordinate of the end of the box
     double MaxY() const { return c_max[1]; }
     
+    /// Returns the world y coordinate of the center of the box
+    double CenterY() const { return (MinY() + MaxY()) / 2.; }
+    
     /// Returns the world z coordinate of the start of the box
     double MinZ() const { return c_min[2]; }
     
     /// Returns the world z coordinate of the end of the box
     double MaxZ() const { return c_max[2]; }
-    //@}
+    
+    /// Returns the world z coordinate of the center of the box
+    double CenterZ() const { return (MinZ() + MaxZ()) / 2.; }
+    
+    /// @}
     
     
     
-    /// @{
     /// @name Containment in the full volume
+    /// @{
     /**
      * @brief Returns whether this TPC contains the specified world x coordinate
      * @param x the absolute ("world") coordinate x
@@ -154,8 +164,8 @@ namespace geo {
     ///@}
     
     
-    /// @{
     /// @name Containment in a fiducial volume
+    /// @{
     /**
      * @brief Returns whether TPC fiducial volume contains world x coordinate
      * @param x the absolute ("world") coordinate x

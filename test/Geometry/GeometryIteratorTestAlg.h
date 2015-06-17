@@ -35,7 +35,15 @@ namespace geo {
     virtual unsigned int Run();
    
     //@{
-    /// All the tests
+    /// All the ID iterator tests
+    void CryostatIDIteratorsTest() const;
+    void TPCIDIteratorsTest() const;
+    void PlaneIDIteratorsTest() const;
+    void WireIDIteratorsTest() const;
+    //@}
+    
+    //@{
+    /// All the ID iterator tests
     void CryostatIteratorsTest() const;
     void TPCIteratorsTest() const;
     void PlaneIteratorsTest() const;

@@ -19,6 +19,7 @@
 #include <set>
 #include <vector>
 #include <array>
+#include <memory> // std::unique_ptr<>
 
 // forward declarations
 namespace fhicl {
@@ -32,6 +33,10 @@ namespace geo {
   class GeometryCore;
   class TPCGeo;
   class PlaneGeo;
+  
+  namespace details {
+    class TestTrackerClassBase;
+  }
   
   
   /** **************************************************************************
@@ -54,21 +59,25 @@ namespace geo {
    *   plane vs. the following. It works as /ExpectedWirePitches/
    * - **ForgiveExceptions** (list of strings, default: empty): the categories
    *   of exceptions in this list are "forgiven" (non-fatal)
-   * - **RunTests** (string list): marks which tests to run;
-   *   if the list is empty, all default tests (marked below as such) are run:
+   * - **RunTests** (string list): marks which tests to run; it can't be
+   *   specified together with _SkipTests_; possible values include:
    *   + `CheckOverlaps` perform overlap checks
-   *   + `Cryostat` (default):
-   *   + `ChannelToWire` (default):
-   *   + `FindPlaneCenters` (default):
-   *   + `Projection` (default):
+   *   + `Cryostat`:
+   *   + `ChannelToWire`:
+   *   + `FindPlaneCenters`:
+   *   + `Projection`:
    *   + `WirePos`: currently disabled
-   *   + `NearestWire` (default): tests `WireCoordinate()` and `NearestWire()`
-   *   + `WireIntersection` (default): tests `WireIDsIntersect()`
-   *   + `ThirdPlaneSlope` (default): tests `ThirdPlaneSlope()`
-   *   + `WirePitch` (default):
-   *   + `PlanePitch` (default):
-   *   + `Stepping` (default):
+   *   + `WireCoordAngle`: tests geo::PlaneGeo::PhiZ()
+   *   + `NearestWire`: tests `WireCoordinate()` and `NearestWire()`
+   *   + `WireIntersection`: tests `WireIDsIntersect()`
+   *   + `ThirdPlane`: tests `ThirdPlane()`
+   *   + `ThirdPlaneSlope`: tests `ThirdPlaneSlope()`
+   *   + `WirePitch`:
+   *   + `PlanePitch`:
+   *   + `Stepping`:
    *   + `PrintWires`: prints *all* the wires in the geometry
+   * - **SkipTests** (string list): marks which tests to skip; it can't be
+   *   specified together with _RunTests_; see _RunTests_ for possible values
    * - **CheckForOverlaps** (boolean, default: false): equivalent to enabling
    *   `CheckOverlaps` in `RunTests`
    * - **PrintWires**: (boolean, default: false): equivalent to enabling
@@ -91,16 +100,15 @@ namespace geo {
     static std::array<double, 3> GetIncreasingWireDirection
       (const geo::PlaneGeo& plane);
 
-    static const std::vector<std::string> DefaultTests;
-
   private:
     geo::GeometryCore const* geom; ///< pointer to geometry service provider
 
     bool fDisableValidWireIDcheck;  ///< disable test on out-of-world NearestWire()
     std::set<std::string> fNonFatalExceptions;
-    std::set<std::string> fRunTests; ///< which tests to run (empty runs all)
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
+    
+    std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
     
     void printChannelSummary();
     void printVolBounds();
@@ -113,13 +121,15 @@ namespace geo {
     void testChannelToWire();
     void testFindPlaneCenters();
     void testProject();
+    void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
     void testStandardWirePos();
     void testAPAWirePos();
     void testNearestWire();
     void testWireIntersection() const;
-    void testThirdPlaneSlope() const;
+    void testThirdPlane() const;
+    void testThirdPlane_dTdW() const;
     void testStepping();
 
     bool shouldRunTests(std::string test_name) const;
@@ -128,13 +138,68 @@ namespace geo {
     unsigned int testWireIntersectionAt
       (const TPCID& tpcid, double x, double y, double z) const;
     
+    /// Returns dT/dW expected from the specified segment A-to-B
+    std::vector<std::pair<geo::PlaneID, double>> ExpectedPlane_dTdW(
+      std::array<double, 3> const& A, std::array<double, 3> const& B,
+      const double driftVelocity = -0.1
+      ) const;
     
     /// Performs the third plane slope test with a single configuration
-    unsigned int testThirdPlaneSlopeAt(
-      geo::PlaneID const& pid1, double slope1,
-      geo::PlaneID const& pid2, double slope2
-      ) const;
+    unsigned int testThirdPlane_dTdW_at
+      (std::vector<std::pair<geo::PlaneID, double>> const& plane_dTdW) const;
+    
   };
+  
+  
+  namespace details {
+    /// Class telling whether a test needs to be run
+    class TestTrackerClassBase {
+        public:
+      using TestList_t = std::set<std::string>;
+      
+      virtual ~TestTrackerClassBase() = default;
+      
+      /// Returns whether the specified test should run
+      virtual bool ShouldRun(std::string test_name) const = 0;
+      
+      /// Checks the test and records the request
+      bool operator() (std::string test_name);
+      
+      /// Allow the specified test to run
+      virtual void PleaseRunAlso(std::string test_name) = 0;
+      
+      /// Returns the tests that have been run
+      TestList_t const& RunTests() const { return run; }
+      
+      /// Returns the tests that have been skipped
+      TestList_t const& SkippedTests() const { return skipped; }
+      
+      /// Returns the tests that have been queried
+      TestList_t QueriedTests() const;
+      
+      /// Checks that the validity of the configuration (after the fact)
+      virtual bool CheckQueriesRegistry() const;
+      
+      /// Prints information about the configuration of the filter
+      virtual void PrintConfiguration(std::ostream&) const;
+      
+        protected:
+      TestList_t run; ///< requested tests that should be run
+      TestList_t skipped; ///< requested tests that should be skipped
+      
+      virtual void RecordRequest(std::string test_name, bool bRun);
+      
+      /// Checks the test and records the request
+      virtual bool Query(std::string test_name);
+      
+      /// Adds a vector of tests into a test set
+      static void CopyList
+        (TestList_t& dest, std::vector<std::string> const& from);
+    }; // class TestTrackerClassBase
+    
+  } // namespace details
+  
+  
 } // namespace geo
 
 #endif // GEO_GEOMETRYTESTALG_H
