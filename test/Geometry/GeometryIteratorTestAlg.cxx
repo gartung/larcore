@@ -13,8 +13,7 @@
 #include "Geometry/GeometryCore.h"
 
 // Boost libraries
-#define BOOST_TEST_MODULE GeometryIteratorLoopTest
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 // C/C++ standard libraries
 #include <string>

@@ -8,6 +8,7 @@ art_make_library( LIBRARY_NAME GeometryTestLib
                         ${MF_UTILITIES}
                         ${FHICLCPP}
                         ${CETLIB}
+                        ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
           )
 
 
@@ -53,7 +54,7 @@ cet_test(geometry_iterator_test
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS test_geometry.fcl
-  OPTIONAL_GROUPS ONLY_SLF
+#  OPTIONAL_GROUPS ONLY_SLF
 )
 
 # unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
