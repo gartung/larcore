@@ -1310,8 +1310,88 @@ namespace geo {
     this->IntersectionPoint
       (wid1, wid2, WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);
   }
-
-
+  
+  //============================================================================
+  //===  TPC set information
+  //===
+  //--------------------------------------------------------------------
+  unsigned int GeometryCore::NTPCsets(readout::CryostatID const& cryoid) const {
+    return fChannelMapAlg->NTPCsets(cryoid);
+  } // GeometryCore::NTPCsets()
+  
+  
+  //--------------------------------------------------------------------
+  unsigned int GeometryCore::MaxTPCsets() const {
+    return fChannelMapAlg->MaxTPCsets();
+  } // GeometryCore::MaxTPCsets()
+  
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::HasTPCset(readout::TPCsetID const& tpcsetid) const {
+    return fChannelMapAlg->HasTPCset(tpcsetid);
+  } // GeometryCore::HasTPCset()
+  
+  
+  //--------------------------------------------------------------------
+  readout::TPCsetID GeometryCore::FindTPCsetAtPosition
+    (double const worldLoc[3]) const
+  {
+    return TPCtoTPCset(FindTPCAtPosition(worldLoc));
+  } // GeometryCore::FindTPCsetAtPosition()
+  
+  
+  //--------------------------------------------------------------------
+  readout::TPCsetID GeometryCore::TPCtoTPCset(geo::TPCID const& tpcid) const
+  {
+    return fChannelMapAlg->TPCtoTPCset(tpcid);
+  } // GeometryCore::TPCtoTPCset()
+  
+  
+  //--------------------------------------------------------------------
+  std::vector<geo::TPCID> GeometryCore::TPCsetToTPCs
+    (readout::TPCsetID const& tpcsetid) const
+  {
+    return fChannelMapAlg->TPCsetToTPCs(tpcsetid);
+  } // GeometryCore::TPCsetToTPCs()
+  
+  
+  //============================================================================
+  //===  Readout plane information
+  //===
+  //--------------------------------------------------------------------
+  unsigned int GeometryCore::NROPs(readout::TPCsetID const& tpcsetid) const {
+    return fChannelMapAlg->NROPs(tpcsetid);
+  } // GeometryCore::NROPs()
+  
+  
+  //--------------------------------------------------------------------
+  unsigned int GeometryCore::MaxROPs() const {
+    return fChannelMapAlg->MaxROPs();
+  } // GeometryCore::MaxROPs()
+  
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::HasROP(readout::ROPID const& ropid) const {
+    return fChannelMapAlg->HasROP(ropid);
+  } // GeometryCore::HasROP()
+  
+  
+  //--------------------------------------------------------------------
+  readout::ROPID GeometryCore::WirePlaneToROP(geo::PlaneID const& planeid) const
+  {
+    return fChannelMapAlg->WirePlaneToROP(planeid);
+  } // GeometryCore::WirePlaneToROP()
+  
+  
+  //--------------------------------------------------------------------
+  std::vector<geo::PlaneID> GeometryCore::ROPtoWirePlanes
+    (readout::ROPID const& ropid) const
+  {
+    return fChannelMapAlg->ROPtoWirePlanes(ropid);
+  } // GeometryCore::ROPtoWirePlanes()
+  
+  
+  //============================================================================
   //--------------------------------------------------------------------
   // Return gdml string which gives sensitive opdet name
   std::string GeometryCore::OpDetGeoName(unsigned int c) const

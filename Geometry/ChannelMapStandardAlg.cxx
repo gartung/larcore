@@ -339,4 +339,154 @@ namespace geo{
     return fPlaneIDs;
   }
 
+  
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::NTPCsets
+    (readout::CryostatID const& cryoid) const
+  {
+    // return the same number as the number of TPCs
+    return (cryoid.isValid && cryoid.Cryostat < fNTPC.size())?
+      fNTPC[cryoid.Cryostat]: 0;
+  } // ChannelMapStandardAlg::NTPCsets()
+  
+  
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::MaxTPCsets() const
+  {
+    return MaxTPCs();
+  } // ChannelMapStandardAlg::MaxTPCsets()
+  
+  
+  //----------------------------------------------------------------------------
+  bool ChannelMapStandardAlg::HasTPCset(readout::TPCsetID const& tpcsetid) const
+  {
+    return tpcsetid.TPCset < NTPCsets(tpcsetid);
+  } // ChannelMapStandardAlg::HasTPCset()
+  
+  
+  //----------------------------------------------------------------------------
+  readout::TPCsetID ChannelMapStandardAlg::TPCtoTPCset
+    (geo::TPCID const& tpcid) const
+  {
+    return ConvertTPCtoTPCset(tpcid);
+  } // ChannelMapStandardAlg::TPCtoTPCset()
+  
+  
+  //----------------------------------------------------------------------------
+  std::vector<geo::TPCID> ChannelMapStandardAlg::TPCsetToTPCs
+    (readout::TPCsetID const& tpcsetid) const
+  {
+    // note that mapping is implemented also in NROPs()
+    std::vector<geo::TPCID> IDs;
+    if (tpcsetid.isValid) IDs.emplace_back(ConvertTPCsetToTPC(tpcsetid));
+    return IDs;
+  } // ChannelMapStandardAlg::TPCsetToTPCs()
+  
+  
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::MaxTPCs() const
+  {
+    unsigned int max = 0;
+    for (unsigned int nTPCs: fNTPC) if (nTPCs > max) max = nTPCs;
+    return max;
+  } // ChannelMapStandardAlg::MaxTPCs()
+  
+  
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::NROPs
+      (readout::TPCsetID const& tpcsetid) const
+  {
+    if (!tpcsetid.isValid) return 0;
+    // we implement a specific TPC to TPC set mapping here
+    return AccessElement(fNPlanes, ConvertTPCsetToTPC(tpcsetid));
+  } // ChannelMapStandardAlg::NROPs()
+  
+  
+  //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::MaxROPs() const {
+    unsigned int max = 0;
+    for (auto const& cryo_tpc: fNPlanes)
+      for (unsigned int nPlanes: cryo_tpc)
+        if (nPlanes > max) max = nPlanes;
+    return max;
+  } // ChannelMapStandardAlg::MaxROPs()
+  
+  
+  //----------------------------------------------------------------------------
+  bool ChannelMapStandardAlg::HasROP(readout::ROPID const& ropid) const {
+    return ropid.ROP < NROPs(ropid);
+  } // ChannelMapStandardAlg::HasROP()
+  
+  
+  //----------------------------------------------------------------------------
+  readout::ROPID ChannelMapStandardAlg::WirePlaneToROP
+    (geo::PlaneID const& planeid) const
+  {
+    return ConvertWirePlaneToROP(planeid);
+  } // ChannelMapStandardAlg::WirePlaneToROP()
+  
+  
+  //----------------------------------------------------------------------------
+  std::vector<geo::PlaneID> ChannelMapStandardAlg::ROPtoWirePlanes
+    (readout::ROPID const& ropid) const
+  {
+    std::vector<geo::PlaneID> IDs;
+    if (ropid.isValid) IDs.emplace_back(ConvertROPtoWirePlane(ropid));
+    return IDs;
+  } // ChannelMapStandardAlg::ROPtoWirePlanes()
+  
+  
+  //----------------------------------------------------------------------------
+  readout::TPCsetID ChannelMapStandardAlg::ConvertTPCtoTPCset
+    (geo::TPCID const& tpcid)
+  {
+    if (!tpcid.isValid) return {}; // invalid ID, default-constructed
+    return {
+      (readout::CryostatID::CryostatID_t) tpcid.Cryostat,
+      (readout::TPCsetID::TPCsetID_t) tpcid.TPC
+      };
+  } // ChannelMapStandardAlg::ConvertTPCtoTPCset()
+  
+  
+  //----------------------------------------------------------------------------
+  geo::TPCID ChannelMapStandardAlg::ConvertTPCsetToTPC
+    (readout::TPCsetID const& tpcsetid)
+  {
+    if (!tpcsetid.isValid) return {};
+    return {
+      (geo::CryostatID::CryostatID_t) tpcsetid.Cryostat,
+      (geo::TPCID::TPCID_t) tpcsetid.TPCset
+      };
+  } // ChannelMapStandardAlg::ConvertTPCsetToTPC()
+  
+  
+  //----------------------------------------------------------------------------
+  readout::ROPID ChannelMapStandardAlg::ConvertWirePlaneToROP
+    (geo::PlaneID const& planeid)
+  {
+    if (!planeid.isValid) return {}; // invalid ID, default-constructed
+    return {
+      (readout::CryostatID::CryostatID_t) planeid.Cryostat,
+      (readout::TPCsetID::TPCsetID_t) planeid.TPC,
+      (readout::ROPID::ROPID_t) planeid.Plane
+      };
+    
+  } // ChannelMapStandardAlg::ConvertWirePlaneToROP()
+  
+  
+  //----------------------------------------------------------------------------
+  geo::PlaneID ChannelMapStandardAlg::ConvertROPtoWirePlane
+    (readout::ROPID const& ropid)
+  {
+    if (!ropid.isValid) return {};
+    return {
+      (geo::CryostatID::CryostatID_t) ropid.Cryostat,
+      (geo::TPCID::TPCID_t) ropid.TPCset,
+      (geo::PlaneID::PlaneID_t) ropid.ROP
+      };
+  } // ChannelMapStandardAlg::ConvertROPtoWirePlane()
+  
+  
+  //----------------------------------------------------------------------------
+  
 } // namespace

@@ -10,6 +10,7 @@
 
 // LArSoft  libraries
 #include "SimpleTypesAndConstants/geo_types.h"
+#include "SimpleTypesAndConstants/readout_types.h"
 #include "SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // Framework libraries
@@ -58,6 +59,11 @@ namespace geo{
    virtual unsigned int             Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
    virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
+   
+   
+   //
+   // channel interface
+   //
    
    //@{
    /**
@@ -144,7 +150,65 @@ namespace geo{
    virtual std::pair<size_t, size_t>  ChannelToSensitiveAuxDet(std::vector<geo::AuxDetGeo*> const& auxDets,
 							       std::string                  const& detName,
 							       uint32_t                     const& channel) const;
-
+    
+    //
+    // TPC set interface
+    //
+    /// @name TPC set mapping
+    /// @{
+    /**
+     * @brief Returns the total number of TPC sets in the specified cryostat
+     * @param cryoid cryostat ID
+     * @return number of TPC sets in the cryostat, or 0 if no cryostat found
+     */
+    virtual unsigned int NTPCsets(readout::CryostatID const& cryoid) const = 0;
+    
+    /// Returns the largest number of TPC sets a cryostat in the detector has
+    virtual unsigned int MaxTPCsets() const = 0;
+    
+    /// Returns whether we have the specified TPC set
+    virtual bool HasTPCset(readout::TPCsetID const& tpcsetid) const = 0;
+    
+    /// Returns the ID of the TPC set tpcid belongs to, or invalid if none
+    virtual readout::TPCsetID TPCtoTPCset(geo::TPCID const& tpcid) const = 0;
+    
+    /// Returns a list of ID of TPCs belonging to the specified TPC set
+    virtual std::vector<geo::TPCID> TPCsetToTPCs
+      (readout::TPCsetID const& tpcsetid) const = 0;
+    
+    /// @} TPC set mapping
+    
+    
+    //
+    // Readout plane interface
+    //
+    /// @name Readout plane mapping
+    /// @{
+    /**
+     * @brief Returns the total number of ROP in the specified TPC set
+     * @param tpcsetid TPC set ID
+     * @return number of readout planes in the TPC sets, or 0 if no set found
+     */
+    virtual unsigned int NROPs(readout::TPCsetID const& tpcsetid) const = 0;
+    
+    /// Returns the largest number of ROPs a TPC set in the detector has
+    virtual unsigned int MaxROPs() const = 0;
+    
+    /// Returns whether we have the specified ROP
+    virtual bool HasROP(readout::ROPID const& ropid) const = 0;
+    
+    /// Returns the ID of the ROP planeid belongs to, or invalid if none
+    virtual readout::ROPID WirePlaneToROP
+      (geo::PlaneID const& planeid) const = 0;
+    
+    /// Returns a list of ID of planes belonging to the specified ROP
+    virtual std::vector<geo::PlaneID> ROPtoWirePlanes
+      (readout::ROPID const& ropid) const = 0;
+    
+    /// @} Readout plane mapping
+    
+    
+    
  protected:
 
    /// Data type for per-TPC information
