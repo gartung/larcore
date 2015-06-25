@@ -193,6 +193,16 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
+  unsigned int ChannelMapStandardAlg::Nchannels
+    (readout::ROPID const& ropid) const
+  {
+    if (!ropid.isValid) return 0;
+    // The number of channels matches the number of wires. Life is easy.
+    return WireCount(ConvertROPtoWirePlane(ropid));
+  } // ChannelMapStandardAlg::Nchannels(ROPID)
+  
+  
+  //----------------------------------------------------------------------------
   double ChannelMapStandardAlg::WireCoordinate
     (double YPos, double ZPos, geo::PlaneID const& planeID) const
   {
@@ -442,6 +452,42 @@ namespace geo{
     if (ropid.isValid) IDs.emplace_back(FirstWirePlaneInROP(ropid));
     return IDs;
   } // ChannelMapStandardAlg::ROPtoWirePlanes()
+  
+  
+  //----------------------------------------------------------------------------
+  std::vector<geo::TPCID> ChannelMapStandardAlg::ROPtoTPCs
+    (readout::ROPID const& ropid) const
+  {
+    std::vector<geo::TPCID> IDs;
+    // we take the TPC set of the ROP and convert it straight into a TPC ID
+    if (ropid.isValid) IDs.emplace_back(ConvertTPCsetToTPC(ropid.asTPCsetID()));
+    return IDs;
+  } // ChannelMapStandardAlg::ROPtoTPCs()
+  
+  
+  //----------------------------------------------------------------------------
+  readout::ROPID ChannelMapStandardAlg::ChannelToROP
+    (raw::ChannelID_t channel) const
+  {
+    // which wires does the channel cover?
+    std::vector<geo::WireID> wires = ChannelToWire(channel);
+    
+    // - none:
+    if (wires.empty()) return {}; // default-constructed ID, invalid
+    
+    // - one: maps its plane ID into a ROP ID
+    return WirePlaneToROP(wires[0]);
+  } // ChannelMapStandardAlg::ROPtoTPCs()
+  
+  
+  //----------------------------------------------------------------------------
+  raw::ChannelID_t ChannelMapStandardAlg::FirstChannelInROP
+    (readout::ROPID const& ropid) const
+  {
+    if (!ropid.isValid) return raw::InvalidChannelID;
+    return (raw::ChannelID_t)
+      AccessElement(fPlaneBaselines, ConvertROPtoWirePlane(ropid));
+  } // ChannelMapStandardAlg::FirstChannelInROP()
   
   
   //----------------------------------------------------------------------------

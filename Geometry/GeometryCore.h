@@ -3093,6 +3093,9 @@ namespace geo {
     /// Returns the number of TPC readout channels in the detector
     unsigned int Nchannels() const;
     
+    /// Returns the number of TPC readout channels in specified readout plane
+    unsigned int Nchannels(readout::ROPID const& ropid) const;
+    
     /**
      * @brief Returns a list of possible views in the detector
      * @return a constant reference to the set of views
@@ -3159,6 +3162,10 @@ namespace geo {
      */
     std::vector<geo::WireID> ChannelToWire
       (raw::ChannelID_t const channel) const;
+    
+    
+    /// Returns the ID of the ROP the channel belongs to (invalid if none)
+    readout::ROPID ChannelToROP(raw::ChannelID_t channel) const;
     
     
     //
@@ -3405,6 +3412,15 @@ namespace geo {
     std::vector<geo::PlaneID> ROPtoWirePlanes
       (readout::ROPID const& ropid) const;
     
+    /// Returns a list of ID of TPCs the specified ROP spans
+    std::vector<geo::TPCID> ROPtoTPCs(readout::ROPID const& ropid) const;
+    
+    
+    /**
+     * @brief Returns the ID of the first channel in the specified readout plane
+     * @return the ID of the first channel, or raw::InvalidChannelID if none
+     */
+    raw::ChannelID_t FirstChannelInROP(readout::ROPID const& ropid) const;
     
 #if 0
     ///

@@ -136,6 +136,12 @@ namespace geo {
   }
 
   //......................................................................
+  unsigned int GeometryCore::Nchannels(readout::ROPID const& ropid) const
+  {
+    return fChannelMapAlg->Nchannels(ropid);
+  } // GeometryCore::Nchannels(ROPID)
+  
+  //......................................................................
   unsigned int GeometryCore::NOpDets() const
   {
     int N=0;
@@ -864,6 +870,13 @@ namespace geo {
     return fChannelMapAlg->ChannelToWire(channel);
   }
 
+  //--------------------------------------------------------------------
+  readout::ROPID GeometryCore::ChannelToROP(raw::ChannelID_t channel) const
+  {
+    return fChannelMapAlg->ChannelToROP(channel);
+  } // GeometryCore::ChannelToROP()
+  
+  
   //----------------------------------------------------------------------------
   double GeometryCore::WireCoordinate
     (double YPos, double ZPos, geo::PlaneID const& planeid) const
@@ -1389,6 +1402,22 @@ namespace geo {
   {
     return fChannelMapAlg->ROPtoWirePlanes(ropid);
   } // GeometryCore::ROPtoWirePlanes()
+  
+  
+  //--------------------------------------------------------------------
+  std::vector<geo::TPCID> GeometryCore::ROPtoTPCs
+    (readout::ROPID const& ropid) const
+  {
+    return fChannelMapAlg->ROPtoTPCs(ropid);
+  } // GeometryCore::ROPtoTPCs()
+  
+  
+  //--------------------------------------------------------------------
+  raw::ChannelID_t GeometryCore::FirstChannelInROP
+    (readout::ROPID const& ropid) const
+  {
+    return fChannelMapAlg->FirstChannelInROP(ropid);
+  } // GeometryCore::FirstChannelInROP()
   
   
   //--------------------------------------------------------------------

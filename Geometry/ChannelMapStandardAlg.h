@@ -29,6 +29,8 @@ namespace geo{
     void                     Uninitialize();
     std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)     const;
     unsigned int             Nchannels()                                 const;
+    /// Returns the number of channels in the specified ROP (0 if invalid)
+    virtual unsigned int     Nchannels(readout::ROPID const& ropid) const override;
 
     //@{
     virtual double WireCoordinate
@@ -177,6 +179,32 @@ namespace geo{
      * the ID actually exists.
      */
     virtual std::vector<geo::PlaneID> ROPtoWirePlanes
+      (readout::ROPID const& ropid) const override;
+    
+    /**
+     * @brief Returns a list of ID of TPCs the specified ROP spans
+     * @param ropid ID of the readout plane
+     * @return the list of TPC IDs, empty if readout plane ID is invalid
+     *
+     * In this mapping, readout planes and wire planes are mapped one-to-one.
+     * The returned list contains always one entry, unless the specified readout
+     * plane ID is invalid, in which case the list is empty.
+     * Note that this check is performed on the validity of the readout plane
+     * ID, that does not necessarily imply that the readout plane specified by
+     * the ID actually exists.
+     */
+    virtual std::vector<geo::TPCID> ROPtoTPCs
+      (readout::ROPID const& ropid) const override;
+    
+    /// Returns the ID of the ROP the channel belongs to (invalid if none)
+    virtual readout::ROPID ChannelToROP
+      (raw::ChannelID_t channel) const override;
+    
+    /**
+     * @brief Returns the ID of the first channel in the specified readout plane
+     * @return the ID of the first channel, or raw::InvalidChannelID if none
+     */
+    virtual raw::ChannelID_t FirstChannelInROP
       (readout::ROPID const& ropid) const override;
     
     /// Returns the ID of the first plane belonging to the specified ROP

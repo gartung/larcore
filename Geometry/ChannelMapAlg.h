@@ -57,6 +57,8 @@ namespace geo{
    virtual void                     Uninitialize() = 0;
    virtual std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int             Nchannels()                               const = 0;
+   /// Returns the number of channels in the specified ROP (0 if invalid)
+   virtual unsigned int             Nchannels(readout::ROPID const& ropid)    const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
    virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
    
@@ -211,6 +213,20 @@ namespace geo{
     
     /// Returns the ID of the first plane belonging to the specified ROP
     virtual geo::PlaneID FirstWirePlaneInROP
+      (readout::ROPID const& ropid) const = 0;
+    
+    /// Returns a list of ID of TPCs the specified ROP spans
+    virtual std::vector<geo::TPCID> ROPtoTPCs
+      (readout::ROPID const& ropid) const = 0;
+    
+    /// Returns the ID of the ROP the channel belongs to (invalid if none)
+    virtual readout::ROPID ChannelToROP(raw::ChannelID_t channel) const = 0;
+    
+    /**
+     * @brief Returns the ID of the first channel in the specified readout plane
+     * @return the ID of the first channel, or raw::InvalidChannelID if none
+     */
+    virtual raw::ChannelID_t FirstChannelInROP
       (readout::ROPID const& ropid) const = 0;
     
     /// @} Readout plane mapping
