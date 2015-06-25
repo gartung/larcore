@@ -1391,6 +1391,18 @@ namespace geo {
   } // GeometryCore::ROPtoWirePlanes()
   
   
+  //--------------------------------------------------------------------
+  geo::View_t GeometryCore::View(readout::ROPID const& ropid) const {
+    return View(fChannelMapAlg->FirstWirePlaneInROP(ropid));
+  } // GeometryCore::View()
+  
+  
+  //--------------------------------------------------------------------
+  geo::SigType_t GeometryCore::SignalType(readout::ROPID const& ropid) const {
+    return SignalType(fChannelMapAlg->FirstWirePlaneInROP(ropid));
+  } // GeometryCore::SignalType()
+  
+  
   //============================================================================
   //--------------------------------------------------------------------
   // Return gdml string which gives sensitive opdet name

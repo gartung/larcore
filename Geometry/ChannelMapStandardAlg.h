@@ -118,6 +118,10 @@ namespace geo{
     virtual std::vector<geo::TPCID> TPCsetToTPCs
       (readout::TPCsetID const& tpcsetid) const override;
     
+    /// Returns the ID of the first TPC belonging to the specified TPC set
+    virtual geo::TPCID FirstTPCinTPCset
+      (readout::TPCsetID const& tpcsetid) const override;
+    
     /// @} TPC set mapping
     
     
@@ -173,6 +177,10 @@ namespace geo{
      * the ID actually exists.
      */
     virtual std::vector<geo::PlaneID> ROPtoWirePlanes
+      (readout::ROPID const& ropid) const override;
+    
+    /// Returns the ID of the first plane belonging to the specified ROP
+    virtual geo::PlaneID FirstWirePlaneInROP
       (readout::ROPID const& ropid) const override;
     
     /// @} readout plane mapping

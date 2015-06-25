@@ -3445,9 +3445,10 @@ namespace geo {
       >
     IterateROPIDs() const { return { this }; }
     
+#endif // 0
     
     /**
-     * @brief Returns the view of the channels of specified readout plane
+     * @brief Returns the view of the channels in the specified readout plane
      * @param ropid readout plane ID
      * @return the type of signal on the specified ROP, or geo::kUnknown
      * 
@@ -3456,10 +3457,10 @@ namespace geo {
      * 
      * @todo verify that kUnknown is returned on invalid ROP
      */
-    View_t View(readout::ROPID const& ropid) const;
+    geo::View_t View(readout::ROPID const& ropid) const;
     
     /**
-     * @brief Returns the type of signal of channels of specified readout plane
+     * @brief Returns the type of signal of channels in specified readout plane
      * @param ropid readout plane ID
      * @return the type of signal on the specified ROP, or geo::kMysteryType
      * 
@@ -3468,9 +3469,8 @@ namespace geo {
      * 
      * @todo verify that kMysteryType is returned on invalid plane
      */
-    SigType_t SignalType(readout::ROPID const& ropid) const;
+    geo::SigType_t SignalType(readout::ROPID const& ropid) const;
     
-#endif // 0
     
     /// @} Readout plane information
     

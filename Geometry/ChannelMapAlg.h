@@ -176,6 +176,10 @@ namespace geo{
     virtual std::vector<geo::TPCID> TPCsetToTPCs
       (readout::TPCsetID const& tpcsetid) const = 0;
     
+    /// Returns the ID of the first TPC belonging to the specified TPC set
+    virtual geo::TPCID FirstTPCinTPCset
+      (readout::TPCsetID const& tpcsetid) const = 0;
+    
     /// @} TPC set mapping
     
     
@@ -203,6 +207,10 @@ namespace geo{
     
     /// Returns a list of ID of planes belonging to the specified ROP
     virtual std::vector<geo::PlaneID> ROPtoWirePlanes
+      (readout::ROPID const& ropid) const = 0;
+    
+    /// Returns the ID of the first plane belonging to the specified ROP
+    virtual geo::PlaneID FirstWirePlaneInROP
       (readout::ROPID const& ropid) const = 0;
     
     /// @} Readout plane mapping

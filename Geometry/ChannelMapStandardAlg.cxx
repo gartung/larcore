@@ -384,6 +384,14 @@ namespace geo{
   
   
   //----------------------------------------------------------------------------
+  geo::TPCID ChannelMapStandardAlg::FirstTPCinTPCset
+    (readout::TPCsetID const& tpcsetid) const
+  {
+    return ConvertTPCsetToTPC(tpcsetid);
+  } // ChannelMapStandardAlg::FirstTPCinTPCset()
+  
+  
+  //----------------------------------------------------------------------------
   unsigned int ChannelMapStandardAlg::MaxTPCs() const
   {
     unsigned int max = 0;
@@ -431,9 +439,17 @@ namespace geo{
     (readout::ROPID const& ropid) const
   {
     std::vector<geo::PlaneID> IDs;
-    if (ropid.isValid) IDs.emplace_back(ConvertROPtoWirePlane(ropid));
+    if (ropid.isValid) IDs.emplace_back(FirstWirePlaneInROP(ropid));
     return IDs;
   } // ChannelMapStandardAlg::ROPtoWirePlanes()
+  
+  
+  //----------------------------------------------------------------------------
+  geo::PlaneID ChannelMapStandardAlg::FirstWirePlaneInROP
+    (readout::ROPID const& ropid) const
+  {
+    return ConvertROPtoWirePlane(ropid);
+  } // ChannelMapStandardAlg::FirstWirePlaneInROP()
   
   
   //----------------------------------------------------------------------------
