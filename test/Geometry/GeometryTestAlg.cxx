@@ -215,16 +215,16 @@ namespace geo{
       
     }; // class PassAllTestTrackerClass
     
-    /// Asks to run only tests in a list
-    class WhiteListTestTrackerClass: public TestTrackerClassBase {
+    /// Asks to skip tests in a list
+    class BlackListTestTrackerClass: public TestTrackerClassBase {
         public:
       using TestList_t = TestTrackerClassBase::TestList_t;
       
       //@{
       /// Constructor: takes the list of tests to be skipped
-      WhiteListTestTrackerClass(TestList_t skip_these):
+      BlackListTestTrackerClass(TestList_t skip_these):
         to_be_skipped(skip_these) {}
-      WhiteListTestTrackerClass(std::vector<std::string> const& skip_these):
+      BlackListTestTrackerClass(std::vector<std::string> const& skip_these):
         to_be_skipped()
         { CopyList(to_be_skipped, skip_these); }
       //@}
@@ -272,17 +272,17 @@ namespace geo{
         protected:
       TestList_t to_be_skipped; ///< tests that should be skipped
       
-    }; // class WhiteListTestTrackerClass
+    }; // class BlackListTestTrackerClass
     
     /// Asks to run only tests in a list
-    class BlackListTestTrackerClass: public TestTrackerClassBase {
+    class WhiteListTestTrackerClass: public TestTrackerClassBase {
         public:
       using TestList_t = TestTrackerClassBase::TestList_t;
       
       //@{
       /// Constructor: takes the list of tests to be skipped
-      BlackListTestTrackerClass(TestList_t run_these): to_be_run(run_these) {}
-      BlackListTestTrackerClass(std::vector<std::string> const& run_these):
+      WhiteListTestTrackerClass(TestList_t run_these): to_be_run(run_these) {}
+      WhiteListTestTrackerClass(std::vector<std::string> const& run_these):
         to_be_run()
         { CopyList(to_be_run, run_these); }
       //@}
@@ -330,7 +330,7 @@ namespace geo{
         protected:
       TestList_t to_be_run; ///< tests that should be run
       
-    }; // class BlackListTestTrackerClass
+    }; // class WhiteListTestTrackerClass
     
   } // namespace details
   
