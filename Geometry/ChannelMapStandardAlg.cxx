@@ -196,9 +196,9 @@ namespace geo{
   unsigned int ChannelMapStandardAlg::Nchannels
     (readout::ROPID const& ropid) const
   {
-    if (!ropid.isValid) return 0;
+    if (!HasROP(ropid)) return 0;
     // The number of channels matches the number of wires. Life is easy.
-    return WireCount(ConvertROPtoWirePlane(ropid));
+    return WireCount(FirstWirePlaneInROP(ropid));
   } // ChannelMapStandardAlg::Nchannels(ROPID)
   
   
@@ -386,7 +386,6 @@ namespace geo{
   std::vector<geo::TPCID> ChannelMapStandardAlg::TPCsetToTPCs
     (readout::TPCsetID const& tpcsetid) const
   {
-    // note that mapping is implemented also in NROPs()
     std::vector<geo::TPCID> IDs;
     if (tpcsetid.isValid) IDs.emplace_back(ConvertTPCsetToTPC(tpcsetid));
     return IDs;
@@ -414,9 +413,8 @@ namespace geo{
   unsigned int ChannelMapStandardAlg::NROPs
       (readout::TPCsetID const& tpcsetid) const
   {
-    if (!tpcsetid.isValid) return 0;
-    // we implement a specific TPC to TPC set mapping here
-    return AccessElement(fNPlanes, ConvertTPCsetToTPC(tpcsetid));
+    if (!HasTPCset(tpcsetid)) return 0;
+    return AccessElement(fNPlanes, FirstTPCinTPCset(tpcsetid));
   } // ChannelMapStandardAlg::NROPs()
   
   
