@@ -128,5 +128,11 @@ BOOST_AUTO_TEST_CASE( ROPMappingTestCase )
   GeometryStandardChannelMappingTestFixture::GlobalTester().ROPMappingTest();
 } // BOOST_AUTO_TEST_CASE( ROPMappingTestCase )
 
+BOOST_AUTO_TEST_CASE( ChannelMappingTestCase )
+{
+  GeometryStandardChannelMappingTestFixture::GlobalTester()
+    .ChannelMappingTest();
+} // BOOST_AUTO_TEST_CASE( ChannelMappingTestCase )
+
 
 // BOOST_AUTO_TEST_SUITE_END()

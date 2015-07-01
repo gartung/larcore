@@ -438,6 +438,12 @@ namespace geo {
     return fChannelMapAlg->Views();
   }
 
+  //--------------------------------------------------------------------
+  bool GeometryCore::HasChannel(raw::ChannelID_t channel) const {
+    return fChannelMapAlg->HasChannel(channel);
+  } // GeometryCore::HasChannel()
+  
+  
   //......................................................................
   std::set<PlaneID> const& GeometryCore::PlaneIDs() const
   {

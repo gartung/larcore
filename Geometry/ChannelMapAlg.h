@@ -87,6 +87,11 @@ namespace geo{
    // channel interface
    //
    
+   /// @brief Returns whether the specified channel is valid
+   /// This default implementation assumes all channels up to Nchannels() valid.
+   virtual bool HasChannel(raw::ChannelID_t channel) const
+     { return raw::isValidChannelID(channel)? channel < Nchannels(): false; }
+   
    //@{
    /**
     * @brief Returns the index of the wire nearest to the specified position

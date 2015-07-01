@@ -3112,6 +3112,16 @@ namespace geo {
     // access
     //
     
+    /**
+     * @brief Returns whether the specified channel exists and is valid
+     * @param channel the ID of the channel
+     * @return whether the specified channel exists
+     *
+     * A channel is defined as existing and valid if its ID is not invalid and
+     * if the channel is physical.
+     */
+    bool HasChannel(raw::ChannelID_t channel) const;
+    
     //@{
     /**
      * @brief Returns the ID of the TPC channel connected to the specified wire

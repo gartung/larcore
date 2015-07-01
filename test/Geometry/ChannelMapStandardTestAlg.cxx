@@ -53,6 +53,7 @@ unsigned int geo::ChannelMapStandardTestAlg::Run() {
   
   TPCsetMappingTest();
   ROPMappingTest();
+  ChannelMappingTest();
   
   return 0;
 } // ChannelMapStandardTestAlg::Run()
@@ -235,7 +236,6 @@ void geo::ChannelMapStandardTestAlg::ROPMappingTest() const {
   //
   // plane-wide checks
   //
-  // readout plane tests
   for (geo::PlaneID const& planeID: geom->IteratePlaneIDs()) {
     BOOST_TEST_MESSAGE("plane: " << std::string(planeID));
     
@@ -292,5 +292,39 @@ void geo::ChannelMapStandardTestAlg::ROPMappingTest() const {
   
   
 } // ChannelMapStandardTestAlg::ROPMappingTest()
+
+
+//-----------------------------------------------------------------------------
+void geo::ChannelMapStandardTestAlg::ChannelMappingTest() const {
+  
+  /*
+   * ChannelMapStandardAlg interface being tested (via GeometryCore):
+   * 
+   *     unsigned int Nchannels() const
+   *       (only called, not checked)
+   *     
+   *     unsigned int HasChannel(raw::ChannelID_t) const
+   * 
+   * The rest is not tested here.
+   */
+  
+  // check for invalid input
+  BOOST_CHECK(!geom->HasChannel(raw::InvalidChannelID));
+  
+  //
+  // channel-wide checks
+  //
+  unsigned int const NChannels = geom->Nchannels();
+  for (unsigned int iChannel = 0; iChannel < NChannels; ++iChannel) {
+    raw::ChannelID_t channel = (raw::ChannelID_t) iChannel;
+    
+    BOOST_TEST_MESSAGE("channel: " << channel);
+    
+    BOOST_CHECK(geom->HasChannel(iChannel));
+    
+  } // for channels
+  BOOST_CHECK(!geom->HasChannel((raw::ChannelID_t) NChannels));
+  
+} // ChannelMapStandardTestAlg::ChannelMappingTest()
 
 //-----------------------------------------------------------------------------

@@ -40,6 +40,9 @@ namespace geo {
     /// Tests ROP mappings
     void ROPMappingTest() const;
     
+    /// Tests channel mappings (very, very partial)
+    void ChannelMappingTest() const;
+    
       protected:
     GeometryCore const* geom = nullptr; ///< pointer to the geometry description
     
