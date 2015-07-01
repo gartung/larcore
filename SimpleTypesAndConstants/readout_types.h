@@ -23,7 +23,7 @@ namespace readout {
   
   
   // We define our own cryostat ID as an alias of the one from geometry
-  using CryostatID = geo::CryostatID;
+  typedef geo::CryostatID CryostatID;
   
   
   /**
