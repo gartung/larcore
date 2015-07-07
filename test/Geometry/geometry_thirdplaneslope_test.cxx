@@ -10,7 +10,6 @@
 
 // Boost test libraries; we want to define this stuff as soon as possible
 #define BOOST_TEST_MODULE GeometryThirdPlaneSlopeTest
-#include <boost/test/included/unit_test.hpp>
 
 // LArSoft libraries
 #include "test/Geometry/geometry_boost_unit_test_base.h"
