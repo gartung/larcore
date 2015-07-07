@@ -113,6 +113,12 @@ namespace geo {
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
     
+    /// Returns a reference to the service provider (that is, this same object)
+    GeometryCore const& GetProvider() const { return *this; }
+    
+    /// Returns a pointer to the service provider (that is, this same object)
+    GeometryCore const* GetProviderPtr() const { return this; }
+    
   private:
     
     /// Expands the provided paths and loads the geometry description(s)
