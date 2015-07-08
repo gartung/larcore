@@ -22,7 +22,7 @@
 #include "test/Geometry/geometry_unit_test_base.h"
 
 // Boost libraries
-#include <boost/test/included/unit_test.hpp> // framework::master_test_suite()
+#include <boost/test/unit_test.hpp> // framework::master_test_suite()
 
 // C/C++ standard libraries
 #include <string>
