@@ -983,7 +983,11 @@
    y="(0.4)"
    z="(5)*2+(40)"
    lunit="cm"/>
-
+  <box name="TPCPlaneVert"
+   x="(5)*2+(90)"
+   y="(0.4)"
+   z="(5)*2+(40)"
+   lunit="cm"/>
  <box name="TPCWidthFace"
   lunit="cm"
   z="(90)+2*(0.5*(2.54))"
