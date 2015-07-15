@@ -19,10 +19,7 @@
 #include <cstddef> // size_t
 #include <string>
 #include <vector>
-#include <set>
 #include <memory> // std::shared_ptr<>
-#include <iterator> // std::forward_iterator_tag
-#include <type_traits> // std::is_base_of<>
 
 #include "Geometry/AuxDetChannelMapAlg.h"
 
