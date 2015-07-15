@@ -3,40 +3,6 @@
  * @brief  Access the description of auxiliary detector geometry
  * @author brebel@fnal.gov
  * @see    AuxDetGeometryCore.cxx
- *
- * Structure of the header:
- *     
- *     namespace geo {
- *       
- *       // forward class declarations
- *       
- *       namespace details {
- *         
- *         // geometry iterator base class
- *       
- *       }
- *       
- *       // geometry iterators declaration
- *       //  - cryostat_id_iterator
- *       //  - TPC_id_iterator
- *       //  - plane_id_iterator
- *       //  - wire_id_iterator
- *       
- *       // GeometryData_t definition (part of GeometryCore)
- *       
- *       // GeometryCore declaration
- *     
- *     }
- *     
- *
- *
- * Revised <seligman@nevis.columbia.edu> 29-Jan-2009
- *         Revise the class to make it into more of a general detector interface
- * Revised <petrillo@fnal.gov> 27-Apr-2015
- *         Factorization into a framework-independent GeometryCore.h and a
- *         art framework interface
- * Revised <petrillo@fnal.gov> 30-Apr-2015
- *         Redesign of the iterators
  */
 #ifndef GEO_AUXDETGEOMETRYCORE_H
 #define GEO_AUXDETGEOMETRYCORE_H
