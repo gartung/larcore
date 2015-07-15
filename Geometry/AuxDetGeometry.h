@@ -94,7 +94,7 @@ namespace geo {
    * ROOT for the internal geometry representation.
    * 
    */
-  class AuxDetGeometry: public AuxDetGeometryCore
+  class AuxDetGeometry
   {
   public:
     
@@ -104,7 +104,7 @@ namespace geo {
     void preBeginRun(art::Run const& run);
     
     /// Returns a constant reference to the service provider
-    AuxDetGeometryCore const& GetProvider() const { return *this; }
+    AuxDetGeometryCore const& GetProvider() const { return fProvider; }
     
     /// Returns a constant pointer to the service provider
     AuxDetGeometryCore const* GetProviderPtr() const { return &GetProvider(); }
@@ -117,11 +117,13 @@ namespace geo {
     void InitializeChannelMap();
     
     /// Returns a reference to the service provider
-    AuxDetGeometryCore& GetProvider() { return *this; }
+    AuxDetGeometryCore& GetProvider() { return fProvider; }
     
     /// Returns a pointer to the service provider
     AuxDetGeometryCore* GetProviderPtr() { return &GetProvider(); }
     
+    
+    AuxDetGeometryCore fProvider; ///< the actual service provider
 
     std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
                                                  ///< geometry file

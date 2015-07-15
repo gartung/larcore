@@ -29,7 +29,7 @@ namespace geo {
   //......................................................................
   // Constructor.
   AuxDetGeometry::AuxDetGeometry(fhicl::ParameterSet const& pset, art::ActivityRegistry &reg)
-    : AuxDetGeometryCore(pset)
+    : fProvider         (pset)
     , fRelPath          (pset.get< std::string       >("RelativePath",      ""   ))
     , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" ,  false))
     , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
