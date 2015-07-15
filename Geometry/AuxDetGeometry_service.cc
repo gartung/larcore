@@ -76,13 +76,13 @@ namespace geo {
     
     // if the detector name is still the same, everything is fine
     std::string newDetectorName = rdcol.front()->DetName();
-    if (DetectorName() == newDetectorName) return;
+    if (GetProvider().DetectorName() == newDetectorName) return;
     
     // check to see if the detector name in the RunData
     // object has not been set.  If that is the case, 
     // try the old DetId_t code
     std::string const nodetname("nodetectorname");
-    if (this->DetectorName() == nodetname)
+    if (GetProvider().DetectorName() == nodetname)
       LOG_WARNING("AuxDetGeometry") << "Detector name not set: " << newDetectorName
 				    << " use detector id: " << rdcol[0]->DetId()
 				    << " This is expected behavior for legacy files" ;
@@ -92,7 +92,10 @@ namespace geo {
     //   SetDetectorName(newDetectorName);
     // }
     
-    LoadNewGeometry(this->DetectorName() + ".gdml", this->DetectorName() + ".gdml");
+    LoadNewGeometry(
+      GetProvider().DetectorName() + ".gdml",
+      GetProvider().DetectorName() + ".gdml"
+      );
   } // Geometry::preBeginRun()
   
   
@@ -101,9 +104,9 @@ namespace geo {
   {
     // the channel map is responsible of calling the channel map configuration
     // of the geometry
-    art::ServiceHandle<geo::AuxDetExptGeoHelperInterface>()->ConfigureAuxDetChannelMapAlg(fSortingParameters, this);
+    art::ServiceHandle<geo::AuxDetExptGeoHelperInterface>()->ConfigureAuxDetChannelMapAlg(fSortingParameters, GetProviderPtr());
     
-    if ( ! AuxDetChannelMap() ) {
+    if ( ! GetProvider().hasAuxDetChannelMap() ) {
       throw cet::exception("ChannelMapLoadFail") << " failed to load new channel map";
     }
     
@@ -140,7 +143,7 @@ namespace geo {
     }
     
     // initialize the geometry with the files we have found
-    LoadGeometryFile(GDMLfile, ROOTfile);
+    GetProvider().LoadGeometryFile(GDMLfile, ROOTfile);
     
     // now update the channel map
     InitializeChannelMap();
