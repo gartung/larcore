@@ -7,7 +7,7 @@
  */
 
 // class header
-#include "Geo/AuxDetGeometryCore.h"
+#include "Geometry/AuxDetGeometryCore.h"
 
 // lar includes
 #include "Geometry/AuxDetGeo.h"

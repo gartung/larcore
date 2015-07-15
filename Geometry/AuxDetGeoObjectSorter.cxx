@@ -6,7 +6,7 @@
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
-#include "Geo/AuxDetGeoObjectSorter.h"
+#include "Geometry/AuxDetGeoObjectSorter.h"
 
 namespace geo{
 

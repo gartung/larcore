@@ -58,7 +58,7 @@
 #include <iterator> // std::forward_iterator_tag
 #include <type_traits> // std::is_base_of<>
 
-#include "Geo/AuxDetChannelMapAlg.h"
+#include "Geometry/AuxDetChannelMapAlg.h"
 
 // ROOT class prototypes
 class TGeoManager;

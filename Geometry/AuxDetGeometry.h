@@ -12,8 +12,8 @@
 // LArSoft libraries
 
 // the following are included for convenience only
-#include "Geo/AuxDetGeometryCore.h"
-#include "Geo/AuxDetChannelMapAlg.h"
+#include "Geometry/AuxDetGeometryCore.h"
+#include "Geometry/AuxDetChannelMapAlg.h"
 #include "Geometry/AuxDetGeo.h"
 
 // framework libraries

@@ -6,8 +6,8 @@
  */
 
 // class header
-#include "Geo/AuxDetGeometry.h"
-#include "Geo/AuxDetExptGeoHelperInterface.h"
+#include "Geometry/AuxDetGeometry.h"
+#include "Geometry/AuxDetExptGeoHelperInterface.h"
 
 // lar includes
 #include "SimpleTypesAndConstants/geo_types.h"
