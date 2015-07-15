@@ -103,12 +103,25 @@ namespace geo {
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
     
+    /// Returns a constant reference to the service provider
+    AuxDetGeometryCore const& GetProvider() const { return *this; }
+    
+    /// Returns a constant pointer to the service provider
+    AuxDetGeometryCore const* GetProviderPtr() const { return &GetProvider(); }
+    
   private:
     
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(std::string gdmlfile, std::string rootfile);
     
     void InitializeChannelMap();
+    
+    /// Returns a reference to the service provider
+    AuxDetGeometryCore& GetProvider() { return *this; }
+    
+    /// Returns a pointer to the service provider
+    AuxDetGeometryCore* GetProviderPtr() { return &GetProvider(); }
+    
 
     std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
                                                  ///< geometry file

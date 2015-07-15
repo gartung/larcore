@@ -270,6 +270,11 @@ namespace geo {
      */
     void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
     
+    
+    /// Returns whether we have a channel map
+    bool hasAuxDetChannelMap() const { return bool(fChannelMapAlg); }
+    
+    
     /**
      * @brief Initializes the geometry to work with this channel map
      * @param pChannelMap a pointer to the channel mapping algorithm to be used
