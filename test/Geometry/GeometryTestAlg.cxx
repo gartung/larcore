@@ -215,23 +215,23 @@ namespace geo{
       
     }; // class PassAllTestTrackerClass
     
-    /// Asks to run only tests in a list
-    class WhiteListTestTrackerClass: public TestTrackerClassBase {
+    /// Asks to skip tests in a list
+    class BlackListTestTrackerClass: public TestTrackerClassBase {
         public:
       using TestList_t = TestTrackerClassBase::TestList_t;
       
       //@{
       /// Constructor: takes the list of tests to be skipped
-      WhiteListTestTrackerClass(TestList_t skip_these):
+      BlackListTestTrackerClass(TestList_t skip_these):
         to_be_skipped(skip_these) {}
-      WhiteListTestTrackerClass(std::vector<std::string> const& skip_these):
+      BlackListTestTrackerClass(std::vector<std::string> const& skip_these):
         to_be_skipped()
         { CopyList(to_be_skipped, skip_these); }
       //@}
       
       /// Returns whether the specified test should run
       virtual bool ShouldRun(std::string test_name) const override
-        { return to_be_skipped.count(test_name) > 0; }
+        { return to_be_skipped.count(test_name) == 0; }
       
       // everything always runs already
       virtual void PleaseRunAlso(std::string test_name) override
@@ -272,24 +272,24 @@ namespace geo{
         protected:
       TestList_t to_be_skipped; ///< tests that should be skipped
       
-    }; // class WhiteListTestTrackerClass
+    }; // class BlackListTestTrackerClass
     
     /// Asks to run only tests in a list
-    class BlackListTestTrackerClass: public TestTrackerClassBase {
+    class WhiteListTestTrackerClass: public TestTrackerClassBase {
         public:
       using TestList_t = TestTrackerClassBase::TestList_t;
       
       //@{
       /// Constructor: takes the list of tests to be skipped
-      BlackListTestTrackerClass(TestList_t run_these): to_be_run(run_these) {}
-      BlackListTestTrackerClass(std::vector<std::string> const& run_these):
+      WhiteListTestTrackerClass(TestList_t run_these): to_be_run(run_these) {}
+      WhiteListTestTrackerClass(std::vector<std::string> const& run_these):
         to_be_run()
         { CopyList(to_be_run, run_these); }
       //@}
       
       /// Returns whether the specified test should run
       virtual bool ShouldRun(std::string test_name) const override
-        { return to_be_run.count(test_name) == 0; }
+        { return to_be_run.count(test_name) > 0; }
       
       // everything always runs already
       virtual void PleaseRunAlso(std::string test_name) override
@@ -330,7 +330,7 @@ namespace geo{
         protected:
       TestList_t to_be_run; ///< tests that should be run
       
-    }; // class BlackListTestTrackerClass
+    }; // class WhiteListTestTrackerClass
     
   } // namespace details
   
@@ -525,6 +525,22 @@ namespace geo{
         << "(postumous) configuration error detected!\n";
     }
     
+    mf::LogInfo log("GeometryTest");
+    log << "Tests completed:";
+    auto const& tests_run = fRunTests->RunTests();
+    if (tests_run.empty()) {
+      log << "\n  no test run";
+    }
+    else {
+      log << "\n  " << tests_run.size() << " tests run:\t ";
+      for (std::string const& test_name: tests_run) log << " " << test_name;
+    }
+    auto const& tests_skipped = fRunTests->SkippedTests();
+    if (!tests_skipped.empty()) {
+      log << "\n  " << tests_skipped.size() << " tests skipped:\t ";
+      for (std::string const& test_name: tests_skipped) log << " " << test_name;
+    }
+
     return nErrors;
   } // GeometryTestAlg::Run()
 
