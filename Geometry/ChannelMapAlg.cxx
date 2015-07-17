@@ -27,6 +27,13 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
+  unsigned int ChannelMapAlg::MaxOpChannel(unsigned int NOpDets) const
+  {
+    // By default just return the number of optical detectos
+    return NOpChannels(NOpDets);
+  }
+
+  //----------------------------------------------------------------------------
   unsigned int ChannelMapAlg::NOpHardwareChannels(unsigned int /*opDet*/) const
   {
     // By defualt, 1 channel per optical detector

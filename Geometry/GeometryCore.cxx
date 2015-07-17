@@ -151,6 +151,12 @@ namespace geo {
   }
 
   //......................................................................
+  unsigned int GeometryCore::MaxOpChannel() const
+  {
+    return fChannelMapAlg->MaxOpChannel(this->NOpDets());
+  }
+
+  //......................................................................
   unsigned int GeometryCore::NOpHardwareChannels(int opDet) const
   {
     return fChannelMapAlg->NOpHardwareChannels(opDet);
