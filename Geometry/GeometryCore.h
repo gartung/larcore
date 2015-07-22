@@ -3232,6 +3232,9 @@ namespace geo {
     /// Number of electronics channels for all the optical detectors
     unsigned int NOpChannels() const;
 
+    /// Largest optical channel number
+    unsigned int MaxOpChannel() const;
+
     // Number of hardware channels for a given optical detector
     unsigned int NOpHardwareChannels(int opDet) const;
     

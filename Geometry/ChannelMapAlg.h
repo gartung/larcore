@@ -57,6 +57,7 @@ namespace geo{
    virtual std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)   const = 0;
    virtual unsigned int             Nchannels()                               const = 0;
    virtual unsigned int             NOpChannels(unsigned int NOpDets)         const;
+   virtual unsigned int             MaxOpChannel(unsigned int NOpDets)        const;
    virtual unsigned int             NOpHardwareChannels(unsigned int opDet)   const;
    
    //@{
