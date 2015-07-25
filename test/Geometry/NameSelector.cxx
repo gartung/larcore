@@ -203,6 +203,7 @@ namespace testing {
   {
     NameSelector::Names_t names;
     for (auto const& query_info: query_registry) {
+      if (query_info.first == DefaultName) continue;
       if (LookupResponse(query_info.first) != answer) continue;
       names.insert(query_info.first);
     } // for
