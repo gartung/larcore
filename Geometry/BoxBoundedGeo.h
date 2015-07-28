@@ -308,6 +308,15 @@ namespace geo {
     Coords_t c_min; ///< minimum coordinates (x, y, z)
     Coords_t c_max; ///< maximum coordinates (x, y, z)
     
+      public:
+    //@{
+    /**
+     * @brief Calculates of a entry point on the box surface
+     * @param TrackOffset
+     * 
+     * This member is public since it just gives an output and does not change any member
+     */
+    Coords_t GetEntryPoint(Coords_t TrackOffset ,Coords_t TrackDirect);
   }; // class BoxBoundedGeo
   
 } // namespace geo
