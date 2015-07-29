@@ -11,6 +11,9 @@
 /// C/C++ standard library
 #include <array>
 
+/// ROOT library
+#include "TVector3.h"
+
 
 namespace geo {
   /**
@@ -312,15 +315,22 @@ namespace geo {
     //@{
     /**
      * @brief Calculates of a entry point on the box surface
-     * @param TrackOffset
-     * 
-     * This member is public since it just gives an output and does not change any member
+     * @author Christoph Rudolf von Rohr (crohr@fnal.gov)
+     * @date July 27th, 2015
+     * @param TrackOffset position of the track source
+     * @param TrackDirect direction vector of the track
+     * @param TrackAngles is a doublet containing the angles theta and phi of the track
+     *
+     * This member is public since it just gives an output and does not change any member.
+     * The algorithm works only for a box shaped active volume with parallel facing walls.
      */
-    Coords_t GetEntryPoint(Coords_t TrackOffset ,Coords_t TrackDirect);
+    TVector3 GetEntryPoint(TVector3 TrackOffset, TVector3 TrackDirect);
+//     TVector3 GetEntryPoint(TVector3 TrackOffset, std::array<Coord_t> TrackAngles);
+    //@}
   }; // class BoxBoundedGeo
   
 } // namespace geo
 
 
 
-#endif // GEO_BOXBOUNDEDGEO_H
+#endif // GEO_BOXBOUNDEDGEO
