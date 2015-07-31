@@ -12,8 +12,8 @@
 // LArSoft libraries
 
 // the following are included for convenience only
-#include "Geo/AuxDetGeometryCore.h"
-#include "Geo/AuxDetChannelMapAlg.h"
+#include "Geometry/AuxDetGeometryCore.h"
+#include "Geometry/AuxDetChannelMapAlg.h"
 #include "Geometry/AuxDetGeo.h"
 
 // framework libraries
@@ -94,7 +94,7 @@ namespace geo {
    * ROOT for the internal geometry representation.
    * 
    */
-  class AuxDetGeometry: public AuxDetGeometryCore
+  class AuxDetGeometry
   {
   public:
     
@@ -103,12 +103,27 @@ namespace geo {
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
     
+    /// Returns a constant reference to the service provider
+    AuxDetGeometryCore const& GetProvider() const { return fProvider; }
+    
+    /// Returns a constant pointer to the service provider
+    AuxDetGeometryCore const* GetProviderPtr() const { return &GetProvider(); }
+    
   private:
     
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(std::string gdmlfile, std::string rootfile);
     
     void InitializeChannelMap();
+    
+    /// Returns a reference to the service provider
+    AuxDetGeometryCore& GetProvider() { return fProvider; }
+    
+    /// Returns a pointer to the service provider
+    AuxDetGeometryCore* GetProviderPtr() { return &GetProvider(); }
+    
+    
+    AuxDetGeometryCore fProvider; ///< the actual service provider
 
     std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
                                                  ///< geometry file

@@ -6,7 +6,7 @@
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
-#include "Geo/AuxDetChannelMapAlg.h"
+#include "Geometry/AuxDetChannelMapAlg.h"
 #include "Geometry/AuxDetGeo.h"
 
 namespace geo{
