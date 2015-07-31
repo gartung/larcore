@@ -78,10 +78,11 @@ namespace geo {
     // Open the GDML file, and convert it into ROOT TGeoManager format.
     // try to be efficient - if the GeometryCore object already imported 
     // the file, then the gGeoManager will be non-null.  If not, import it.
-    // There will still be an efficiency issue in that case because GeometryCore
-    // will also import it, but I think that the gGeoManager pointer will dump
-    // the previous information and get filled with the same information
-    if( !gGeoManager ) TGeoManager::Import(rootfile.c_str());
+    // Then lock the gGeoManager to prevent future imports.
+    if( !gGeoManager ){
+      TGeoManager::Import(rootfile.c_str());
+      gGeoManager->LockGeometry();
+    }
 
     std::vector<const TGeoNode*> path(8);
     path[0] = gGeoManager->GetTopNode();
