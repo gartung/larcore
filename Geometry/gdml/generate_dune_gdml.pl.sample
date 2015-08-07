@@ -4,13 +4,13 @@ use Math::Trig;
 use XML::LibXML;
 use Getopt::Long;
 
-$outfile					=	"lbne.gdml";
+$outfile					=	"dune.gdml";
 $nCryos						= 2;		# can get rid of this later, 1 corresponds to 1st gdml iteration
 $nAPAWide					= 3; 
 $nAPAHigh					=	2;
 $nAPALong					= 18;
 
-#Specific H,W,L of LBNE
+#Specific H,W,L of DUNE
 $CryostatWidth		=	2400;
 $CryostatHeight		=	1500;
 $CryostatLength		=	4500;
@@ -23,7 +23,7 @@ $ArgonLength			=	$CryostatLength-2*$SteelThickness;
 
 #set rock thickness
 #  1000 for normal 10m thickness
-#  10000 for lbnebulky
+#  10000 for dunebulky
 $RockThickness		=	1000;
 $MiddleRockThickness = 1500;
 
@@ -60,7 +60,7 @@ $Pi=3.14159;
 
 gen_header();
 gen_materials();
-gen_lbne();
+gen_dune();
 exit;
 
 
@@ -68,13 +68,13 @@ exit;
 
 
 
-sub gen_lbne()
+sub gen_dune()
 {
   # Set up the output file.
-  $LBNE = ">>" . $outfile;
-  open(LBNE) or die("Could not open file $LBNE for writing");
+  $DUNE = ">>" . $outfile;
+  open(DUNE) or die("Could not open file $DUNE for writing");
 
-  print LBNE <<EOF;
+  print DUNE <<EOF;
  <solids>
     <box name="World" lunit="cm" 
       x="2*$CryostatWidth+2*($RockThickness+$TotalPadding)+$TPCWidth" 
@@ -189,7 +189,7 @@ EOF
     $count=1;
     for ( $i=-0.3*$TPCLength ; $i < 0.3*$TPCLength ; $i+=$rt2*$TPC_WireSpacing ) {
       $wire_ypos=$i;
-      print LBNE <<EOF;
+      print DUNE <<EOF;
       <physvol>
         <volumeref ref="volTPCWire"/>
         <position name="posTPCWire$count" unit="cm" x="0" y="$wire_ypos" z="0"/>
@@ -198,7 +198,7 @@ EOF
 EOF
       $count++;
     }
-    print LBNE <<EOF;
+    print DUNE <<EOF;
     </volume>
     <volume name="volCathode">
       <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
@@ -255,7 +255,7 @@ EOF
 				{			
 
 					$TPC_Y = ( $j - ( ( $nAPAHigh - 1 ) / 2 ) ) * $FiducialHeight/$nAPAHigh;
-	    		print LBNE <<EOF;
+	    		print DUNE <<EOF;
       <physvol>
         <volumeref ref="volAPA"/>
         <position name="posAPA$i\-$j\-$k" unit="cm" x="$TPC_X" y="$TPC_Y" z="$TPC_Z"/>
@@ -266,7 +266,7 @@ EOF
 			}
 		}
 
-    print LBNE <<EOF;
+    print DUNE <<EOF;
     </volume>
     <volume name="volConcreteWithCavern">
       <materialref ref="Concrete"/>
@@ -286,14 +286,14 @@ EOF
 EOF
 
 		if($nCryos==1){
-		    print LBNE <<EOF;
+		    print DUNE <<EOF;
       <physvol>
         <volumeref ref="volCryostat"/>
         <position name="posCryostat" unit="cm" x="0" y="0" z="0"/>
       </physvol>
 EOF
 		}elsif($nCryos==2){
-				    print LBNE <<EOF;
+				    print DUNE <<EOF;
       <physvol>
         <volumeref ref="volCryostat"/>
         <position name="posCryostatDownstream" unit="cm" x="0" y="0" z="$CryoZ"/>
@@ -305,7 +305,7 @@ EOF
 EOF
 		}
 
-    print LBNE <<EOF;
+    print DUNE <<EOF;
 
       <physvol>
         <volumeref ref="volConcreteWithCavern"/>
@@ -374,7 +374,7 @@ EOF
   </setup>
 </gdml>
 EOF
-   close(LBNE);
+   close(DUNE);
 }
 
 
@@ -382,9 +382,9 @@ EOF
 sub gen_header() 
 {
 
-  $LBNE = ">" . $outfile;
-  open(LBNE) or die("Could not open file $LBNE for writing");
-  print LBNE <<EOF;
+  $DUNE = ">" . $outfile;
+  open(DUNE) or die("Could not open file $DUNE for writing");
+  print DUNE <<EOF;
 <?xml version="1.0" encoding="UTF-8" ?>
 <gdml xmlns:gdml="http://cern.ch/2001/Schemas/GDML"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -396,9 +396,9 @@ EOF
 sub gen_materials() 
 {
 
-  $LBNE = ">>" . $outfile;
-  open(LBNE) or die("Could not open file $LBNE for writing");
-  print LBNE <<EOF;
+  $DUNE = ">>" . $outfile;
+  open(DUNE) or die("Could not open file $DUNE for writing");
+  print DUNE <<EOF;
 <materials>
   <element name="videRef" formula="VACUUM" Z="1">  <atom value="1"/> </element>
   <element name="bromine" formula="Br" Z="35"> <atom value="79.904"/> </element>

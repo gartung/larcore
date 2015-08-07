@@ -8,8 +8,8 @@
    <rotation name="rPlus90AboutX"       unit="deg" x="90" y="0" z="0"/>
    <rotation name="rMinus90AboutY"      unit="deg" x="0" y="270" z="0"/>
    <rotation name="rMinus90AboutYMinus90AboutX"       unit="deg" x="270" y="270" z="0"/>
-   <rotation name="rPlusUAngleAboutX"	unit="deg" x="90-36" y="0"   z="0"/>
-   <rotation name="rPlusVAngleAboutX"	unit="deg" x="90+36" y="0"   z="0"/>
+   <rotation name="rPlusUAngleAboutX"	unit="deg" x="90-45.7" y="0"   z="0"/>
+   <rotation name="rPlusVAngleAboutX"	unit="deg" x="90+44.3" y="0"   z="0"/>
    <rotation name="rPlus180AboutY"	unit="deg" x="0" y="180"   z="0"/>
    <rotation name="rIdentity"		unit="deg" x="0" y="0"   z="0"/>
 </define>
@@ -282,7 +282,7 @@
 
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 
@@ -421,7 +421,7 @@
 
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 

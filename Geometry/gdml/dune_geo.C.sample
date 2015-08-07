@@ -4,12 +4,12 @@ typedef struct _drawopt
   int         color;
 } drawopt;
 
-lbne_geo(TString volName="")
+dune_geo(TString volName="")
 {
   gSystem->Load("libGeom");
   gSystem->Load("libGdml");
 
-  TGeoManager::Import("lbne34kt_nowires.gdml");
+  TGeoManager::Import("dune34kt_nowires.gdml");
 
   drawopt optuboone[] = {
 // color in volumes later
@@ -38,7 +38,7 @@ lbne_geo(TString volName="")
 //  gGeoManager->FindVolumeFast("volCryostat")->Draw("X3D");
 
 
-  TFile *tf = new TFile("lbne.root", "RECREATE");
+  TFile *tf = new TFile("dune.root", "RECREATE");
  
   gGeoManager->Write();
 

@@ -4,8 +4,8 @@ use Math::Trig;
 use XML::LibXML;
 use Getopt::Long;
 
-$outfile					=	"lbnend.gdml";
-#Specific H,W,L of LBNE
+$outfile					=	"dunend.gdml";
+#Specific H,W,L of DUNE
 $CryostatLength		=	538.5;
 $CryostatRadius		=	312.4/2;
 $CryostatWidth 	        =       2*$CryostatRadius;
@@ -55,7 +55,7 @@ $Pi=3.14159;
 
 gen_header();
 gen_materials();
-gen_lbne();
+gen_dune();
 exit;
 
 
@@ -63,13 +63,13 @@ exit;
 
 
 
-sub gen_lbne()
+sub gen_dune()
 {
 	# Set up the output file.
-	$LBNE = ">>" . $outfile;
-	open(LBNE) or die("Could not open file $LBNE for writing");
+	$DUNE = ">>" . $outfile;
+	open(DUNE) or die("Could not open file $DUNE for writing");
 
-	print LBNE <<EOF;
+	print DUNE <<EOF;
  <solids>
     <box name="World" lunit="cm" 
       x="2*$CryostatWidth+100" 
@@ -129,7 +129,7 @@ EOF
 	@topzpos;
 	for ( $i= $WiresPadding; $i <= $TPCLength- $LongWiresSpread; $i+=$TPC_WireSpacing/$sin30 ) {
 		$wire_zpos=$i;
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	<tube name="TPCWireTop$countertop"
 	rmax="0.5*$TPCWireThickness"
 	z="$wire_zpos/$cos30 -0.03"
@@ -148,7 +148,7 @@ EOF
 	@bottomzpos;
 	for ( $i= $LongWiresSpread + $TBWiresPadding; $i <= ($TPCLength - $WiresPadding + 0.015); $i+=$TPC_WireSpacing/$sin30 ) {
 		$wire_zpos=$i;
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	<tube name="TPCWireBottom$counterbottom"
 	rmax="0.5*$TPCWireThickness"
 	z="($TPCLength - $wire_zpos)/$cos30 -0.03"
@@ -163,7 +163,7 @@ EOF
 	}
 
 
-	print LBNE <<EOF;
+	print DUNE <<EOF;
       <box name="Cathode" lunit="cm"
       x="$CathodeThickness"
       y="$TPCHeight"
@@ -188,7 +188,7 @@ EOF
 	#top wires
 
 	for($i = 1; $i < $countertop; $i+=1){
-		print LBNE<<EOF;
+		print DUNE<<EOF;
 <volume name="volTPCWireTop$i">
       <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
       <solidref ref="TPCWireTop$i" />
@@ -199,7 +199,7 @@ EOF
 
 	for($i = 1; $i <$counterbottom; $i+=1){
 
-		print LBNE<<EOF;
+		print DUNE<<EOF;
       <volume name="volTPCWireBottom$i">
       <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
       <solidref ref="TPCWireBottom$i" />
@@ -208,7 +208,7 @@ EOF
 
 	}
 
-	print LBNE<<EOF;
+	print DUNE<<EOF;
 
     <volume name="volTPCPlane">
     <materialref ref="LAr" />
@@ -220,7 +220,7 @@ EOF
 	$count=1;
 	for ( $i= (-$LongWiresSpread + 2*$LongWiresPadding)/2 ; $i <=  ($LongWiresSpread - 2*$LongWiresPadding)/2 + 0.015 ; $i+=$TPC_WireSpacing/$sin30 ) {
 		$wire_zpos=$i;
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	 <physvol>
 	 <volumeref ref="volTPCLongWire"/>
 	 <position name="posTPCLWire$count" unit="cm" x="0" y="0" z="$wire_zpos "/>
@@ -239,7 +239,7 @@ EOF
 		$wire_zpos=$i - ($topzpos[$count-1])/2;
 		$wire_ypos= $TPCHeight/2 - ($topzpos[$count-1])/2*$tg30;
 
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	 <physvol>
 	 <volumeref ref="volTPCWireTop$count"/>
 	 <position name="posTPCTWire$count" unit="cm" x="0" y="$wire_ypos" z="$wire_zpos"/>
@@ -259,7 +259,7 @@ EOF
 	for ( $i= -$TPCLength/2 + $LongWiresSpread + $TBWiresPadding ; $i <=  ($TPCLength - 2*$WiresPadding)/2 ; $i+=$TPC_WireSpacing/$sin30 ) {
 		$wire_zpos=$i + ($bottomzpos[$count-1])/2;
 		$wire_ypos= -$TPCHeight/2 + ($bottomzpos[$count-1])/2*$tg30;
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	 <physvol>
 	 <volumeref ref="volTPCWireBottom$count"/>
 	 <position name="posTPCBWire$count" unit="cm" x="0" y="$wire_ypos" z="$wire_zpos"/>
@@ -275,7 +275,7 @@ EOF
 	}
 
 
-	print LBNE <<EOF;
+	print DUNE <<EOF;
 
 </volume>
 <volume name="volTPCPlaneVert">
@@ -289,7 +289,7 @@ EOF
 	for ( $i= (-$TPCLength + 2*$VertWiresPadding)/2 ; $i <= ($TPCLength - 2*$VertWiresPadding)/2 + 0.015 ; $i+=$TPC_WireSpacing ) {
 		$wire_zpos=$i;
 
-		print LBNE <<EOF;
+		print DUNE <<EOF;
 	 <physvol>
 		 <volumeref ref="volTPCVertWire"/>
 		 <position name="posTPCVWire$count" unit="cm" x="0" y="0" z="$wire_zpos "/>
@@ -304,7 +304,7 @@ EOF
 	}
 
 
-	print LBNE <<EOF;
+	print DUNE <<EOF;
  </volume>
 	 <volume name="volCathode">
 	 <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
@@ -373,7 +373,7 @@ EOF
 	 </setup>
 	 </gdml>
 EOF
-	close(LBNE);
+	close(DUNE);
 }
 
 
@@ -381,9 +381,9 @@ EOF
 sub gen_header() 
 {
 
-	$LBNE = ">" . $outfile;
-	open(LBNE) or die("Could not open file $LBNE for writing");
-	print LBNE <<EOF;
+	$DUNE = ">" . $outfile;
+	open(DUNE) or die("Could not open file $DUNE for writing");
+	print DUNE <<EOF;
 	<?xml version="1.0" encoding="UTF-8" ?>
 		<gdml xmlns:gdml="http://cern.ch/2001/Schemas/GDML"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -395,9 +395,9 @@ EOF
 sub gen_materials() 
 {
 
-	$LBNE = ">>" . $outfile;
-	open(LBNE) or die("Could not open file $LBNE for writing");
-	print LBNE <<EOF;
+	$DUNE = ">>" . $outfile;
+	open(DUNE) or die("Could not open file $DUNE for writing");
+	print DUNE <<EOF;
 	<materials>
 		<element name="videRef" formula="VACUUM" Z="1">  <atom value="1"/> </element>
 		<element name="bromine" formula="Br" Z="35"> <atom value="79.904"/> </element>

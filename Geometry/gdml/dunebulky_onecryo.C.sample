@@ -4,17 +4,18 @@ typedef struct _drawopt
   int         color;
 } drawopt;
 
-lbnend_geo(TString volName="")
+dunebulky_onecryo(TString volName="")
 {
   gSystem->Load("libGeom");
   gSystem->Load("libGdml");
 
-  TGeoManager::Import("lbnend.gdml");
+  TGeoManager::Import("dunebulky_onecryo.gdml");
 
   drawopt optuboone[] = {
-    {"volTPC",        kOrange-7},
-    {"volTPCPlane",        kOrange-7},
-    {"volTPCPlaneVert",        kOrange-7},
+    {"volRockTop",        kOrange-7},
+    {"volRockBottom",        kOrange-7},
+    {"volUpperRockWithCavern",        kOrange-7},
+    {"volLowerRockWithCavern",        kOrange-7},
     {0, 0}
   };
 
@@ -22,7 +23,6 @@ lbnend_geo(TString volName="")
     if (optuboone[i].volume==0) break;
       gGeoManager->FindVolumeFast(optuboone[i].volume)->SetLineColor(optuboone[i].color);
   }
-  
   TList* mat = gGeoManager->GetListOfMaterials();
   TIter next(mat);
   TObject *obj;
@@ -37,11 +37,10 @@ lbnend_geo(TString volName="")
 
   //gGeoManager->GetTopVolume()->Draw();
   //if ( ! volName.IsNull() ) gGeoManager->FindVolumeFast(volName)->Draw("ogl");
-  
   gGeoManager->FindVolumeFast("volWorld")->Draw("ogl");
 
 
-  TFile *tf = new TFile("lbnend.root", "RECREATE");
+  TFile *tf = new TFile("dunebulky_onecryo.root", "RECREATE");
  
   gGeoManager->Write();
 

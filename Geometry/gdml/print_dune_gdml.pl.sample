@@ -14,7 +14,7 @@
     $TotalPadding=$ConcretePadding+$GlassFoamPadding;
 
 
-$GDML = "lbne.gdml";
+$GDML = "dune.gdml";
 $GDML = ">" . $GDML; 
 open(GDML) or die("Could not open file $GDML for writing");
 

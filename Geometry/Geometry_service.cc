@@ -95,9 +95,9 @@ namespace geo {
       case geo::kArgoNeuT   : SetDetectorName("argoneut");   break;
       case geo::kLArIAT     : SetDetectorName("lariat");     break;
       case geo::kMicroBooNE : SetDetectorName("microboone"); break;
-      case geo::kLBNE10kt   : SetDetectorName("lbne10kt");   break;
-      case geo::kLBNE34kt   : SetDetectorName("lbne34kt");   break;
-      case geo::kLBNE35t    : SetDetectorName("lbne35t");    break;
+      case geo::kDUNE10kt   : SetDetectorName("dune10kt");   break;
+      case geo::kDUNE34kt   : SetDetectorName("dune34kt");   break;
+      case geo::kDUNE35t    : SetDetectorName("dune35t");    break;
       case geo::kJP250L     : SetDetectorName("jp250L");     break;
       case geo::kCSU40L     : SetDetectorName("csu40l");     break;
       case geo::kICARUS     : SetDetectorName("icarus");     break;

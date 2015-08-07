@@ -291,7 +291,7 @@
 
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 
@@ -433,7 +433,7 @@
 
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 

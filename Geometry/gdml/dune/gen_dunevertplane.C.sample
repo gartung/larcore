@@ -1,8 +1,8 @@
 #include "Riostream.h"
 
-void gen_lbnevertplane(){
+void gen_dunevertplane(){
 
-  ofstream of("lbne-vertplane.gdml");
+  ofstream of("dune-vertplane.gdml");
 
   int nwi = 1912;
 

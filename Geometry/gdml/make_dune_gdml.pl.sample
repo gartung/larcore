@@ -8,15 +8,15 @@
 #
 
 
-@defFile = qw(global-defs.gdml lbne/lbne-defs.gdml);
-@gdmlFile = qw(lbne/lbne-rotations.gdml
+@defFile = qw(global-defs.gdml dune/dune-defs.gdml);
+@gdmlFile = qw(dune/dune-rotations.gdml
 	       materials.gdml
-	       lbne/lbne-vertplane.gdml
-	       lbne/lbne-plane.gdml
-	       lbne/lbne-tpc.gdml
-	       lbne/lbne-cryostat.gdml
-	       lbne/lbne-enclosure.gdml
-	       lbne/lbne-world.gdml
+	       dune/dune-vertplane.gdml
+	       dune/dune-plane.gdml
+	       dune/dune-tpc.gdml
+	       dune/dune-cryostat.gdml
+	       dune/dune-enclosure.gdml
+	       dune/dune-world.gdml
 	      );
 
 

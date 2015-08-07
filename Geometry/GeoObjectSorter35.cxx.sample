@@ -6,7 +6,7 @@
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
-#include "lbne/Geometry/GeoObjectSorter35.h"
+#include "dune/Geometry/GeoObjectSorter35.h"
 #include "Geometry/AuxDetGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
@@ -152,12 +152,12 @@ namespace geo{
       // Hard code a number to tell sorting when to look
       // for top/bottom APAs and when to look for only one
       bool InVertSplitRegion = false;
-      if(detVersion=="lbne35t")             InVertSplitRegion = xyz1[2] > 76.35;      // the old
-      else if(detVersion=="lbne35t4apa")    InVertSplitRegion = ((51 < xyz1[2])       // the new...
+      if(detVersion=="dune35t")             InVertSplitRegion = xyz1[2] > 76.35;      // the old
+      else if(detVersion=="dune35t4apa")    InVertSplitRegion = ((51 < xyz1[2])       // the new...
 								 && (xyz1[2] < 102)); //
-      else if(detVersion=="lbne35t4apa_v2") InVertSplitRegion = ((52.74 < xyz1[2])   // ...and improved
+      else if(detVersion=="dune35t4apa_v2") InVertSplitRegion = ((52.74 < xyz1[2])   // ...and improved
       								 && (xyz1[2] < 106.23));
-      else if(detVersion=="lbne35t4apa_v3") InVertSplitRegion = ((51.41045 < xyz1[2])   
+      else if(detVersion=="dune35t4apa_v3") InVertSplitRegion = ((51.41045 < xyz1[2])   
       								 && (xyz1[2] < 103.33445));
 
       ///////////////////////////////////////////////////////////
@@ -187,7 +187,7 @@ namespace geo{
 
   //----------------------------------------------------------------------------
   GeoObjectSorter35::GeoObjectSorter35(fhicl::ParameterSet const& p)
-    : fDetVersion(p.get< std::string >("DetectorVersion", "lbne35t4apa"))
+    : fDetVersion(p.get< std::string >("DetectorVersion", "dune35t4apa"))
   {
   }
 
