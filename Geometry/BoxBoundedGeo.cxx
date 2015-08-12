@@ -5,27 +5,71 @@
  * @date   July 27th, 2015
  */
 
-#include "BoxBoundedGeo.h"
+#include "Geometry/BoxBoundedGeo.h"
 
-// This algorithm calculates
-TVector3 GetEntryPoint(TVector3 TrackOffset, TVector3 TrackDirect)
+namespace geo
 {
-  // Generate Normal vectors and offsets for every plane of the box
-  std::array<TVector3,3> NormalVectors;
-  std::array<TVector3,6> NormalVectorOffsets;
+  std::vector<TVector3> BoxBoundedGeo::GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect)
+  {
+    std::vector<TVector3> IntersectionPoints;
+    std::vector<double> LineParameters;
+    
+    // Generate normal vectors and offsets for every plane of the box
+    static std::array<TVector3,6> NormalVectors;
+    static std::array<TVector3,6> NormalVectorOffsets;
+
   
-  // There are only 3 plane normal vectors
-  NormalVectors.at(0) = (1., 0., 0.); // Cathode and anode
-  NormalVectors.at(1) = (0., 1., 0.); // Top and bottom
-  NormalVectors.at(2) = (0., 0., 1.); // Upstram and Downstream
-  
-  NormalVectorOffsets.at(0) = (x_min, y_min, z_min); // Anode offset
-  NormalVectorOffsets.at(1) = (x_max, y_min, z_min); // Cathode
-  NormalVectorOffsets.at(2) = (x_min, y_max, z_min); // Top
-  NormalVectorOffsets.at(3) = (x_min, y_min, z_min); // Bottom
-  NormalVectorOffsets.at(4) = (x_min, y_min, z_min); // upstream
-  NormalVectorOffsets.at(5) = (x_min, y_min, z_max); // downstream
-  
-  
-  
-}
+    // All normal vectors are headed outwards
+    NormalVectors.at(0) = TVector3(-1., 0., 0.); // Anode normal vector
+    NormalVectors.at(1) = TVector3(1., 0., 0.);  // Cathode
+    NormalVectors.at(2) = TVector3(0., -1., 0.); // Bottom
+    NormalVectors.at(3) = TVector3(0., 1., 0.);  // Top
+    NormalVectors.at(4) = TVector3(0., 0., -1.); // Upstram
+    NormalVectors.at(5) = TVector3(0., 0., 1.);  // Downstream
+    
+    // Fill offset vectors  
+    NormalVectorOffsets.at(0) = TVector3(c_min[0], c_min[1], c_min[2]); // Anode offset
+    NormalVectorOffsets.at(1) = TVector3(c_max[0], c_min[1], c_min[2]); // Cathode
+    NormalVectorOffsets.at(2) = TVector3(c_min[0], c_min[1], c_min[2]); // Bottom
+    NormalVectorOffsets.at(3) = TVector3(c_min[0], c_max[1], c_min[2]); // Top
+    NormalVectorOffsets.at(4) = TVector3(c_min[0], c_min[1], c_min[2]); // upstream
+    NormalVectorOffsets.at(5) = TVector3(c_min[0], c_min[1], c_max[2]); // downstream
+    
+    // Loop over all surfaces of the box 
+    for(unsigned int face_no = 0; face_no < NormalVectors.size(); face_no++)
+    {
+      // Check if trajectory and surface are not parallel
+      if(NormalVectors.at(face_no).Dot(TrajectoryDirect))
+      {
+	// Calculate the line parameter for the intersection points
+	LineParameters.push_back( NormalVectors.at(face_no).Dot(NormalVectorOffsets.at(face_no) - TrajectoryStart)
+				/ NormalVectors.at(face_no).Dot(TrajectoryDirect) );
+      }
+      else continue;
+      
+      // Calculate intersection point using the line parameter
+      IntersectionPoints.push_back( LineParameters.back()*TrajectoryDirect + TrajectoryStart );
+      
+      // Loop over all three space coordinates
+      for(unsigned int coord = 0; coord < 3; coord++)
+      {
+	// Check if point is not within the surface limits at this coordinate
+	if(IntersectionPoints.back()[coord] > c_max[coord] || IntersectionPoints.back()[coord] < c_min[coord])
+	{
+	  // if off limits, get rid of the useless data and break the coordinate loop
+	  LineParameters.pop_back();
+	  IntersectionPoints.pop_back();
+	  break;
+	}
+      }// coordinate loop
+    }// Surcaces loop
+    
+    // sort points according to their parameter value (first is entry, second is exit)
+    if(LineParameters.size() == 2 && LineParameters.front() > LineParameters.back())
+    {
+      std::swap(IntersectionPoints.front(),IntersectionPoints.back());
+    }
+    
+    return IntersectionPoints;
+  }
+} // GetIntersections()
