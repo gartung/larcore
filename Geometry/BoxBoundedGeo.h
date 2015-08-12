@@ -9,9 +9,10 @@
 #define GEO_BOXBOUNDEDGEO_H
 
 /// C/C++ standard library
+#include <algorithm>
 #include <array>
 
-/// ROOT library
+/// Root library
 #include "TVector3.h"
 
 
@@ -164,6 +165,12 @@ namespace geo {
         return ContainsX(worldLoc[0], wiggle)
           && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
       } // ContainsPosition()
+    bool ContainsPosition
+      (TVector3 const& worldLoc, double const& wiggle = 1 ) const
+      {
+	return ContainsX(worldLoc[0], wiggle)
+          && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
+      } // ContainsPosition()
     ///@}
     
     
@@ -311,26 +318,29 @@ namespace geo {
     Coords_t c_min; ///< minimum coordinates (x, y, z)
     Coords_t c_max; ///< maximum coordinates (x, y, z)
     
+    
+    
       public:
     //@{
     /**
-     * @brief Calculates of a entry point on the box surface
+     * @brief Calculates the entry and exit points of a trajectory on the box surface
      * @author Christoph Rudolf von Rohr (crohr@fnal.gov)
      * @date July 27th, 2015
-     * @param TrackOffset position of the track source
-     * @param TrackDirect direction vector of the track
-     * @param TrackAngles is a doublet containing the angles theta and phi of the track
+     * @param TrajectoryStart position of the trajectory source
+     * @param TrajectoryDirect direction vector of the trajectory
      *
      * This member is public since it just gives an output and does not change any member.
-     * The algorithm works only for a box shaped active volume with parallel facing walls.
+     * The algorithm works only for a box shaped active volume with facing walls parallel to axis.
+     * If the return std::vector is empty the trajectory does not intersect with the box.
+     * Normaly the return value should have one (if the trajectory originates in the box) or two (else) entries.
+     * If the return value has two entries the first represents the entry point and the second the exit point
      */
-    TVector3 GetEntryPoint(TVector3 TrackOffset, TVector3 TrackDirect);
-//     TVector3 GetEntryPoint(TVector3 TrackOffset, std::array<Coord_t> TrackAngles);
-    //@}
+    std::vector<TVector3> GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect);
+    
   }; // class BoxBoundedGeo
   
 } // namespace geo
 
 
 
-#endif // GEO_BOXBOUNDEDGEO
+#endif // GEO_BOXBOUNDEDGEO_H
