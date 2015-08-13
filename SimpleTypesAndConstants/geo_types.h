@@ -25,10 +25,10 @@ namespace geo {
     kBo,          ///< Bo id
     kArgoNeuT,    ///< ArgoNeuT id
     kMicroBooNE,  ///< MicroBoone id
-    kLBNE10kt,    ///< LBNE 10kt id
+    kDUNE10kt,    ///< DUNE 10kt id
     kJP250L,      ///< JPARC 250 L id
-    kLBNE35t,     ///< 35t prototype id
-    kLBNE34kt,    ///< LBNE 34kt id
+    kDUNE35t,     ///< 35t prototype id
+    kDUNE34kt,    ///< DUNE 34kt id
     kCSU40L,      ///< CSU 40 L id
     kLArIAT,	  ///< LArIAT id
     kICARUS,      ///< ICARUS T600 id

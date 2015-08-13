@@ -9,7 +9,7 @@
 
 # Each subroutine generates a fragment GDML file, and the last subroutine
 # creates an XML file that make_gdml.pl will use to appropriately arrange
-# the fragment GDML files to create the final desired LBNE GDML file, 
+# the fragment GDML files to create the final desired DUNE GDML file, 
 # to be named by make_gdml output command
 
 # If you are playing with different geometries, you can use the
@@ -450,7 +450,7 @@ sub gen_Define()
 # Create the <define> fragment file name, 
 # add file to list of fragments,
 # and open it
-    $DEF = "lbne_10kT_Def" . $suffix . ".gdml";
+    $DEF = "dune_10kT_Def" . $suffix . ".gdml";
     push (@gdmlFiles, $DEF);
     $DEF = ">" . $DEF;
     open(DEF) or die("Could not open file $DEF for writing");
@@ -489,7 +489,7 @@ sub gen_Materials()
 # Create the <materials> fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $MAT = "lbne_10kT_Materials" . $suffix . ".gdml";
+    $MAT = "dune_10kT_Materials" . $suffix . ".gdml";
     push (@gdmlFiles, $MAT);
     $MAT = ">" . $MAT;
     open(MAT) or die("Could not open file $MAT for writing");
@@ -766,7 +766,7 @@ sub gen_TPC()
 # Create the TPC fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $TPC = "lbne_10kT_TPC" . $suffix . ".gdml";
+    $TPC = "dune_10kT_TPC" . $suffix . ".gdml";
     push (@gdmlFiles, $TPC);
     $TPC = ">" . $TPC;
     open(TPC) or die("Could not open file $TPC for writing");
@@ -896,7 +896,7 @@ EOF
 print TPC <<EOF;
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 
@@ -1046,7 +1046,7 @@ EOF
 print TPC <<EOF;
 
 
-   <!-- The command -w=0 has been used when running generate_lbne_gdml-NEW.pl -->
+   <!-- The command -w=0 has been used when running generate_dune_gdml-NEW.pl -->
 
         <!-- This GDML version has no wires and uses much less memory -->
 
@@ -1419,7 +1419,7 @@ sub gen_Cryostat()
 # Create the cryostat fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $CRYO = "lbne_10kT_Cryostat" . $suffix . ".gdml";
+    $CRYO = "dune_10kT_Cryostat" . $suffix . ".gdml";
     push (@gdmlFiles, $CRYO);
     $CRYO = ">" . $CRYO;
     open(CRYO) or die("Could not open file $CRYO for writing");
@@ -1827,7 +1827,7 @@ sub gen_Enclosure()
 # Create the detector enclosure fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $ENCL = "lbne_10kT_DetEnclosure" . $suffix . ".gdml";
+    $ENCL = "dune_10kT_DetEnclosure" . $suffix . ".gdml";
     push (@gdmlFiles, $ENCL);
     $ENCL = ">" . $ENCL;
     open(ENCL) or die("Could not open file $ENCL for writing");
@@ -1952,7 +1952,7 @@ sub gen_ServiceBuilding()
 # Create the service building above the detector enclosure
 # add file to list of output GDML fragments,
 # and open it
-    $SRVBUILD = "lbne_10kT_DetServiceBuilding" . $suffix . ".gdml";
+    $SRVBUILD = "dune_10kT_DetServiceBuilding" . $suffix . ".gdml";
     push (@gdmlFiles, $SRVBUILD);
     $SRVBUILD = ">" . $SRVBUILD;
     open(SRVBUILD) or die("Could not open file $SRVBUILD for writing");
@@ -2137,7 +2137,7 @@ sub gen_HillSide()
 # Create the WORLD fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $HILLSIDE = "lbne_10kT_HillSide" . $suffix . ".gdml";
+    $HILLSIDE = "dune_10kT_HillSide" . $suffix . ".gdml";
     push (@gdmlFiles, $HILLSIDE);
     $HILLSIDE = ">" . $HILLSIDE;
     open(HILLSIDE) or die("Could not open file $HILLSIDE for writing");
@@ -2279,7 +2279,7 @@ sub gen_World()
 # Create the WORLD fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $WORLD = "lbne_10kT_World" . $suffix . ".gdml";
+    $WORLD = "dune_10kT_World" . $suffix . ".gdml";
     push (@gdmlFiles, $WORLD);
     $WORLD = ">" . $WORLD;
     open(WORLD) or die("Could not open file $WORLD for writing");
