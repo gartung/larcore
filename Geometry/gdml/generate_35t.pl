@@ -5,7 +5,7 @@
 
 # Each subroutine generates a fragment GDML file, and the last subroutine
 # creates an XML file that make_gdml.pl will use to appropriately arrange
-# the fragment GDML files to create the final desired LBNE GDML file, 
+# the fragment GDML files to create the final desired DUNE GDML file, 
 # to be named by make_gdml output command
 
 # If you are playing with different geometries, you can use the
@@ -494,7 +494,7 @@ sub gen_Define()
 # Create the <define> fragment file name, 
 # add file to list of fragments,
 # and open it
-    $DEF = "lbne_10kT_Def" . $suffix . ".gdml";
+    $DEF = "dune_10kT_Def" . $suffix . ".gdml";
     push (@gdmlFiles, $DEF);
     $DEF = ">" . $DEF;
     open(DEF) or die("Could not open file $DEF for writing");
@@ -556,7 +556,7 @@ sub gen_Materials()
 # Create the <materials> fragment file name,
 # add file to list of output GDML fragments,
 # and open it
-    $MAT = "lbne_10kT_Materials" . $suffix . ".gdml";
+    $MAT = "dune_10kT_Materials" . $suffix . ".gdml";
     push (@gdmlFiles, $MAT);
     $MAT = ">" . $MAT;
     open(MAT) or die("Could not open file $MAT for writing");

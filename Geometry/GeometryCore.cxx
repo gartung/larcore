@@ -91,7 +91,12 @@ namespace geo {
     ClearGeometry();
 
     // Open the GDML file, and convert it into ROOT TGeoManager format.
-    TGeoManager::Import(rootfile.c_str());
+    // Then lock the gGeoManager to prevent future imports, for example
+    // in AuxDetGeometry
+    if( !gGeoManager ){
+      TGeoManager::Import(rootfile.c_str());
+      gGeoManager->LockGeometry();
+    }
 
     std::vector<const TGeoNode*> path(8);
     path[0] = gGeoManager->GetTopNode();
@@ -148,6 +153,12 @@ namespace geo {
   unsigned int GeometryCore::NOpChannels() const
   {
     return fChannelMapAlg->NOpChannels(this->NOpDets());
+  }
+
+  //......................................................................
+  unsigned int GeometryCore::MaxOpChannel() const
+  {
+    return fChannelMapAlg->MaxOpChannel(this->NOpDets());
   }
 
   //......................................................................

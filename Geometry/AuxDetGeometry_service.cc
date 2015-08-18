@@ -6,12 +6,12 @@
  */
 
 // class header
-#include "Geometry/Geometry.h"
+#include "Geometry/AuxDetGeometry.h"
+#include "Geometry/AuxDetExptGeoHelperInterface.h"
 
 // lar includes
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "SummaryData/RunData.h"
-#include "Geometry/ExptGeoHelperInterface.h"
 
 // Framework includes
 #include "cetlib/exception.h"
@@ -28,18 +28,17 @@ namespace geo {
 
   //......................................................................
   // Constructor.
-  Geometry::Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry &reg)
-    : GeometryCore(pset)
-    , fRelPath          (pset.get< std::string       >("RelativePath",     ""   ))
-    , fDisableWiresInG4 (pset.get< bool              >("DisableWiresInG4", false))
-    , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" , false))
+  AuxDetGeometry::AuxDetGeometry(fhicl::ParameterSet const& pset, art::ActivityRegistry &reg)
+    : fProvider         (pset)
+    , fRelPath          (pset.get< std::string       >("RelativePath",      ""   ))
+    , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" ,  false))
     , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
   {
     // add a final directory separator ("/") to fRelPath if not already there
     if (!fRelPath.empty() && (fRelPath.back() != '/')) fRelPath += '/';
     
     // register a callback to be executed when a new run starts
-    reg.sPreBeginRun.watch(this, &Geometry::preBeginRun);
+    reg.sPreBeginRun.watch(this, &AuxDetGeometry::preBeginRun);
     
     //......................................................................
     // 5.15.12 BJR: use the gdml file for both the fGDMLFile and fROOTFile
@@ -56,7 +55,7 @@ namespace geo {
   } // Geometry::Geometry()
 
 
-  void Geometry::preBeginRun(art::Run const& run)
+  void AuxDetGeometry::preBeginRun(art::Run const& run)
   {
     // FIXME this seems utterly wrong: constructor loads geometry based on an
     // explicit parameter, whereas here we load it by detector name
@@ -77,62 +76,44 @@ namespace geo {
     
     // if the detector name is still the same, everything is fine
     std::string newDetectorName = rdcol.front()->DetName();
-    if (DetectorName() == newDetectorName) return;
+    if (GetProvider().DetectorName() == newDetectorName) return;
     
     // check to see if the detector name in the RunData
     // object has not been set.  If that is the case, 
     // try the old DetId_t code
     std::string const nodetname("nodetectorname");
-    if (newDetectorName == nodetname) {
-      LOG_WARNING("Geometry") << "Detector name not set: " << newDetectorName
-                              << " use detector id: " << rdcol[0]->DetId()
-                              << " This is expected behavior for legacy files" ;
+    if (GetProvider().DetectorName() == nodetname)
+      LOG_WARNING("AuxDetGeometry") << "Detector name not set: " << newDetectorName
+				    << " use detector id: " << rdcol[0]->DetId()
+				    << " This is expected behavior for legacy files" ;
       
-      SetDetectorID(rdcol[0]->DetId());
-      
-      switch(DetectorID()){
-      case geo::kBo         : SetDetectorName("bo");         break;
-      case geo::kArgoNeuT   : SetDetectorName("argoneut");   break;
-      case geo::kLArIAT     : SetDetectorName("lariat");     break;
-      case geo::kMicroBooNE : SetDetectorName("microboone"); break;
-      case geo::kDUNE10kt   : SetDetectorName("dune10kt");   break;
-      case geo::kDUNE34kt   : SetDetectorName("dune34kt");   break;
-      case geo::kDUNE35t    : SetDetectorName("dune35t");    break;
-      case geo::kJP250L     : SetDetectorName("jp250L");     break;
-      case geo::kCSU40L     : SetDetectorName("csu40l");     break;
-      case geo::kICARUS     : SetDetectorName("icarus");     break;
-      default               :
-        throw cet::exception("LoadNewGeometry")
-          << "detid invalid, " << DetectorID() << " give up\n";
-      } // switch fDetId
-    } // if no detector name stored
-    else {
-      // the detector name is specified in the RunData object
-      SetDetectorName(newDetectorName);
-    }
+    // else {
+    //   // the detector name is specified in the RunData object
+    //   SetDetectorName(newDetectorName);
+    // }
     
-    LoadNewGeometry(DetectorName() + ".gdml", DetectorName() + ".gdml");
+    LoadNewGeometry(
+      GetProvider().DetectorName() + ".gdml",
+      GetProvider().DetectorName() + ".gdml"
+      );
   } // Geometry::preBeginRun()
   
   
   //......................................................................
-  void Geometry::InitializeChannelMap()
+  void AuxDetGeometry::InitializeChannelMap()
   {
     // the channel map is responsible of calling the channel map configuration
     // of the geometry
-    art::ServiceHandle<geo::ExptGeoHelperInterface>()
-      ->ConfigureChannelMapAlg(fSortingParameters, this);
+    art::ServiceHandle<geo::AuxDetExptGeoHelperInterface>()->ConfigureAuxDetChannelMapAlg(fSortingParameters, GetProviderPtr());
     
-    if ( ! ChannelMap() ) {
-      throw cet::exception("ChannelMapLoadFail")
-        << " failed to load new channel map";
+    if ( ! GetProvider().hasAuxDetChannelMap() ) {
+      throw cet::exception("ChannelMapLoadFail") << " failed to load new channel map";
     }
     
   } // Geometry::InitializeChannelMap()
 
   //......................................................................
-  void Geometry::LoadNewGeometry
-    (std::string gdmlfile, std::string /* rootfile */)
+  void AuxDetGeometry::LoadNewGeometry(std::string gdmlfile, std::string /* rootfile */)
   {
     // start with the relative path
     std::string GDMLFileName(fRelPath), ROOTFileName(fRelPath);
@@ -140,10 +121,6 @@ namespace geo {
     // add the base file names
     ROOTFileName.append(gdmlfile); // not rootfile (why?)
     GDMLFileName.append(gdmlfile);
-    
-    // special for GDML if geometry with no wires is used for Geant4 simulation
-    if(fDisableWiresInG4)
-      GDMLFileName.insert(GDMLFileName.find(".gdml"), "_nowires");
     
     // Search all reasonable locations for the GDML file that contains
     // the detector geometry.
@@ -153,27 +130,25 @@ namespace geo {
     
     std::string GDMLfile;
     if( !sp.find_file(GDMLFileName, GDMLfile) ) {
-      throw cet::exception("Geometry")
-        << "cannot find the gdml geometry file:" 
-        << "\n" << GDMLFileName
-        << "\nbail ungracefully.\n";
+      throw cet::exception("AuxDetGeometry") << "cannot find the gdml geometry file:" 
+					     << "\n" << GDMLFileName
+					     << "\nbail ungracefully.\n";
     }
     
     std::string ROOTfile;
     if( !sp.find_file(ROOTFileName, ROOTfile) ) {
-      throw cet::exception("Geometry")
-        << "cannot find the root geometry file:\n"
-        << "\n" << ROOTFileName
-        << "\nbail ungracefully.\n";
+      throw cet::exception("AuxDetGeometry") << "cannot find the root geometry file:\n"
+					     << "\n" << ROOTFileName
+					     << "\nbail ungracefully.\n";
     }
     
     // initialize the geometry with the files we have found
-    LoadGeometryFile(GDMLfile, ROOTfile);
+    GetProvider().LoadGeometryFile(GDMLfile, ROOTfile);
     
     // now update the channel map
     InitializeChannelMap();
     
   } // Geometry::LoadNewGeometry()
   
-  DEFINE_ART_SERVICE(Geometry)
+  DEFINE_ART_SERVICE(AuxDetGeometry)
 } // namespace geo

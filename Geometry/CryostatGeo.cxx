@@ -49,10 +49,10 @@ namespace geo{
       return xyz1[0]>xyz2[0];
   }
 
-  // LBNE specific sorting originally intended for 10kt
+  // DUNE specific sorting originally intended for 10kt
   // executed when there are 600+ opdets. -talion
-  ///\todo: move lbne opdet sorting to appropriate place in lbnecode 
-  static bool LBNE_opdet_sort(const OpDetGeo* t1, const OpDetGeo* t2)
+  ///\todo: move dune opdet sorting to appropriate place in dunetpc 
+  static bool DUNE_opdet_sort(const OpDetGeo* t1, const OpDetGeo* t2)
   {
     double xyz1[3] = {0.}, xyz2[3] = {0.};
     double local[3] = {0.};
@@ -102,10 +102,10 @@ namespace geo{
     this->FindOpDet(path, depth);
     
     // sort the OpDets according to xyz position
-    // 600 intended to separate lbne10kt geometry from others when sorting
+    // 600 intended to separate dune10kt geometry from others when sorting
     ///\todo: remove the hard-coded 600 in favor of selecting sorting the same way as in ChannelMapAlgs
     if(fOpDets.size() != 600 ) std::sort(fOpDets.begin(), fOpDets.end(), opdet_sort);
-    else std::sort(fOpDets.begin(), fOpDets.end(), LBNE_opdet_sort);
+    else std::sort(fOpDets.begin(), fOpDets.end(), DUNE_opdet_sort);
     return;
   }
 
