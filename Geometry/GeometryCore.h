@@ -3289,6 +3289,7 @@ namespace geo {
      * @brief Loads the geometry information from the specified files
      * @param gdmlfile path to file to be used for Geant4 simulation
      * @param rootfile path to file for internal geometry representation
+     * @param bForceReload reload even if there is already a valid geometry
      * @see ApplyChannelMap()
      *
      * Both paths must directly resolve to an available file, as no search
@@ -3307,7 +3308,8 @@ namespace geo {
      * initialized yet, since it's still necessary to provide or update the
      * channel mapping.
      */
-    void LoadGeometryFile(std::string gdmlfile, std::string rootfile);
+    void LoadGeometryFile
+      (std::string gdmlfile, std::string rootfile, bool bForceReload = false);
     
     /**
      * @brief Initializes the geometry to work with this channel map
