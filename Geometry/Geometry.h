@@ -116,7 +116,10 @@ namespace geo {
   private:
     
     /// Expands the provided paths and loads the geometry description(s)
-    void LoadNewGeometry(std::string gdmlfile, std::string rootfile);
+    void LoadNewGeometry(
+      std::string gdmlfile, std::string rootfile,
+      bool bForceReload = false
+      );
     
     void InitializeChannelMap();
 

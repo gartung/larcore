@@ -241,6 +241,9 @@ namespace geo {
     double                             fHalfWidth;        ///< half width of total volume
     double                             fHalfHeight;       ///< half height of total volume
     double                             fLength;           ///< length of total volume
+    
+    /// Index of the plane for each view (InvalidID if none)
+    std::vector<geo::PlaneID::PlaneID_t> fViewToPlaneNumber;
   
     /// Recomputes the TPC boundary
     void InitTPCBoundaries();
