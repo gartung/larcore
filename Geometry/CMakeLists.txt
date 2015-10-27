@@ -23,6 +23,18 @@ art_make( BASENAME_ONLY
                             ${MF_UTILITIES}
                             ${FHICLCPP}
                             ${CETLIB}
+          MODULE_LIBRARIES Geometry
+#                           ${ART_FRAMEWORK_CORE}
+#                           ${ART_FRAMEWORK_IO_SOURCES}
+                           ${ART_FRAMEWORK_PRINCIPAL}
+#                           ${ART_PERSISTENCY_COMMON}
+#                           ${ART_PERSISTENCY_PROVENANCE}
+                           ${ART_UTILITIES}
+                           ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                           ${MF_MESSAGELOGGER}
+                           ${MF_UTILITIES}
+                           ${FHICLCPP}
+                           ${CETLIB}
           )
 
 install_headers()
