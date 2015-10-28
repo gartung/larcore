@@ -32,8 +32,6 @@
 namespace geo{
 
 
-  static std::map<geo::View_t, unsigned int> sViewToPlaneNumber;
-
   //......................................................................
   TPCGeo::TPCGeo(std::vector<const TGeoNode*>& path, int depth)
     : BoxBoundedGeo() // we initialize boundaries at the end of construction
@@ -193,6 +191,12 @@ namespace geo{
     for(unsigned int i = 0; i < fPlaneLocation.size(); ++i) fPlaneLocation[i].resize(3);
     fPlane0Pitch.clear();
     fPlane0Pitch.resize(this->Nplanes(), 0.);
+    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
+    // leaving it a reference would cause C++ to treat it as such,
+    // that can't be because InvalidID is a static member constant without an address
+    // (it is not defined in any translation unit, just declared in header)
+    fViewToPlaneNumber.resize
+      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
     for(size_t p = 0; p < this->Nplanes(); ++p){
       fPlanes[p]->SetSignalType(geo::kInduction); //<set all planes to be induction for now
       fPlanes[p]->LocalToWorld(origin,xyz1);
@@ -203,7 +207,7 @@ namespace geo{
       fPlaneLocation[p][1] = xyz1[1];
       fPlaneLocation[p][2] = xyz1[2];
 
-      sViewToPlaneNumber[fPlanes[p]->View()] = p;
+      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
     }
 
     // now set the last plane in drift direction to be collection
@@ -229,8 +233,14 @@ namespace geo{
   //......................................................................
   const PlaneGeo& TPCGeo::Plane(geo::View_t view) const
   {
-    return *fPlanes[sViewToPlaneNumber[view]];
-  }
+    geo::PlaneID::PlaneID_t const p = fViewToPlaneNumber[size_t(view)];
+    if (p == geo::PlaneID::InvalidID) {
+      throw cet::exception("TPCGeo")
+        << "TPCGeo[" << ((void*) this) << "]::Plane(): no plane for view #"
+        << (size_t) view << "\n";
+    }
+    return *fPlanes[p];
+  } // TPCGeo::Plane(geo::View_t)
 
   //......................................................................
   unsigned int TPCGeo::MaxWires() const {

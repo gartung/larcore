@@ -74,9 +74,10 @@ namespace geo {
   } // GeometryCore::ApplyChannelMap()
 
   //......................................................................
-  void GeometryCore::LoadGeometryFile
-    (std::string gdmlfile, std::string rootfile)
-  {
+  void GeometryCore::LoadGeometryFile(
+    std::string gdmlfile, std::string rootfile,
+    bool bForceReload /* = false*/
+  ) {
     
     if (gdmlfile.empty()) {
       throw cet::exception("GeometryCore")
@@ -93,7 +94,8 @@ namespace geo {
     // Open the GDML file, and convert it into ROOT TGeoManager format.
     // Then lock the gGeoManager to prevent future imports, for example
     // in AuxDetGeometry
-    if( !gGeoManager ){
+    if( !gGeoManager || bForceReload ){
+      if (gGeoManager) TGeoManager::UnlockGeometry();
       TGeoManager::Import(rootfile.c_str());
       gGeoManager->LockGeometry();
     }
@@ -584,13 +586,9 @@ namespace geo {
   // it assumes all planes of a given view have the same pitch
   double GeometryCore::WirePitch(geo::View_t view) const
   { 
-    // loop over the planes in cryostat 0, tpc 0 to find the plane with the 
+    // look in cryostat 0, tpc 0 to find the plane with the 
     // specified view
-    unsigned int p = 0;
-    for(p = 0; p < this->Cryostat(0).TPC(0).Nplanes(); ++p)
-      if( this->Cryostat(0).TPC(0).Plane(p).View() == view ) break;
-
-    return this->Cryostat(0).TPC(0).WirePitch(0, 1, p);
+    return TPC({ 0, 0 }).Plane(view).WirePitch();
   }
 
   //......................................................................

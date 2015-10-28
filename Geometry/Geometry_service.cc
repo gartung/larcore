@@ -111,7 +111,7 @@ namespace geo {
       SetDetectorName(newDetectorName);
     }
     
-    LoadNewGeometry(DetectorName() + ".gdml", DetectorName() + ".gdml");
+    LoadNewGeometry(DetectorName() + ".gdml", DetectorName() + ".gdml", true);
   } // Geometry::preBeginRun()
   
   
@@ -131,9 +131,10 @@ namespace geo {
   } // Geometry::InitializeChannelMap()
 
   //......................................................................
-  void Geometry::LoadNewGeometry
-    (std::string gdmlfile, std::string /* rootfile */)
-  {
+  void Geometry::LoadNewGeometry(
+    std::string gdmlfile, std::string /* rootfile */,
+    bool bForceReload /* = false */
+  ) {
     // start with the relative path
     std::string GDMLFileName(fRelPath), ROOTFileName(fRelPath);
     
@@ -168,7 +169,7 @@ namespace geo {
     }
     
     // initialize the geometry with the files we have found
-    LoadGeometryFile(GDMLfile, ROOTfile);
+    LoadGeometryFile(GDMLfile, ROOTfile, bForceReload);
     
     // now update the channel map
     InitializeChannelMap();

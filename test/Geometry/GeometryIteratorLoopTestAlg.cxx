@@ -20,8 +20,10 @@
 #include "cetlib/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-
 namespace geo {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
   //......................................................................
   unsigned int GeometryIteratorLoopTestAlg::Run() {
@@ -468,5 +470,7 @@ namespace geo {
   } // GeometryIteratorLoopTestAlg::Run()
   
   //----------------------------------------------------------------------------
+
+#pragma GCC diagnostic pop
 
 } // namespace geo
