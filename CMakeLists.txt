@@ -54,6 +54,7 @@ include(BuildPlugins)
 add_subdirectory(Geometry)
 add_subdirectory(SimpleTypesAndConstants)
 add_subdirectory(SummaryData)
+add_subdirectory(CoreUtils)
 
 # tests 
 add_subdirectory(test)
