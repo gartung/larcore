@@ -108,10 +108,16 @@ namespace geo {
   {
   public:
     
+    using provider_type = GeometryCore; ///< type of service provider
+    
     Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
     
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
+    
+    /// Returns a pointer to the geometry service provider
+    provider_type const* provider() const
+      { return static_cast<provider_type const*>(this); }
     
   private:
     
