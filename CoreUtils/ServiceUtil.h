@@ -40,17 +40,38 @@ namespace lar {
    * Violations of the protocol yield compilation errors (in case non-compliance
    * can be statically detected), or throw of exceptions.
    * 
+   * Example of usage:
+   *     
+   *     auto const* geom = lar::providerFrom<geo::Geometry>();
+   *     
+   * retrieves the service provider for LArSoft geometry.
+   * This requires the inclusion of "Geometry/Geometry.h" header, where the
+   * service is declared. Typically, both ServiceUtil.h and the header of the
+   * provider class are included in the service header.
+   * 
    */
   template <class T>
     typename T::provider_type const* providerFrom()
     {
+      // static check on provider class: not copyable nor movable
       static_assert(
-        (! std::is_copy_constructible<typename T::provider_type>::value
-         && ! std::is_copy_assignable<typename T::provider_type>::value
-         && ! std::is_move_constructible<typename T::provider_type>::value
-         && ! std::is_move_assignable<typename T::provider_type>::value),
-        "Data provider classes must not be copyable or movable"
+        !std::is_copy_constructible<typename T::provider_type>::value,
+        "Data provider classes must not be copyable"
         );
+      static_assert(
+        !std::is_copy_assignable<typename T::provider_type>::value,
+        "Data provider classes must not be copyable"
+        );
+      static_assert(
+        !std::is_move_constructible<typename T::provider_type>::value,
+        "Data provider classes must not be movable"
+        );
+      static_assert(
+        !std::is_move_assignable<typename T::provider_type>::value,
+        "Data provider classes must not be movable"
+        );
+      
+      // retrieve the provider
       art::ServiceHandle<T> h;
       typename T::provider_type const* pProvider = h->provider();
       if (!pProvider) {
@@ -58,6 +79,7 @@ namespace lar {
           << "Service <" << cet::demangle(typeid(T).name())
           << "> offered a null provider";
       }
+      
       return pProvider;
       
     } // providerFrom()
