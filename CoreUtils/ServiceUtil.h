@@ -41,16 +41,17 @@ namespace lar {
     typename T::provider_type const* providerFrom()
     {
       static_assert(
-		    (! std::is_copy_constructible<typename T::provider_type>::value
-		     && ! std::is_copy_assignable<typename T::provider_type>::value
-		     && ! std::is_move_constructible<typename T::provider_type>::value
-		     && ! std::is_move_assignable<typename T::provider_type>::value),
-		    "Data provider classes must not be copyable or movable"
-		    );
+        (! std::is_copy_constructible<typename T::provider_type>::value
+         && ! std::is_copy_assignable<typename T::provider_type>::value
+         && ! std::is_move_constructible<typename T::provider_type>::value
+         && ! std::is_move_assignable<typename T::provider_type>::value),
+        "Data provider classes must not be copyable or movable"
+        );
       art::ServiceHandle<T> h;
       return h->provider();
       
     } // providerFrom()
+  
 } // namespace lar
 
 #endif //#COREUTILS_SERVICEUTIL
