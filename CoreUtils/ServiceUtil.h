@@ -12,9 +12,13 @@
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art/Utilities/Exception.h"
+#include "cetlib/demangle.h"
 
 // C/C++ standard libraries
 #include <type_traits>
+#include <typeinfo>
+
 
 namespace lar {
   
@@ -48,7 +52,13 @@ namespace lar {
         "Data provider classes must not be copyable or movable"
         );
       art::ServiceHandle<T> h;
-      return h->provider();
+      typename T::provider_type const* pProvider = h->provider();
+      if (!pProvider) {
+        throw art::Exception(art::errors::NotFound)
+          << "Service <" << cet::demangle(typeid(T).name())
+          << "> offered a null provider";
+      }
+      return pProvider;
       
     } // providerFrom()
   
