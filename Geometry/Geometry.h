@@ -140,9 +140,13 @@ namespace geo {
                                                  ///< files specified in the fcl file
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
   };
-
+  
 } // namespace geo
 
 DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
+
+// check that the requirements for geo::Geometry are satisfied
+template class lar::details::ServiceRequirementsChecker<geo::Geometry>;
+
 
 #endif // GEO_GEOMETRY_H

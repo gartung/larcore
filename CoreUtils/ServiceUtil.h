@@ -22,7 +22,13 @@
 
 namespace lar {
   
-  /**
+  namespace details {
+    template <typename PROVIDER>
+    struct ServiceRequirementsChecker;
+  } // namespace details
+  
+  
+  /** **************************************************************************
    * @brief Returns a constant pointer to the provider of specified service
    * @tparam T type of the service
    * @return a constant pointer to the provider of specified service
@@ -53,23 +59,7 @@ namespace lar {
   template <class T>
     typename T::provider_type const* providerFrom()
     {
-      // static check on provider class: not copyable nor movable
-      static_assert(
-        !std::is_copy_constructible<typename T::provider_type>::value,
-        "Data provider classes must not be copyable"
-        );
-      static_assert(
-        !std::is_copy_assignable<typename T::provider_type>::value,
-        "Data provider classes must not be copyable"
-        );
-      static_assert(
-        !std::is_move_constructible<typename T::provider_type>::value,
-        "Data provider classes must not be movable"
-        );
-      static_assert(
-        !std::is_move_assignable<typename T::provider_type>::value,
-        "Data provider classes must not be movable"
-        );
+      details::ServiceRequirementsChecker<T>(); // instantiate a temporary...
       
       // retrieve the provider
       art::ServiceHandle<T> h;
@@ -83,6 +73,55 @@ namespace lar {
       return pProvider;
       
     } // providerFrom()
+  
+  
+  //----------------------------------------------------------------------------
+  namespace details {
+    /// Compiles only if PROVIDER class satisfied service provider requirements
+    template <typename PROVIDER>
+    struct ServiceProviderRequirementsChecker {
+      
+      using provider_type = PROVIDER;
+      
+      // static checks on provider class: not copyable nor movable
+      static_assert(
+        !std::is_copy_constructible<provider_type>::value,
+        "Data provider classes must not be copyable"
+        );
+      static_assert(
+        !std::is_copy_assignable<provider_type>::value,
+        "Data provider classes must not be copyable"
+        );
+      static_assert(
+        !std::is_move_constructible<provider_type>::value,
+        "Data provider classes must not be movable"
+        );
+      static_assert(
+        !std::is_move_assignable<provider_type>::value,
+        "Data provider classes must not be movable"
+        );
+      
+    }; // ServiceProviderRequirementsChecker
+    
+    
+    template <typename SERVICE>
+    struct ServiceRequirementsChecker {
+      
+      // TODO: check that SERVICE::provider_type is available
+      // (with a sensible message if it does not)
+      
+      using provider_type = typename SERVICE::provider_type;
+      
+      /// Checker for the provider
+      ServiceProviderRequirementsChecker<typename SERVICE::provider_type>
+        provider_checker;
+      
+      // TODO check that a function providerFrom() is present with the right
+      // signature
+      
+    }; // ServiceRequirementsChecker
+    
+  } // namespace details
   
 } // namespace lar
 
