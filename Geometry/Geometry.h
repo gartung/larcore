@@ -9,6 +9,8 @@
  * Revised <petrillo@fnal.gov> 27-Apr-2015
  *         Factorization into a framework-independent GeometryCore.h and a
  *         art framework interface
+ * Revised <petrillo@fnal.gov> 10-Nov-2015
+ *         Complying with the provider requirements described in ServiceUtil.h
  */
 
 #ifndef GEO_GEOMETRY_H
@@ -16,6 +18,7 @@
 
 // LArSoft libraries
 #include "Geometry/GeometryCore.h"
+#include "CoreUtils/ServiceUtil.h" // not used; for user's convenience
 
 // the following are included for convenience only
 #include "Geometry/ChannelMapAlg.h"
