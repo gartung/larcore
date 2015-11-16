@@ -11,6 +11,7 @@
 #include "Geometry/AuxDetSensitiveGeo.h"
 #include "Geometry/CryostatGeo.h"
 #include "Geometry/TPCGeo.h"
+#include "Geometry/OpDetGeo.h"
 #include "Geometry/PlaneGeo.h"
 #include "Geometry/WireGeo.h"
 
@@ -79,6 +80,22 @@ namespace geo{
     return false;
   }
 
+  //----------------------------------------------------------------------------
+  // Define sort order for tpcs in standard configuration.
+  static bool sortOpDetStandard(const OpDetGeo* od1, const OpDetGeo* od2)
+  {
+    double xyz1[3] = {0.};
+    double xyz2[3] = {0.};
+    double local[3] = {0.};
+    od1->LocalToWorld(local, xyz1);
+    od2->LocalToWorld(local, xyz2);
+    
+    // sort OpDets according to z
+    if(xyz1[2] < xyz2[2]) return true;
+    
+    return false;
+  }
+
 
   //----------------------------------------------------------------------------
   // Define sort order for planes in standard configuration
@@ -142,17 +159,26 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
+  void GeoObjectSorterStandard::SortOpDets(std::vector<geo::OpDetGeo*>  & odgeo) const
+  {
+    
+    std::sort(odgeo.begin(), odgeo.end(), sortOpDetStandard);
+    
+    return;
+  }
+  
+  //----------------------------------------------------------------------------
   void GeoObjectSorterStandard::SortTPCs(std::vector<geo::TPCGeo*>  & tgeo) const
   {
     
     std::sort(tgeo.begin(), tgeo.end(), sortTPCStandard);
-
+    
     return;
   }
-
+  
   //----------------------------------------------------------------------------
   void GeoObjectSorterStandard::SortPlanes(std::vector<geo::PlaneGeo*> & pgeo,
-					   geo::DriftDirection_t  const& driftDir) const
+                                           geo::DriftDirection_t  const& driftDir) const
   {
     // sort the planes to increase in drift direction
     // The drift direction has to be set before this method is called.  It is set when

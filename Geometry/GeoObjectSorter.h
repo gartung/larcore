@@ -19,6 +19,7 @@ namespace geo{
   class AuxDetGeo;
   class AuxDetSensitiveGeo;
   class CryostatGeo;
+  class OpDetGeo;
   class TPCGeo;
   class PlaneGeo;
   class WireGeo;
@@ -30,13 +31,14 @@ namespace geo{
     GeoObjectSorter();
     ~GeoObjectSorter();
 
-    virtual void SortAuxDets        (std::vector<geo::AuxDetGeo*>          & adgeo)   const = 0;
-    virtual void SortAuxDetSensitive(std::vector<geo::AuxDetSensitiveGeo*> & adsgeo)  const = 0;
-    virtual void SortCryostats      (std::vector<geo::CryostatGeo*>        & cgeo)    const = 0;
-    virtual void SortTPCs     	    (std::vector<geo::TPCGeo*>      	  & tgeo)     const = 0;
-    virtual void SortPlanes   	    (std::vector<geo::PlaneGeo*>       	  & pgeo, 		 
-			      	     geo::DriftDirection_t     	    const & driftDir) const = 0;
-    virtual void SortWires    	    (std::vector<geo::WireGeo*>     	  & wgeo)     const = 0;
+    virtual void SortAuxDets        (std::vector<geo::AuxDetGeo*>          & adgeo)    const = 0;
+    virtual void SortAuxDetSensitive(std::vector<geo::AuxDetSensitiveGeo*> & adsgeo)   const = 0;
+    virtual void SortCryostats      (std::vector<geo::CryostatGeo*>        & cgeo)     const = 0;
+    virtual void SortOpDets         (std::vector<geo::OpDetGeo*>           & odgeo)    const = 0;
+    virtual void SortTPCs     	    (std::vector<geo::TPCGeo*>      	     & tgeo)     const = 0;
+    virtual void SortPlanes   	    (std::vector<geo::PlaneGeo*>       	   & pgeo,
+                                     geo::DriftDirection_t     	     const & driftDir) const = 0;
+    virtual void SortWires    	    (std::vector<geo::WireGeo*>         	 & wgeo)     const = 0;
     
   private:
     

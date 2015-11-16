@@ -39,9 +39,9 @@ namespace geo{
 
     fSorter.SortCryostats(cgeo);
     fSorter.SortAuxDets(adgeo);
-    for(size_t c = 0; c < cgeo.size(); ++c) 
+    for(size_t c = 0; c < cgeo.size(); ++c)
       cgeo[c]->SortSubVolumes(fSorter);
-    
+      
     fNTPC.resize(fNcryostat);
     fWireCounts.resize(fNcryostat);
     fNPlanes.resize(fNcryostat);
@@ -64,12 +64,12 @@ namespace geo{
       
       // Size up all the vectors 
       fWireCounts[cs]             .resize(fNTPC[cs]);
-      fFirstWireProj[cs]           .resize(fNTPC[cs]);
-      fOrthVectorsY[cs]            .resize(fNTPC[cs]);
-      fOrthVectorsZ[cs]            .resize(fNTPC[cs]);
-      fPlaneBaselines[cs]          .resize(fNTPC[cs]);
-      fWiresPerPlane[cs]           .resize(fNTPC[cs]);
-      fNPlanes[cs]                     .resize(fNTPC[cs]);
+      fFirstWireProj[cs]          .resize(fNTPC[cs]);
+      fOrthVectorsY[cs]           .resize(fNTPC[cs]);
+      fOrthVectorsZ[cs]           .resize(fNTPC[cs]);
+      fPlaneBaselines[cs]         .resize(fNTPC[cs]);
+      fWiresPerPlane[cs]          .resize(fNTPC[cs]);
+      fNPlanes[cs]                .resize(fNTPC[cs]);
       fFirstChannelInThisPlane[cs].resize(fNTPC[cs]);
       fFirstChannelInNextPlane[cs].resize(fNTPC[cs]);
 

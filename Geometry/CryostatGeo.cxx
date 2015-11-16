@@ -160,6 +160,7 @@ namespace geo{
   // sort the TPCGeo objects, and the PlaneGeo objects inside
   void CryostatGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
   {
+    sorter.SortOpDets(fOpDets);
     sorter.SortTPCs(fTPCs);
     for(size_t t = 0; t < fTPCs.size(); ++t) { 
       TPCGeo* TPC = fTPCs[t];
@@ -211,7 +212,7 @@ namespace geo{
 
   //......................................................................
   void CryostatGeo::FindOpDet(std::vector<const TGeoNode*>& path,
-			      unsigned int depth) 
+                              unsigned int depth)
   {
 
     const char* nm = path[depth]->GetName();
