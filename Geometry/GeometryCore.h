@@ -3337,13 +3337,6 @@ namespace geo {
     /// Sets the detector name
     void SetDetectorName(std::string new_name) { fDetectorName = new_name; }
     
-    /// Sets the detector ID; this is legacy as detector ID should not be used
-    void SetDetectorID(geo::DetId_t ID) { fDetId = ID; }
-    
-    // There are some issues that require detector-specific queries.
-    /// This method returns an enumerated type that can be tested in those cases
-    geo::DetId_t DetectorID() const { return fDetId; }
-    
     /// Returns the object handling the channel map
     geo::ChannelMapAlg const* ChannelMap() const
       { return fChannelMapAlg.get(); }
@@ -3387,11 +3380,12 @@ namespace geo {
     std::string    fROOTfile;       ///< path to geometry file for geometry in GeometryCore
     double         fMinWireZDist;   ///< Minimum distance in Z from a point in which
                                     ///< to look for the closest wire
-    geo::DetId_t   fDetId;          ///< Detector type (deprecated, legacy)
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
+
     std::shared_ptr<const geo::ChannelMapAlg>
                    fChannelMapAlg;  ///< Object containing the channel to wire mapping
     bool         fOpDetSort;        ///< Turn off sorting of opdets (important when different dets have different properties e.g in LArIAT)
+
   }; // class GeometryCore
   
 } // namespace geo

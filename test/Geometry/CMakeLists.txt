@@ -142,6 +142,16 @@ if( NOT mrb_build_dir )
                         "FHICL_FILE_PATH=.:${CMAKE_BINARY_DIR}/job;FW_SEARCH_PATH=${CMAKE_BINARY_DIR}/gdml" )
 endif()
 
+
+# FCL files need to be copied to the test area (DATAFILES directive) since they
+# are not installed.
+cet_test(dump_channel_map_test HANDBUILT
+  DATAFILES dump_lartpcdetector_channelmap.fcl
+  TEST_EXEC lar
+  TEST_ARGS --rethrow-all --config ./dump_lartpcdetector_channelmap.fcl
+)
+
+
 install_headers()
 install_fhicl()
 install_source()

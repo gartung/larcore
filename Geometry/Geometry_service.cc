@@ -80,31 +80,10 @@ namespace geo {
     if (DetectorName() == newDetectorName) return;
     
     // check to see if the detector name in the RunData
-    // object has not been set.  If that is the case, 
-    // try the old DetId_t code
+    // object has not been set.
     std::string const nodetname("nodetectorname");
     if (newDetectorName == nodetname) {
-      LOG_WARNING("Geometry") << "Detector name not set: " << newDetectorName
-                              << " use detector id: " << rdcol[0]->DetId()
-                              << " This is expected behavior for legacy files" ;
-      
-      SetDetectorID(rdcol[0]->DetId());
-      
-      switch(DetectorID()){
-      case geo::kBo         : SetDetectorName("bo");         break;
-      case geo::kArgoNeuT   : SetDetectorName("argoneut");   break;
-      case geo::kLArIAT     : SetDetectorName("lariat");     break;
-      case geo::kMicroBooNE : SetDetectorName("microboone"); break;
-      case geo::kDUNE10kt   : SetDetectorName("dune10kt");   break;
-      case geo::kDUNE34kt   : SetDetectorName("dune34kt");   break;
-      case geo::kDUNE35t    : SetDetectorName("dune35t");    break;
-      case geo::kJP250L     : SetDetectorName("jp250L");     break;
-      case geo::kCSU40L     : SetDetectorName("csu40l");     break;
-      case geo::kICARUS     : SetDetectorName("icarus");     break;
-      default               :
-        throw cet::exception("LoadNewGeometry")
-          << "detid invalid, " << DetectorID() << " give up\n";
-      } // switch fDetId
+      LOG_WARNING("Geometry") << "Detector name not set: " << newDetectorName;
     } // if no detector name stored
     else {
       // the detector name is specified in the RunData object
