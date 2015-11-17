@@ -3391,6 +3391,7 @@ namespace geo {
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
     std::shared_ptr<const geo::ChannelMapAlg>
                    fChannelMapAlg;  ///< Object containing the channel to wire mapping
+    bool         fOpDetSort;        ///< Turn off sorting of opdets (important when different dets have different properties e.g in LArIAT)
   }; // class GeometryCore
   
 } // namespace geo
