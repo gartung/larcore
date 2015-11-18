@@ -97,14 +97,15 @@ namespace geo{
 
     // Set OpDetName;
     fOpDetGeoName = "volOpDetSensitive";
-    
+    std::cout<<"finding optical detectors "<<std::endl;
     // find the opdets for the cryostat so that you can use them later
     this->FindOpDet(path, depth);
     
     // sort the OpDets according to xyz position
     // 600 intended to separate dune10kt geometry from others when sorting
     ///\todo: remove the hard-coded 600 in favor of selecting sorting the same way as in ChannelMapAlgs
-    if(fOpDets.size() != 600 ) std::sort(fOpDets.begin(), fOpDets.end(), opdet_sort);
+    if(fOpDets.size() != 600&& fOpDets.size() != 5 ) std::sort(fOpDets.begin(), fOpDets.end(), opdet_sort);
+    else if (fOpDets.size() == 5 ) std::cout<<"For now, LArIAT doesn't want its opdets sorted "<<std::endl ;
     else std::sort(fOpDets.begin(), fOpDets.end(), DUNE_opdet_sort);
     return;
   }
@@ -215,9 +216,9 @@ namespace geo{
   {
 
     const char* nm = path[depth]->GetName();
+
     if( (strncmp(nm, OpDetGeoName().c_str(), 6) == 0) ){
       this->MakeOpDet(path,depth);
-std::cout<<" making opdet CryostatGeo 202 "<<path[depth]->GetName()<<std::endl;
       return;
     }
 
@@ -240,7 +241,6 @@ std::cout<<" making opdet CryostatGeo 202 "<<path[depth]->GetName()<<std::endl;
   void CryostatGeo::MakeOpDet(std::vector<const TGeoNode*>& path, int depth) 
   {
     fOpDets.push_back(new OpDetGeo(path, depth));
-std::cout<<" adding Optical detectors in CryostatGeo 225 container size "<<fOpDets.size()<<std::endl;
   }
 
   //......................................................................
