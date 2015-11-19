@@ -78,15 +78,6 @@ namespace geo {
     std::string newDetectorName = rdcol.front()->DetName();
     if (GetProvider().DetectorName() == newDetectorName) return;
     
-    // check to see if the detector name in the RunData
-    // object has not been set.  If that is the case, 
-    // try the old DetId_t code
-    std::string const nodetname("nodetectorname");
-    if (GetProvider().DetectorName() == nodetname)
-      LOG_WARNING("AuxDetGeometry") << "Detector name not set: " << newDetectorName
-				    << " use detector id: " << rdcol[0]->DetId()
-				    << " This is expected behavior for legacy files" ;
-      
     // else {
     //   // the detector name is specified in the RunData object
     //   SetDetectorName(newDetectorName);
