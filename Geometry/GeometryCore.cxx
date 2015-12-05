@@ -25,6 +25,7 @@
 #include <TGeoVolume.h>
 #include <TGeoMatrix.h>
 #include <TGeoBBox.h>
+#include <TGeoVolume.h>
 // #include <Rtypes.h>
 
 // C/C++ includes
@@ -459,6 +460,40 @@ namespace geo {
     return std::string("volWorld");
   }
 
+  //......................................................................
+  struct CollectNodesByName {
+    std::set<std::string> const* vol_names;
+    std::vector<TGeoNode const*> nodes;
+    
+    CollectNodesByName(std::set<std::string> const& names): vol_names(&names) {}
+    
+    void operator() (TGeoNode const& node)
+      {
+        if (vol_names->find(node.GetVolume()->GetName()) != vol_names->end())
+          nodes.push_back(&node);
+      }
+    
+  }; // CollectNodesByName
+  
+  
+  std::vector<TGeoNode const*> GeometryCore::FindAllVolumes
+    (std::set<std::string> const& vol_names) const
+  {
+    CollectNodesByName node_collector(vol_names);
+    
+    ROOTGeoNodeForwardIterator iNode(ROOTGeoManager()->GetTopNode());
+    TGeoNode const* pCurrentNode;
+    
+    while ((pCurrentNode = *iNode)) {
+      node_collector(*pCurrentNode);
+      ++iNode;
+    } // while
+    
+    return node_collector.nodes;
+  } // GeometryCore::FindAllVolumes()
+  
+  
+  
   //......................................................................
   std::string GeometryCore::GetLArTPCVolumeName(geo::TPCID const& tpcid) const
   {
@@ -1426,6 +1461,42 @@ namespace geo {
   constexpr details::geometry_iterator_types::UndefinedPos_t
     details::geometry_iterator_types::undefined_pos;
   
+  //--------------------------------------------------------------------
+  //--- ROOTGeoNodeForwardIterator
+  //---
+  
+  ROOTGeoNodeForwardIterator& ROOTGeoNodeForwardIterator::operator++ () {
+    if (path.empty()) return *this;
+    if (path.size() == 1) { path.pop_back(); return *this; }
+    
+    // I am done; all my descendants were also done already;
+    // first look at my younger siblings
+    NodeInfo_t& current = path.back();
+    NodeInfo_t const& parent = path[path.size() - 2];
+    if (++(current.sibling) < parent.self->GetNdaughters()) {
+      // my next sibling exists, let's parse his descendents
+      current.self = parent.self->GetDaughter(current.sibling);
+      reach_deepest_descendant();
+    }
+    else path.pop_back(); // no sibling, it's time for mum
+    return *this;
+  } // ROOTGeoNodeForwardIterator::operator++
+  
+  void ROOTGeoNodeForwardIterator::reach_deepest_descendant() {
+    Node_t descendent = path.back().self;
+    while (descendent->GetNdaughters() > 0) {
+      descendent = descendent->GetDaughter(0);
+      path.emplace_back(descendent, 0U);
+    } // while
+  } // ROOTGeoNodeForwardIterator::reach_deepest_descendant()
+  
+  void ROOTGeoNodeForwardIterator::init(TGeoNode const* start_node) {
+    path.clear();
+    if (!start_node) return;
+    path.emplace_back(start_node, 0U);
+    reach_deepest_descendant();
+  } // ROOTGeoNodeForwardIterator::init()
+
   //--------------------------------------------------------------------
   
 } // namespace geo

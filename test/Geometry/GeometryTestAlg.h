@@ -67,6 +67,8 @@ namespace geo {
    *   explicitly marked as excluded by default in the list below:
    *   + `CheckOverlaps` (not in default) perform overlap checks
    *   + `ThoroughCheck` (not in default) makes ROOT perform full geometry check
+   *   + `FindVolumes`: checks it can find the volumes corresponding to world
+   *     and all cryostats
    *   + `Cryostat`:
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
@@ -125,6 +127,7 @@ namespace geo {
     void printWirePos();
     void printWiresInTPC(const TPCGeo& tpc, std::string indent = "") const;
     void printAllGeometry() const;
+    void testFindVolumes();
     void testCryostat();
     void testTPC(unsigned int const& c);
     void testChannelToWire();

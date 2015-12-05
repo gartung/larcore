@@ -279,6 +279,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("FindVolumes")) {
+        LOG_INFO("GeometryTest") << "test FindAllVolumes method ...";
+        testFindVolumes();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("ChannelToWire")) {
         LOG_INFO("GeometryTest") << "test channel to plane wire and back ...";
         testChannelToWire();
@@ -632,6 +638,67 @@ namespace geo{
     return;
   }
 
+  //......................................................................
+  void GeometryTestAlg::testFindVolumes() {
+    /*
+     * Finds and checks a selected number of volumes by name:
+     * - world volume
+     * - cryostat volumes
+     *
+     */
+    
+    unsigned int nErrors = 0;
+    
+    std::set<std::string> volume_names;
+    std::vector<TGeoNode const*> nodes;
+    
+    // world
+    volume_names.insert(geom->GetWorldVolumeName());
+    nodes = geom->FindAllVolumes(volume_names);
+    {
+      mf::LogVerbatim log("GeometryTest");
+      log << "Found " << nodes.size() << " world volumes '"
+        << geom->GetWorldVolumeName() << "':";
+      for (TGeoNode const* node: nodes) {
+        TGeoVolume const* pVolume = node->GetVolume();
+        log << "\n - '" << pVolume->GetName() << "' (a "
+          << pVolume->GetShape()->GetName() << ")";
+      } // for
+    } // anonymous block
+    if (nodes.size() != 1) {
+      ++nErrors;
+      mf::LogError("GeometryTest")
+        << "Found " << nodes.size() << " world volumes '"
+          << geom->GetWorldVolumeName() << "! [expecting: one!!]";
+    } // if nodes
+    
+    
+    // world and cryostats
+    volume_names.insert("volCryostat");
+    nodes = geom->FindAllVolumes(volume_names);
+    
+    mf::LogVerbatim log("GeometryTest");
+    log << "Found " << nodes.size() << " world and cryostat volumes:";
+    for (TGeoNode const* node: nodes) {
+      TGeoVolume const* pVolume = node->GetVolume();
+      log << "\n - '" << pVolume->GetName() << "' (a "
+        << pVolume->GetShape()->GetName() << ")";
+    } // for
+    if (nodes.size() != (1 + geom->Ncryostats())) {
+      ++nErrors;
+      mf::LogError("GeometryTest")
+        << "Found " << nodes.size() << " world and cryostat volumes! "
+        "[expecting: 1 world and " << geom->Ncryostats() << " cryostats]";
+    } // if nodes
+    
+    if (nErrors != 0) {
+      throw cet::exception("FindVolumes")
+        << "Collected " << nErrors << " errors during FindAllVolumes() test!\n";
+    }
+    
+  } // GeometryTestAlg::testFindVolumes()
+  
+  
   //......................................................................
   void GeometryTestAlg::testTPC(unsigned int const& c)
   {
