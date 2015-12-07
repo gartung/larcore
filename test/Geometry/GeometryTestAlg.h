@@ -146,6 +146,11 @@ namespace geo {
 
     bool shouldRunTests(std::string test_name) const;
     
+    // single tests for testFindVolumes
+    unsigned int testFindWorldVolumes();
+    unsigned int testFindCryostatVolumes();
+    unsigned int testFindTPCvolumePaths();
+    
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
       (const TPCID& tpcid, double x, double y, double z) const;

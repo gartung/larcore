@@ -1397,7 +1397,21 @@ namespace geo {
     std::vector<TGeoNode const*> FindAllVolumes
       (std::set<std::string> const& vol_names) const;
     
-    
+    /**
+     * @brief Returns paths of all nodes with volumes with the specified names
+     * @param vol_names list of names of volumes
+     * @return list paths of the found nodes
+     * 
+     * All the nodes in the geometry are checked, and the path of all the ones
+     * that contain a volume with a name among the ones specified in vol_names
+     * is saved in the collection and returned.
+     * A node path is a ordered list of all nodes leading to the final one,
+     * starting from thetop level (root) down. The node at the `back()` of the
+     * path is the one with name in vol_names.
+     * No empty paths are returned.
+     */
+    std::vector<std::vector<TGeoNode const*>> FindAllVolumePaths
+      (std::set<std::string> const& vol_names) const;
     
     /**
      * @brief Name of the deepest material containing the point xyz
@@ -1698,6 +1712,9 @@ namespace geo {
     
     /// Returns the largest number of TPCs a cryostat in the detector has
     unsigned int MaxTPCs() const;
+    
+    /// Returns the total number of TPCs in the detector
+    unsigned int TotalNTPC() const;
     
     /**
      * @brief Returns the total number of TPCs in the specified cryostat
@@ -3430,10 +3447,13 @@ namespace geo {
     
     /// Returns the pointer to the current node, or nullptr if none
     TGeoNode const* operator* () const
-      { return path.empty()? nullptr: path.back().self; }
+      { return current_path.empty()? nullptr: current_path.back().self; }
     
     /// Points to the next node, or to nullptr if there are no more
     ROOTGeoNodeForwardIterator& operator++ ();
+    
+    /// Returns the full path of the current node
+    std::vector<TGeoNode const*> get_path() const;
     
       protected:
     using Node_t = TGeoNode const*;
@@ -3444,7 +3464,7 @@ namespace geo {
     }; // NodeInfo_t
     
     /// which node, which sibling?
-    std::vector<NodeInfo_t> path;
+    std::vector<NodeInfo_t> current_path;
     
     void reach_deepest_descendant();
     

@@ -28,6 +28,9 @@
 // ROOT includes
 #include "TGeoManager.h"
 #include "TStopwatch.h"
+#include "TGeoNode.h"
+#include "TGeoVolume.h"
+#include "TClass.h"
 
 // C/C++ standard libraries
 #include <cmath>
@@ -233,6 +236,7 @@ namespace geo{
         << "\n  TPC in a cryostat: " << geom->MaxTPCs()
         << "\n  planes in a TPC:   " << geom->MaxPlanes()
         << "\n  wires in a plane:  " << geom->MaxWires()
+        << "\nTotal number of TPCs " << geom->TotalNTPC()
         ;
 
       //LOG_DEBUG("GeometryTest") << "print channel information ...";
@@ -639,13 +643,7 @@ namespace geo{
   }
 
   //......................................................................
-  void GeometryTestAlg::testFindVolumes() {
-    /*
-     * Finds and checks a selected number of volumes by name:
-     * - world volume
-     * - cryostat volumes
-     *
-     */
+  unsigned int GeometryTestAlg::testFindWorldVolumes() {
     
     unsigned int nErrors = 0;
     
@@ -672,10 +670,19 @@ namespace geo{
           << geom->GetWorldVolumeName() << "! [expecting: one!!]";
     } // if nodes
     
+    return nErrors;
+  } // GeometryTestAlg::testFindWorldVolumes()
+  
+  
+  unsigned int GeometryTestAlg::testFindCryostatVolumes() {
     
-    // world and cryostats
+    unsigned int nErrors = 0;
+    
+    std::set<std::string> volume_names;
+    volume_names.insert(geom->GetWorldVolumeName());
     volume_names.insert("volCryostat");
-    nodes = geom->FindAllVolumes(volume_names);
+    
+    std::vector<TGeoNode const*> nodes = geom->FindAllVolumes(volume_names);
     
     mf::LogVerbatim log("GeometryTest");
     log << "Found " << nodes.size() << " world and cryostat volumes:";
@@ -690,6 +697,67 @@ namespace geo{
         << "Found " << nodes.size() << " world and cryostat volumes! "
         "[expecting: 1 world and " << geom->Ncryostats() << " cryostats]";
     } // if nodes
+    
+    return nErrors;
+  } // GeometryTestAlg::testFindCryostatVolumes()
+  
+  
+  unsigned int GeometryTestAlg::testFindTPCvolumePaths() {
+    
+    unsigned int nErrors = 0;
+    
+    // search the full path of all TPCs
+    std::set<std::string> volume_names;
+    for (geo::TPCGeo const& TPC: geom->IterateTPCs())
+      volume_names.insert(TPC.TotalVolume()->GetName());
+    
+    // get the right answer: how many TPCs?
+    const unsigned int NTPCs = geom->TotalNTPC();
+    
+    std::vector<std::vector<TGeoNode const*>> node_paths
+      = geom->FindAllVolumePaths(volume_names);
+    
+    mf::LogVerbatim log("GeometryTest");
+    log << "Found " << node_paths.size() << " TPC volumes:";
+    for (auto const& path: node_paths) {
+      TGeoNode const* node = path.back();
+      TGeoVolume const* pVolume = node->GetVolume();
+      log << "\n - '" << pVolume->GetName() << "' (a "
+        << pVolume->GetShape()->GetName() << ") with " << (path.size()-1)
+        << " ancestors";
+      for (TGeoNode const* pNode: path) {
+        TGeoVolume const* pVolume = pNode->GetVolume();
+        log << "\n      * '" << pVolume->GetName() << "' (a "
+          << pVolume->GetShape()->GetName() << ") with a "
+          << pNode->GetMatrix()->IsA()->GetName() << " that "
+          << (pNode->GetMatrix()->IsTranslation()? "is": "is not")
+          << " a simple translation";
+      } // for node
+    } // for path
+    if (node_paths.size() != NTPCs) {
+      ++nErrors;
+      mf::LogError("GeometryTest")
+        << "Found " << node_paths.size() << " TPC volumes! "
+        "[expecting: " << NTPCs << " TPCs]";
+    } // if missed some
+    
+    return nErrors;
+  } // GeometryTestAlg::testFindTPCvolumePaths()
+  
+  
+  void GeometryTestAlg::testFindVolumes() {
+    /*
+     * Finds and checks a selected number of volumes by name:
+     * - world volume
+     * - cryostat volumes
+     * - TPCs (returns full paths)
+     */
+    
+    unsigned int nErrors = 0;
+    
+    nErrors += testFindWorldVolumes();
+    nErrors += testFindCryostatVolumes();
+    nErrors += testFindTPCvolumePaths();
     
     if (nErrors != 0) {
       throw cet::exception("FindVolumes")
