@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v04_22_00
+parent	larcore	v04_23_00
 defaultqual	e9
 
 # These optional lines define the installed directories where
@@ -22,10 +22,10 @@ gdmldir product_dir
 # we list geant4 explicitly because we are going to set GDML_SCHEMA_DIR 
 # Defining GDML_SCHEMA_DIR here is a temporary hack
 product         version
-art		v1_17_04
+art		v1_17_05
 gcc		v4_9_3
 
-cetbuildtools	v4_17_03	-	only_for_build
+cetbuildtools	v4_18_01	-	only_for_build
 end_product_list
 
   
