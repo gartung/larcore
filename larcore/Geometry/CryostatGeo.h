@@ -13,7 +13,7 @@
 #include "TVector3.h"
 #include "TGeoVolume.h"
 
-#include "Geometry/GeoObjectSorter.h"
+#include "larcore/Geometry/GeoObjectSorter.h"
 
 class TGeoNode;
 class TGeoHMatrix;

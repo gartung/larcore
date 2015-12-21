@@ -20,8 +20,8 @@
 #include "cetlib/exception.h"
 
 // LArSoft includes
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 
 namespace geo{
 

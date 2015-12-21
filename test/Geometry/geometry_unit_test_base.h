@@ -25,8 +25,8 @@
 
 // LArSoft libraries
 #include "test/Geometry/unit_test_base.h"
-#include "Geometry/GeometryCore.h"
-#include "Geometry/ChannelMapAlg.h"
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapAlg.h"
 
 // utility libraries
 #include "fhiclcpp/ParameterSet.h"

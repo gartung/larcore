@@ -17,17 +17,17 @@
 #define GEO_GEOMETRY_H
 
 // LArSoft libraries
-#include "Geometry/GeometryCore.h"
-#include "CoreUtils/ServiceUtil.h" // not used; for user's convenience
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/CoreUtils/ServiceUtil.h" // not used; for user's convenience
 
 // the following are included for convenience only
-#include "Geometry/ChannelMapAlg.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
-#include "Geometry/OpDetGeo.h"
-#include "Geometry/AuxDetGeo.h"
+#include "larcore/Geometry/ChannelMapAlg.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
+#include "larcore/Geometry/OpDetGeo.h"
+#include "larcore/Geometry/AuxDetGeo.h"
 
 // framework libraries
 #include "fhiclcpp/ParameterSet.h"

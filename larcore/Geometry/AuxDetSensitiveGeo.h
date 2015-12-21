@@ -10,7 +10,7 @@
 #include <vector>
 #include "TGeoVolume.h"
 
-#include "SimpleTypesAndConstants/geo_types.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
 
 class TGeoNode;
 class TGeoHMatrix;

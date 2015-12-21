@@ -17,7 +17,7 @@ art_make_library( LIBRARY_NAME GeometryTestLib
 simple_plugin ( GeometryIteratorLoopTest "module"
                     Geometry
                     GeometryTestLib
-                    Geometry_service
+                    larcore_Geometry_Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
@@ -28,7 +28,7 @@ simple_plugin ( GeometryIteratorLoopTest "module"
 simple_plugin ( GeometryTest "module"
                     Geometry
                     GeometryTestLib
-                    Geometry_service
+                    larcore_Geometry_Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}

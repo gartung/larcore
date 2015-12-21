@@ -7,13 +7,13 @@
  */
 
 // class header
-#include "Geometry/GeometryCore.h"
+#include "larcore/Geometry/GeometryCore.h"
 
 // lar includes
-#include "SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
-#include "Geometry/OpDetGeo.h"
-#include "Geometry/AuxDetGeo.h"
-#include "Geometry/AuxDetSensitiveGeo.h"
+#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
+#include "larcore/Geometry/OpDetGeo.h"
+#include "larcore/Geometry/AuxDetGeo.h"
+#include "larcore/Geometry/AuxDetSensitiveGeo.h"
 
 // Framework includes
 #include "cetlib/exception.h"

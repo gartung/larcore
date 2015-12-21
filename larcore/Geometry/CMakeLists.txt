@@ -1,5 +1,5 @@
 
-art_make( BASENAME_ONLY
+art_make( 
           LIBRARY_NAME  Geometry
           LIB_LIBRARIES ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include "SimpleTypesAndConstants/PhysicalConstants.h"
+#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h"
 
 int main() {
 
