@@ -212,12 +212,12 @@ namespace testing {
     /// Adds a default configuration for the specified service
     void AddDefaultServiceConfiguration
       (std::string service_name, std::string service_cfg)
-      { services_default_cfg.emplace(service_name, service_cfg); }
+      { services_default_cfg[service_name] = service_cfg; }
     
     /// Adds a default configuration for the specified tester
     void AddDefaultTesterConfiguration
       (std::string tester_name, std::string tester_cfg)
-      { analyzers_default_cfg.emplace(tester_name, tester_cfg); }
+      { analyzers_default_cfg[tester_name] = tester_cfg; }
     
     /// Adds a default configuration for the main tester
     void AddDefaultTesterConfiguration(std::string tester_cfg)
@@ -374,7 +374,7 @@ namespace testing {
      
      /// Adds a shared resource to the resource registry
      static void AddSharedResource(std::string res_name, ResourcePtr_t res_ptr)
-       { Resources.emplace(res_name, res_ptr); }
+       { Resources[res_name] = res_ptr; }
      
      /// Adds a shared resource to the resource registry (empty name)
      static void AddDefaultSharedResource(ResourcePtr_t res_ptr)
