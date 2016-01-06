@@ -1386,6 +1386,34 @@ namespace geo {
     
     
     /**
+     * @brief Returns all the nodes with volumes with any of the specified names
+     * @param vol_names list of names of volumes
+     * @return list of nodes found
+     * 
+     * All the nodes in the geometry are checked, and all the ones that contain
+     * a volume with a name among the ones specified in vol_names are saved
+     * in the collection and returned.
+     */
+    std::vector<TGeoNode const*> FindAllVolumes
+      (std::set<std::string> const& vol_names) const;
+    
+    /**
+     * @brief Returns paths of all nodes with volumes with the specified names
+     * @param vol_names list of names of volumes
+     * @return list paths of the found nodes
+     * 
+     * All the nodes in the geometry are checked, and the path of all the ones
+     * that contain a volume with a name among the ones specified in vol_names
+     * is saved in the collection and returned.
+     * A node path is a ordered list of all nodes leading to the final one,
+     * starting from thetop level (root) down. The node at the `back()` of the
+     * path is the one with name in vol_names.
+     * No empty paths are returned.
+     */
+    std::vector<std::vector<TGeoNode const*>> FindAllVolumePaths
+      (std::set<std::string> const& vol_names) const;
+    
+    /**
      * @brief Name of the deepest material containing the point xyz
      * @return material of the origin by default
      * 
@@ -1684,6 +1712,9 @@ namespace geo {
     
     /// Returns the largest number of TPCs a cryostat in the detector has
     unsigned int MaxTPCs() const;
+    
+    /// Returns the total number of TPCs in the detector
+    unsigned int TotalNTPC() const;
     
     /**
      * @brief Returns the total number of TPCs in the specified cryostat
@@ -3383,6 +3414,63 @@ namespace geo {
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
     std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;  ///< Object containing the channel to wire mapping
   }; // class GeometryCore
+  
+  
+  
+  /** **************************************************************************
+   * @brief Iterator to navigate through all the nodes
+   * 
+   * Note that this is not a fully standard forward iterator in that it lacks
+   * of the postfix operator. The reason is that it's too expensive and it
+   * should be avoided.
+   * Also I did not bother declaring the standard type definitions
+   * (that's just laziness).
+   * 
+   * An example of iteration:
+   *     
+   *     TGeoNode const* pCurrentNode;
+   *     
+   *     ROOTGeoNodeForwardIterator iNode(geom->ROOTGeoManager()->GetTopNode());
+   *     while ((pCurrentNode = *iNode)) {
+   *       // do something with pCurrentNode
+   *       ++iNode;
+   *     } // while
+   *     
+   * These iterators are one use only, and they can't be reset after a loop
+   * is completed.
+   */
+  class ROOTGeoNodeForwardIterator {
+      public:
+    /// Constructor: start from this node
+    ROOTGeoNodeForwardIterator(TGeoNode const* start_node)
+      { init(start_node); }
+    
+    /// Returns the pointer to the current node, or nullptr if none
+    TGeoNode const* operator* () const
+      { return current_path.empty()? nullptr: current_path.back().self; }
+    
+    /// Points to the next node, or to nullptr if there are no more
+    ROOTGeoNodeForwardIterator& operator++ ();
+    
+    /// Returns the full path of the current node
+    std::vector<TGeoNode const*> get_path() const;
+    
+      protected:
+    using Node_t = TGeoNode const*;
+    struct NodeInfo_t {
+      Node_t self; int sibling;
+      NodeInfo_t(Node_t new_self, int new_sibling)
+        : self(new_self), sibling(new_sibling) {}
+    }; // NodeInfo_t
+    
+    /// which node, which sibling?
+    std::vector<NodeInfo_t> current_path;
+    
+    void reach_deepest_descendant();
+    
+    void init(TGeoNode const* start_node);
+    
+  }; // class ROOTGeoNodeForwardIterator
   
 } // namespace geo
 

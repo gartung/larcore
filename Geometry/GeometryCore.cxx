@@ -25,6 +25,7 @@
 #include <TGeoVolume.h>
 #include <TGeoMatrix.h>
 #include <TGeoBBox.h>
+#include <TGeoVolume.h>
 // #include <Rtypes.h>
 
 // C/C++ includes
@@ -460,6 +461,87 @@ namespace geo {
   }
 
   //......................................................................
+  struct NodeNameMatcherClass {
+    std::set<std::string> const* vol_names;
+    
+    NodeNameMatcherClass(std::set<std::string> const& names)
+      : vol_names(&names) {}
+    
+    /// Returns whether the specified node matches a set of names
+    bool operator() (TGeoNode const& node) const
+      {
+        if (!vol_names) return true;
+        return vol_names->find(node.GetVolume()->GetName()) != vol_names->end();
+      }
+    
+  }; // NodeNameMatcherClass
+  
+  struct CollectNodesByName {
+    std::vector<TGeoNode const*> nodes;
+    
+    CollectNodesByName(std::set<std::string> const& names): matcher(names) {}
+    
+    /// If the name of the node matches, records the end node
+    void operator() (TGeoNode const& node)
+      { if (matcher(node)) nodes.push_back(&node); }
+    
+    void operator() (ROOTGeoNodeForwardIterator const& iter)
+      { operator() (**iter); }
+    
+      protected:
+    NodeNameMatcherClass matcher;
+  }; // CollectNodesByName
+  
+  struct CollectPathsByName {
+    std::vector<std::vector<TGeoNode const*>> paths;
+    
+    CollectPathsByName(std::set<std::string> const& names): matcher(names) {}
+    
+    /// If the name of the node matches, records the node full path
+    void operator() (ROOTGeoNodeForwardIterator const& iter)
+      { if (matcher(**iter)) paths.push_back(iter.get_path()); }
+    
+      protected:
+    NodeNameMatcherClass matcher;
+  }; // CollectPathsByName
+  
+  
+  
+  std::vector<TGeoNode const*> GeometryCore::FindAllVolumes
+    (std::set<std::string> const& vol_names) const
+  {
+    CollectNodesByName node_collector(vol_names);
+    
+    ROOTGeoNodeForwardIterator iNode(ROOTGeoManager()->GetTopNode());
+    TGeoNode const* pCurrentNode;
+    
+    while ((pCurrentNode = *iNode)) {
+      node_collector(*pCurrentNode);
+      ++iNode;
+    } // while
+    
+    return node_collector.nodes;
+  } // GeometryCore::FindAllVolumes()
+  
+  
+  std::vector<std::vector<TGeoNode const*>> GeometryCore::FindAllVolumePaths
+    (std::set<std::string> const& vol_names) const
+  {
+    CollectPathsByName path_collector(vol_names);
+    
+    ROOTGeoNodeForwardIterator iNode(ROOTGeoManager()->GetTopNode());
+    
+    while (*iNode) {
+      path_collector(iNode);
+      ++iNode;
+    } // while
+    
+    return path_collector.paths;
+  } // GeometryCore::FindAllVolumePaths()
+  
+  
+  
+  //......................................................................
   std::string GeometryCore::GetLArTPCVolumeName(geo::TPCID const& tpcid) const
   {
     return std::string(TPC(tpcid).ActiveVolume()->GetName());
@@ -618,6 +700,16 @@ namespace geo {
     } // for
     return maxTPCs;
   } // GeometryCore::MaxTPCs()
+  
+  //......................................................................
+  unsigned int GeometryCore::TotalNTPC() const {
+    // it looks like C++11 lambdas have made STL algorithms easier to use,
+    // but only so much:
+    return std::accumulate(Cryostats().begin(), Cryostats().end(), 0U,
+      [](unsigned int sum, geo::CryostatGeo const* pCryo)
+        { return sum + (pCryo? pCryo->NTPC(): 0U); }
+      );
+  } // GeometryCore::TotalNTPC()
   
   //......................................................................
   unsigned int GeometryCore::MaxPlanes() const {
@@ -1426,6 +1518,57 @@ namespace geo {
   constexpr details::geometry_iterator_types::UndefinedPos_t
     details::geometry_iterator_types::undefined_pos;
   
+  //--------------------------------------------------------------------
+  //--- ROOTGeoNodeForwardIterator
+  //---
+  
+  ROOTGeoNodeForwardIterator& ROOTGeoNodeForwardIterator::operator++ () {
+    if (current_path.empty()) return *this;
+    if (current_path.size() == 1) { current_path.pop_back(); return *this; }
+    
+    // I am done; all my descendants were also done already;
+    // first look at my younger siblings
+    NodeInfo_t& current = current_path.back();
+    NodeInfo_t const& parent = current_path[current_path.size() - 2];
+    if (++(current.sibling) < parent.self->GetNdaughters()) {
+      // my next sibling exists, let's parse his descendents
+      current.self = parent.self->GetDaughter(current.sibling);
+      reach_deepest_descendant();
+    }
+    else current_path.pop_back(); // no sibling, it's time for mum
+    return *this;
+  } // ROOTGeoNodeForwardIterator::operator++
+  
+  
+  //--------------------------------------------------------------------
+  std::vector<TGeoNode const*> ROOTGeoNodeForwardIterator::get_path() const {
+    
+    std::vector<TGeoNode const*> node_path(current_path.size());
+    
+    std::transform(current_path.begin(), current_path.end(), node_path.begin(),
+      [](NodeInfo_t const& node_info){ return node_info.self; });
+    return node_path;
+    
+  } // ROOTGeoNodeForwardIterator::path()
+  
+  
+  //--------------------------------------------------------------------
+  void ROOTGeoNodeForwardIterator::reach_deepest_descendant() {
+    Node_t descendent = current_path.back().self;
+    while (descendent->GetNdaughters() > 0) {
+      descendent = descendent->GetDaughter(0);
+      current_path.emplace_back(descendent, 0U);
+    } // while
+  } // ROOTGeoNodeForwardIterator::reach_deepest_descendant()
+  
+  //--------------------------------------------------------------------
+  void ROOTGeoNodeForwardIterator::init(TGeoNode const* start_node) {
+    current_path.clear();
+    if (!start_node) return;
+    current_path.emplace_back(start_node, 0U);
+    reach_deepest_descendant();
+  } // ROOTGeoNodeForwardIterator::init()
+
   //--------------------------------------------------------------------
   
 } // namespace geo
