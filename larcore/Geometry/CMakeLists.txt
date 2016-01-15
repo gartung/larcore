@@ -1,6 +1,6 @@
 
 art_make( 
-          LIBRARY_NAME  Geometry
+          
           LIB_LIBRARIES ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
@@ -11,7 +11,7 @@ art_make(
                         ${ROOT_XMLIO}
                         ${ROOT_GDML}
                         ${ROOT_EG}
-          SERVICE_LIBRARIES Geometry
+          SERVICE_LIBRARIES larcore_Geometry
                             ${ART_FRAMEWORK_CORE}
                             ${ART_FRAMEWORK_IO_SOURCES}
                             ${ART_FRAMEWORK_PRINCIPAL}
@@ -23,7 +23,7 @@ art_make(
                             ${MF_UTILITIES}
                             ${FHICLCPP}
                             ${CETLIB}
-          MODULE_LIBRARIES Geometry
+          MODULE_LIBRARIES larcore_Geometry
 #                           ${ART_FRAMEWORK_CORE}
 #                           ${ART_FRAMEWORK_IO_SOURCES}
                            ${ART_FRAMEWORK_PRINCIPAL}
