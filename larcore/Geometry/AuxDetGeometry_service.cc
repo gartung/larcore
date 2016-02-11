@@ -6,12 +6,12 @@
  */
 
 // class header
-#include "Geometry/AuxDetGeometry.h"
-#include "Geometry/AuxDetExptGeoHelperInterface.h"
+#include "larcore/Geometry/AuxDetGeometry.h"
+#include "larcore/Geometry/AuxDetExptGeoHelperInterface.h"
 
 // lar includes
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "SummaryData/RunData.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/SummaryData/RunData.h"
 
 // Framework includes
 #include "cetlib/exception.h"

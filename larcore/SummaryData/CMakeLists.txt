@@ -1,5 +1,5 @@
 
-art_make( LIBRARY_NAME SummaryData
+art_make( 
           LIB_LIBRARIES ${ART_PERSISTENCY_COMMON}
          )
 

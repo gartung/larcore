@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v04_26_00
+parent	larcore	v05_00_00
 defaultqual	e9
 
 # These optional lines define the installed directories where
@@ -34,9 +34,6 @@ qualifier	art		gcc	notes
 e9:debug	e9:nu:debug	-nq-
 e9:opt		e9:nu:opt	-nq-
 e9:prof		e9:nu:prof	-nq-
-e9:noifdh:debug	e9:nu:debug	-nq-
-e9:noifdh:opt	e9:nu:opt	-nq-
-e9:noifdh:prof	e9:nu:prof	-nq-
 end_qualifier_list
 
 # table fragment to set FW_SEARCH_PATH needed 

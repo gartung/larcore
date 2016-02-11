@@ -12,9 +12,9 @@
 #include <set>
 #include <iostream>
 
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/ChannelMapAlg.h"
-#include "Geometry/GeoObjectSorterStandard.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/ChannelMapAlg.h"
+#include "larcore/Geometry/GeoObjectSorterStandard.h"
 #include "fhiclcpp/ParameterSet.h"
 
 namespace geo{

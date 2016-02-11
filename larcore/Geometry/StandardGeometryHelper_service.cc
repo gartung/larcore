@@ -5,11 +5,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // class header
-#include "Geometry/StandardGeometryHelper.h"
+#include "larcore/Geometry/StandardGeometryHelper.h"
 
 // LArSoft libraries
-#include "Geometry/ChannelMapStandardAlg.h"
-#include "Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapStandardAlg.h"
+#include "larcore/Geometry/GeometryCore.h"
 
 // C/C++ libraries
 #include <string>

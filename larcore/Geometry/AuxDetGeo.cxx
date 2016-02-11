@@ -8,7 +8,7 @@
 #include <iostream>
 #include <limits>
 
-#include "Geometry/AuxDetGeo.h"
+#include "larcore/Geometry/AuxDetGeo.h"
 
 #include "TGeoManager.h"
 #include "TGeoTube.h"

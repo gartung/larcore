@@ -9,7 +9,7 @@
 #ifndef SD_RUNDATA_H
 #define SD_RUNDATA_H
 
-#include "SimpleTypesAndConstants/geo_types.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
 #include <string>
 
 namespace sumdata {

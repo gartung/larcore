@@ -17,9 +17,9 @@
 class TGeoNode;
 class TGeoHMatrix;
 
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/BoxBoundedGeo.h"
-#include "Geometry/GeoObjectSorter.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/BoxBoundedGeo.h"
+#include "larcore/Geometry/GeoObjectSorter.h"
 
 namespace geo {
   class PlaneGeo;

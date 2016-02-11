@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 
-#include "SummaryData/POTSummary.h"
+#include "larcore/SummaryData/POTSummary.h"
 
 namespace sumdata{
 

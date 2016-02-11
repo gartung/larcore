@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "SimpleTypesAndConstants/geo_types.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
 
 #include "fhiclcpp/ParameterSet.h"
 

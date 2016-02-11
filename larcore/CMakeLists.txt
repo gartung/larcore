@@ -1,2 +1,4 @@
 
-
+add_subdirectory(Geometry)
+add_subdirectory(SimpleTypesAndConstants)
+add_subdirectory(SummaryData)

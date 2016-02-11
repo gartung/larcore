@@ -12,7 +12,7 @@
 #define GEO_StandardGeometryHelper_h
 
 // LArSoft libraries
-#include "Geometry/ExptGeoHelperInterface.h"
+#include "larcore/Geometry/ExptGeoHelperInterface.h"
 
 // C/C++ standard libraries
 #include <memory> // std::shared_ptr<>
