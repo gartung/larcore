@@ -134,7 +134,7 @@ namespace geo {
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(TPCID const& other) const
       {
-        register int cmp_res = CryostatID::cmp(other);
+        int cmp_res = CryostatID::cmp(other);
         if (cmp_res == 0) // same cryostat: compare TPC
           return ThreeWayComparison(TPC, other.TPC);
         else              // return the order of cryostats
@@ -179,7 +179,7 @@ namespace geo {
     /// Returns < 0 if this is smaller than other, 0 if equal, > 0 if larger
     int cmp(PlaneID const& other) const
       {
-        register int cmp_res = TPCID::cmp(other);
+        int cmp_res = TPCID::cmp(other);
         if (cmp_res == 0) // same TPC: compare plane
           return ThreeWayComparison(Plane, other.Plane);
         else              // return the order of TPC
@@ -224,7 +224,7 @@ namespace geo {
     /// Returns < 0 if this is smaller than tpcid, 0 if equal, > 0 if larger
     int cmp(WireID const& other) const
       {
-        register int cmp_res = PlaneID::cmp(other);
+        int cmp_res = PlaneID::cmp(other);
         if (cmp_res == 0) // same plane: compare wire
           return ThreeWayComparison(Wire, other.Wire);
         else              // return the order of planes
@@ -291,7 +291,7 @@ namespace geo {
   
   /// Order TPCID in increasing Cryo, then TPC
   inline bool operator< (TPCID const& a, TPCID const& b) {
-    register int cmp_res = (static_cast<CryostatID const&>(a)).cmp(b);
+    int cmp_res = (static_cast<CryostatID const&>(a)).cmp(b);
     if (cmp_res == 0) // same cryostat: compare TPC
       return a.TPC < b.TPC;
     else              // return the order of cryostats
@@ -315,7 +315,7 @@ namespace geo {
   
   /// Order PlaneID in increasing TPC, then plane
   inline bool operator< (PlaneID const& a, PlaneID const& b) {
-    register int cmp_res = (static_cast<TPCID const&>(a)).cmp(b);
+    int cmp_res = (static_cast<TPCID const&>(a)).cmp(b);
     if (cmp_res == 0) // same TPC: compare plane
       return a.Plane < b.Plane;
     else              // return the order of TPC
@@ -339,7 +339,7 @@ namespace geo {
   
   // Order WireID in increasing plane, then wire
   inline bool operator< (WireID const& a, WireID const& b) {
-    register int cmp_res = (static_cast<PlaneID const&>(a)).cmp(b);
+    int cmp_res = (static_cast<PlaneID const&>(a)).cmp(b);
     if (cmp_res == 0) // same plane: compare wire
       return a.Wire < b.Wire;
     else              // return the order of planes
