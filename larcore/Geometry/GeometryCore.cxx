@@ -72,6 +72,41 @@ namespace geo {
   {
     pChannelMap->Initialize(fGeoData);
     fChannelMapAlg = pChannelMap;
+
+    // calculate and print the active boundaries
+    double activeBounds[6] = { DBL_MAX,-DBL_MAX,
+			       DBL_MAX,-DBL_MAX,
+			       DBL_MAX,-DBL_MAX  };
+    // assume single cryostats
+    for (geo::TPCGeo const& TPC: this->IterateTPCs()) {
+
+      // get center in world coordinates
+      double origin[3] = {0.}; 
+      double center[3] = {0.};
+      TPC.LocalToWorld(origin, center);
+
+      // account for rotations
+      double localHalfDim[3] =  {
+        TPC.ActiveHalfWidth(),
+        TPC.ActiveHalfHeight(),
+        0.5*TPC.ActiveLength()  };
+      double worldDim[3];
+      TPC.LocalToWorldVect(localHalfDim,worldDim);
+      
+      if( center[0] - worldDim[0] < activeBounds[0] ) activeBounds[0] = center[0] - worldDim[0];
+      if( center[0] + worldDim[0] > activeBounds[1] ) activeBounds[1] = center[0] + worldDim[0];
+      if( center[1] - worldDim[1] < activeBounds[2] ) activeBounds[2] = center[1] - worldDim[1];
+      if( center[1] + worldDim[1] > activeBounds[3] ) activeBounds[3] = center[1] + worldDim[1];
+      if( center[2] - worldDim[2] < activeBounds[4] ) activeBounds[4] = center[2] - worldDim[2];
+      if( center[2] + worldDim[2] > activeBounds[5] ) activeBounds[5] = center[2] + worldDim[2];
+
+    } // for all TPC
+
+    mf::LogVerbatim("GeometryCoreActiveBounds") << "Active Dimensions: "
+						<< "\n\tx: " << activeBounds[0] << " to " << activeBounds[1]
+						<< "\n\ty: " << activeBounds[2] << " to " << activeBounds[3]
+						<< "\n\tz: " << activeBounds[4] << " to " << activeBounds[5]
+						<< std::endl;
   } // GeometryCore::ApplyChannelMap()
 
   //......................................................................
@@ -109,12 +144,8 @@ namespace geo {
     fGDMLfile = gdmlfile;
     fROOTfile = rootfile;
     
-    mf::LogInfo("GeometryCore") << "New detector geometry loaded from "
-                                << "\n\t" << fROOTfile 
-                                << "\n\t" << fGDMLfile << "\n";
-    
   } // GeometryCore::LoadGeometryFile()
-
+  
   //......................................................................
   void GeometryCore::ClearGeometry() {
     
