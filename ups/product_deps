@@ -41,7 +41,7 @@ end_qualifier_list
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
     # this is a temporary hack until we have a release of geant4 that defines GDML_SCHEMA_DIR
-    envSet(GDML_SCHEMA_DIR, ${GEANT4_DIR}/source/geant4.9.6.p02/source/persistency/gdml/schema)
+    #envSet(GDML_SCHEMA_DIR, ${GEANT4_DIR}/source/geant4.9.6.p02/source/persistency/gdml/schema)
 table_fragment_end
 
 # Preserve tabs and formatting in emacs and vi / vim:
