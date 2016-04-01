@@ -28,8 +28,8 @@
    <rotation name="rPlus90AboutX"       unit="deg" x="90" y="0" z="0"/>
    <rotation name="rMinus90AboutY"      unit="deg" x="0" y="270" z="0"/>
    <rotation name="rMinus90AboutYMinus90AboutX"       unit="deg" x="270" y="270" z="0"/>
-   <rotation name="rPlusUAngleAboutX"	unit="deg" x="90-60" y="0"   z="0"/>
-   <rotation name="rPlusVAngleAboutX"	unit="deg" x="90+60" y="0"   z="0"/>
+   <rotation name="rPlusUAngleAboutX"	unit="deg" x="30" y="0"   z="0"/>
+   <rotation name="rPlusVAngleAboutX"	unit="deg" x="150" y="0"   z="0"/>
    <rotation name="rPlus180AboutY"	unit="deg" x="0" y="180"   z="0"/>
    <rotation name="rIdentity"		unit="deg" x="0" y="0"   z="0"/>
 </define>
@@ -150,7 +150,7 @@
     <fraction n="0.0053" ref="Na2O"/>
     <fraction n="0.00070" ref="P2O5"/>
     <fraction n="0.0771" ref="oxygen"/>
-  </material> 
+  </material>
 
   <material name="fibrous_glass">
    <D value="2.74351" unit="g/cm3"/>
@@ -213,7 +213,7 @@
   </material>
 
   <material formula=" " name="ShotRock">
-   <D value="2.7*0.6" unit="g/cm3"/>
+   <D value="1.62" unit="g/cm3"/>
    <fraction n="0.438" ref="oxygen"/>
    <fraction n="0.257" ref="silicon"/>
    <fraction n="0.222" ref="sodium"/>
@@ -278,13 +278,13 @@
 
 </materials>
 <solids>
-    <box name="TPC" lunit="cm" 
-      x="151.443" 
-      y="390" 
+    <box name="TPC" lunit="cm"
+      x="151.443"
+      y="390"
       z="1990"/>
-    <box name="TPCPlane" lunit="cm" 
-      x="0.015" 
-      y="390" 
+    <box name="TPCPlane" lunit="cm"
+      x="0.015"
+      y="390"
       z="1990"/>
     <box name="TPCActive" lunit="cm"
       x="150"
@@ -292,8 +292,8 @@
       z="1990"/>
 
     <tube name="TPCWireVert"
-      rmax="0.5*0.015"
-      z="1990"               
+      rmax="0.0075"
+      z="1990"
       deltaphi="360"
       aunit="deg"
       lunit="cm"/>
@@ -321,15 +321,15 @@
 
 
 
-    <box name="Cryostat" lunit="cm" 
-      x="803.512" 
-      y="512.54" 
+    <box name="Cryostat" lunit="cm"
+      x="803.512"
+      y="512.54"
       z="2092.54"/>
-    <box name="ArgonInterior" lunit="cm" 
+    <box name="ArgonInterior" lunit="cm"
       x="800.972"
       y="490"
       z="2090"/>
-    <box name="GaseousArgon" lunit="cm" 
+    <box name="GaseousArgon" lunit="cm"
       x="800.972"
       y="20"
       z="2090"/>
@@ -345,15 +345,15 @@
 
 
 
-    <box name="DetEnclosure" lunit="cm" 
+    <box name="DetEnclosure" lunit="cm"
       x="1063.512"
       y="562.54"
       z="2352.54"/>
 
 
-    <box name="World" lunit="cm" 
-      x="2127.024" 
-      y="1125.08" 
+    <box name="World" lunit="cm"
+      x="2127.024"
+      y="1125.08"
       z="4705.08"/>
 </solids>
 <structure>
@@ -430,15 +430,15 @@
       <solidref ref="TPC" />
      <physvol>
        <volumeref ref="volTPCPlaneU" />
-       <position name="posTPCPlaneU" unit="cm" x="(-151.443/2)+3*0.476" y="0" z="0" />
+       <position name="posTPCPlaneU" unit="cm" x="-74.2935" y="0" z="0" />
      </physvol>
      <physvol>
        <volumeref ref="volTPCPlaneV" />
-       <position name="posTPCPlaneV" unit="cm" x="(-151.443/2)+2*0.476" y="0" z="0" />
+       <position name="posTPCPlaneV" unit="cm" x="-74.7695" y="0" z="0" />
      </physvol>
      <physvol>
        <volumeref ref="volTPCPlaneX" />
-       <position name="posTPCPlaneX" unit="cm" x="(-151.443/2)+0.476" y="0" z="0" />
+       <position name="posTPCPlaneX" unit="cm" x="-75.2455" y="0" z="0" />
      </physvol>
      <physvol>
        <volumeref ref="volTPCActive"/>
@@ -466,7 +466,7 @@
       <solidref ref="Cryostat" />
       <physvol>
         <volumeref ref="volGaseousArgon"/>
-        <position name="posGaseousArgon" unit="cm" x="0" y="490/2-20/2" z="0"/>
+        <position name="posGaseousArgon" unit="cm" x="0" y="235" z="0"/>
       </physvol>
       <physvol>
         <volumeref ref="volSteelShell"/>
