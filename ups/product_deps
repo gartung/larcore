@@ -18,6 +18,7 @@ defaultqual	e9
 
 fcldir product_dir job
 gdmldir product_dir
+rootpath
 #
 # we list geant4 explicitly because we are going to set GDML_SCHEMA_DIR 
 # Defining GDML_SCHEMA_DIR here is a temporary hack
