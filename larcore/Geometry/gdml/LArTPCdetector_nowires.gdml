@@ -2319,11 +2319,11 @@
   </physvol>
 <physvol>
    <volumeref ref="volEndCap"/>
-   <position name="posEndCap1" unit="cm" x="0" y="0" z="427.75*2.54/2- 2.54*sqrt(144.5^2-75.5^2)"/>
+   <position name="posEndCap1" unit="cm" x="0" y="0" z="230.296357669"/>
    </physvol>
    <physvol>
     <volumeref ref="volEndCap"/>
-    <position name="posEndCap2" unit="cm" x="0" y="0" z="-(427.75*2.54/2 - 2.54*sqrt(144.5^2-75.5^2))"/>
+    <position name="posEndCap2" unit="cm" x="0" y="0" z="-230.296357669"/>
     <rotationref ref="rPlus180AboutY"/>
   </physvol>
   <physvol>
