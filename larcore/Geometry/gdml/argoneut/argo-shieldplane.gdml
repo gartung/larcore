@@ -4,7 +4,7 @@
    z="kTPCWirePlaneLength"
    deltaphi="2*kPi"
    aunit="rad"
-   lunit="cm"/> 
+   lunit="cm"/>
   <box name="TPCShieldPlaneLengthSide"
    x="kTPCWirePlaneOuterWidth"
    y="kTPCWirePlaneThickness"

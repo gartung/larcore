@@ -3,58 +3,58 @@
 </define>
 
 <solids>
- <tube name="Cryostat" 
-  rmax="(53.34)"
+ <tube name="Cryostat"
+  rmax="53.34"
   z="162.7"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="OuterSteelTube"
-  rmin="(53.34)-0.635"
-  rmax="(53.34)"
+  rmin="52.705"
+  rmax="53.34"
   z="122.516"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="InnerSteelTube"
-  rmin="38.1-0.476"
+  rmin="37.624"
   rmax="38.1"
   z="101.13"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="ArgonTube"
-  rmax="38.1-0.476"
+  rmax="37.624"
   z="101.13"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="Tube_for_subtr"
   rmax="38.1"
   z="101.13"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="Inner_ring"
   rmin="38.1"
   rmax="45.7"
   z="7"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="Inner_ring2"
   rmin="38.1"
   rmax="45.7"
   z="6.4"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 
-<sphere name="Argon_solid_L" rmin="0" rmax="62.64" deltaphi="2*(3.1415926535897)" deltatheta="0.6444" aunit="rad"
+<sphere name="Argon_solid_L" rmin="0" rmax="62.64" deltaphi="6.28318530718" deltatheta="0.6444" aunit="rad"
 lunit="cm"/>
-<sphere name="Inner_endcap" rmin="62.944" rmax="63.42" deltaphi="2*(3.1415926535897)" deltatheta="0.6444" aunit="rad"
+<sphere name="Inner_endcap" rmin="62.944" rmax="63.42" deltaphi="6.28318530718" deltatheta="0.6444" aunit="rad"
 lunit="cm"/>
-<sphere name="Outer_endcap" rmin="80.80" rmax="81.28" deltaphi="2*(3.1415926535897)" deltatheta="0.715" aunit="rad"
+<sphere name="Outer_endcap" rmin="80.80" rmax="81.28" deltaphi="6.28318530718" deltatheta="0.715" aunit="rad"
 lunit="cm"/>
 <subtraction name="Argon_cap_L">
    <first ref="Argon_solid_L"/> <second ref="Tube_for_subtr"/>
@@ -140,33 +140,33 @@ lunit="cm"/>
   </physvol>
 <physvol>
    <volumeref ref="volTPC"/>
-   <position name="posTPC" unit="cm" x="0.5*kTPCWallThickness-0.5*kTPCWirePlaneThickness" y="-0.2" z="0"/>   
+   <position name="posTPC" unit="cm" x="0.5*kTPCWallThickness-0.5*kTPCWirePlaneThickness" y="-0.2" z="0"/>
   </physvol>
 <physvol>
    <volumeref ref="volInner_ring"/>
-   <position name="posInner_ring" unit="cm" x="0" y="0" z="(-101.13/2)+6.35+(0.5*6.985)"/>
+   <position name="posInner_ring" unit="cm" x="0" y="0" z="-40.7225"/>
   </physvol>
 <physvol>
    <volumeref ref="volInner_ring2"/>
-   <position name="posInner_ring2" unit="cm" x="0" y="0" z="(-101.13/2)+(0.5*6.35)"/>
+   <position name="posInner_ring2" unit="cm" x="0" y="0" z="-47.39"/>
   </physvol>
 
 <physvol>
    <volumeref ref="volInner_endcap"/>
-   <position name="posInner_endcap1" unit="cm" x="0" y="0" z="-0.238-0.00576844"/>
+   <position name="posInner_endcap1" unit="cm" x="0" y="0" z="-0.24376844"/>
  <rotationref ref="rPlus180AboutY"/>
   </physvol>
 <physvol>
    <volumeref ref="volInner_endcap"/>
-   <position name="posInner_endcap2" unit="cm" x="0" y="0" z="0.238+0.00576844"/>
+   <position name="posInner_endcap2" unit="cm" x="0" y="0" z="0.24376844"/>
 </physvol>
 <physvol>
    <volumeref ref="volOuter_endcap"/>
-   <position name="posOuter_endcap1" unit="cm" x="0" y="0" z="0.238+0.00846643199"/>
+   <position name="posOuter_endcap1" unit="cm" x="0" y="0" z="0.24646643199"/>
 </physvol>
 <physvol>
    <volumeref ref="volOuter_endcap"/>
-   <position name="posOuter_endcap2" unit="cm" x="0" y="0" z="-0.238-0.00846643199"/>
+   <position name="posOuter_endcap2" unit="cm" x="0" y="0" z="-0.24646643199"/>
  <rotationref ref="rPlus180AboutY"/>
 </physvol>
 

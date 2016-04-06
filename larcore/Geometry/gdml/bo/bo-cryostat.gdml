@@ -1,10 +1,10 @@
 <solids>
- <tube name="BoOuterShell" 
+ <tube name="BoOuterShell"
    rmin="0.5*kBoOuterShellCircumference/kPi-kBoOuterShellThickness"
-   rmax="0.5*kBoOuterShellCircumference/kPi"  
+   rmax="0.5*kBoOuterShellCircumference/kPi"
    z="kBoOuterShellHeight"
    deltaphi="360"
-   aunit="deg" 
+   aunit="deg"
    lunit="cm"/>
  <tube name="BoOuterShellBottom"
    rmax="0.5*kBoOuterShellCircumference/kPi"

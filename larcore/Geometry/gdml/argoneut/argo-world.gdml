@@ -20,13 +20,13 @@
 
 <physvol>
 <volumeref ref="volMND"/>
-<position name="posMND" unit="cm" x="-(93.07-0.5*47.5)" y="190.5-173.228" z="151.68"/>
+<position name="posMND" unit="cm" x="-69.32" y="17.272" z="151.68"/>
  </physvol>
 
 
 
 
- </volume> 
+ </volume>
 
 
 

@@ -11,14 +11,14 @@
   rmin="53.34"
   rmax="61"
   z="7"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 <tube name="Outer_ring2"
   rmin="53.34"
   rmax="61"
   z="7"
-  deltaphi="2*(3.1415926535897)"
+  deltaphi="6.28318530718"
   aunit="rad"
   lunit="cm"/>
 
@@ -94,57 +94,57 @@
   <physvol>
    <volumeref ref="volTubLongSide"/>
    <position  name="posTubLongSide1" unit="cm" x="-0.5*kTubWidth" y="0.4" z="0" />
-  </physvol>  
+  </physvol>
   <physvol>
    <volumeref ref="volTubLongSide"/>
    <position  name="posTubLongSide2" unit="cm" x="0.5*kTubWidth" y="0.4" z="0" />
-  </physvol>  
+  </physvol>
   <physvol>
    <volumeref ref="volTubShortSide"/>
    <position  name="posTubShortSide1" unit="cm" x="0" y="0.3175" z="-0.5*kTubLength-0.5*0.3175" />
-  </physvol>  
+  </physvol>
   <physvol>
    <volumeref ref="volTubShortSide"/>
    <position  name="posTubShortSide2" unit="cm" x="0" y="0.3175" z="0.5*kTubLength+0.5*0.3175" />
-  </physvol>  
+  </physvol>
   <physvol>
    <volumeref ref="volTubBottom"/>
    <position  name="posTubBottom" unit="cm" x="0" y="-0.5*kTubHeight" z="0" />
-  </physvol> 
+  </physvol>
 
 
 <physvol>
    <volumeref ref="volCryostat"/>
-   <position name="posCryostat" unit="cm" x="0" y="12+0.2" z="0"/>
-  
- 
+   <position name="posCryostat" unit="cm" x="0" y="12.2" z="0"/>
+
+
 
   </physvol>
 <physvol>
    <volumeref ref="volOuter_ring"/>
-   <position name="posOuter_ring" unit="cm" x="0" y="12+0.2" z="-(122.516/2)+(6.985/2)+6.985"/>
+   <position name="posOuter_ring" unit="cm" x="0" y="12.2" z="-50.7805"/>
   </physvol>
 <physvol>
    <volumeref ref="volOuter_ring2"/>
-   <position name="posOuter_ring2" unit="cm" x="0" y="12+0.2" z="-(122.516/2)+(6.985/2)"/>
+   <position name="posOuter_ring2" unit="cm" x="0" y="12.2" z="-57.7655"/>
   </physvol>
 <physvol>
    <volumeref ref="volBottom"/>
-   <position name="posBottom" unit="cm" x="0" y="-26.865-53.46" z="27.15+(20.32/2)+(12.7*0.5)"/>
+   <position name="posBottom" unit="cm" x="0" y="-80.325" z="43.66"/>
 <rotationref ref="rPlus90AboutX"/>
   </physvol>
 <physvol>
    <volumeref ref="volBottom"/>
-   <position name="posBottom2" unit="cm" x="0" y="-26.865-53.46" z="-(27.15+(20.32/2)-(12.7*0.5))"/>
+   <position name="posBottom2" unit="cm" x="0" y="-80.325" z="-30.96"/>
 <rotationref ref="rPlus90AboutX"/>
   </physvol>
  <physvol>
    <volumeref ref="voltheX"/>
-   <position name="postheX" unit="cm" x="-60.96" y="-(91.44-(53.66/2))-15.14+0.2-0.00861154-0.0024" z="27.15+(20.32/2)"/>
+   <position name="postheX" unit="cm" x="-60.96" y="-79.56101154" z="37.31"/>
   </physvol>
    <physvol>
    <volumeref ref="voltheX"/>
-   <position name="postheX2" unit="cm" x="-60.96" y="-(91.44-(53.66/2))-15.14+0.2-0.00861154-0.0024" z="-(27.15+(20.32/2))"/>
+   <position name="postheX2" unit="cm" x="-60.96" y="-79.56101154" z="-37.31"/>
   </physvol>
 </volume>
 </structure>
