@@ -144,7 +144,8 @@ namespace lar {
         std::bitset<NOptions> options; ///< value of current options
         
         /// Set one option o to the specified set value (true by default)
-        void set(option_t o, bool set = true) { options.set(o, set); }
+        opt& set(option_t o, bool set = true)
+          { options.set(o, set); return *this; }
         
         /// Returns whether the specified option is set
         bool has(option_t o) const { return options.test(o); }
@@ -207,12 +208,17 @@ namespace lar {
         { print(std::forward<Stream>(out), info); }     
       
       /// Sets this object to use a set of default options
-      void setDefaultOptions()
+      void setDefaultOptions() { options = defaultOptions(); }
+      
+      /// Returns a set of default options 
+      static opt defaultOptions()
         {
+          opt options;
           options.set(opt::demangled);
           options.set(opt::library);
           options.set(opt::shortLibrary);
           options.set(opt::address);
+          return options;
         }
       
     }; // CallInfoPrinter
@@ -242,7 +248,7 @@ namespace lar {
     void printBacktrace(
       Stream&& out,
       unsigned int maxLines = 5, std::string indent = "  ",
-      CallInfoPrinter::opt* options = nullptr
+      CallInfoPrinter::opt const* options = nullptr
       )
     {
       constexpr unsigned int nSkip = 1;
