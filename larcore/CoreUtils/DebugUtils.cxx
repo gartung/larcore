@@ -9,13 +9,16 @@
 //--- lar::debug::CallInfo_t
 //---
 bool lar::debug::CallInfo_t::ParseString(std::string const& s) {
+
+  //----------------------------------------------------------------------------
+#if (__linux__)
   constexpr auto boo = std::string::npos;
   range_t libraryStr  { boo, boo };
   range_t addressStr  { boo, boo };
   range_t functionStr { boo, boo };
   range_t offsetStr   { boo, boo };
   setAll(s, addressStr, libraryStr, functionStr, offsetStr);
-   
+  
   // expected format:
   // libraryName(mangledSymbol+offset) [hexAddress]
   // (+offset optional)
@@ -68,9 +71,49 @@ bool lar::debug::CallInfo_t::ParseString(std::string const& s) {
     
     break;
   } // while (for ever)
-   
+  
   setAll(s, addressStr, libraryStr, functionStr, offsetStr);
   return true;
+
+  //----------------------------------------------------------------------------
+#elif (__APPLE__)
+  // expected format:
+  // N  libraryName address mangledFunction + offset
+  // "+ offset" is considered optional
+  original = s;
+  while (true) {
+    std::istringstream sstr(s);
+    int n;
+    char plus;
+    sstr
+      >> n
+      >> libraryName
+      >> std::hex >> address >> std::dec
+      >> mangledFunctionName;
+    
+    // optional offset
+    if (sstr.fail()) break; // an error somewhere: bail out
+    sstr >> plus;
+    if (sstr.fail()) offset = 0;
+    else {
+      if (plus != '+') break;
+      sstr >> offset;
+      if (sstr.fail()) break;
+    }
+    
+    demangleFunction();
+    return true;
+  } // while
+  address = nullptr;
+  libraryName.clear();
+  mangledFunctionName.clear();
+  functionName.clear();
+  offset = 0;
+  return false;
+  //----------------------------------------------------------------------------
+#else
+# error("I am not on Linux nor on OSX. Hard to believe.")
+#endif
 } // lar::debug::CallInfo_t::ParseString()
 
 
