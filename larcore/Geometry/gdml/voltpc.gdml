@@ -75,13 +75,13 @@
   </materials>
   <solids>
     <box name="World" lunit="cm"
-      x="1000"
-      y="1000"
-      z="5000"/>
+      x="1000.0"
+      y="1000.0"
+      z="5000.0"/>
     <box name="DetEnclosure" lunit="cm"
-      x="210"
-      y="210"
-      z="1010"/>
+      x="210.0"
+      y="210.0"
+      z="1010.0"/>
     <box name="Cryostat" lunit="cm"
       x="200"
       y="200"
