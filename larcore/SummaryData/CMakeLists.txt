@@ -1,5 +1,6 @@
 
-art_make( LIBRARY_NAME larcore_SummaryData
+art_make( 
+
           LIB_LIBRARIES ${ART_PERSISTENCY_COMMON}
          )
 

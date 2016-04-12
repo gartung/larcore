@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v04_26_00
+parent	larcore	v05_06_00
 defaultqual	e9
 
 # These optional lines define the installed directories where
@@ -25,7 +25,7 @@ product         version
 art		v1_17_07
 gcc		v4_9_3
 
-cetbuildtools	v4_18_02	-	only_for_build
+cetbuildtools	v4_18_04	-	only_for_build
 end_product_list
 
   
@@ -34,9 +34,6 @@ qualifier	art		gcc	notes
 e9:debug	e9:nu:debug	-nq-
 e9:opt		e9:nu:opt	-nq-
 e9:prof		e9:nu:prof	-nq-
-e9:noifdh:debug	e9:nu:debug	-nq-
-e9:noifdh:opt	e9:nu:opt	-nq-
-e9:noifdh:prof	e9:nu:prof	-nq-
 end_qualifier_list
 
 # table fragment to set FW_SEARCH_PATH needed 
@@ -44,7 +41,7 @@ end_qualifier_list
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
     # this is a temporary hack until we have a release of geant4 that defines GDML_SCHEMA_DIR
-    envSet(GDML_SCHEMA_DIR, ${GEANT4_DIR}/source/geant4.9.6.p02/source/persistency/gdml/schema)
+    #envSet(GDML_SCHEMA_DIR, ${GEANT4_DIR}/source/geant4.9.6.p02/source/persistency/gdml/schema)
 table_fragment_end
 
 # Preserve tabs and formatting in emacs and vi / vim:

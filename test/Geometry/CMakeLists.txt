@@ -22,7 +22,6 @@ simple_plugin ( GeometryIteratorLoopTest "module"
                     ${MF_UTILITIES}
                     ${FHICLCPP}
                     ${CETLIB}
-               BASENAME_ONLY
              )
 
 simple_plugin ( GeometryTest "module"
@@ -34,7 +33,6 @@ simple_plugin ( GeometryTest "module"
                     ${FHICLCPP}
                     ${CETLIB}
                     ${ROOT_BASIC_LIB_LIST}
-                BASENAME_ONLY
               )
 
 # library test

@@ -1,0 +1,17 @@
+BEGIN_PROLOG
+
+lartpcdetector_geometry:
+{
+  SurfaceY:         690                  # in cm, vertical distance to the surface
+  Name:            "LArTPCdetector"
+  GDML:            "LArTPCdetector.gdml"
+  ROOT:            "LArTPCdetector.gdml"
+  DisableWiresInG4: true
+}
+
+lartpcdetector_geometry_helper:
+{
+  service_provider : StandardGeometryHelper
+}
+
+END_PROLOG

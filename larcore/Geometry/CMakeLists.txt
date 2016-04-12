@@ -1,6 +1,6 @@
+art_make( 
+          
 
-art_make( BASENAME_ONLY
-          LIBRARY_NAME  larcore_Geometry
           LIB_LIBRARIES ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}

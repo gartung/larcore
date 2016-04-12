@@ -1102,7 +1102,7 @@ namespace geo {
   bool GeometryCore::ChannelsIntersect(raw::ChannelID_t c1, 
                                    raw::ChannelID_t c2, 
                                    double &y, 
-                                   double &z)
+                                   double &z) const
   {
 
     std::vector< geo::WireID > chan1wires, chan2wires; 

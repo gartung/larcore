@@ -41,9 +41,81 @@
    <fraction n="1.0" ref="videRef"/>
   </material>
 
-  <material formula="Ti" name="Titanium">
-   <D value="4.506" unit="g/cc"/>
-   <fraction n="1." ref="titanium"/>
+  <material name="ALUMINUM_Al" formula="ALUMINUM_Al">
+   <D value="2.6990" unit="g/cm3"/>
+   <fraction n="1.0000" ref="aluminum"/>
+  </material>
+
+  <material name="SILICON_Si" formula="SILICON_Si">
+   <D value="2.3300" unit="g/cm3"/>
+   <fraction n="1.0000" ref="silicon"/>
+  </material>
+
+  <material name="epoxy_resin" formula="C38H40O6Br4">
+   <D value="1.1250" unit="g/cm3"/>
+   <composite n="38" ref="carbon"/>
+   <composite n="40" ref="hydrogen"/>
+   <composite n="6" ref="oxygen"/>
+   <composite n="4" ref="bromine"/>
+  </material>
+
+  <material name="SiO2" formula="SiO2">
+   <D value="2.2" unit="g/cm3"/>
+   <composite n="1" ref="silicon"/>
+   <composite n="2" ref="oxygen"/>
+  </material>
+
+  <material name="Al2O3" formula="Al2O3">
+   <D value="3.97" unit="g/cm3"/>
+   <composite n="2" ref="aluminum"/>
+   <composite n="3" ref="oxygen"/>
+  </material>
+
+  <material name="Fe2O3" formula="Fe2O3">
+   <D value="5.24" unit="g/cm3"/>
+   <composite n="2" ref="iron"/>
+   <composite n="3" ref="oxygen"/>
+  </material>
+
+  <material name="CaO" formula="CaO">
+   <D value="3.35" unit="g/cm3"/>
+   <composite n="1" ref="calcium"/>
+   <composite n="1" ref="oxygen"/>
+  </material>
+
+  <material name="MgO" formula="MgO">
+   <D value="3.58" unit="g/cm3"/>
+   <composite n="1" ref="magnesium"/>
+   <composite n="1" ref="oxygen"/>
+  </material>
+
+  <material name="Na2O" formula="Na2O">
+   <D value="2.27" unit="g/cm3"/>
+   <composite n="2" ref="sodium"/>
+   <composite n="1" ref="oxygen"/>
+  </material>
+
+  <material name="TiO2" formula="TiO2">
+   <D value="4.23" unit="g/cm3"/>
+   <composite n="1" ref="titanium"/>
+   <composite n="2" ref="oxygen"/>
+  </material>
+
+  <material name="fibrous_glass">
+   <D value="2.74351" unit="g/cm3"/>
+   <fraction n="0.600" ref="SiO2"/>
+   <fraction n="0.118" ref="Al2O3"/>
+   <fraction n="0.001" ref="Fe2O3"/>
+   <fraction n="0.224" ref="CaO"/>
+   <fraction n="0.034" ref="MgO"/>
+   <fraction n="0.010" ref="Na2O"/>
+   <fraction n="0.013" ref="TiO2"/>
+  </material>
+
+  <material name="FR4">
+   <D value="1.98281" unit="g/cm3"/>
+   <fraction n="0.47" ref="epoxy_resin"/>
+   <fraction n="0.53" ref="fibrous_glass"/>
   </material>
 
   <material name="STEEL_STAINLESS_Fe7Cr2Ni" formula="STEEL_STAINLESS_Fe7Cr2Ni">
@@ -60,22 +132,52 @@
   </material>
 
   <material formula=" " name="Air">
-   <D value="0.001205" unit="g/cc"/>
+   <D value="0.001205" unit="g/cm3"/>
    <fraction n="0.781154" ref="nitrogen"/>
    <fraction n="0.209476" ref="oxygen"/>
    <fraction n="0.00934" ref="argon"/>
   </material>
 
   <material formula=" " name="G10">
-   <D value="1.7" unit="g/cc"/>
+   <D value="1.7" unit="g/cm3"/>
    <fraction n="0.2805" ref="silicon"/>
    <fraction n="0.3954" ref="oxygen"/>
    <fraction n="0.2990" ref="carbon"/>
    <fraction n="0.0251" ref="hydrogen"/>
   </material>
 
+  <material formula=" " name="Granite">
+   <D value="2.7" unit="g/cm3"/>
+   <fraction n="0.438" ref="oxygen"/>
+   <fraction n="0.257" ref="silicon"/>
+   <fraction n="0.222" ref="sodium"/>
+   <fraction n="0.049" ref="aluminum"/>
+   <fraction n="0.019" ref="iron"/>
+   <fraction n="0.015" ref="potassium"/>
+  </material>
+
+  <material formula=" " name="ShotRock">
+   <D value="2.7*0.6" unit="g/cm3"/>
+   <fraction n="0.438" ref="oxygen"/>
+   <fraction n="0.257" ref="silicon"/>
+   <fraction n="0.222" ref="sodium"/>
+   <fraction n="0.049" ref="aluminum"/>
+   <fraction n="0.019" ref="iron"/>
+   <fraction n="0.015" ref="potassium"/>
+  </material>
+
+  <material formula=" " name="Dirt">
+   <D value="1.7" unit="g/cm3"/>
+   <fraction n="0.438" ref="oxygen"/>
+   <fraction n="0.257" ref="silicon"/>
+   <fraction n="0.222" ref="sodium"/>
+   <fraction n="0.049" ref="aluminum"/>
+   <fraction n="0.019" ref="iron"/>
+   <fraction n="0.015" ref="potassium"/>
+  </material>
+
   <material formula=" " name="Concrete">
-   <D value="2.3" unit="g/cc"/>
+   <D value="2.3" unit="g/cm3"/>
    <fraction n="0.530" ref="oxygen"/>
    <fraction n="0.335" ref="silicon"/>
    <fraction n="0.060" ref="calcium"/>
@@ -83,6 +185,85 @@
    <fraction n="0.020" ref="iron"/>
    <fraction n="0.040" ref="aluminum"/>
   </material>
+
+  <material formula="H2O" name="Water">
+   <D value="1.0" unit="g/cm3"/>
+   <fraction n="0.1119" ref="hydrogen"/>
+   <fraction n="0.8881" ref="oxygen"/>
+  </material>
+
+  <material formula="Ti" name="Titanium">
+   <D value="4.506" unit="g/cm3"/>
+   <fraction n="1." ref="titanium"/>
+  </material>
+
+  <material name="TPB" formula="TPB">
+   <D value="1.40" unit="g/cm3"/>
+   <fraction n="1.0000" ref="argon"/>
+  </material>
+
+  <material name="Glass">
+   <D value="2.74351" unit="g/cm3"/>
+   <fraction n="0.600" ref="SiO2"/>
+   <fraction n="0.118" ref="Al2O3"/>
+   <fraction n="0.001" ref="Fe2O3"/>
+   <fraction n="0.224" ref="CaO"/>
+   <fraction n="0.034" ref="MgO"/>
+   <fraction n="0.010" ref="Na2O"/>
+   <fraction n="0.013" ref="TiO2"/>
+  </material>
+
+  <material name="Acrylic">
+   <D value="1.19" unit="g/cm3"/>
+   <fraction n="0.600" ref="carbon"/>
+   <fraction n="0.320" ref="oxygen"/>
+   <fraction n="0.080" ref="hydrogen"/>
+  </material>
+
+  <!-- 06-Dec-2011 WGS: Cut-and-paste from the GDML description of the Double Chooz Outer Veto module -->  
+  <element Z="6" name="Carbon0x1aadb80">
+    <atom unit="g/mole" value="12.01"/>
+  </element>
+  <element Z="1" name="Hydrogen0x1aada10">
+    <atom unit="g/mole" value="1.008"/>
+  </element>
+  <element Z="7" name="Nitrogen0x1aadd30">
+    <atom unit="g/mole" value="14.01"/>
+  </element>
+  <element Z="8" name="Oxygen0x1aadf00">
+    <atom unit="g/mole" value="16"/>
+  </element>
+  <material name="plastic0x1bec080" state="solid">
+    <D unit="g/cm3" value="1.05"/>
+    <fraction n="0.677252001868948" ref="Carbon0x1aadb80"/>
+    <fraction n="0.0649620571318092" ref="Hydrogen0x1aada10"/>
+    <fraction n="0.257785940999243" ref="Oxygen0x1aadf00"/>
+  </material>
+  <element Z="22" name="Titanium0x1bea8d0">
+    <atom unit="g/mole" value="47.867"/>
+  </element>
+  <material name="TitaniumDioxide0x1beaf50" state="solid">
+    <D unit="g/cm3" value="4.23"/>
+    <fraction n="0.599333892596442" ref="Titanium0x1bea8d0"/>
+    <fraction n="0.400666107403558" ref="Oxygen0x1aadf00"/>
+  </material>
+  <material name="foamtape0x1bec350" state="solid">
+    <D unit="g/cm3" value="1.05"/>
+    <fraction n="0.677252001868948" ref="Carbon0x1aadb80"/>
+    <fraction n="0.0649620571318092" ref="Hydrogen0x1aada10"/>
+    <fraction n="0.257785940999243" ref="Oxygen0x1aadf00"/>
+  </material>
+  <material name="rubber0x1beccc0" state="solid">
+    <D unit="g/cm3" value="1.05"/>
+    <fraction n="0.677252001868948" ref="Carbon0x1aadb80"/>
+    <fraction n="0.0649620571318092" ref="Hydrogen0x1aada10"/>
+    <fraction n="0.257785940999243" ref="Oxygen0x1aadf00"/>
+  </material>
+  <material Z="13" name="Aluminum0x1beb1f0" state="solid">
+    <D unit="g/cm3" value="2.7"/>
+    <atom unit="g/mole" value="26.98"/>
+  </material>
+
 
 </materials>
 <solids>
@@ -111,26 +292,21 @@
    deltaphi="360"
    aunit="deg"
    lunit="cm"/>
+
  <tube name="TPCSheet" 
    rmin="0.5*(9.75*(2.54))"
    rmax="0.5*(10.00*(2.54))"
-   z="(200.)"
+   z="(20.00*(2.54))"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/>
  <tube name="TPC"
+   rmin="0.5*(0.75*(2.54))"
    rmax="0.5*(13.00*(2.54))"
-   z="(200.)+2*(1.00*(2.54))"
+   z="(20.00*(2.54))+2*(1.00*(2.54))"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/>
- <tube name="TPCActive"
-   rmax="0.5*(13.00*(2.54))"
-   z="(200.)+2*(1.00*(2.54))"
-   deltaphi="360"
-   aunit="deg"
-   lunit="cm"/>
-
  <torus name="TPCBottomRing"
    rmax="0.5*(1.00*(2.54))"
    rtor="0.5*(10.00*(2.54))"
@@ -138,20 +314,51 @@
    aunit="deg"
    lunit="cm"/>
 
+ <tube name="BoOuterShell" 
+   rmin="0.5*(75.907*(2.54))/(3.1415926535897)-(0.075*(2.54))"
+   rmax="0.5*(75.907*(2.54))/(3.1415926535897)"  
+   z="(38.00*(2.54))"
+   deltaphi="360"
+   aunit="deg" 
+   lunit="cm"/>
+ <tube name="BoOuterShellBottom"
+   rmax="0.5*(75.907*(2.54))/(3.1415926535897)"
+   z="(0.075*(2.54))"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+ <tube name="BoInnerShell"
+   rmin="0.5*(69.115*(2.54))/(3.1415926535897)-(0.048*(2.54))"
+   rmax="0.5*(69.115*(2.54))/(3.1415926535897)"
+   z="(36.296875*(2.54))"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+ <tube name="BoInnerShellBottom"
+   rmax="0.5*(69.115*(2.54))/(3.1415926535897)"
+   z="(0.048*(2.54))"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
+ <tube name="BoTopLid"
+   rmax="0.5*(26.00*(2.54))"
+   z="(5.029*(2.54))"
+   deltaphi="360"
+   aunit="deg"
+   lunit="cm"/>
  <tube name="Cryostat"
-   rmax="0.5*(304.8)"
-   z="(304.8)+(5.029*(2.54))"
+   rmax="0.5*(26.00*(2.54))"
+   z="(38.00*(2.54))+(5.029*(2.54))"
    deltaphi="360"
    aunit="deg"
    lunit="cm"/>
 
  <box name="DetEnclosure" lunit="cm"
-   x="(2*(304.8))" y="(2*(304.8))" z="(2*(304.8))"/>
+   x="(10*(26.00*(2.54)))" y="(10*(38.00*(2.54)))" z="(10*(26.00*(2.54)))"/>
 
  <box name="World" lunit="cm"
-      x="(100.0*(304.8))" y="(100.0*(304.8))" z="(100.0*(304.8))"/>
+      x="(100.0*(10*(26.00*(2.54))))" y="(100.0*(10*(38.00*(2.54))))" z="(100.0*(10*(26.00*(2.54))))"/>
 </solids>
-
 <structure>
   <volume name="volTPCWire">
     <materialref ref="Titanium"/>
@@ -164,10 +371,6 @@
   <volume name="volTPCRing">
     <materialref ref="G10"/>
     <solidref ref="TPCRing"/>
-  </volume>
-  <volume name="volTPCSheet">
-    <materialref ref="G10" />
-    <solidref ref="TPCSheet" />
   </volume>
   <volume name="volTPCPlane">
     <materialref ref="LAr"/>
@@ -428,51 +631,87 @@
   </physvol>
   </volume>
   
+  <volume name="volTPCSheet">
+    <materialref ref="G10" />
+    <solidref ref="TPCSheet" />
+  </volume>
   <volume name="volTPCBottomRing">
     <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni" />
     <solidref ref="TPCBottomRing"/>
   </volume>
- <volume name="volTPCActive">
-  <materialref ref="LAr"/>
-  <solidref ref="TPCActive"/>
- </volume>
   <volume name="volTPC">
     <materialref ref="LAr" />
     <solidref ref="TPC" />
-    <physvol>
-      <volumeref ref="volTPCActive"/>
-      <position name="posTPCActive" unit="cm" x="0.0" y="0.0" z="0"/>
-    </physvol>
     <physvol>
       <volumeref ref="volTPCSheet"/>
       <position name="posTPCSheet" unit="cm" x="0" y="0" z="0"/>
     </physvol>
     <physvol>
       <volumeref ref="volTPCBottomRing"/>
-      <position name="posTPCBottomRing" unit="cm" x="0" y="0" z="-0.5*(200.)-0.5*(1.00*(2.54))"/>
+      <position name="posTPCBottomRing" unit="cm" x="0" y="0" z="-0.5*(20.00*(2.54))-0.5*(1.00*(2.54))"/>
     </physvol>
     <physvol>
       <volumeref ref="volTPCPlane"/>
       <rotationref ref="r60"/>
-      <position name="posTPCWireRingModule2" unit="cm" x="0" y="0" z="0.5*(200)+0.5*(0.256*(2.54))"/>
+      <position name="posTPCWireRingModule2" unit="cm" x="0" y="0" z="0.5*(20.00*(2.54))+0.5*(0.256*(2.54))"/>
     </physvol>
     <physvol>
       <volumeref ref="volTPCPlane"/>
       <rotationref ref="r120"/>
-      <position name="posTPCWireRingModule3" unit="cm" x="0" y="0" z="0.5*(200)+1.5*(0.256*(2.54))"/>
+      <position name="posTPCWireRingModule3" unit="cm" x="0" y="0" z="0.5*(20.00*(2.54))+1.5*(0.256*(2.54))"/>
     </physvol>
     <physvol>
       <volumeref ref="volTPCPlane"/>
-      <position name="posTPCWireRingModule1" unit="cm" x="0" y="0" z="0.5*(200)+2.5*(0.256*(2.54))"/>
+      <position name="posTPCWireRingModule1" unit="cm" x="0" y="0" z="0.5*(20.00*(2.54))+2.5*(0.256*(2.54))"/>
     </physvol>
   </volume>
   
+  <volume name="volBoInnerShellBottom">
+    <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+    <solidref ref="BoInnerShellBottom"/>
+  </volume>
+  <volume name="volBoInnerShell">
+    <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+    <solidref ref="BoInnerShell"/>
+  </volume>
+  <volume name="volBoOuterShellBottom">
+    <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+    <solidref ref="BoOuterShellBottom"/>
+  </volume>
+  <volume name="volBoOuterShell">
+    <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+    <solidref ref="BoOuterShell"/>
+  </volume>
+  <volume name="volBoTopLid">
+    <materialref ref="STEEL_STAINLESS_Fe7Cr2Ni"/>
+    <solidref ref="BoTopLid"/>
+  </volume>
   <volume name="volCryostat">
     <materialref ref="LAr"/>
     <solidref ref="Cryostat"/>
     <physvol>
+      <volumeref ref="volBoOuterShell"/>
+      <position name="posBoOuterShellInitial" unit="cm" x="0" y="0" z="-0.5*(5.029*(2.54))"/>
+    </physvol>
+    <physvol>
+      <volumeref ref="volBoOuterShellBottom"/>
+      <position name="posBoOuterShellBottom" unit="cm" x="0" y="0" z="-0.5*(38.00*(2.54))+0.5*(0.075*(2.54))-0.5*(5.029*(2.54))"/>
+    </physvol>
+    <physvol>
+      <volumeref ref="volBoInnerShell"/>
+      <position name="posBoInnerShellInitial" unit="cm" x="0" y="0" z="0.5*(38.00*(2.54))-0.5*(36.296875*(2.54))-0.5*(5.029*(2.54))"/>
+    </physvol>
+    <physvol>
+      <volumeref ref="volBoInnerShellBottom"/>
+      <position name="posBoInnerShellBottom" unit="cm" x="0" y="0" z="0.5*(38.00*(2.54))-(36.296875*(2.54))+0.5*(0.048*(2.54))-0.5*(5.029*(2.54))"/>
+    </physvol>
+    <physvol>
+      <volumeref ref="volBoTopLid"/>
+      <position name="posBoTopLid" unit="cm" x="0" y="0" z="0.5*(38.00*(2.54))"/>
+    </physvol>
+    <physvol>
       <volumeref ref="volTPC"/>
-      <position name="posTPC" unit="cm" x="0" y="0" z="50."/>
+      <position name="posTPC" unit="cm" x="-(2.78*(2.54))" y="0" z="-0.5*(20.00*(2.54))-(17.3*(2.54))+0.5*(38.00*(2.54))+0.5*(5.029*(2.54))-0.13462"/>
     </physvol>
   </volume>
   
@@ -482,16 +721,15 @@
     <physvol>
       <volumeref ref="volCryostat"/>
       <rotationref ref="rPlus90AboutY"/>
-      <position name="posCryostat" unit="cm" x="0" y="0" z="0"/>
+      <position name="posCryostat" unit="cm" x="10*(2.54)" y="-5*2.54" z="0"/>
     </physvol>
   </volume>
   
   <volume name="volWorld" >
-    <materialref ref="Air"/> 
-    <solidref ref="World"/>
+    <materialref ref="Vacuum"/> <solidref ref="World"/>
     <physvol>
       <volumeref ref="volDetEnclosure"/>
-      <position name="posDetEnclosure" unit="cm" x="150.32512" y="0" z="11.0396"/>
+      <position name="posDetEnclosure" unit="cm" x="-0.5*(38.00*(2.54))-0.5*(5.029*(2.54))+(17.3*(2.54))-3*(0.15*(2.54))-2.65684" y="(2.78*(2.54))+5.6388" z="0.5*(10.00*(2.54))+5.4008"/>
     </physvol>
   </volume> 
 </structure>

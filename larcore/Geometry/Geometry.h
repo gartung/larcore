@@ -9,6 +9,8 @@
  * Revised <petrillo@fnal.gov> 27-Apr-2015
  *         Factorization into a framework-independent GeometryCore.h and a
  *         art framework interface
+ * Revised <petrillo@fnal.gov> 10-Nov-2015
+ *         Complying with the provider requirements described in ServiceUtil.h
  */
 
 #ifndef GEO_GEOMETRY_H
@@ -16,6 +18,9 @@
 
 // LArSoft libraries
 #include "larcore/Geometry/GeometryCore.h"
+
+#include "larcore/CoreUtils/ServiceUtil.h" // not used; for user's convenience
+
 
 // the following are included for convenience only
 #include "larcore/Geometry/ChannelMapAlg.h"
@@ -108,10 +113,16 @@ namespace geo {
   {
   public:
     
+    using provider_type = GeometryCore; ///< type of service provider
+    
     Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
     
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
+    
+    /// Returns a pointer to the geometry service provider
+    provider_type const* provider() const
+      { return static_cast<provider_type const*>(this); }
     
   private:
     
@@ -131,9 +142,13 @@ namespace geo {
                                                  ///< files specified in the fcl file
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
   };
-
+  
 } // namespace geo
 
 DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
+
+// check that the requirements for geo::Geometry are satisfied
+template class lar::details::ServiceRequirementsChecker<geo::Geometry>;
+
 
 #endif // GEO_GEOMETRY_H

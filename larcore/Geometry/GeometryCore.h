@@ -3246,7 +3246,7 @@ namespace geo {
      * @deprecated This is clearly not APA-aware
      */
     bool ChannelsIntersect
-      (raw::ChannelID_t c1, raw::ChannelID_t c2, double &y, double &z);
+      (raw::ChannelID_t c1, raw::ChannelID_t c2, double &y, double &z) const;
     
     /// @} TPC readout channels
     
