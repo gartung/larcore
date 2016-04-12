@@ -7,7 +7,7 @@
 
 // LArSoft includes
 #include "test/Geometry/GeometryTestAlg.h"
-#include "Geometry/Geometry.h"
+#include "larcore/Geometry/Geometry.h"
 
 // Framework includes
 #include "fhiclcpp/ParameterSet.h"

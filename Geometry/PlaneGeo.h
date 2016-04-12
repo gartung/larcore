@@ -9,8 +9,8 @@
 #define GEO_PLANEGEO_H
 
 // LArSoft libraries
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/GeoObjectSorter.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/GeoObjectSorter.h"
 
 // C/C++ standard libraries
 #include <cmath> // std::atan2()

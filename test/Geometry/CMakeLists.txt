@@ -3,7 +3,7 @@ cet_enable_asserts()
 # test libraries
 art_make_library( LIBRARY_NAME GeometryTestLib
                   SOURCE NameSelector.cxx GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
-                  LIBRARIES Geometry
+                  LIBRARIES larcore_Geometry
                         ${ART_UTILITIES}
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
@@ -15,9 +15,9 @@ art_make_library( LIBRARY_NAME GeometryTestLib
 
 # test modules
 simple_plugin ( GeometryIteratorLoopTest "module"
-                    Geometry
+                    larcore_Geometry
                     GeometryTestLib
-                    Geometry_service
+                    larcore_Geometry_Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
@@ -26,9 +26,9 @@ simple_plugin ( GeometryIteratorLoopTest "module"
              )
 
 simple_plugin ( GeometryTest "module"
-                    Geometry
+                    larcore_Geometry
                     GeometryTestLib
-                    Geometry_service
+                    larcore_Geometry_Geometry_service
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
@@ -55,7 +55,7 @@ cet_test(NameSelector_test
 # (untimely initialization of the Boost test framework)
 cet_test(geometry_iterator_test
   SOURCES geometry_iterator_test.cxx
-  LIBRARIES Geometry
+  LIBRARIES larcore_Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
@@ -72,7 +72,7 @@ cet_test(geometry_test
   SOURCES geometry_test.cxx
   DATAFILES test_geometry.fcl
   TEST_ARGS ./test_geometry.fcl
-  LIBRARIES Geometry
+  LIBRARIES larcore_Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
@@ -86,7 +86,7 @@ cet_test(geometry_iterator_loop_test
   SOURCES geometry_iterator_loop_test.cxx
   DATAFILES test_geometry_iterator_loop.fcl
   TEST_ARGS ./test_geometry_iterator_loop.fcl
-  LIBRARIES Geometry
+  LIBRARIES larcore_Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
@@ -99,7 +99,7 @@ cet_test(geometry_iterator_loop_test
 # this uses BOOST for the test
 cet_test(geometry_thirdplaneslope_test
   SOURCES geometry_thirdplaneslope_test.cxx
-  LIBRARIES Geometry
+  LIBRARIES larcore_Geometry
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}

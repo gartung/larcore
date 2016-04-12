@@ -9,12 +9,12 @@
 #include "GeometryIteratorLoopTestAlg.h"
 
 // LArSoft includes
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/GeometryCore.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 
 // Framework includes
 #include "cetlib/exception.h"

@@ -19,9 +19,9 @@
 #include "cetlib/exception.h"
 
 // LArSoft includes
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 
 // C/C++ standard libraries
 #include <cmath>

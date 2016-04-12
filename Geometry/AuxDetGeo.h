@@ -10,9 +10,9 @@
 #include <vector>
 #include "TGeoVolume.h"
 
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/AuxDetSensitiveGeo.h"
-#include "Geometry/GeoObjectSorter.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/AuxDetSensitiveGeo.h"
+#include "larcore/Geometry/GeoObjectSorter.h"
 
 class TGeoNode;
 class TGeoHMatrix;

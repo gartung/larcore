@@ -13,9 +13,9 @@
 
 // LArSoft libraries
 #include "test/Geometry/geometry_boost_unit_test_base.h"
-#include "SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
-#include "Geometry/GeometryCore.h"
-#include "Geometry/ChannelMapStandardAlg.h"
+#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapStandardAlg.h"
 
 // utility libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
