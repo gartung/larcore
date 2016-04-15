@@ -40,8 +40,8 @@ end_qualifier_list
 # to find gdml files:
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
-    # this is temporary until art defines ROOT_INCLUDE_PATH
-    pathPrepend(ROOT_INCLUDE_PATH, ${ART_INC}:${FHICLCPP_INC}:${CETLIB_INC})
+    # this is temporary until art and boost define ROOT_INCLUDE_PATH
+    pathPrepend(ROOT_INCLUDE_PATH, ${ART_INC}:${FHICLCPP_INC}:${CETLIB_INC}:${BOOST_INC})
     # this is a temporary hack until we have a release of geant4 that defines GDML_SCHEMA_DIR
     #envSet(GDML_SCHEMA_DIR, ${GEANT4_DIR}/source/geant4.9.6.p02/source/persistency/gdml/schema)
 table_fragment_end
