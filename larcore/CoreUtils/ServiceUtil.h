@@ -86,19 +86,19 @@ namespace lar {
       // static checks on provider class: not copyable nor movable
       static_assert(
         !std::is_copy_constructible<provider_type>::value,
-        "Data provider classes must not be copyable"
+        "Service provider classes must not be copyable"
         );
       static_assert(
         !std::is_copy_assignable<provider_type>::value,
-        "Data provider classes must not be copyable"
+        "Service provider classes must not be copyable"
         );
       static_assert(
         !std::is_move_constructible<provider_type>::value,
-        "Data provider classes must not be movable"
+        "Service provider classes must not be movable"
         );
       static_assert(
         !std::is_move_assignable<provider_type>::value,
-        "Data provider classes must not be movable"
+        "Service provider classes must not be movable"
         );
       
     }; // ServiceProviderRequirementsChecker
