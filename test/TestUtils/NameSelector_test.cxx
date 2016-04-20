@@ -6,7 +6,7 @@
  */
 
 // LArSoft libraries
-#include "test/Geometry/NameSelector.h"
+#include "larcore/TestUtils/NameSelector.h"
 
 // Boost libraries
 #include "art/Utilities/Exception.h"

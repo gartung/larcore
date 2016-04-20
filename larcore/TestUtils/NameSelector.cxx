@@ -7,13 +7,10 @@
  */
 
 // our library
-#include "test/Geometry/NameSelector.h"
+#include "larcore/TestUtils/NameSelector.h"
 
 // framework libraries
 #include "art/Utilities/Exception.h"
-
-// C/C++ standard library
-#include <stdexcept> // std::logic_error
 
 
 namespace testing {
@@ -180,7 +177,7 @@ namespace testing {
     }
     Definitions_t::const_iterator iDefinition = definitions.find(item);
     if ((iDefinition == definitions.end()) && bForceDef) {
-      throw cet::exception("NameSelector")
+      throw art::Exception(art::errors::LogicError)
         << "no set named '" << item << "'\n";
     }
     return iDefinition;

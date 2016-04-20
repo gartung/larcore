@@ -9,13 +9,13 @@
  */
 
 // Boost test libraries; defining this symbol tells boost somehow to generate
-// a main() function; Boost is pulled in by geometry_boost_unit_test_base.h
+// a main() function; Boost is pulled in by boost_unit_test_base.h
 #define BOOST_TEST_MODULE GeometryIteratorTest
 
 // LArSoft libraries
-#include "test/Geometry/boost_unit_test_base.h"
 #include "test/Geometry/geometry_unit_test_base.h"
 #include "test/Geometry/GeometryIteratorTestAlg.h"
+#include "larcore/TestUtils/boost_unit_test_base.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/ChannelMapStandardAlg.h"
 

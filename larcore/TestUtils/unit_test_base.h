@@ -14,6 +14,13 @@
  * - TestSharedGlobalResource: mostly internal use
  * - TesterEnvironment: a prepacked test environment
  * 
+ * This is a pure template header. It will require the following libraries:
+ * 
+ * * `${MF_MESSAGELOGGER}`
+ * * `${MF_UTILITIES}`
+ * * `${FHICLCPP}`
+ * * `${CETLIB}`
+ * 
  */
 
 
@@ -37,7 +44,9 @@
 #include <iostream> // for output before message facility is set up
 #include <string>
 #include <memory> // std::unique_ptr<>
+#include <utility> // std::move(), std::forward()
 #include <map>
+#include <type_traits> // std::add_rvalue_reference()
 #include <stdexcept> // std::logic_error
 
 
@@ -646,6 +655,49 @@ namespace testing {
     
   }; // class TesterEnvironment<>
   
+  
+  /**
+   * @brief Constructs and returns a TesterEnvironment object
+   * @tparam CONFIG type of configuration object (detected from arguments)
+   * @tparam TESTENV type of the tester environment (defaults to TesterEnvironment)
+   * @tparam ARGS pack of types of the remining constructor arguments (optional)
+   * @param config the configuration object to be used
+   * @param other_args the remaining arguments of the tester constructor
+   *  
+   * This function creates and returns a tester environment.
+   * By default, the tester environment class is TesterEnvironment<CONFIG>
+   * and no additional constructor arguments are needed except for special
+   * needs. The simplest way to use the function with an already available
+   * configuration is:
+   *     
+   *    auto TestEnv = testing::CreateTesterEnvironment(config); 
+   *     
+   * where TestEnv is assigned a specialization of TesterEnvironment.
+   * 
+   * The template class TESTENV undergoes the following requirement:
+   * 
+   *  - it must have a constructor using a CONFIG constant reference as first
+   *    argument
+   * 
+   * The CONFIG object is subject to no special requirements besides the ones
+   * from TESTENV constructor.
+   */
+  // Note: this function is expected to be used with automatic type detection;
+  // the rules on "universal references" dictate that if config is a (l-value)
+  // reference, CONFIG itself is a l-value reference. We don't want to create
+  // a TesterEnvironment<Config&>, so we explicitly remove the reference from
+  // CONFIG (decay does that and aso removes the constantness, that we also
+  // don't want to be embedded in CONFIG).
+  template <
+    typename CONFIG,
+    typename TESTENV = TesterEnvironment<std::decay_t<CONFIG>>,
+    typename... ARGS
+    >
+  TESTENV CreateTesterEnvironment(CONFIG&& config, ARGS... other_args)
+    {
+      return TESTENV
+        (std::forward<CONFIG>(config), std::forward<ARGS>(other_args)...);
+    }
   
   
   //****************************************************************************

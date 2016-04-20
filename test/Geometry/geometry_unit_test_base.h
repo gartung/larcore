@@ -24,7 +24,7 @@
 #define TEST_GEOMETRY_UNIT_TEST_BASE_H
 
 // LArSoft libraries
-#include "test/Geometry/unit_test_base.h"
+#include "larcore/TestUtils/unit_test_base.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
 

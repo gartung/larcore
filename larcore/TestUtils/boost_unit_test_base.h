@@ -12,6 +12,10 @@
  * wrappers.
  * 
  * For an example of usage, see larcore/test/Geometry/geometry_iterator_test.cxx
+ * 
+ * This is a pure template header. It will require the same libraries as
+ * unit_test_base.h .
+ *
  */
 
 
@@ -19,7 +23,7 @@
 #define TEST_BOOST_UNIT_TEST_BASE_H
 
 // LArSoft libraries
-#include "test/Geometry/unit_test_base.h"
+#include "larcore/TestUtils/unit_test_base.h"
 
 // Boost libraries
 #include <boost/test/unit_test.hpp> // framework::master_test_suite()
