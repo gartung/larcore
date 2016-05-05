@@ -10,6 +10,9 @@
 #ifndef COREUTILS_SERVICEUTIL
 #define COREUTILS_SERVICEUTIL
 
+// LArSoft libraries
+#include "larcore/CoreUtils/UncopiableAndUnmoveableClass.h"
+
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Utilities/Exception.h"
@@ -35,7 +38,7 @@ namespace lar {
    * @throws art::Exception (category art::errors::NotFound) if pointer is null
    * 
    * This function relies on the following service and provider interface:
-   * - provider is not movable nor copyable
+   * - provider is not movable nor copiable
    * - service contains a type "provider_type" defined as the class of the
    *   service provider
    * - service contains a method "provider()" that returns a non-null pointer
@@ -57,7 +60,7 @@ namespace lar {
    * 
    */
   template <class T>
-    typename T::provider_type const* providerFrom()
+  typename T::provider_type const* providerFrom()
     {
       details::ServiceRequirementsChecker<T>(); // instantiate a temporary...
       
@@ -83,14 +86,14 @@ namespace lar {
       
       using provider_type = PROVIDER;
       
-      // static checks on provider class: not copyable nor movable
+      // static checks on provider class: not copiable nor movable
       static_assert(
         !std::is_copy_constructible<provider_type>::value,
-        "Service provider classes must not be copyable"
+        "Service provider classes must not be copiable"
         );
       static_assert(
         !std::is_copy_assignable<provider_type>::value,
-        "Service provider classes must not be copyable"
+        "Service provider classes must not be copiable"
         );
       static_assert(
         !std::is_move_constructible<provider_type>::value,
@@ -107,17 +110,20 @@ namespace lar {
     template <typename SERVICE>
     struct ServiceRequirementsChecker {
       
-      // TODO: check that SERVICE::provider_type is available
-      // (with a sensible message if it does not)
-      
+      // require SERVICE::provider_type to be a type
       using provider_type = typename SERVICE::provider_type;
       
-      /// Checker for the provider
-      ServiceProviderRequirementsChecker<typename SERVICE::provider_type>
-        provider_checker;
+      // expected type for SERVICE::provider() method
+      using provider_func_type = provider_type const* (SERVICE::*)() const;
       
-      // TODO check that a function providerFrom() is present with the right
-      // signature
+      /// Checker for the provider
+      ServiceProviderRequirementsChecker<provider_type> provider_checker;
+      
+      // check the provider() method
+      static_assert(
+        std::is_same<decltype(&SERVICE::provider), provider_func_type>::value,
+        "provider() method has unsupported signature"
+        );
       
     }; // ServiceRequirementsChecker
     

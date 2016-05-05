@@ -16,16 +16,20 @@
  * 
  * This is a pure template header. It will require the following libraries:
  * 
- * * `${MF_MESSAGELOGGER}`
- * * `${MF_UTILITIES}`
- * * `${FHICLCPP}`
- * * `${CETLIB}`
+ * * `MF_MessageLogger`
+ * * `MF_Utilities`
+ * * `fhiclcpp`
+ * * `cetlib`
  * 
  */
 
 
 #ifndef TEST_UNIT_TEST_BASE_H
 #define TEST_UNIT_TEST_BASE_H
+
+// LArSoft libraries
+#include "larcore/TestUtils/ProviderList.h"
+#include "larcore/CoreUtils/ProviderPack.h"
 
 // utility libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -99,6 +103,12 @@ namespace testing {
       std::copy(argv + 1, argv + argc, args.begin());
       
     } // CommandLineArguments:ParseArguments()
+    
+    
+    // forward declaration
+    template
+       <typename TestEnv, typename Pack, typename... Provs>
+    struct ProviderPackFiller;
     
   } // namespace details
   
@@ -582,6 +592,9 @@ namespace testing {
     virtual ~TesterEnvironment();
     
     
+    /// @{
+    /// @name Configuration retrieval
+    
     /// Returns the full configuration
     fhicl::ParameterSet const& Parameters() const { return params; }
     
@@ -606,6 +619,7 @@ namespace testing {
         else return TesterParameters(config.MainTesterParameterSetName());
       }
     
+    /// @}
     
     static fhicl::ParameterSet CompileParameterSet(std::string cfg);
     
@@ -701,6 +715,162 @@ namespace testing {
   
   
   //****************************************************************************
+  template <typename ConfigurationClass>
+  class TesterEnvironmentWithProviders
+    : public TesterEnvironment<ConfigurationClass>
+  {
+    using TesterEnvBase_t = TesterEnvironment<ConfigurationClass>;
+    using TesterEnv_t = TesterEnvironmentWithProviders<ConfigurationClass>;
+    
+      public:
+    // inherit constructors
+    using TesterEnvBase_t::TesterEnvBase_t;
+    
+    /**
+     * @brief Sets a service provider up by calling its testing::setupProvider()
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @throw runtime_error if the provider already exists
+     * @see SetupProviderFor(), AcquireProvider()
+     * 
+     * A provider of type Prov is created, set up and recorded.
+     * Provider setup is delegated to `testing::setupProvider` function specific
+     * to the provider itself (that is, `testing::setupProvider<Prov>(args...)`)
+     * to which the setup arguments are forwarded.
+     * If the provider already exists, an exception is thrown.
+     */
+    template <typename Prov, typename... Args>
+    Prov* SetupProvider(Args... args)
+      {
+        if (!providers.setup<Prov>(std::forward<Args>(args)...))
+          throw std::runtime_error("Provider already exists!");
+        return Provider<Prov>();
+      }
+    
+    /**
+     * @brief Sets a service provider up by calling its testing::setupProvider()
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @see SetupProvider()
+     * @throw runtime_error if the provider already exists
+     * 
+     * A provider of type Prov is created, set up and recorded.
+     * Provider setup is attempted by constructing the provider with a parameter
+     * set from the registered configuration of service with specified `name`.
+     */
+    template <typename Prov>
+    Prov* SetupProviderFromService(std::string name)
+      { return SetupProvider<Prov>(this->ServiceParameters(name)); }
+    
+    /**
+     * @brief Acquires a service provider
+     * @tparam Prov type of provider
+     * @param prov the provider to be acquired
+     * @return a pointer to the provider
+     * @see SetupProvider()
+     * @throw runtime_error if the provider already exists
+     * 
+     * This method registers and takes ownership of the specified provider.
+     * It is similar to SetupProvider() except that user is in charge of the
+     * preliminary creation and setup of the provider.
+     */
+    template <typename Prov>
+    Prov* AcquireProvider(std::unique_ptr<Prov>&& prov)
+      {
+        if (!providers.acquire(prov))
+          throw std::runtime_error("Provider already exists!");
+        return Provider<Prov>();
+      }
+    
+    /**
+     * @brief Sets a provider up, recording it as implementation of Interface
+     * @tparam Interface type of provider interface being implemented
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @see SetupProvider()
+     * 
+     * This method performs the same type of setup as SetupProvider().
+     * In addition, it registers the provider as an implementation of Interface.
+     * This means that the provider can be obtained not only with
+     * `provider<Prov>()`, which returns a pointer to the actual class Prov,
+     * but also as `provider<Interface>()`, which returns a pointer to the base
+     * class Interface.
+     */
+    template <typename Interface, typename Prov, typename... Args>
+    Prov* SetupProviderFor(Args... args)
+      {
+        auto prov = SetupProvider<Prov>(std::forward<Args>(args)...);
+        providers.set_alias<Prov, Interface>();
+        return prov;
+      }
+    
+    /**
+     * @brief Acquires a service provider implementing an interface
+     * @tparam Prov type of provider
+     * @tparam Interface type provider alias
+     * @param prov the provider to be acquired
+     * @return a pointer to the provider
+     * @see SetupProviderFor(), AcquireProvider()
+     * 
+     * This method registers and takes ownership of the specified provider,
+     * like AcquireProvider() does. It also registers the provider as an
+     * implementation of Interface class, as SetupProviderFor does.
+     * It is similar to SetupProvider() except that user is in charge of the
+     * preliminar creation and setup of the provider.
+     */
+    template <typename Interface, typename Prov>
+    Prov* AcquireProviderFor(std::unique_ptr<Prov>&& prov)
+      {
+        auto prov_ptr = providers.acquire(prov);
+        providers.set_alias<Prov, Interface>();
+        return prov_ptr;
+      }
+    
+    /**
+     * @brief Removes and destroys the specified provider
+     * @tparam Prov type of provider to be destroyed
+     * @throw runtime_error if the provider was not present
+     */
+    template <typename Prov>
+    void DropProvider()
+      { 
+        if (!providers.erase<Prov>())
+          throw std::runtime_error("Provider not present!");
+      }
+    
+    /// Return the specified provider (throws if not available)
+    template <typename Prov>
+    Prov const* Provider() const
+      { return providers.getPointer<Prov>(); }
+    
+    /**
+     * @brief Fills the specified provider pack with providers
+     * @throw runtime_error and everything provider() method can throw
+     * @see provider()
+     */
+    template <typename... Provs>
+    void FillProviderPack(lar::ProviderPack<Provs...>& pack) const
+      {
+         details::ProviderPackFiller
+           <TesterEnv_t, lar::ProviderPack<Provs...>, Provs...>
+           ::fill
+           (*this, pack);
+      } // FillProviderPack()
+    
+    
+      protected:
+    ProviderList providers; ///< list of available providers
+  }; // class TesterEnvironmentWithProviders<>
+  
+  
+  
+  //****************************************************************************
   namespace details {
     // Class to implement FHiCL file search.
     // This is badly ripped off from ART, but we need to stay out of it
@@ -735,6 +905,27 @@ namespace testing {
         return after_paths.find_file(filename);
       }
     } // FirstAbsoluteOrLookupWithDotPolicy::operator()
+    
+    
+    /// Helper to fill a provider pack: main specialisation
+    template
+      <typename TestEnv, typename Pack, typename Prov, typename... Others>
+    struct ProviderPackFiller<TestEnv, Pack, Prov, Others...> {
+      static void fill(TestEnv const& env, Pack& pack)
+        {
+          pack.set(env.template Provider<Prov>());
+          ProviderPackFiller<TestEnv, Pack, Others...>::fill(env, pack);
+        } // fill()
+      
+    }; // ProviderPackFiller<TestEnv, Pack, Prov, Others...>
+    
+    // end-of-recursion specialisation
+    template <typename TestEnv, typename Pack>
+    struct ProviderPackFiller<TestEnv, Pack> {
+      static void fill(TestEnv const&, Pack&) {}
+    }; // ProviderPackFiller<>
+    
+    
   } // namespace details
   
   
