@@ -9,7 +9,7 @@
 
 namespace geo
 {
-  std::vector<TVector3> BoxBoundedGeo::GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect)
+  std::vector<TVector3> BoxBoundedGeo::GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect) const
   {
     std::vector<TVector3> IntersectionPoints;
     std::vector<double> LineParameters;

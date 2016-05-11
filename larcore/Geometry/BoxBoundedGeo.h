@@ -335,7 +335,7 @@ namespace geo {
      * Normaly the return value should have one (if the trajectory originates in the box) or two (else) entries.
      * If the return value has two entries the first represents the entry point and the second the exit point
      */
-    std::vector<TVector3> GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect);
+    std::vector<TVector3> GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect) const;
     
   }; // class BoxBoundedGeo
   
