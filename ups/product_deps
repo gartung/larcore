@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v06_00_00_rc2
+parent	larcore	v06_00_00_rc3
 defaultqual	e9
 
 # These optional lines define the installed directories where
