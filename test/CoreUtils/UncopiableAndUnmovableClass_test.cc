@@ -1,9 +1,9 @@
 /**
- * @file   UncopiableAndUnmoveableClass_test.cc
- * @brief  Tests the content of UncopiableAndUnmoveableClass.h
+ * @file   UncopiableAndUnmovableClass_test.cc
+ * @brief  Tests the content of UncopiableAndUnmovableClass.h
  * @author Gianluca Petrillo (petrillo@fnal.gov)
  * @date   April 28, 2016
- * @see    UncopiableAndUnmoveableClass.h
+ * @see    UncopiableAndUnmovableClass.h
  * 
  * This test takes no command line argument.
  * 
@@ -16,10 +16,10 @@
  * Among the those, there is a main() function and some wrapping catching
  * unhandled exceptions and considering them test failures, and probably more.
  */
-#define BOOST_TEST_MODULE ( UncopiableAndUnmoveableClass_test )
+#define BOOST_TEST_MODULE ( UncopiableAndUnmovableClass_test )
 
 // LArSoft libraries
-#include "larcore/CoreUtils/UncopiableAndUnmoveableClass.h"
+#include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
 
 // Boost libraries
 #include <boost/test/auto_unit_test.hpp> // BOOST_AUTO_TEST_CASE()
@@ -30,21 +30,21 @@
 
 
 //------------------------------------------------------------------------------
-BOOST_AUTO_TEST_CASE(UncopiableAndUnmoveableClassTest) {
+BOOST_AUTO_TEST_CASE(UncopiableAndUnmovableClassTest) {
    
-   // check lar::UncopiableAndUnmoveableClass class itself
+   // check lar::UncopiableAndUnmovableClass class itself
    BOOST_CHECK
-     (!std::is_copy_constructible<lar::UncopiableAndUnmoveableClass>::value);
+     (!std::is_copy_constructible<lar::UncopiableAndUnmovableClass>::value);
    BOOST_CHECK
-     (!std::is_copy_assignable<lar::UncopiableAndUnmoveableClass>::value);
+     (!std::is_copy_assignable<lar::UncopiableAndUnmovableClass>::value);
    BOOST_CHECK
-     (!std::is_move_constructible<lar::UncopiableAndUnmoveableClass>::value);
+     (!std::is_move_constructible<lar::UncopiableAndUnmovableClass>::value);
    BOOST_CHECK
-     (!std::is_move_assignable<lar::UncopiableAndUnmoveableClass>::value);
+     (!std::is_move_assignable<lar::UncopiableAndUnmovableClass>::value);
    
    
-   // check a class derived from lar::UncopiableAndUnmoveableClass class
-   struct Derived: protected lar::UncopiableAndUnmoveableClass {};
+   // check a class derived from lar::UncopiableAndUnmovableClass class
+   struct Derived: protected lar::UncopiableAndUnmovableClass {};
    
    BOOST_CHECK(!std::is_copy_constructible<Derived>::value);
    BOOST_CHECK(!std::is_copy_assignable   <Derived>::value);
@@ -52,22 +52,22 @@ BOOST_AUTO_TEST_CASE(UncopiableAndUnmoveableClassTest) {
    BOOST_CHECK(!std::is_move_assignable   <Derived>::value);
    
    
-   // check a class derived from lar::UncopiableAndUnmoveableClass class
-   // and made moveable
-   struct MoveableDerived: protected lar::UncopiableAndUnmoveableClass {
-      MoveableDerived(MoveableDerived&&):
-        lar::UncopiableAndUnmoveableClass() {}
+   // check a class derived from lar::UncopiableAndUnmovableClass class
+   // and made movable
+   struct MovableDerived: protected lar::UncopiableAndUnmovableClass {
+      MovableDerived(MovableDerived&&):
+        lar::UncopiableAndUnmovableClass() {}
    };
    
-   BOOST_CHECK(!std::is_copy_constructible<MoveableDerived>::value);
-   BOOST_CHECK(!std::is_copy_assignable   <MoveableDerived>::value);
-   BOOST_CHECK( std::is_move_constructible<MoveableDerived>::value);
-   BOOST_CHECK(!std::is_move_assignable   <MoveableDerived>::value);
+   BOOST_CHECK(!std::is_copy_constructible<MovableDerived>::value);
+   BOOST_CHECK(!std::is_copy_assignable   <MovableDerived>::value);
+   BOOST_CHECK( std::is_move_constructible<MovableDerived>::value);
+   BOOST_CHECK(!std::is_move_assignable   <MovableDerived>::value);
    
    
-   // check a class derived from lar::UncopiableAndUnmoveableClass class
+   // check a class derived from lar::UncopiableAndUnmovableClass class
    // and made both copy- and move-assignable
-   struct AssignableDerived: protected lar::UncopiableAndUnmoveableClass {
+   struct AssignableDerived: protected lar::UncopiableAndUnmovableClass {
       AssignableDerived& operator=(AssignableDerived const&) { return *this; }
       AssignableDerived& operator=(AssignableDerived&&) { return *this; }
    };

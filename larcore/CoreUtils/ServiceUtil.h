@@ -11,7 +11,7 @@
 #define COREUTILS_SERVICEUTIL
 
 // LArSoft libraries
-#include "larcore/CoreUtils/UncopiableAndUnmoveableClass.h"
+#include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"

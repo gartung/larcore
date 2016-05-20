@@ -99,7 +99,8 @@ struct PinnedDatumClass: public PinnedDatumClassBase {
    static std::unique_ptr<PinnedDatumClass> New(float x, float y)
       {
          ++nNewCalls;
-         return testing::DefaultSetupProvider<PinnedDatumClass>()(x, y);
+         return
+           testing::DefaultSetupProviderClass<PinnedDatumClass>::setup(x, y);
       }
    
    static unsigned int nNewCalls;
@@ -192,7 +193,7 @@ BOOST_AUTO_TEST_CASE(ProviderListTest)
    BOOST_CHECK(l->setup<UnmovableDatumClass>());
    BOOST_CHECK
      (l->custom_setup<PinnedDatumClass>(&PinnedDatumClass::New, 1.0, 0.0));
-   BOOST_CHECK((l->set_alias<PinnedDatumClassBase, PinnedDatumClass>()));
+   BOOST_CHECK((l->set_alias<PinnedDatumClass, PinnedDatumClassBase>()));
    
    // second creation shoudl fail
    BOOST_CHECK(!l->setup_instance<UncopiableDatumClass>("One", "uncopiableII"));

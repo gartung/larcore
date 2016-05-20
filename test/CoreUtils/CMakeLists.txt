@@ -19,7 +19,7 @@ cet_test(ServiceUtil_test
   USE_BOOST_UNIT
   )
 
-cet_test(UncopiableAndUnmoveableClass_test
+cet_test(UncopiableAndUnmovableClass_test
   USE_BOOST_UNIT
   )
 

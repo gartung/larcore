@@ -102,7 +102,7 @@ int main(int argc, char const** argv) {
   geo::GeometryTestAlg Tester(TestEnvironment.TesterParameters());
   
   // 2. we set it up with the geometry from the environment
-  Tester.Setup(*TestEnvironment.Geometry());
+  Tester.Setup(*(TestEnvironment.Provider<geo::GeometryCore>()));
   
   // 3. then we run it!
   unsigned int nErrors = Tester.Run();

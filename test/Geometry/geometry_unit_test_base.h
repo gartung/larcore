@@ -13,6 +13,14 @@
  * 
  * For an example of usage, see larcore/test/Geometry/geometry_iterator_test.cxx
  * 
+ * The standard TesterEnvironment<> class can't handle geo::GeometryCore.
+ * The reason is twofold: for once, ExptGeoHelperInterface service is not
+ * factorized, so we need to choose explicitly the ChannelMapAlg implementation
+ * (here this is obtained by a template argument). Another is that GeometryCore
+ * both is required and requires ChannelMapAlg to have a complete
+ * initialisation. There are ways to overcome the issue at the cost of added
+ * complication.
+ * 
  * Currently provides:
  * - BasicGeometryEnvironmentConfiguration: a test environment configuration
  * - GeometryTesterEnvironment: a prepacked geometry-aware test environment
@@ -245,7 +253,6 @@ namespace testing {
     static SharedGeoPtr_t SharedGlobalGeometry()
       { return GeoResources_t::ShareResource(); }
     
-    
       protected:
     
     using ChannelMapClass = typename ConfigurationClass::ChannelMapClass;
@@ -255,7 +262,7 @@ namespace testing {
     virtual void Setup();
     
     /// Creates a new geometry
-    virtual SharedGeoPtr_t CreateNewGeometry() const;
+    virtual std::unique_ptr<geo::GeometryCore> CreateNewGeometry() const;
     
     //@{
     /// Get ownership of the specified geometry and registers it as global
@@ -297,7 +304,7 @@ namespace testing {
    * 
    */
   template <typename ConfigurationClass>
-  typename GeometryTesterEnvironment<ConfigurationClass>::SharedGeoPtr_t
+  std::unique_ptr<geo::GeometryCore>
   GeometryTesterEnvironment<ConfigurationClass>::CreateNewGeometry() const
   {
     
@@ -310,7 +317,7 @@ namespace testing {
     fhicl::ParameterSet ProviderConfig
       = this->Parameters().template get<fhicl::ParameterSet>
         (ProviderParameterSetPath);
-    geo::GeometryCore* new_geom = new geo::GeometryCore(ProviderConfig);
+    auto new_geom = std::make_unique<geo::GeometryCore>(ProviderConfig);
     
     std::string RelativePath
       = ProviderConfig.get< std::string>("RelativePath", "");
@@ -349,7 +356,7 @@ namespace testing {
     // (we give up ours at the end of this method)
     new_geom->ApplyChannelMap(pChannelMap);
     
-    return SharedGeoPtr_t(new_geom);
+    return new_geom;
   } // GeometryTesterEnvironment<>::CreateNewGeometry()
   
   
@@ -371,7 +378,15 @@ namespace testing {
   
   template <typename ConfigurationClass>
   void GeometryTesterEnvironment<ConfigurationClass>::SetupGeometry() {
-    RegisterGeometry(CreateNewGeometry());
+    //
+    // horrible, shameful hack to support the "new" testing environment
+    // while the old one, informally deprecated, is still around;
+    // we will have TWO versions of GeometryCore around.
+    // Ugh.
+    //
+    RegisterGeometry(CreateNewGeometry()); // old
+    // new
+    this->template AcquireProvider<geo::GeometryCore>(CreateNewGeometry());
   } // GeometryTesterEnvironment<>::SetupGeometry()
   
   

@@ -79,7 +79,7 @@ class GeometryIteratorTestFixture:
     {
       // create a new tester
       tester_ptr = std::make_shared<Tester_t>(TesterParameters());
-      tester_ptr->Setup(*Geometry()); // Geometry() is inherited
+      tester_ptr->Setup(*(Provider<geo::GeometryCore>()));
       // if no tester is default yet, share ours:
       TesterRegistry_t::ProvideDefaultSharedResource(tester_ptr);
     }

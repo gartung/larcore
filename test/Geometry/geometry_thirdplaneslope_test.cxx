@@ -72,7 +72,7 @@ BOOST_FIXTURE_TEST_SUITE(GeometryIterators, SimpleGeometryTestFixture)
 
 BOOST_AUTO_TEST_CASE( AllTests )
 {
-  geo::GeometryCore const& geom = *Geometry();
+  geo::GeometryCore const& geom = *(Provider<geo::GeometryCore>());
   
   const double angle_u = 1. / 3. * util::pi<double>();
   const double angle_v = 2. / 3. * util::pi<double>();

@@ -1,5 +1,5 @@
 /**
- * @file   UncopiableAndUnmoveableClass.h
+ * @file   UncopiableAndUnmovableClass.h
  * @brief  Defines a class that can't be copied nor moved.
  * @author Gianluca Petrillo (petrillo@fnal.gov)
  * 
@@ -19,9 +19,9 @@ namespace lar {
    * A class derived from this one can still be copied (or moved)
    * with an explicit effort. For example, to enable copy construction:
    *     
-   *     struct CopiableClass: protected UncopiableAndUnmoveableClass {
+   *     struct CopiableClass: protected UncopiableAndUnmovableClass {
    *       CopiableClass(CopiableClass const& from)
-   *         : UncopiableAndUnmoveableClass() // , ...
+   *         : UncopiableAndUnmovableClass() // , ...
    *         {
    *           // ...
    *         }
@@ -30,7 +30,7 @@ namespace lar {
    * the default constructor of the base class can be called explicitly instead
    * of the copy constructor. To provide an assignment operation, 
    *     
-   *     struct MoveAssignableClass: protected UncopiableAndUnmoveableClass {
+   *     struct MoveAssignableClass: protected UncopiableAndUnmovableClass {
    *       MoveAssignableClass& operator= (MoveAssignableClass&& from)
    *         {
    *           // ...
@@ -40,26 +40,26 @@ namespace lar {
    *     
    * 
    */
-  struct UncopiableAndUnmoveableClass {
+  struct UncopiableAndUnmovableClass {
     
     /// Default constructor
-    UncopiableAndUnmoveableClass() = default;
+    UncopiableAndUnmovableClass() = default;
     
     // @{
     /// Deleted copy and move constructors and assignments
-    UncopiableAndUnmoveableClass(UncopiableAndUnmoveableClass const&) = delete;
-    UncopiableAndUnmoveableClass(UncopiableAndUnmoveableClass&&) = delete;
+    UncopiableAndUnmovableClass(UncopiableAndUnmovableClass const&) = delete;
+    UncopiableAndUnmovableClass(UncopiableAndUnmovableClass&&) = delete;
     
-    UncopiableAndUnmoveableClass& operator=
-      (UncopiableAndUnmoveableClass const&) = delete;
-    UncopiableAndUnmoveableClass& operator=
-      (UncopiableAndUnmoveableClass&&) = delete;
+    UncopiableAndUnmovableClass& operator=
+      (UncopiableAndUnmovableClass const&) = delete;
+    UncopiableAndUnmovableClass& operator=
+      (UncopiableAndUnmovableClass&&) = delete;
     // @}
     
     /// Default destructor
-    ~UncopiableAndUnmoveableClass() = default;
+    ~UncopiableAndUnmovableClass() = default;
     
-  }; // UncopiableAndUnmoveableClass
+  }; // UncopiableAndUnmovableClass
   
   
 } // namespace lar

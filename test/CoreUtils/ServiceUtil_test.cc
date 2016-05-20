@@ -19,7 +19,7 @@
 #define BOOST_TEST_MODULE ( ServiceUtil_test )
 
 // LArSoft libraries
-#include "larcore/CoreUtils/UncopiableAndUnmoveableClass.h"
+#include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
 #include "larcore/CoreUtils/ServiceUtil.h"
 
 // art libraries
@@ -35,7 +35,7 @@
 
 
 //------------------------------------------------------------------------------
-struct MyProvider: protected lar::UncopiableAndUnmoveableClass {};
+struct MyProvider: protected lar::UncopiableAndUnmovableClass {};
 
 class MyService {
    MyProvider* prov = nullptr;

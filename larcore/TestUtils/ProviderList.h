@@ -3,9 +3,11 @@
  * @brief  Container for service providers used in a test
  * @date   April 22nd, 2016
  * @author Gianluca Petrillo (petrillo@fnal.gov)
+ * @see    ProviderTesterHelpers.h
  * 
  * This is a header-only library.
- * It depends only on standard C++ and does not require additional linkage.
+ * It depends only on standard C++ and on LArSoft pure headers with that same
+ * feature, and therefore does not require additional linkage.
  * 
  * This library provides:
  * 
@@ -14,14 +16,17 @@
  */
 
 #ifndef LARCORE_TESTUTILS_PROVIDERLIST_H
-#define LARCORE_TESTUTILS_PROVIDERLIST_H q
+#define LARCORE_TESTUTILS_PROVIDERLIST_H 1
 
+// LArSoft libraries
+#include "larcore/TestUtils/ProviderTestHelpers.h"
 
 // C/C++ standard libraries
 #include <unordered_map>
 #include <memory> // std::unique_ptr()
 #include <utility> // std::forward()
 #include <typeinfo>
+
 
 
 namespace testing {
@@ -110,47 +115,6 @@ namespace testing {
    } // namespace details
    
    
-   /// Generic setup provider function type
-   template <typename Prov, typename... Args>
-   using setupProvider_t = std::function<std::unique_ptr<Prov>(Args...)>;
-   
-   
-   /// a default implementation for setup provider functor
-   template <typename Prov>
-   struct DefaultSetupProvider {
-      
-      /// Instantiates a new provider with specified arguments for constructor
-      template <typename... Args>
-      std::unique_ptr<Prov> operator() (Args... args) const
-         { return std::make_unique<Prov>(std::forward<Args>(args)...); }
-      
-   }; // DefaultSetupProvider()
-   
-   
-   /**
-    * @brief Class to create and set up a new provider.
-    * @tparam Prov type of provider being set up
-    * 
-    * The class `setupProvider<Prov>` is used by ProviderList to create and
-    * set up a new service provider. The class must be compatible with
-    * setupProvider_t signature: each instance of setupProvider must be a
-    * callable returning a std::unique_ptr<Prov>.
-    * 
-    * An example of implementation is DefaultSetupProvider, that is in fact the
-    * default implementation.
-    * A simple 
-    * 
-    * 
-    */
-   template <typename Prov, typename... Args>
-   std::unique_ptr<Prov> setupProvider(Args... args)
-      { return DefaultSetupProvider<Prov>()(std::forward<Args>(args)...); }
-   
-   template <>
-   std::unique_ptr<int> setupProvider<int>(int a)
-      { return std::make_unique<int>(a); }
-   
-   
    
    /** *************************************************************************
     * @brief Container of service providers accessed by type and optional label
@@ -160,17 +124,18 @@ namespace testing {
     * an optional instance label to discriminate between providers of the same
     * type.
     * 
-    * The list owns the providers. A provider is created with `emplace()`
-    * (or `emplace_instance()` if a instance label is needed). This method
-    * relies on a functor `testing::setupProviderClass()` to create and
-    * correctly set up the provider:
+    * The list owns the providers. A provider is created with `setup()`
+    * (or `setup_instance()` if a instance label is needed). This method
+    * relies on a class `testing::ProvideSetupClass` to create and
+    * correctly set up the provider. For example, to set up the provider
+    * `LArPropertiesStandard`:
     *     
     *     provList.setup<LArPropertiesStandard>(pset);
     *     
     * assuming that `LArPropertiesStandard` provider has a constructor with
-    * as only argument `pset` (supposedly, a `fhicl::ParameterSet`.
+    * as only argument `pset` (supposedly, a `fhicl::ParameterSet`).
     * If a custom setup is needed, the methods `custom_setup_instance()` and
-    * `custom_setup()`  take as argument the setup functor itself, which can do
+    * `custom_setup()`  take as argument a setup function, which can do
     * whatever it takes to perform the set up.
     * 
     * After a provider is set up, a reference to it can be obtained by `get()`:
@@ -180,8 +145,16 @@ namespace testing {
     * If no such class is available, an exception will be thrown.
     * The presence of a provider can be checked beforehand with `has()`.
     * 
-    * @note The presence of multiple providers of the same type is not useful
-    * in the current art/LArSoft.
+    * @note The presence of multiple providers of the same type, supported via
+    * instance names, is not useful in the current art/LArSoft.
+    * 
+    * 
+    * How can a provider support the `setup()` construction method?
+    * --------------------------------------------------------------
+    * 
+    * A provider can specify its own setup by specialising the class
+    * `testing::ProvideSetupClass`. A default implementation is provided,
+    * that constructs the provider with a parameter set.
     * 
     */
    class ProviderList {
@@ -262,8 +235,16 @@ namespace testing {
       bool setup_instance
          (std::string label, Args&&... args)
          {
-            return custom_setup_instance<T>
-              (label, setupProvider<T, Args...>, std::forward<Args>(args)...);
+            auto k = key<T>(label); // key
+            auto it = data.find(k);
+            if (it != data.end()) return false;
+            
+            pointer_t ptr = std::make_unique<concrete_type_t<T>>
+              (setupProvider<T>(std::forward<Args>(args)...));
+            data.emplace_hint(it, std::move(k), std::move(ptr));
+            return true;
+         //   return custom_setup_instance<T>
+         //     (label, setupProvider<T, Args...>, std::forward<Args>(args)...);
          } // setup_instance()
       
       /// Construct and register an object of type T with specified arguments
@@ -321,7 +302,7 @@ namespace testing {
       
       
       /// Sets the Alias type as an alias of the Prov provider (with labels)
-      template <typename Alias, typename Prov>
+      template <typename Prov, typename Alias>
       bool set_alias(std::string alias_label = "", std::string prov_label = "")
          {
             // find the alias location
@@ -372,7 +353,7 @@ namespace testing {
        */
       template <typename T>
       T const* getPointer(std::string label = "") const
-         { return get<T>(label).get(); }
+         { return get_elem<T>(label).get(); }
       
       template <typename T>
       T* getPointer(std::string label = "")

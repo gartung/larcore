@@ -93,7 +93,7 @@ namespace lar {
     
     using this_type = ProviderPack<Providers...>; ///< alias of this class
     
-    /// type used for stoage of the pointers
+    /// type used for storage of the pointers
     using tuple_type = std::tuple<Providers const*...>;
     
       public:
@@ -118,6 +118,22 @@ namespace lar {
         details::SetFrom
           <this_type, ProviderPack<OtherProviders...>, Providers...>
           (*this, from);
+      }
+
+    /**
+     * @brief Constructor: extracts the providers from anothe parameter pack
+     * @tparam OtherProviders list of the providers of the source provider pack
+     * @param providers all the providers needed (or more)
+     * 
+     * This constructor requires all the providers we need to be present
+     * in the source provider pack.
+     */
+    template<typename... OtherProviders>
+    ProviderPack(OtherProviders const*... providers)
+      {
+        details::SetFrom
+          <this_type, ProviderPack<OtherProviders...>, Providers...>
+          (*this, ProviderPack<OtherProviders...>(providers...));
       }
 
     /// Returns the provider with the specified type
