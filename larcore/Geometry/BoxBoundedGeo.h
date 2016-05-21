@@ -11,6 +11,7 @@
 /// C/C++ standard library
 #include <algorithm>
 #include <array>
+#include <vector>
 
 /// Root library
 #include "TVector3.h"
