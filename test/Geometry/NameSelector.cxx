@@ -10,7 +10,7 @@
 #include "test/Geometry/NameSelector.h"
 
 // framework libraries
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 
 // C/C++ standard library
 #include <stdexcept> // std::logic_error

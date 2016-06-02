@@ -12,7 +12,7 @@
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 #include "cetlib/demangle.h"
 
 // C/C++ standard libraries

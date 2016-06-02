@@ -9,8 +9,8 @@
 #define GEO_CHANNELMAPALG_H
 
 // LArSoft  libraries
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "larcore/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // Framework libraries
 #include "cetlib/exception.h"

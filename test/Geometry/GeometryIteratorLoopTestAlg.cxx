@@ -9,7 +9,7 @@
 #include "GeometryIteratorLoopTestAlg.h"
 
 // LArSoft includes
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"

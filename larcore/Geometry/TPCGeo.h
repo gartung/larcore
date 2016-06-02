@@ -17,7 +17,7 @@
 class TGeoNode;
 class TGeoHMatrix;
 
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/BoxBoundedGeo.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 

@@ -1,7 +1,7 @@
-#include "art/Persistency/Common/Wrapper.h"
+#include "canvas/Persistency/Common/Wrapper.h"
 
-#include "larcore/SummaryData/RunData.h"
-#include "larcore/SummaryData/POTSummary.h"
+#include "larcoreobj/SummaryData/RunData.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
 
 template class std::vector<sumdata::RunData>;
 template class art::Wrapper<sumdata::RunData>;

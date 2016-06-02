@@ -1,6 +1,6 @@
 
 art_make( 
-          LIB_LIBRARIES ${ART_PERSISTENCY_COMMON}
+          LIB_LIBRARIES art_Persistency_Common canvas_Persistency_Common
          )
 
 install_headers()

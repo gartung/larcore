@@ -12,7 +12,7 @@
 #include <set>
 #include <iostream>
 
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
 #include "larcore/Geometry/GeoObjectSorterStandard.h"
 #include "fhiclcpp/ParameterSet.h"

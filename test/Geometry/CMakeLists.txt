@@ -4,7 +4,7 @@ cet_enable_asserts()
 art_make_library( LIBRARY_NAME GeometryTestLib
                   SOURCE NameSelector.cxx GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
                   LIBRARIES larcore_Geometry
-                        ${ART_UTILITIES}
+                        art_Utilities canvas_Utilities
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
@@ -39,7 +39,7 @@ simple_plugin ( GeometryTest "module"
 cet_test(NameSelector_test
   SOURCES NameSelector_test.cxx
   LIBRARIES GeometryTestLib
-            ${ART_UTILITIES}
+            art_Utilities canvas_Utilities
   USE_BOOST_UNIT
 )
 

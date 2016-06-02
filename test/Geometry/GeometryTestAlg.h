@@ -13,7 +13,7 @@
 
 // LArSoft includes
 #include "test/Geometry/NameSelector.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
 // C/C++ standard libraries
 #include <string>

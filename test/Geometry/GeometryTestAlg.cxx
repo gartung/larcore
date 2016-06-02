@@ -10,8 +10,8 @@
 #include "test/Geometry/GeometryTestAlg.h"
 
 // LArSoft includes
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"

@@ -7,7 +7,7 @@
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
-#include "larcore/SummaryData/RunData.h"
+#include "larcoreobj/SummaryData/RunData.h"
 
 namespace sumdata {
 
