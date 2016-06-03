@@ -110,7 +110,7 @@ class GeometryIteratorTestFixture:
 //
 
 // BOOST_FIXTURE_TEST_SUITE(GeometryIterators, GeometryIteratorTestFixture)
-BOOST_GLOBAL_FIXTURE(GeometryIteratorTestFixture)
+BOOST_GLOBAL_FIXTURE(GeometryIteratorTestFixture);
 
 /*
 BOOST_AUTO_TEST_CASE( AllTests )

@@ -119,7 +119,7 @@ void TestIDcomparison(
 
 void test_CryostatID_defaultConstructor() {
   
-  BOOST_MESSAGE("Testing default-constructed cryostat ID");
+  BOOST_TEST_MESSAGE("Testing default-constructed cryostat ID");
   
   geo::CryostatID cid;
   
