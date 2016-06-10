@@ -11,6 +11,7 @@
 /// C/C++ standard library
 #include <algorithm>
 #include <array>
+#include <vector>
 
 /// Root library
 #include "TVector3.h"
@@ -279,9 +280,9 @@ namespace geo {
       { return CoordinateContained(c, range[0], range[1], wiggle); }
     
     
-      protected:
+    /// @{
+    /// @name Setting dimensions
     
-    //@{
     /**
      * @brief Sets the boundaries in world coordinates as specified.
      * @param x_min lower x coordinate
@@ -290,14 +291,6 @@ namespace geo {
      * @param y_max upper y coordinate
      * @param z_min lower z coordinate
      * @param z_max upper z coordinate
-     * @param lower lower coordinates (x, y, z)
-     * @param upper upper coordinates (x, y, z)
-     * 
-     * This class is protected, since we don't want users to mess up with the
-     * boundaries.
-     * This may become a limit if an object wants to contain a BoxBoundedGeo
-     * (as opposed to derive from it) and needs to defer the construction.
-     * In that case, a pointer needs to be used.
      */
     void SetBoundaries(
       Coord_t x_min, Coord_t x_max,
@@ -308,9 +301,39 @@ namespace geo {
         c_min = { x_min, y_min, z_min };
         c_max = { x_max, y_max, z_max };
       }
+
+    /**
+     * @brief Sets the boundaries in world coordinates as specified.
+     * @param lower lower coordinates (x, y, z)
+     * @param upper upper coordinates (x, y, z)
+     */
     void SetBoundaries(Coords_t lower, Coords_t upper)
       { c_min = lower; c_max = upper; }
-    //@}
+    
+    /**
+     * @brief Extends the current box to also include the specified one
+     * @param box the box to include
+     */
+    void ExtendToInclude(BoxBoundedGeo const& box)
+      {
+        set_min(c_min[0], box.MinX());
+        set_min(c_min[1], box.MinY());
+        set_min(c_min[2], box.MinZ());
+        set_max(c_min[0], box.MaxX());
+        set_max(c_min[1], box.MaxY());
+        set_max(c_min[2], box.MaxZ());
+      } // ExtendToInclude()
+    
+    /// @}
+    
+    
+    /// Sets var to value if value is smaller than the current var value
+    static void set_min(Coord_t& var, Coord_t value)
+      { if (value < var) var = value; }
+    
+    /// Sets var to value if value is larger than the current var value
+    static void set_max(Coord_t& var, Coord_t value)
+      { if (value > var) var = value; }
     
     
       private:
@@ -335,7 +358,7 @@ namespace geo {
      * Normaly the return value should have one (if the trajectory originates in the box) or two (else) entries.
      * If the return value has two entries the first represents the entry point and the second the exit point
      */
-    std::vector<TVector3> GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect);
+    std::vector<TVector3> GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect) const;
     
   }; // class BoxBoundedGeo
   

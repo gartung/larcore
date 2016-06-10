@@ -9,7 +9,7 @@
 
 namespace geo
 {
-  std::vector<TVector3> BoxBoundedGeo::GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect)
+  std::vector<TVector3> BoxBoundedGeo::GetIntersections(TVector3 const& TrajectoryStart, TVector3 const& TrajectoryDirect) const
   {
     std::vector<TVector3> IntersectionPoints;
     std::vector<double> LineParameters;
@@ -34,7 +34,7 @@ namespace geo
     NormalVectorOffsets.at(3) = TVector3(c_min[0], c_max[1], c_min[2]); // Top
     NormalVectorOffsets.at(4) = TVector3(c_min[0], c_min[1], c_min[2]); // upstream
     NormalVectorOffsets.at(5) = TVector3(c_min[0], c_min[1], c_max[2]); // downstream
-    
+
     // Loop over all surfaces of the box 
     for(unsigned int face_no = 0; face_no < NormalVectors.size(); face_no++)
     {
@@ -50,11 +50,29 @@ namespace geo
       // Calculate intersection point using the line parameter
       IntersectionPoints.push_back( LineParameters.back()*TrajectoryDirect + TrajectoryStart );
       
+      // Coordinate which should be ignored when checking for limits added by Christoph Rudolf von Rohr 05/21/2016
+      unsigned int NoCheckCoord;
+      
+      // Calculate NoCheckCoord out of the face_no
+      if(face_no % 2)
+      {
+	  // Convert odd face number to coordinate
+	  NoCheckCoord = (face_no - 1)/2;
+      }
+      else
+      {
+	  // Convert even face number to coordinate
+	  NoCheckCoord = face_no/2;
+      }
+      
       // Loop over all three space coordinates
       for(unsigned int coord = 0; coord < 3; coord++)
       {
-	// Check if point is not within the surface limits at this coordinate
-	if(IntersectionPoints.back()[coord] > c_max[coord] || IntersectionPoints.back()[coord] < c_min[coord])
+	// Changed by Christoph Rudolf von Rohr 05/21/2016
+	// Then check if point is not within the surface limits at this coordinate, without looking
+	// at the plane normal vector coordinate. We can assume, that our algorithm already found this coordinate correctily.
+	// In rare cases, looking for boundaries in this coordinate causes unexpected behavior due to floating point inaccuracies.
+	if( coord != NoCheckCoord && (IntersectionPoints.back()[coord] > c_max[coord] || IntersectionPoints.back()[coord] < c_min[coord]) )
 	{
 	  // if off limits, get rid of the useless data and break the coordinate loop
 	  LineParameters.pop_back();
