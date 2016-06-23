@@ -11,7 +11,7 @@ cet_test( printBacktrace_test
 
 cet_test(ServiceUtil_test
   LIBRARIES
-    ${ART_UTILITIES}
+    art_Utilities canvas_Utilities
     ${MF_MESSAGELOGGER}
     ${MF_UTILITIES}
     ${FHICLCPP}
