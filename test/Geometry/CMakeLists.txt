@@ -2,8 +2,9 @@ cet_enable_asserts()
 
 # test libraries
 art_make_library( LIBRARY_NAME GeometryTestLib
-                  SOURCE NameSelector.cxx GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
+                  SOURCE GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
                   LIBRARIES larcore_Geometry
+                        larcore_TestUtils
                         art_Utilities canvas_Utilities
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
@@ -34,15 +35,6 @@ simple_plugin ( GeometryTest "module"
                     ${CETLIB}
                     ${ROOT_BASIC_LIB_LIST}
               )
-
-# library test
-cet_test(NameSelector_test
-  SOURCES NameSelector_test.cxx
-  LIBRARIES GeometryTestLib
-            art_Utilities canvas_Utilities
-  USE_BOOST_UNIT
-)
-
 
 # geometry test on "standard" geometry
 

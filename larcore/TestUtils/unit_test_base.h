@@ -12,13 +12,25 @@
  * Currently provides:
  * - BasicEnvironmentConfiguration: a test environment configuration
  * - TestSharedGlobalResource: mostly internal use
- * - TesterEnvironment: a prepacked test environment
+ * - TesterEnvironment: a prepacked test environment with some provider support
+ * 
+ * This is a pure template header. It will require the following libraries:
+ * 
+ * * `MF_MessageLogger`
+ * * `MF_Utilities`
+ * * `fhiclcpp`
+ * * `cetlib`
  * 
  */
 
 
 #ifndef TEST_UNIT_TEST_BASE_H
 #define TEST_UNIT_TEST_BASE_H
+
+// LArSoft libraries
+#include "larcore/TestUtils/ProviderTestHelpers.h"
+#include "larcore/TestUtils/ProviderList.h"
+#include "larcore/CoreUtils/ProviderPack.h"
 
 // utility libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -37,7 +49,9 @@
 #include <iostream> // for output before message facility is set up
 #include <string>
 #include <memory> // std::unique_ptr<>
+#include <utility> // std::move(), std::forward()
 #include <map>
+#include <type_traits> // std::add_rvalue_reference()
 #include <stdexcept> // std::logic_error
 
 
@@ -90,6 +104,12 @@ namespace testing {
       std::copy(argv + 1, argv + argc, args.begin());
       
     } // CommandLineArguments:ParseArguments()
+    
+    
+    // forward declaration
+    template
+       <typename TestEnv, typename Pack, typename... Provs>
+    struct ProviderPackFiller;
     
   } // namespace details
   
@@ -511,7 +531,7 @@ namespace testing {
    * Unfortunately Boost does not give any control on the initialization of the
    * object, so everything must be ready to go as hard coded.
    * The ConfigurationClass class tries to alleviate that.
-   * That is another, small static class that TesterEnvironment uses to
+   * That is another, small static class that BasicTesterEnvironment uses to
    * get its parameters.
    * 
    * The requirements for the ConfigurationClass are:
@@ -532,10 +552,10 @@ namespace testing {
    * of the set up, but it's not trivial to create a derived class that works
    * correctly: the derived class must declare a new default constructor,
    * and that default constructor must call the protected constructor
-   * (TesterEnvironment<ConfigurationClass>(no_setup))
+   * (BasicTesterEnvironment<ConfigurationClass>(no_setup))
    */
   template <typename ConfigurationClass>
-  class TesterEnvironment: private details::CommandLineArguments {
+  class BasicTesterEnvironment: private details::CommandLineArguments {
     
       public:
     using Configuration_t = ConfigurationClass;
@@ -546,7 +566,7 @@ namespace testing {
      * The configuration is from a default-constructed ConfigurationClass.
      * This is suitable for use as Boost unit test fixture.
      */
-    TesterEnvironment(bool bSetup = true) { if (bSetup) Setup(); }
+    BasicTesterEnvironment(bool bSetup = true) { if (bSetup) Setup(); }
     
     //@{
     /**
@@ -561,17 +581,20 @@ namespace testing {
      * 
      * In the r-value-reference constructor, the configurer is moved.
      */
-    TesterEnvironment(Configuration_t const& cfg_obj, bool bSetup = true):
+    BasicTesterEnvironment(Configuration_t const& cfg_obj, bool bSetup = true):
       config(cfg_obj)
       { if (bSetup) Setup(); }
-    TesterEnvironment(Configuration_t&& cfg_obj, bool bSetup = true):
+    BasicTesterEnvironment(Configuration_t&& cfg_obj, bool bSetup = true):
       config(cfg_obj)
       { if (bSetup) Setup(); }
     //@}
     
     /// Destructor: closing remarks
-    virtual ~TesterEnvironment();
+    virtual ~BasicTesterEnvironment();
     
+    
+    /// @{
+    /// @name Configuration retrieval
     
     /// Returns the full configuration
     fhicl::ParameterSet const& Parameters() const { return params; }
@@ -597,6 +620,7 @@ namespace testing {
         else return TesterParameters(config.MainTesterParameterSetName());
       }
     
+    /// @}
     
     static fhicl::ParameterSet CompileParameterSet(std::string cfg);
     
@@ -644,7 +668,325 @@ namespace testing {
     
     fhicl::ParameterSet params; ///< full configuration of the test
     
+  }; // class BasicTesterEnvironment<>
+  
+  
+  
+  //****************************************************************************
+  /**
+   * @brief A test environment with some support for service providers
+   * @tparam ConfigurationClass a class providing compile-time configuration
+   * 
+   * This test environment extends BasicTesterEnvironment with some basic
+   * support for service providers.
+   *
+   *
+   * Service provider support
+   * =========================
+   *
+   * This environment makes it available the method `Provider<Prov>()`, which
+   * returns a pointer to the provider of type Prov.
+   * 
+   * All providers must be set up _after_ the test environment is constructed.
+   * The environment provides the following facilities:
+   * 
+   * * SetupProvider() to set up a service provider with generic arguments
+   * * SetupProviderFromService() to set up a service provider with a parameter
+   *     set extracted from the configuration
+   * * AcquireProvider() to register a service provider already available
+   * * DropProvider() to destroy an existing provider
+   * 
+   * The set up methods support a `For` variant (e.g. `SetupProviderFor()`) to
+   * register the provider also under the type of its interface. For example,
+   * if `LArPropertiesStandard` is an implementation of `LArProperties`,
+   * the call:
+   *     
+   *     env.SetupProviderFor<LArProperties, LArPropertiesStandard>(pset);
+   *     
+   * will set up a `LArPropertiesStandard` provider just like
+   *     
+   *     env.SetupProvider<LArPropertiesStandard>(pset);
+   *     
+   * would, and it makes the provider available as `LArProperties` too, so that
+   * both calls:
+   *     
+   *     env.Provider<LArProperties>();
+   *     env.Provider<LArPropertiesStandard>();
+   *     
+   * are valid and return the same provider.
+   * 
+   * 
+   * Use as test fixture
+   * ====================
+   * 
+   * The providers must be set up _after_ the test environment is constructed.
+   * This also means an additional complication for fixtures that require to
+   * be constructed in a final state, as it is the case for Boost unit test
+   * suite fixtures.
+   * In these cases, a class should publicly derive from TesterEnvironment, and
+   * the necessary setup should be added into the constructor of this derived
+   * class.
+   * 
+   * Note that, as in the case of BasicTesterEnvironment, in this case there is
+   * no room for polymorphism here since the setup need to happen on
+   * construction.
+   */
+  template <typename ConfigurationClass>
+  class TesterEnvironment
+    : public BasicTesterEnvironment<ConfigurationClass>
+  {
+    using TesterEnvBase_t = BasicTesterEnvironment<ConfigurationClass>;
+    using TesterEnv_t = TesterEnvironment<ConfigurationClass>;
+    
+      public:
+    // inherit constructors
+    using TesterEnvBase_t::TesterEnvBase_t;
+    
+    /**
+     * @brief Sets a service provider up by calling its testing::setupProvider()
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @throw runtime_error if the provider already exists
+     * @see SetupProviderFor(), AcquireProvider()
+     * 
+     * A provider of type Prov is created, set up and recorded.
+     * Provider setup is delegated to `testing::setupProvider` function specific
+     * to the provider itself (that is, `testing::setupProvider<Prov>(args...)`)
+     * to which the setup arguments are forwarded.
+     * If the provider already exists, an exception is thrown.
+     */
+    template <typename Prov, typename... Args>
+    Prov* SetupProvider(Args... args)
+      {
+        if (!providers.setup<Prov>(std::forward<Args>(args)...))
+          throw std::runtime_error("Provider already exists!");
+        return providers.getPointer<Prov>();
+      }
+    
+    /**
+     * @brief Sets a service provider up by calling its testing::setupProvider()
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @see SetupProvider()
+     * @throw runtime_error if the provider already exists
+     * 
+     * A provider of type Prov is created, set up and recorded.
+     * Provider setup is attempted by constructing the provider with a parameter
+     * set from the registered configuration of service with specified `name`.
+     */
+    template <typename Prov>
+    Prov* SetupProviderFromService(std::string name)
+      { return SetupProvider<Prov>(this->ServiceParameters(name)); }
+    
+    /**
+     * @brief Acquires a service provider
+     * @tparam Prov type of provider
+     * @param prov the provider to be acquired
+     * @return a pointer to the provider
+     * @see SetupProvider()
+     * @throw runtime_error if the provider already exists
+     * 
+     * This method registers and takes ownership of the specified provider.
+     * It is similar to SetupProvider() except that user is in charge of the
+     * preliminary creation and setup of the provider.
+     */
+    template <typename Prov>
+    Prov* AcquireProvider(std::unique_ptr<Prov>&& prov)
+      {
+        if (!providers.acquire(std::move(prov)))
+          throw std::runtime_error("Provider already exists!");
+        return providers.getPointer<Prov>();
+      }
+    
+    /**
+     * @brief Sets a provider up, recording it as implementation of Interface
+     * @tparam Interface type of provider interface being implemented
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @see SetupProvider()
+     * 
+     * This method performs the same type of setup as SetupProvider().
+     * In addition, it registers the provider as an implementation of Interface.
+     * This means that the provider can be obtained not only with
+     * `provider<Prov>()`, which returns a pointer to the actual class Prov,
+     * but also as `provider<Interface>()`, which returns a pointer to the base
+     * class Interface.
+     */
+    template <typename Interface, typename Prov, typename... Args>
+    Prov* SetupProviderFor(Args... args)
+      {
+        auto prov = SetupProvider<Prov>(std::forward<Args>(args)...);
+        providers.set_alias<Prov, Interface>();
+        return prov;
+      }
+    
+    /**
+     * @brief Sets a provider up, recording it as implementation of Interface
+     * @tparam Interface type of provider interface being implemented
+     * @tparam Prov type of provider
+     * @tparam Args type of arguments for the setup function
+     * @param args arguments for the setup function
+     * @return a pointer to the provider set up
+     * @see SetupProviderFromService(), SetupProviderFor()
+     * @throw runtime_error if the provider already exists
+     * 
+     * This method performs the same type of setup as
+     * SetupProviderFromService().
+     * In addition, it registers the provider as an implementation of Interface.
+     * This means that the provider can be obtained not only with
+     * `provider<Prov>()`, which returns a pointer to the actual class Prov,
+     * but also as `provider<Interface>()`, which returns a pointer to the base
+     * class Interface.
+     */
+    template <typename Interface, typename Prov>
+    Prov* SetupProviderFromServiceFor(std::string name)
+      {
+        auto prov = SetupProviderFromService<Prov>(name);
+        providers.set_alias<Prov, Interface>();
+        return prov;
+      }
+    
+    /**
+     * @brief Acquires a service provider implementing an interface
+     * @tparam Prov type of provider
+     * @tparam Interface type provider alias
+     * @param prov the provider to be acquired
+     * @return a pointer to the provider
+     * @see SetupProviderFor(), AcquireProvider()
+     * 
+     * This method registers and takes ownership of the specified provider,
+     * like AcquireProvider() does. It also registers the provider as an
+     * implementation of Interface class, as SetupProviderFor does.
+     * It is similar to SetupProvider() except that user is in charge of the
+     * preliminar creation and setup of the provider.
+     */
+    template <typename Interface, typename Prov>
+    Prov* AcquireProviderFor(std::unique_ptr<Prov>&& prov)
+      {
+        auto prov_ptr = providers.acquire(prov);
+        providers.set_alias<Prov, Interface>();
+        return prov_ptr;
+      }
+    
+    /**
+     * @brief Oversimplified provider setup
+     * @return a pointer to the provider
+     * @tparam Prov provider type
+     * 
+     * This is a one-step setup of the specified provider.
+     * 
+     * It is available only if Prov provider comes with an implementation of
+     * testing::SimpleEnvironmentSetupClass that explains how to set up an
+     * environment.
+     * 
+     */
+    template <typename Prov>
+    Prov* SimpleProviderSetup() { return simpleEnvironmentSetup<Prov>(*this); }
+
+    /**
+     * @brief Removes and destroys the specified provider
+     * @tparam Prov type of provider to be destroyed
+     * @throw runtime_error if the provider was not present
+     */
+    template <typename Prov>
+    void DropProvider()
+      { 
+        if (!providers.erase<Prov>())
+          throw std::runtime_error("Provider not present!");
+      }
+    
+    /// Return the specified provider (throws if not available)
+    template <typename Prov>
+    Prov const* Provider() const
+      { return providers.getPointer<Prov>(); }
+    
+    /**
+     * @brief Fills the specified provider pack with providers
+     * @throw runtime_error and everything provider() method can throw
+     * @see Provider()
+     */
+    template <typename... Provs>
+    void FillProviderPack(lar::ProviderPack<Provs...>& pack) const
+      {
+         details::ProviderPackFiller
+           <TesterEnv_t, lar::ProviderPack<Provs...>, Provs...>
+           ::fill
+           (*this, pack);
+      } // FillProviderPack()
+    
+    
+    /**
+     * @brief Returns a provider pack for the specified provider
+     * @tparam Prov type of the provider
+     * @throw runtime_error and everything provider() method can throw
+     * @see FillProviderPack()
+     * 
+     * The provider is required to have a `providers_type` type defined as an
+     * specialisation of lar::ProviderPack.
+     */
+    template <typename Prov>
+    typename Prov::providers_type ProviderPackFor() const
+      {
+         typename Prov::providers_type pack;
+         FillProviderPack(pack);
+         return pack;
+      } // ProviderPackFor()
+    
+    
+      protected:
+    ProviderList providers; ///< list of available providers
   }; // class TesterEnvironment<>
+  
+  
+  
+  /**
+   * @brief Constructs and returns a TesterEnvironment object
+   * @tparam CONFIG type of configuration object (detected from arguments)
+   * @tparam TESTENV type of the tester environment (default: TesterEnvironment)
+   * @tparam ARGS pack of types of the remining constructor arguments (optional)
+   * @param config the configuration object to be used
+   * @param other_args the remaining arguments of the tester constructor
+   *  
+   * This function creates and returns a tester environment.
+   * By default, the tester environment class is TesterEnvironment<CONFIG>
+   * and no additional constructor arguments are needed except for special
+   * needs. The simplest way to use the function with an already available
+   * configuration is:
+   *     
+   *    auto TestEnv = testing::CreateTesterEnvironment(config); 
+   *     
+   * where TestEnv is assigned a specialization of TesterEnvironment.
+   * 
+   * The template class TESTENV undergoes the following requirement:
+   * 
+   *  - it must have a constructor using a CONFIG constant reference as first
+   *    argument
+   * 
+   * The CONFIG object is subject to no special requirements besides the ones
+   * from TESTENV constructor.
+   */
+  // Note: this function is expected to be used with automatic type detection;
+  // the rules on "universal references" dictate that if config is a (l-value)
+  // reference, CONFIG itself is a l-value reference. We don't want to create
+  // a TesterEnvironment<Config&>, so we explicitly remove the reference from
+  // CONFIG (decay does that and aso removes the constantness, that we also
+  // don't want to be embedded in CONFIG).
+  template <
+    typename CONFIG,
+    typename TESTENV = TesterEnvironment<std::decay_t<CONFIG>>,
+    typename... ARGS
+    >
+  TESTENV CreateTesterEnvironment(CONFIG&& config, ARGS... other_args)
+    {
+      return TESTENV
+        (std::forward<CONFIG>(config), std::forward<ARGS>(other_args)...);
+    }
   
   
   
@@ -683,16 +1025,37 @@ namespace testing {
         return after_paths.find_file(filename);
       }
     } // FirstAbsoluteOrLookupWithDotPolicy::operator()
+    
+    
+    /// Helper to fill a provider pack: main specialisation
+    template
+      <typename TestEnv, typename Pack, typename Prov, typename... Others>
+    struct ProviderPackFiller<TestEnv, Pack, Prov, Others...> {
+      static void fill(TestEnv const& env, Pack& pack)
+        {
+          pack.set(env.template Provider<Prov>());
+          ProviderPackFiller<TestEnv, Pack, Others...>::fill(env, pack);
+        } // fill()
+      
+    }; // ProviderPackFiller<TestEnv, Pack, Prov, Others...>
+    
+    // end-of-recursion specialisation
+    template <typename TestEnv, typename Pack>
+    struct ProviderPackFiller<TestEnv, Pack> {
+      static void fill(TestEnv const&, Pack&) {}
+    }; // ProviderPackFiller<>
+    
+    
   } // namespace details
   
   
   //****************************************************************************
   template <typename ConfigurationClass>
-  TesterEnvironment<ConfigurationClass>::~TesterEnvironment() {
+  BasicTesterEnvironment<ConfigurationClass>::~BasicTesterEnvironment() {
     
     mf::LogInfo("Test") << config.ApplicationName() << " completed.";
     
-  } // TesterEnvironment<>::~TesterEnvironment()
+  } // BasicTesterEnvironment<>::~BasicTesterEnvironment()
   
   
   /** **************************************************************************
@@ -701,11 +1064,13 @@ namespace testing {
    */
   template <typename ConfigurationClass>
   fhicl::ParameterSet
-  TesterEnvironment<ConfigurationClass>::CompileParameterSet(std::string cfg) {
+  BasicTesterEnvironment<ConfigurationClass>::CompileParameterSet
+    (std::string cfg)
+  {
     fhicl::ParameterSet global_pset;
     fhicl::make_ParameterSet(cfg, global_pset);
     return global_pset;
-  } // TesterEnvironment<>::CompileParameterSet()
+  } // BasicTesterEnvironment<>::CompileParameterSet()
   
   
   /** **************************************************************************
@@ -715,7 +1080,7 @@ namespace testing {
    */
   template <typename ConfigurationClass>
   fhicl::ParameterSet
-  TesterEnvironment<ConfigurationClass>::ParseParameters
+  BasicTesterEnvironment<ConfigurationClass>::ParseParameters
     (std::string config_path)
   {
     // configuration file lookup policy
@@ -732,7 +1097,7 @@ namespace testing {
     fhicl::make_ParameterSet(table, global_pset);
     
     return global_pset;
-  } // TesterEnvironment<>::ParseParameters()
+  } // BasicTesterEnvironment<>::ParseParameters()
   
   
   /** **************************************************************************
@@ -750,11 +1115,11 @@ namespace testing {
    * used as full configuration.
    */
   template <typename ConfigurationClass>
-  void TesterEnvironment<ConfigurationClass>::Configure() {
+  void BasicTesterEnvironment<ConfigurationClass>::Configure() {
     std::string config_path = config.ConfigurationPath();
     params = config_path.empty()?
       DefaultParameters(): ParseParameters(config_path);
-  } // TesterEnvironment::Configure()
+  } // BasicTesterEnvironment::Configure()
   
   
   /** **************************************************************************
@@ -764,7 +1129,7 @@ namespace testing {
    * set. If not there, the default configuration is used.
    */
   template <typename ConfigurationClass>
-  void TesterEnvironment<ConfigurationClass>::SetupMessageFacility
+  void BasicTesterEnvironment<ConfigurationClass>::SetupMessageFacility
     (fhicl::ParameterSet const& pset, std::string appl_name /* = "" */) const
   {
     fhicl::ParameterSet mf_pset;
@@ -789,12 +1154,12 @@ namespace testing {
   //    << "LOG_TRACE/LOG_DEBUG messages are not compiled away.";
     mf::LogInfo("MessageFacility") << "MessageFacility started.";
     mf::SetModuleName("main");
-  } // TesterEnvironment::SetupMessageFacility()
+  } // BasicTesterEnvironment::SetupMessageFacility()
   
   
   
   template <typename ConfigurationClass>
-  void TesterEnvironment<ConfigurationClass>::Setup(
+  void BasicTesterEnvironment<ConfigurationClass>::Setup(
   ) {
     
     //
@@ -821,7 +1186,7 @@ namespace testing {
     
     mf::LogInfo("Test") << config.ApplicationName() << " base setup complete.";
     
-  } // TesterEnvironment<>::Setup()
+  } // BasicTesterEnvironment<>::Setup()
   
   
 } // namespace testing
