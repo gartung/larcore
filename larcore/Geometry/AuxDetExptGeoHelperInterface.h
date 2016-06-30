@@ -77,7 +77,7 @@ namespace geo
      * according to the channel map (usually, it resorts the data).
      */
     void ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters, 
-				      geo::AuxDetGeometryCore* geom);
+                                      geo::AuxDetGeometryCore* geom);
     
     /// Returns null pointer if the initialization failed
     /// NOTE:  the sub-class owns the ChannelMapAlg object
@@ -88,9 +88,8 @@ namespace geo
     
     /// Implementation of ConfigureChannelMapAlg (pure virtual)
     virtual 
-    void doConfigureAuxDetChannelMapAlg(
-      fhicl::ParameterSet const & sortingParameters, geo::AuxDetGeometryCore* geom
-      ) = 0;
+    void doConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters,
+                                        geo::AuxDetGeometryCore* geom) = 0;
     
     /// Returns the ChannelMapAlg
     virtual 
