@@ -10,3 +10,5 @@ cet_test(NameSelector_test
 cet_test(ProviderList_test
   USE_BOOST_UNIT
 )
+
+cet_test(StopWatch_test)
