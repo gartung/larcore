@@ -12,10 +12,11 @@
 #define BOOST_TEST_MODULE GeometryThirdPlaneSlopeTest
 
 // LArSoft libraries
-#include "test/Geometry/geometry_boost_unit_test_base.h"
-#include "SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
-#include "Geometry/GeometryCore.h"
-#include "Geometry/ChannelMapStandardAlg.h"
+#include "test/Geometry/geometry_unit_test_base.h"
+#include "larcore/TestUtils/boost_unit_test_base.h"
+#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapStandardAlg.h"
 
 // utility libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -71,7 +72,7 @@ BOOST_FIXTURE_TEST_SUITE(GeometryIterators, SimpleGeometryTestFixture)
 
 BOOST_AUTO_TEST_CASE( AllTests )
 {
-  geo::GeometryCore const& geom = *Geometry();
+  geo::GeometryCore const& geom = *(Provider<geo::GeometryCore>());
   
   const double angle_u = 1. / 3. * util::pi<double>();
   const double angle_v = 2. / 3. * util::pi<double>();

@@ -20,8 +20,8 @@
 // LArSoft libraries
 #include "test/Geometry/GeometryIteratorLoopTestAlg.h"
 #include "test/Geometry/geometry_unit_test_base.h"
-#include "Geometry/GeometryCore.h"
-#include "Geometry/ChannelMapStandardAlg.h"
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapStandardAlg.h"
 
 // utility libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -83,8 +83,7 @@ int main(int argc, char const** argv) {
   
   // second argument: path of the parameter set for geometry test configuration
   // (optional; default: "physics.analysers.geotest")
-  config.SetTesterParameterSetPath
-    ((++iParam < argc)? argv[iParam]: "physics.analyzers.geotest");
+  if (++iParam < argc) config.SetMainTesterParameterSetPath(argv[iParam]);
   
   // third argument: path of the parameter set for geometry configuration
   // (optional; default: "services.Geometry" from the inherited object)
@@ -103,7 +102,7 @@ int main(int argc, char const** argv) {
   geo::GeometryIteratorLoopTestAlg Tester(TestEnvironment.TesterParameters());
   
   // 2. we set it up with the geometry from the environment
-  Tester.Setup(*TestEnvironment.Geometry());
+  Tester.Setup(*(TestEnvironment.Provider<geo::GeometryCore>()));
   
   // 3. then we run it!
   unsigned int nErrors = Tester.Run();

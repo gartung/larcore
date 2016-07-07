@@ -34,6 +34,7 @@ cet_cmake_env()
 cet_set_compiler_flags(DIAGS CAUTIOUS
   WERROR
   NO_UNDEFINED
+  ALLOW_DEPRECATIONS
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
 )
 
@@ -51,9 +52,7 @@ include(ArtMake)
 include(BuildPlugins)
 
 # source
-add_subdirectory(Geometry)
-add_subdirectory(SimpleTypesAndConstants)
-add_subdirectory(SummaryData)
+add_subdirectory(larcore)
 
 # tests 
 add_subdirectory(test)

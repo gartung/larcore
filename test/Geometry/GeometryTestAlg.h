@@ -12,7 +12,8 @@
 #define GEO_GEOMETRYTESTALG_H
 
 // LArSoft includes
-#include "SimpleTypesAndConstants/geo_types.h"
+#include "larcore/TestUtils/NameSelector.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
 
 // C/C++ standard libraries
 #include <string>
@@ -36,7 +37,7 @@ namespace geo {
   
   namespace details {
     class TestTrackerClassBase;
-  }
+  } // namespace details
   
   
   /** **************************************************************************
@@ -59,9 +60,15 @@ namespace geo {
    *   plane vs. the following. It works as /ExpectedWirePitches/
    * - **ForgiveExceptions** (list of strings, default: empty): the categories
    *   of exceptions in this list are "forgiven" (non-fatal)
-   * - **RunTests** (string list): marks which tests to run; it can't be
-   *   specified together with _SkipTests_; possible values include:
-   *   + `CheckOverlaps` perform overlap checks
+   * - **RunTests** (string list): marks which tests to run; each entry can be
+   *   specified with a "+" or "-" prepended, to indicate to add or to remove
+   *   the test from the set to be run, respectively. The directives act against
+   *   a pre-existing default set that executes all tests, except the ones
+   *   explicitly marked as excluded by default in the list below:
+   *   + `CheckOverlaps` (not in default) perform overlap checks
+   *   + `ThoroughCheck` (not in default) makes ROOT perform full geometry check
+   *   + `FindVolumes`: checks it can find the volumes corresponding to world
+   *     and all cryostats
    *   + `Cryostat`:
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
@@ -75,13 +82,15 @@ namespace geo {
    *   + `WirePitch`:
    *   + `PlanePitch`:
    *   + `Stepping`:
-   *   + `PrintWires`: prints *all* the wires in the geometry
-   * - **SkipTests** (string list): marks which tests to skip; it can't be
-   *   specified together with _RunTests_; see _RunTests_ for possible values
+   *   + `PrintWires`: (not in default) prints *all* the wires in the geometry
+   *   + `default`: represents the default set (optionally prepended by '@')
+   *   + `!` (special): means to forget the tests configured so far; used as the
+   *     first test name, removes the default list but leaves unchanged the
+   *     default behaviour (the one specified with "+*" or "-*")
    * - **CheckForOverlaps** (boolean, default: false): equivalent to enabling
-   *   `CheckOverlaps` in `RunTests`
+   *   `+CheckOverlaps` in `RunTests`
    * - **PrintWires**: (boolean, default: false): equivalent to enabling
-   *   `PrintWires` in `RunTests`
+   *   `+PrintWires` in `RunTests`
    */
   class GeometryTestAlg {
       public:
@@ -108,7 +117,9 @@ namespace geo {
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
     
-    std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
+  //  std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
+    // using as pointer just not to have to write the declaration in the header
+    testing::NameSelector fRunTests; ///< test filter
     
     void printChannelSummary();
     void printVolBounds();
@@ -116,6 +127,7 @@ namespace geo {
     void printWirePos();
     void printWiresInTPC(const TPCGeo& tpc, std::string indent = "") const;
     void printAllGeometry() const;
+    void testFindVolumes();
     void testCryostat();
     void testTPC(unsigned int const& c);
     void testChannelToWire();
@@ -133,6 +145,11 @@ namespace geo {
     void testStepping();
 
     bool shouldRunTests(std::string test_name) const;
+    
+    // single tests for testFindVolumes
+    unsigned int testFindWorldVolumes();
+    unsigned int testFindCryostatVolumes();
+    unsigned int testFindTPCvolumePaths();
     
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt

@@ -9,14 +9,15 @@
  */
 
 // Boost test libraries; defining this symbol tells boost somehow to generate
-// a main() function; Boost is pulled in by geometry_boost_unit_test_base.h
+// a main() function; Boost is pulled in by boost_unit_test_base.h
 #define BOOST_TEST_MODULE GeometryIteratorTest
 
 // LArSoft libraries
-#include "test/Geometry/geometry_boost_unit_test_base.h"
+#include "test/Geometry/geometry_unit_test_base.h"
 #include "test/Geometry/GeometryIteratorTestAlg.h"
-#include "Geometry/GeometryCore.h"
-#include "Geometry/ChannelMapStandardAlg.h"
+#include "larcore/TestUtils/boost_unit_test_base.h"
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/ChannelMapStandardAlg.h"
 
 // utility libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -78,7 +79,7 @@ class GeometryIteratorTestFixture:
     {
       // create a new tester
       tester_ptr = std::make_shared<Tester_t>(TesterParameters());
-      tester_ptr->Setup(*Geometry()); // Geometry() is inherited
+      tester_ptr->Setup(*(Provider<geo::GeometryCore>()));
       // if no tester is default yet, share ours:
       TesterRegistry_t::ProvideDefaultSharedResource(tester_ptr);
     }

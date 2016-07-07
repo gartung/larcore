@@ -9,19 +9,21 @@
 #include "GeometryIteratorLoopTestAlg.h"
 
 // LArSoft includes
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "Geometry/GeometryCore.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/Geometry/GeometryCore.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 
 // Framework includes
 #include "cetlib/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-
 namespace geo {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
   //......................................................................
   unsigned int GeometryIteratorLoopTestAlg::Run() {
@@ -468,5 +470,7 @@ namespace geo {
   } // GeometryIteratorLoopTestAlg::Run()
   
   //----------------------------------------------------------------------------
+
+#pragma GCC diagnostic pop
 
 } // namespace geo

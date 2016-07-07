@@ -1,0 +1,17 @@
+<!--  Include art::Wrapper lines for objects that we would like to put  -->
+<!--  into the event -->
+<!--  Include the non-wrapper lines for all objects on the art::Wrapper --> 
+<!--  lines and for all objects that are data members of those objects.-->
+ 
+<lcgdict>
+  <class name="sumdata::RunData"    ClassVersion="12">
+   <version ClassVersion="12" checksum="3272890369"/>
+   <version ClassVersion="11" checksum="2747058960"/>
+   <version ClassVersion="10" checksum="1710245499"/>
+  </class>
+  <class name="sumdata::POTSummary" ClassVersion="10">
+   <version ClassVersion="10" checksum="1885190085"/>
+  </class>
+  <class name="art::Wrapper<sumdata::RunData>"       /> 
+  <class name="art::Wrapper<sumdata::POTSummary>"    /> 
+ </lcgdict>
