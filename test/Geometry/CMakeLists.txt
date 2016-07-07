@@ -92,7 +92,7 @@ cet_test(geometry_iterator_loop_test
 # test for standard channel mapping (BOOST unit test)
 cet_test(geometry_standardchannelmapping_test
   SOURCES geometry_standardchannelmapping_test.cxx
-  LIBRARIES Geometry
+  LIBRARIES larcore_Geometry
             GeometryTestLib
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}

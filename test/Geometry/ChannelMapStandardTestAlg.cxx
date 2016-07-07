@@ -9,9 +9,9 @@
 
 // LArSoft libraries
 #include "test/Geometry/ChannelMapStandardTestAlg.h"
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "SimpleTypesAndConstants/readout_types.h"
-#include "Geometry/GeometryCore.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/SimpleTypesAndConstants/readout_types.h"
+#include "larcore/Geometry/GeometryCore.h"
 
 // framework
 #include "cetlib/exception.h"

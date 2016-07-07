@@ -26,7 +26,7 @@
 #include <boost/test/test_tools.hpp> // BOOST_CHECK(), BOOST_CHECK_EQUAL()
 
 // LArSoft libraries
-#include "SimpleTypesAndConstants/readout_types.h"
+#include "larcore/SimpleTypesAndConstants/readout_types.h"
 
 
 //------------------------------------------------------------------------------

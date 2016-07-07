@@ -31,7 +31,7 @@
 
 // we define here all the configuration that is needed;
 // in the specific, the type of the channel mapping and a proper test name,
-// used for output only; BasicGeometryFixtureConfiguration can read the
+// used for output only; BasicGeometryEnvironmentConfiguration can read the
 // configuration file name from command line, and
 // BoostCommandLineConfiguration<> makes it initialize in time for Boost
 // to catch it when instanciating the fixture.
