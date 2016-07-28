@@ -36,7 +36,7 @@ namespace lar {
      * @tparam FindType the type to find
      * @tparam AmongTypes the list of types
      * 
-     * If FindType type is not any of AmongTypes typesm a compilation error
+     * If FindType type is not any of AmongTypes types, a compilation error
      * message (static assertion) is issued.
      * Otherwise, the class has a `value` member pointing to the index of
      * FindType among AmongTypes.
@@ -56,7 +56,8 @@ namespace lar {
 
     
     /// Implementation detail for the extraction constructor
-    template <typename DestPack, typename SourcePack, typename... ExtractProviders>
+    template
+      <typename DestPack, typename SourcePack, typename... ExtractProviders>
     struct SetFrom;
  
   } // namespace details
@@ -97,6 +98,7 @@ namespace lar {
     using tuple_type = std::tuple<Providers const*...>;
     
       public:
+    
     /// Default constructor: a null provider pointer for each type
     ProviderPack() = default;
     
@@ -105,7 +107,7 @@ namespace lar {
       {}
     
     /**
-     * @brief Constructor: extracts the providers from anothe parameter pack
+     * @brief Constructor: extracts the providers from another parameter pack
      * @tparam OtherProviders list of the providers of the source provider pack
      * @param from where to copy the information from
      * 
@@ -121,12 +123,12 @@ namespace lar {
       }
 
     /**
-     * @brief Constructor: extracts the providers from anothe parameter pack
-     * @tparam OtherProviders list of the providers of the source provider pack
+     * @brief Constructor: picks the providers from the specified ones
+     * @tparam OtherProviders list of the type of providers offered
      * @param providers all the providers needed (or more)
      * 
-     * This constructor requires all the providers we need to be present
-     * in the source provider pack.
+     * This constructor will pick, among the offered providers, the ones that
+     * are needed.
      */
     template<typename... OtherProviders>
     ProviderPack(OtherProviders const*... providers)
@@ -170,13 +172,19 @@ namespace lar {
   
   
   /**
-   * @brief Function to create a ParameterPack from the function arguments
+   * @brief Function to create a ProviderPack from the function arguments
    * @tparam Providers types of the providers in the parameter pack
    * @param providers constant pointers to the providers
-   * @return a ParameterPack object containing all the specified providers
+   * @return a ProviderPack object containing all the specified providers
    *
-   * This is an convevience function to reduce the typing needed to instantiate
-   * a ParameterPack.
+   * This is an convenience function to reduce the typing needed to instantiate
+   * a ProviderPack. Example:
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   *     A a;
+   *     B b;
+   *     auto pack = makeProviderPack(&a, &b);
+   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   * creates a `ProviderPack<A, B>`.
    */
   template <typename... Providers>
   ProviderPack<Providers...> makeProviderPack(Providers const* ...providers)
