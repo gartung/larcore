@@ -504,6 +504,7 @@ namespace lar {
   } // ProviderPack<Providers...>::ProviderPack(ProviderPack, OtherProviders...)
   
   
+  //----------------------------------------------------------------------------
   template <typename... Providers>
   template <typename... OtherProviders>
   bool ProviderPack<Providers...>::operator==
@@ -513,6 +514,7 @@ namespace lar {
       ProviderPack<Providers...>, ProviderPack<OtherProviders...>, Providers...
       >::compare(*this, other);
   }
+  
   
   template <typename... Providers>
   template <typename... OtherProviders>
