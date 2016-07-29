@@ -11,6 +11,8 @@
  *   service
  * - lar::providersFrom(), extracting and returning providers from a set of
  *   services
+ * - lar::providersFrom_t, a type defined as a provider pack with the providers
+ *   from all the specified services
  * 
  */
 
@@ -120,6 +122,22 @@ namespace lar {
   template <typename... Services>
   auto providersFrom()
     { return details::ProviderPackExtractor<Services...>::parameterPack(); }
+  
+  
+  /** **************************************************************************
+   * @brief Type of a provider pack with a provider from each of the Services
+   * @tparam Services the list of services to extract the provider type of
+   * 
+   * Example of usage in a art service class declaration:
+   *     
+   *     using needed_providers_t = lar::providersFrom_t
+   *       <geo::Geometry, detinfo::LArPropertiesService>;
+   *     
+   */
+  template <typename... Services>
+  using providersFrom_t
+    = lar::ProviderPack<typename Services::provider_type...>;
+  
   
   
   //----------------------------------------------------------------------------

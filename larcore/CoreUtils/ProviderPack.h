@@ -201,6 +201,30 @@ namespace lar {
     bool operator!= (ProviderPack<OtherProviders...> const& other) const;
     
     
+    /**
+     * @brief Returns whether all our providers are in the OfferedProviders list
+     * @tparam OfferedProviders list of offered providers
+     * 
+     * This static function returns true if all the providers in this provider
+     * pack are included among the OfferedProviders list. That list can contain
+     * additional provider types, which will not affect the result.
+     * 
+     * Usage example:
+     *     
+     *     using providers_t
+     *       = lar::ProviderPack<geo::GeometryCore, detinfo::LArProperties>;
+     *     static_assert(
+     *       providers_t::containsProviders
+     *         <detinfo::LArProperties, detinfo::DetectorProperties>(),
+     *       "Not all the required providers are present."
+     *       );
+     *     
+     * In this example, the assertion will fail because of the absence of
+     * `detinfo::DetectorProperties` from providers_t.
+     */
+    template <typename... OtherProviders>
+    static constexpr bool containsProviders();
+    
       private:
     
     tuple_type providers; ///< container of the pointers, type-safe
@@ -497,6 +521,15 @@ namespace lar {
     { return !(*this == other); }
   
  
+  //----------------------------------------------------------------------------
+  template <typename... Providers>
+  template <typename... OfferedProviders>
+  constexpr bool ProviderPack<Providers...>::containsProviders() {
+    return details::are_types_contained<Providers...>
+      ::template in<OfferedProviders...>();
+  } // ProviderPack<>::containsProviders()
+  
+  
   //----------------------------------------------------------------------------
   
 } // namespace lar
