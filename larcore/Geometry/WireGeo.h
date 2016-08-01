@@ -35,6 +35,7 @@ namespace geo {
   class WireGeo {
   public:
     WireGeo(std::vector<const TGeoNode*>& path, int depth);
+    WireGeo() = delete;   // disallow default constructor
 
     void   GetCenter(double* xyz, double localz=0.0) const;
     void   GetStart(double* xyz) const { GetCenter(xyz, -fHalfL); }
