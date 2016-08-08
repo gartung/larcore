@@ -53,7 +53,7 @@ cet_test(geometry_iterator_test
             ${CETLIB}
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
-  TEST_ARGS test_geometry.fcl
+  TEST_ARGS -- ./test_geometry.fcl
 #  OPTIONAL_GROUPS ONLY_SLF
 )
 
@@ -68,7 +68,6 @@ cet_test(geometry_test
             ${MF_UTILITIES}
             ${FHICLCPP}
             ${CETLIB}
-  USE_BOOST_UNIT
 )
 
 # unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
@@ -96,7 +95,7 @@ cet_test(geometry_thirdplaneslope_test
             ${CETLIB}
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
-  TEST_ARGS test_geometry.fcl
+  TEST_ARGS -- ./test_geometry.fcl
 )
 
 
