@@ -25,10 +25,10 @@ namespace geo{
 
     ChannelMapStandardAlg(fhicl::ParameterSet const& p);
     
-    void                     Initialize( GeometryData_t& geodata ) override;
-    void                     Uninitialize();
-    std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)     const;
-    unsigned int             Nchannels()                                 const;
+    virtual void                Initialize( GeometryData_t& geodata ) override;
+    virtual void                Uninitialize() override;
+    virtual std::vector<WireID> ChannelToWire(raw::ChannelID_t channel) const override;
+    virtual unsigned int        Nchannels() const override;
 
     //@{
     virtual double WireCoordinate
@@ -36,7 +36,7 @@ namespace geo{
     virtual double WireCoordinate(double YPos, double ZPos,
                                  unsigned int PlaneNo,
                                  unsigned int TPCNo,
-                                 unsigned int cstat) const
+                                 unsigned int cstat) const override
       { return WireCoordinate(YPos, ZPos, geo::PlaneID(cstat, TPCNo, PlaneNo)); }
     //@}
     
