@@ -1,0 +1,17 @@
+BEGIN_PROLOG
+
+lariattest_geo:
+{
+ SurfaceY:         1.0e2                   #in cm, vertical distance to the surface
+ Name:             "lariattest"
+ GDML:             "lariattest.gdml"
+ ROOT:             "lariattest.gdml"
+ DisableWiresInG4: false                         # Has no wires
+}
+
+lariattest_geometry_helper:
+{
+ service_provider : StandardGeometryHelper
+}
+
+END_PROLOG

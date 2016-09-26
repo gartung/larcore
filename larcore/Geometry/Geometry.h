@@ -18,7 +18,9 @@
 
 // LArSoft libraries
 #include "larcore/Geometry/GeometryCore.h"
+
 #include "larcore/CoreUtils/ServiceUtil.h" // not used; for user's convenience
+
 
 // the following are included for convenience only
 #include "larcore/Geometry/ChannelMapAlg.h"

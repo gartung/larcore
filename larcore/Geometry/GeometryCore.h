@@ -3412,7 +3412,11 @@ namespace geo {
     double         fMinWireZDist;   ///< Minimum distance in Z from a point in which
                                     ///< to look for the closest wire
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
-    std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;  ///< Object containing the channel to wire mapping
+
+    std::shared_ptr<const geo::ChannelMapAlg>
+                   fChannelMapAlg;  ///< Object containing the channel to wire mapping
+    bool         fOpDetSort;        ///< Turn off sorting of opdets (important when different dets have different properties e.g in LArIAT)
+
   }; // class GeometryCore
   
   
