@@ -5,7 +5,7 @@
  * @author petrillo@fnal.gov
  * 
  * Usage: just run the executable.
- * Boost unit testing environment keeps the arguments secret anyway.
+ * Or plug a FHiCL file in the command line.
  */
 
 // Boost test libraries; defining this symbol tells boost somehow to generate
@@ -46,7 +46,7 @@ struct StandardGeometryConfiguration:
 }; // class StandardGeometryConfiguration
 
 /*
- * Our fixture is based on GeometryTesterFixture, configured with the object
+ * Our fixture is based on GeometryTesterEnvironment, configured with the object
  * above.
  * It provides to the testing environment:
  * - `Tester()`, returning a configured instance of the test algorithm;

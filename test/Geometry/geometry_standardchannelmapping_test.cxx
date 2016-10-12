@@ -8,7 +8,8 @@
  * Or plug a FHiCL file in the command line.
  */
 
-// Boost test libraries; we want to define this stuff as soon as possible
+// Boost test libraries; defining this symbol tells boost somehow to generate
+// a main() function; Boost is pulled in by boost_unit_test_base.h
 #define BOOST_TEST_MODULE GeometryStandardChannelMappingTest
 
 // LArSoft libraries
@@ -78,7 +79,7 @@ class GeometryStandardChannelMappingTestFixture:
     {
       // create a new tester
       tester_ptr = std::make_shared<Tester_t>(TesterParameters());
-      tester_ptr->Setup(*Geometry()); // Geometry() is inherited
+      tester_ptr->Setup(*(Provider<geo::GeometryCore>()));
       // if no tester is default yet, share ours:
       TesterRegistry_t::ProvideDefaultSharedResource(tester_ptr);
     }
@@ -109,15 +110,7 @@ class GeometryStandardChannelMappingTestFixture:
 //   created.
 //
 
-// BOOST_FIXTURE_TEST_SUITE(TestEnv, GeometryStandardChannelMappingTestFixture)
-BOOST_GLOBAL_FIXTURE(GeometryStandardChannelMappingTestFixture)
-
-/*
-BOOST_AUTO_TEST_CASE( AllTests )
-{
-  GlobalTester().Run();
-} // BOOST_AUTO_TEST_CASE( AllTests )
-*/
+BOOST_GLOBAL_FIXTURE(GeometryStandardChannelMappingTestFixture);
 
 BOOST_AUTO_TEST_CASE( TPCsetMappingTestCase )
 {

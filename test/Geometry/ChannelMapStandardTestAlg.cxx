@@ -9,15 +9,15 @@
 
 // LArSoft libraries
 #include "test/Geometry/ChannelMapStandardTestAlg.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "larcore/SimpleTypesAndConstants/readout_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
 #include "larcore/Geometry/GeometryCore.h"
 
 // framework
 #include "cetlib/exception.h"
 
 // Boost libraries
-#include <boost/test/unit_test.hpp>
+#include <cetlib/quiet_unit_test.hpp>
 
 // C/C++ standard libraries
 #include <string>
