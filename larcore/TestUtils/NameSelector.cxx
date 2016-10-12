@@ -10,7 +10,7 @@
 #include "larcore/TestUtils/NameSelector.h"
 
 // framework libraries
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 
 
 namespace testing {

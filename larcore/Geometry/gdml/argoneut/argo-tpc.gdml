@@ -84,5 +84,5 @@
    <position name="posTPCPlane3" unit="cm" x="-0.5*kTPCDepth-kTPCWirePlaneThickness-0.5*kTPCWallThickness" y="0" z="0"/>
    <rotationref ref="rPlus90AboutXMinus90AboutZ"/>
    </physvol>
- </volume> 
+ </volume>
 </structure>

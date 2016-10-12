@@ -9,11 +9,11 @@
 
 // LArSoft libraries
 #include "test/Geometry/GeometryIteratorTestAlg.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/GeometryCore.h"
 
 // Boost libraries
-#include <boost/test/unit_test.hpp>
+#include <cetlib/quiet_unit_test.hpp>
 
 // C/C++ standard libraries
 #include <string>

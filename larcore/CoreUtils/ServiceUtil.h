@@ -1,25 +1,35 @@
 /**
  * @file   ServiceUtil.h
  * @brief  Utilities related to art service access
- * @author Jonathan Paley (jpaley@fnal.gov)
+ * @author Jonathan Paley (jpaley@fnal.gov),
+ *         Gianluca Petrillo (petrillo@fnal.gov)
  * 
  * This library is currently a pure header.
+ * It provides:
+ * 
+ * - lar::providerFrom(), extracting and returning the provider from a single
+ *   service
+ * - lar::providersFrom(), extracting and returning providers from a set of
+ *   services
+ * - lar::providersFrom_t, a type defined as a provider pack with the providers
+ *   from all the specified services
  * 
  */
 
-#ifndef COREUTILS_SERVICEUTIL
-#define COREUTILS_SERVICEUTIL
+#ifndef LARCORE_COREUTILS_SERVICEUTIL_H
+#define LARCORE_COREUTILS_SERVICEUTIL_H
 
 // LArSoft libraries
 #include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
+#include "larcore/CoreUtils/ProviderPack.h"
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 #include "cetlib/demangle.h"
 
 // C/C++ standard libraries
-#include <type_traits>
+#include <type_traits> // std::decay<>, std::is_same<>
 #include <typeinfo>
 
 
@@ -28,6 +38,10 @@ namespace lar {
   namespace details {
     template <typename PROVIDER>
     struct ServiceRequirementsChecker;
+    
+    template <typename... Services>
+    struct ProviderPackExtractor;
+    
   } // namespace details
   
   
@@ -59,7 +73,7 @@ namespace lar {
    * provider class are included in the service header.
    * 
    */
-  template <class T>
+  template <typename T>
   typename T::provider_type const* providerFrom()
     {
       details::ServiceRequirementsChecker<T>(); // instantiate a temporary...
@@ -76,6 +90,54 @@ namespace lar {
       return pProvider;
       
     } // providerFrom()
+  
+  
+  /** **************************************************************************
+   * @brief Returns a lar::ProviderPack with providers from all services
+   * @tparam Services a list of service types
+   * @return a lar::ProviderPack with providers from all specified services
+   * @throws art::Exception as lar::providerFrom()
+   * @see lar::providerFrom()
+   * 
+   * This function relies on `lar::providerFrom()` to extract providers from
+   * all the specified services.
+   * The parameter pack stores the providers in the same order as the services
+   * were specified, but this is not very relevant since provider packs can
+   * be implicitly converted in other provider packs with the same providers
+   * in a different order.
+   * 
+   * Example of usage:
+   *     
+   *     prov->setup
+   *       (lar::providersFrom<geo::Geometry, detinfo::LArPropertiesService>());
+   *     
+   * retrieves the service providers for LArSoft geometry and
+   * `LArPropertiesService`, and passes them as a provider pack to a setup()
+   * method, presumably from a algorithm or service provider that needs them.
+   * This requires the inclusion of "Geometry/Geometry.h" and
+   * "LArPropertiesService.h" headers, where the services are declared.
+   * Typically, both ServiceUtil.h and the header of the provider class are
+   * included in the service headers.
+   */
+  template <typename... Services>
+  auto providersFrom()
+    { return details::ProviderPackExtractor<Services...>::parameterPack(); }
+  
+  
+  /** **************************************************************************
+   * @brief Type of a provider pack with a provider from each of the Services
+   * @tparam Services the list of services to extract the provider type of
+   * 
+   * Example of usage in a art service class declaration:
+   *     
+   *     using needed_providers_t = lar::providersFrom_t
+   *       <geo::Geometry, detinfo::LArPropertiesService>;
+   *     
+   */
+  template <typename... Services>
+  using providersFrom_t
+    = lar::ProviderPack<typename Services::provider_type...>;
+  
   
   
   //----------------------------------------------------------------------------
@@ -127,9 +189,33 @@ namespace lar {
       
     }; // ServiceRequirementsChecker
     
+    
+    //--------------------------------------------------------------------------
+    template <typename First, typename... Others>
+    struct ProviderPackExtractor<First, Others...> {
+      static ProviderPack<
+        typename First::provider_type, typename Others::provider_type...
+        >
+        parameterPack()
+        {
+          return {
+            ProviderPackExtractor<Others...>::parameterPack(),
+            lar::providerFrom<First>()
+            };
+        }
+    };
+    
+    
+    template <typename Service>
+    struct ProviderPackExtractor<Service> {
+       static auto parameterPack()
+          { return lar::makeProviderPack(lar::providerFrom<Service>()); }
+    };
+    
+  
   } // namespace details
   
 } // namespace lar
 
-#endif //#COREUTILS_SERVICEUTIL
+#endif //#LARCORE_COREUTILS_SERVICEUTIL_H
 

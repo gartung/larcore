@@ -11,7 +11,7 @@
 	<position name="Plate2" x="0" y="0" z="-270.884"/>
 	<position name="Plate3" x="63.5" y="0" z="202.191"/>
 	<position name="Plate4" x="-63.5" y="0" z="202.191"/>
-	<position name="BeamBox1" x="0" y="0" z="300.364"/> 
+	<position name="BeamBox1" x="0" y="0" z="300.364"/>
 	<position name="BeamBox2" x="0" y="0" z="-302.38"/>
 	<position name="OutsidePlate1" x="77.7875" y="0" z="71"/>
 	<position name="OutsidePlate2" x="-77.7875" y="0" z="71"/>
@@ -89,7 +89,7 @@
 	<materialref ref="Stainless_Steel"/>
 	<solidref ref="BeamBox"/>
 	</volume>
-	
+
 	<volume name="volPlate3">
 	<materialref ref="Plastic"/>
 	<solidref ref="MountPlate3"/>
@@ -99,12 +99,12 @@
 	<materialref ref="Plastic"/>
 	<solidref ref="MountPlate1"/>
 	</volume>
-	
+
 	<volume name="volBar1">
 	<materialref ref="Stainless_Steel"/>
 	<solidref ref="Bar1"/>
 	</volume>
-	
+
 	<volume name="volDewar">
 	<materialref ref="Stainless_Steel"/>
 	<solidref ref="Dewar"/>
@@ -161,9 +161,9 @@
 		<volumeref ref="volTopPlate"/>
 		<positionref ref="TopPlate"/>
 		</physvol>
-		
+
 	</volume>
-		
+
 	<volume name="volDetEnclosure">
 	<materialref ref="Air"/>
 	<solidref ref="DetEnclosure"/>
@@ -180,14 +180,14 @@
 		<volumeref ref="volDetEnclosure"/>
 		<positionref ref="center"/>
 		</physvol>
-		
+
 	</volume>
-		
+
 </structure>
 
 
 	<setup name="Default" version="1.0">
 	<world ref="volWorld"/>
-</setup>	
+</setup>
 
 </gdml>

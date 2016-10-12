@@ -10,7 +10,7 @@
 #include "larcore/Geometry/GeometryCore.h"
 
 // lar includes
-#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/AuxDetSensitiveGeo.h"

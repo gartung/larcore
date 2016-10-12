@@ -81,7 +81,7 @@ namespace testing {
   
   
   /**
-   * @brief Function calling ProviderSetup<>::setup for the specified provider
+   * @brief Function calling ProviderSetupClass<>::setup for the specified provider
    * @tparam Prov type of the provider to be created and set up
    * @tparam Args types of arguments to the setup function
    * @param args arguments to the setup function

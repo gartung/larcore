@@ -3,7 +3,7 @@ cet_test(NameSelector_test
   SOURCES NameSelector_test.cxx
   LIBRARIES
     larcore_TestUtils
-    ${ART_UTILITIES}
+    art_Utilities canvas_Utilities
   USE_BOOST_UNIT
 )
 

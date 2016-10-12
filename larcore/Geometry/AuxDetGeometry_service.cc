@@ -10,8 +10,8 @@
 #include "larcore/Geometry/AuxDetExptGeoHelperInterface.h"
 
 // lar includes
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "larcore/SummaryData/RunData.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SummaryData/RunData.h"
 
 // Framework includes
 #include "cetlib/exception.h"

@@ -1,5 +1,5 @@
 <solids>
- <tube name="TPCSheet" 
+ <tube name="TPCSheet"
    rmin="0.5*kTPCSheetInnerDiameter"
    rmax="0.5*kTPCSheetOuterDiameter"
    z="kTPCSheetHeight"

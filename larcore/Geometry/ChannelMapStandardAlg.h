@@ -12,8 +12,8 @@
 #include <set>
 #include <iostream>
 
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "larcore/SimpleTypesAndConstants/readout_types.h" // readout::TPCsetID, ...
+#include "larcoreobj/SimpleTypesAndConstants/readout_types.h" // readout::TPCsetID, ...
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
 #include "larcore/Geometry/GeoObjectSorterStandard.h"
 #include "fhiclcpp/ParameterSet.h"
@@ -26,13 +26,14 @@ namespace geo{
 
     ChannelMapStandardAlg(fhicl::ParameterSet const& p);
     
-    void                     Initialize( GeometryData_t& geodata ) override;
-    void                     Uninitialize();
-    std::vector<WireID>      ChannelToWire(raw::ChannelID_t channel)     const;
-    unsigned int             Nchannels()                                 const;
-   /// @brief Returns the number of channels in the specified ROP
-   /// @return number of channels in the specified ROP, 0 if non-existent
-    virtual unsigned int     Nchannels(readout::ROPID const& ropid) const override;
+    virtual void                Initialize( GeometryData_t& geodata ) override;
+    virtual void                Uninitialize() override;
+    virtual std::vector<WireID> ChannelToWire(raw::ChannelID_t channel) const override;
+    virtual unsigned int        Nchannels() const override;
+
+    /// @brief Returns the number of channels in the specified ROP
+    /// @return number of channels in the specified ROP, 0 if non-existent
+    virtual unsigned int        Nchannels(readout::ROPID const& ropid) const override;
 
     //@{
     virtual double WireCoordinate
@@ -40,7 +41,7 @@ namespace geo{
     virtual double WireCoordinate(double YPos, double ZPos,
                                  unsigned int PlaneNo,
                                  unsigned int TPCNo,
-                                 unsigned int cstat) const
+                                 unsigned int cstat) const override
       { return WireCoordinate(YPos, ZPos, geo::PlaneID(cstat, TPCNo, PlaneNo)); }
     //@}
     

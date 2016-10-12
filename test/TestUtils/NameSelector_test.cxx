@@ -9,11 +9,11 @@
 #include "larcore/TestUtils/NameSelector.h"
 
 // Boost libraries
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 
 // Boost libraries
 #define BOOST_TEST_MODULE ( NameSelector_test )
-#include <boost/test/auto_unit_test.hpp> // BOOST_AUTO_TEST_CASE()
+#include <cetlib/quiet_unit_test.hpp> // BOOST_AUTO_TEST_CASE()
 #include <boost/test/test_tools.hpp> // BOOST_CHECK(), BOOST_CHECK_EQUAL()
 
 // C/C++ standard library

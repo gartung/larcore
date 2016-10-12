@@ -1,6 +1,6 @@
 art_make(
   LIB_LIBRARIES
-    ${ART_UTILITIES}
+    art_Utilities canvas_Utilities
     ${CETLIB}
   )
 

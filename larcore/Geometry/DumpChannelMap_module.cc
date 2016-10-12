@@ -7,7 +7,7 @@
  */
 
 // LArSoft libraries
-#include "larcore/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // framework libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -79,7 +79,7 @@ public:
 //===
 
 // LArSoft libraries
-#include "larcore/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // C/C++ standard libraries
 #include <string>
@@ -159,7 +159,7 @@ namespace {
 //===
 
 // LArSoft libraries
-#include "larcore/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
 
@@ -213,12 +213,12 @@ DEFINE_ART_MODULE(geo::DumpChannelMap)
 //===
 
 // LArSoft libraries
-#include "larcore/SimpleTypesAndConstants/geo_types.h" // geo::WireID
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h" // geo::WireID
 #include "larcore/Geometry/GeometryCore.h"
 
 // framework libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 
 // C/C++ standard libraries
 #include <vector>

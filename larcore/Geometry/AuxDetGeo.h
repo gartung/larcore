@@ -10,7 +10,7 @@
 #include <vector>
 #include "TGeoVolume.h"
 
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/AuxDetSensitiveGeo.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 

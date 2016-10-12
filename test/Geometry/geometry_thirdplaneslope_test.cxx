@@ -14,7 +14,7 @@
 // LArSoft libraries
 #include "test/Geometry/geometry_unit_test_base.h"
 #include "larcore/TestUtils/boost_unit_test_base.h"
-#include "larcore/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/ChannelMapStandardAlg.h"
 
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE( AllTests )
   const double angle_v = 2. / 3. * util::pi<double>();
   const double angle_w = 1. / 2. * util::pi<double>();
   
-  BOOST_MESSAGE(
+  BOOST_TEST_MESSAGE(
     "Wire angles: u=" << angle_u << " v=" << angle_v << " => w=" << angle_w
     );
   
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( AllTests )
   double slope_w = geom.ComputeThirdPlaneSlope
     (angle_u, slope_u, angle_v, slope_v, angle_w);
   
-  BOOST_MESSAGE(
+  BOOST_TEST_MESSAGE(
     "Slopes: s(u)=" << slope_u << " s(v)=" << slope_v << " => s(w)=" << slope_w
     );
   

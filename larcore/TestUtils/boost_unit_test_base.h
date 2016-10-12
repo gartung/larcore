@@ -26,7 +26,7 @@
 #include "larcore/TestUtils/unit_test_base.h"
 
 // Boost libraries
-#include <boost/test/unit_test.hpp> // framework::master_test_suite()
+#include <cetlib/quiet_unit_test.hpp> // framework::master_test_suite()
 
 // C/C++ standard libraries
 #include <string>

@@ -9,7 +9,7 @@
 #define GEO_PLANEGEO_H
 
 // LArSoft libraries
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 
 // C/C++ standard libraries
