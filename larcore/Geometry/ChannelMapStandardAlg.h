@@ -5,12 +5,11 @@
 /// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
-#ifndef GEO_CHANNELSTANDARDMAPALG_H
-#define GEO_CHANNELSTANDARDMAPALG_H
+#ifndef LARCORE_GEOMETRY_CHANNELSTANDARDMAPALG_H
+#define LARCORE_GEOMETRY_CHANNELSTANDARDMAPALG_H
 
 #include <vector>
 #include <set>
-#include <iostream>
 
 #include "larcoreobj/SimpleTypesAndConstants/readout_types.h" // readout::TPCsetID, ...
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -278,5 +277,5 @@ namespace geo{
 
 
 }
-#endif // GEO_CHANNELMAPSTANDARDALG_H
+#endif // LARCORE_GEOMETRY_CHANNELSTANDARDMAPALG_H
 
