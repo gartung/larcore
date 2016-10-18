@@ -37,12 +37,15 @@
  *         art framework interface
  * Revised <petrillo@fnal.gov> 30-Apr-2015
  *         Redesign of the iterators
+ * Revised <petrillo@fnal.gov> 28-Jun-2015
+ *         Added interface for readout mapping
  */
 #ifndef GEO_GEOMETRYCORE_H
 #define GEO_GEOMETRYCORE_H
 
 
 // LArSoft libraries
+#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/ChannelMapAlg.h"
@@ -3123,6 +3126,10 @@ namespace geo {
     /// Returns the number of TPC readout channels in the detector
     unsigned int Nchannels() const;
     
+    /// @brief Returns the number of channels in the specified ROP
+    /// @return number of channels in the specified ROP, 0 if non-existent
+    unsigned int Nchannels(readout::ROPID const& ropid) const;
+    
     /**
      * @brief Returns a list of possible views in the detector
      * @return a constant reference to the set of views
@@ -3135,6 +3142,16 @@ namespace geo {
     //
     // access
     //
+    
+    /**
+     * @brief Returns whether the specified channel exists and is valid
+     * @param channel the ID of the channel
+     * @return whether the specified channel exists
+     *
+     * A channel is defined as existing and valid if its ID is not invalid and
+     * if the channel is physical.
+     */
+    bool HasChannel(raw::ChannelID_t channel) const;
     
     //@{
     /**
@@ -3186,9 +3203,15 @@ namespace geo {
      * @brief Returns a list of wires connected to the specified TPC channel
      * @param channel TPC channel ID
      * @return vector containing the ID of all the connected wires
+     * @throws cet::exception (category: "Geometry") if non-existent channel
      */
     std::vector<geo::WireID> ChannelToWire
       (raw::ChannelID_t const channel) const;
+    
+    
+    /// Returns the ID of the ROP the channel belongs to
+    /// @throws cet::exception (category: "Geometry") if non-existent channel
+    readout::ROPID ChannelToROP(raw::ChannelID_t channel) const;
     
     
     //
@@ -3249,6 +3272,320 @@ namespace geo {
       (raw::ChannelID_t c1, raw::ChannelID_t c2, double &y, double &z) const;
     
     /// @} TPC readout channels
+    
+    
+    
+    /// @name TPC set information
+    /// @{
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the total number of TPC sets in the specified cryostat
+     * @param cryoid cryostat ID
+     * @return number of TPC sets in the cryostat, or 0 if no cryostat found
+     *
+     * The NSiblingElements() method is overloaded and its
+     * return depends on the type of ID.
+     */
+    unsigned int NTPCsets(readout::CryostatID const& cryoid) const;
+    unsigned int NSiblingElements(readout::TPCsetID const& tpcsetid) const
+      { return NTPCsets(tpcsetid); }
+    //@}
+    
+    /// Returns the largest number of TPC sets any cryostat in the detector has
+    unsigned int MaxTPCsets() const;
+    
+    
+    //
+    // access
+    //
+    /// Returns whether we have the specified TPC set
+    /// @return whether the TPC set is valid and exists
+    bool HasTPCset(readout::TPCsetID const& tpcsetid) const;
+    
+    /// Returns whether we have the specified TPC set
+    bool HasElement(readout::TPCsetID const& tpcsetid) const
+      { return HasTPCset(tpcsetid); }
+    
+    
+    /**
+     * @brief Returns the ID of the TPC set at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @return the TPC set ID, or an invalid one if no TPC set is there
+     */
+    readout::TPCsetID FindTPCsetAtPosition(double const worldLoc[3]) const;
+    
+    //
+    // mapping
+    //
+    /// Returns the ID of the TPC set tpcid belongs to
+    readout::TPCsetID TPCtoTPCset(geo::TPCID const& tpcid) const;
+    
+    /**
+     * @brief Returns a list of ID of TPCs belonging to the specified TPC set
+     * @param tpcsetid ID of the TPC set to convert into TPC IDs
+     * @return the list of TPCs, empty if TPC set is invalid
+     *
+     * Note that the check is performed on the validity of the TPC set ID, that
+     * does not necessarily imply that the TPC set specified by the ID actually
+     * exists. Check the existence of the TPC set first (HasTPCset()).
+     * Behaviour on valid, non-existent TPC set IDs is undefined.
+     */
+    std::vector<geo::TPCID> TPCsetToTPCs
+      (readout::TPCsetID const& tpcsetid) const;
+    
+    
+#if 0
+    ///
+    /// iterators
+    ///
+    
+    /// Initializes the specified ID with the ID of the first TPC set
+    void GetBeginID(readout::TPCsetID& id) const;
+    
+    /// Initializes the specified ID with the invalid ID after the last TPC set
+    void GetEndID(readout::TPCsetID& id) const;
+    
+    
+    /// Returns an iterator pointing to the first TPC set ID in the detector
+    TPCset_id_iterator begin_TPCset_id() const
+      { return TPCset_id_iterator(this, TPCset_id_iterator::begin_pos); }
+    
+    /// Returns an iterator pointing after the last TPC set ID in the detector
+    TPCset_id_iterator end_TPCset_id() const
+      { return TPCset_id_iterator(this, TPCset_id_iterator::end_pos); }
+    
+    /**
+     * @brief Enables ranged-for loops on all TPC set IDs of the detector
+     * @returns an object suitable for ranged-for loops on all TPC set IDs
+     * 
+     * Example of usage:
+     *     
+     *     for (readout::TPCsetID const& sID: geom->IterateTPCsetIDs()) {
+     *       
+     *       // useful code here
+     *       
+     *     } // for all TPC sets
+     *     
+     */
+    IteratorBox<
+      TPCset_id_iterator,
+      &GeometryCore::begin_TPCset_id, &GeometryCore::end_TPCset_id
+      >
+    IterateTPCsetIDs() const { return { this }; }
+    
+    
+    //
+    // single object features
+    //
+    
+    /**
+     * @brief Returns the half width of the specified TPC set (x direction)
+     * @param tpcsetid ID of the TPC set
+     * @return the value of the half width of the specified TPC set
+     * 
+     * @todo what happens if it does not exist?
+     */
+    double TPCsetHalfWidth(readout::TPCsetID const& tpcsetid) const;
+    
+    /**
+     * @brief Returns the half height of the specified TPC set (y direction)
+     * @param tpcsetid ID of the TPC set
+     * @return the value of the half height of the specified TPC set
+     * 
+     * @todo what happens if it does not exist?
+     */
+    double TPCsetHalfHeight(readout::TPCsetID const& tpcsetid) const;
+    
+    /**
+     * @brief Returns the length of the specified TPC set (z direction)
+     * @param tpcsetid ID of the TPC set
+     * @return the value of the length of the specified TPC set
+     * 
+     * @todo what happens if it does not exist?
+     */
+    double TPCsetLength(readout::TPCsetID const& tpcsetid) const;
+    
+    
+    /**
+     * @brief Returns the centre of side of the detector facing the beam
+     * @param tpcsetid ID of the TPC set
+     * @return vector of the position of centre of TPC set face toward the beam
+     */
+    TVector3 GetTPCsetFrontFaceCenter(readout::TPCsetID const& tpcsetid) const;
+    
+    
+#endif // 0
+    
+    /// @} TPC set information
+    
+    
+    
+    /// @name Readout plane information
+    /// @{
+    
+    //
+    // group features
+    //
+    
+    /**
+     * @brief Returns the total number of ROP in the specified TPC set
+     * @param tpcsetid TPC set ID
+     * @return number of readout planes in the TPC set, or 0 if no TPC set found
+     * 
+     * Note that this methods explicitly check the existence of the TPC set.
+     * 
+     * The NSiblingElements() method is overloaded and its
+     * return depends on the type of ID.
+     */
+    unsigned int NROPs(readout::TPCsetID const& tpcsetid) const;
+    unsigned int NSiblingElements(readout::ROPID const& ropid) const
+      { return NROPs(ropid); }
+    //@}
+    
+    /// Returns the largest number of ROPs a TPC set in the detector has
+    unsigned int MaxROPs() const;
+    
+    
+    //
+    // access
+    //
+    /// Returns whether we have the specified readout plane
+    /// @return whether the readout plane is valid and exists
+    bool HasROP(readout::ROPID const& ropid) const;
+    
+    /// Returns whether we have the specified readout plane
+    /// @return whether the readout plane is valid and exists
+    bool HasElement(readout::ROPID const& ropid) const { return HasROP(ropid); }
+    
+    
+    //
+    // mapping
+    //
+    /**
+     * @brief Returns the ID of the ROP planeid belongs to
+     * @param planeid ID of the wire plane
+     * @return the ID of the ROP planeid belongs to
+     * 
+     * If planeid is an invalid ID, an invalid ROP ID is returned.
+     * If planeid is a valid ID (i.e. an ID whose isValid flag is set) that
+     * points to a non-existent wire plane, the result is undefined.
+     * Use HasPlane() to check if the wire plane actually exists.
+     */
+    readout::ROPID WirePlaneToROP(geo::PlaneID const& planeid) const;
+    
+    /**
+     * @brief Returns a list of ID of planes belonging to the specified ROP
+     * @param ropid ID of the readout plane
+     * @return list of ID of wire planes belonging to the specified ROP
+     * 
+     * If ropid is an invalid ID, an empty list is returned.
+     * If ropid is a valid ID (i.e. an ID whose isValid flag is set) that
+     * points to a non-existent readout plane, the result is undefined.
+     * Use HasROP() to check if the readout plane actually exists.
+     */
+    std::vector<geo::PlaneID> ROPtoWirePlanes
+      (readout::ROPID const& ropid) const;
+    
+    /**
+     * @brief Returns a list of ID of TPCs the specified ROP spans
+     * @param ropid ID of the readout plane
+     * @return the list of TPC IDs, empty if readout plane ID is invalid
+     *
+     * Note that this check is performed on the validity of the readout plane
+     * ID, that does not necessarily imply that the readout plane specified by
+     * the ID actually exists. Check if the ROP exists with HasROP().
+     * The behaviour on non-existing readout planes is undefined.
+     */
+    std::vector<geo::TPCID> ROPtoTPCs(readout::ROPID const& ropid) const;
+    
+    
+    /**
+     * @brief Returns the ID of the first channel in the specified readout plane
+     * @param ropid ID of the readout plane
+     * @return ID of first channel, or raw::InvalidChannelID if ID is invalid
+     * 
+     * Note that this check is performed on the validity of the readout plane
+     * ID, that does not necessarily imply that the readout plane specified by
+     * the ID actually exists. Check if the ROP exists with HasROP().
+     * The behaviour for non-existing readout planes is undefined.
+     */
+    raw::ChannelID_t FirstChannelInROP(readout::ROPID const& ropid) const;
+    
+#if 0
+    ///
+    /// iterators
+    ///
+    
+    /// Initializes the specified ID with the ID of the first readout plane
+    void GetBeginID(readout::ROPID& id) const;
+    
+    /// Initializes the specified ID with the invalid ID after the last ROP
+    void GetEndID(readout::ROPID& id) const;
+    
+    
+    /// Returns an iterator pointing to the first ROP ID in the detector
+    ROP_id_iterator begin_ROP_id() const
+      { return ROP_id_iterator(this, ROP_id_iterator::begin_pos); }
+    
+    /// Returns an iterator pointing after the last ROP ID in the detector
+    ROP_id_iterator end_ROP_id() const
+      { return ROP_id_iterator(this, ROP_id_iterator::end_pos); }
+    
+    /**
+     * @brief Enables ranged-for loops on all readout plane IDs of the detector
+     * @returns an object suitable for ranged-for loops on all ROP IDs
+     * 
+     * Example of usage:
+     *     
+     *     for (readout::ROPID const& rID: geom->IterateROPIDs()) {
+     *       
+     *       // useful code here
+     *       
+     *     } // for all ROPs
+     *     
+     */
+    IteratorBox<
+      ROP_id_iterator,
+      &GeometryCore::begin_ROP_id, &GeometryCore::end_ROP_id
+      >
+    IterateROPIDs() const { return { this }; }
+    
+#endif // 0
+    
+    /**
+     * @brief Returns the view of the channels in the specified readout plane
+     * @param ropid readout plane ID
+     * @return the type of signal on the specified ROP
+     * 
+     * Returns the view (wire orientation) on the channels of specified readout
+     * plane.
+     * If ropid is an invalid ID, geo::kUnknown is returned.
+     * If ropid is a valid ID (i.e. an ID whose isValid flag is set) that
+     * points to a non-existent readout plane, the result is undefined.
+     * Use HasROP() to check if the readout plane actually exists.
+     */
+    geo::View_t View(readout::ROPID const& ropid) const;
+    
+    /**
+     * @brief Returns the type of signal of channels in specified readout plane
+     * @param ropid readout plane ID
+     * @return the type of signal on the specified ROP
+     * 
+     * Assumes that all the channels on the readout plane have the same signal
+     * type.
+     * If ropid is an invalid ID, geo::kMysteryType is returned.
+     * If ropid is a valid ID (i.e. an ID whose isValid flag is set) that
+     * points to a non-existent readout plane, the result is undefined.
+     * Use HasROP() to check if the readout plane actually exists.
+     */
+    geo::SigType_t SignalType(readout::ROPID const& ropid) const;
+    
+    
+    /// @} Readout plane information
     
     
     

@@ -1,7 +1,7 @@
 /**
- * @file   geometry_iterator_test.cxx
- * @brief  Unit test for geometry iterators on a standard detector
- * @date   May 7th, 2015
+ * @file   geometry_standardchannelmapping_test.cxx
+ * @brief  Unit test of channel mapping on a standard detector
+ * @date   June 26th, 2015
  * @author petrillo@fnal.gov
  * 
  * Usage: just run the executable.
@@ -10,11 +10,11 @@
 
 // Boost test libraries; defining this symbol tells boost somehow to generate
 // a main() function; Boost is pulled in by boost_unit_test_base.h
-#define BOOST_TEST_MODULE GeometryIteratorTest
+#define BOOST_TEST_MODULE GeometryStandardChannelMappingTest
 
 // LArSoft libraries
 #include "test/Geometry/geometry_unit_test_base.h"
-#include "test/Geometry/GeometryIteratorTestAlg.h"
+#include "test/Geometry/ChannelMapStandardTestAlg.h"
 #include "larcore/TestUtils/boost_unit_test_base.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/ChannelMapStandardAlg.h"
@@ -42,7 +42,7 @@ struct StandardGeometryConfiguration:
 {
   /// Constructor: overrides the application name
   StandardGeometryConfiguration()
-    { SetApplicationName("GeometryIteratorUnitTest"); }
+    { SetApplicationName("GeometryStandardChannelMappingTest"); }
 }; // class StandardGeometryConfiguration
 
 /*
@@ -60,22 +60,22 @@ struct StandardGeometryConfiguration:
  * This sharing allows the fixture to be used either as global or as per-suite.
  * In the former case, the BOOST_AUTO_TEST_CASE's will access the global test
  * algotithm instance through the static call to
- * `GeometryIteratorTestFixture::GlobalTester()`; in the latter case, it will
- * access the local tester via the member function `Tester()`.
+ * `GeometryStandardChannelMappingTestFixture::GlobalTester()`; in the latter
+ * case, it will access the local tester via the member function `Tester()`.
  * In this case, whether `GlobalTester()` and `Tester()` point to the same
  * tester depends on Boost unit test implementation.
  */
-class GeometryIteratorTestFixture:
+class GeometryStandardChannelMappingTestFixture:
   private testing::GeometryTesterEnvironment<StandardGeometryConfiguration>
 {
-  using Tester_t = geo::GeometryIteratorTestAlg;
+  using Tester_t = geo::ChannelMapStandardTestAlg;
   
   using TesterRegistry_t = testing::TestSharedGlobalResource<Tester_t>;
 
     public:
   
   /// Constructor: initialize the tester with the Geometry from base class
-  GeometryIteratorTestFixture()
+  GeometryStandardChannelMappingTestFixture()
     {
       // create a new tester
       tester_ptr = std::make_shared<Tester_t>(TesterParameters());
@@ -92,7 +92,7 @@ class GeometryIteratorTestFixture:
   
     private:
   std::shared_ptr<Tester_t> tester_ptr; ///< our tester (may be shared)
-}; // class GeometryIteratorTestFixture
+}; // class GeometryStandardChannelMappingTestFixture
 
 
 
@@ -105,73 +105,28 @@ class GeometryIteratorTestFixture:
 //   member in the environment, as "Tester()"; but a new fixture, with a new
 //   geometry and a new tester, is initialized on each test case
 // - BOOST_GLOBAL_FIXTURE does not provide tester access, so one has to get it
-//   as GeometryIteratorTestFixture::GlobalTester(); on the other hand, the
-//   fixture is initialized only when a new global one is explicitly created.
+//   as GeometryStandardChannelMappingTestFixture::GlobalTester(); on the other
+//   hand, the fixture is initialized only when a new global one is explicitly
+//   created.
 //
 
-// BOOST_FIXTURE_TEST_SUITE(GeometryIterators, GeometryIteratorTestFixture)
-BOOST_GLOBAL_FIXTURE(GeometryIteratorTestFixture);
+BOOST_GLOBAL_FIXTURE(GeometryStandardChannelMappingTestFixture);
 
-/*
-BOOST_AUTO_TEST_CASE( AllTests )
+BOOST_AUTO_TEST_CASE( TPCsetMappingTestCase )
 {
-  GlobalTester().Run();
-} // BOOST_AUTO_TEST_CASE( AllTests )
-*/
+  GeometryStandardChannelMappingTestFixture::GlobalTester().TPCsetMappingTest();
+} // BOOST_AUTO_TEST_CASE( TPCsetMappingTestCase )
 
-BOOST_AUTO_TEST_CASE( CryostatIDIteratorsTest )
+BOOST_AUTO_TEST_CASE( ROPMappingTestCase )
 {
-  GeometryIteratorTestFixture::GlobalTester().CryostatIDIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( CryostatIDIteratorsTest )
+  GeometryStandardChannelMappingTestFixture::GlobalTester().ROPMappingTest();
+} // BOOST_AUTO_TEST_CASE( ROPMappingTestCase )
 
-
-
-BOOST_AUTO_TEST_CASE( CryostatIteratorsTest )
+BOOST_AUTO_TEST_CASE( ChannelMappingTestCase )
 {
-  GeometryIteratorTestFixture::GlobalTester().CryostatIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( CryostatIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( TPCIDIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().TPCIDIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( TPCIDIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( TPCIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().TPCIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( TPCIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( PlaneIDIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().PlaneIDIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( PlaneIDIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( PlaneIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().PlaneIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( PlaneIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( WireIDIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().WireIDIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( WireIDIteratorsTest )
-
-
-
-BOOST_AUTO_TEST_CASE( WireIteratorsTest )
-{
-  GeometryIteratorTestFixture::GlobalTester().WireIteratorsTest();
-} // BOOST_AUTO_TEST_CASE( WireIteratorsTest )
+  GeometryStandardChannelMappingTestFixture::GlobalTester()
+    .ChannelMappingTest();
+} // BOOST_AUTO_TEST_CASE( ChannelMappingTestCase )
 
 
 // BOOST_AUTO_TEST_SUITE_END()

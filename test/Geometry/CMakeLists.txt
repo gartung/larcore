@@ -2,7 +2,11 @@ cet_enable_asserts()
 
 # test libraries
 art_make_library( LIBRARY_NAME GeometryTestLib
-                  SOURCE GeometryTestAlg.cxx GeometryIteratorTestAlg.cxx GeometryIteratorLoopTestAlg.cxx
+                  SOURCE
+                    GeometryTestAlg.cxx
+                    GeometryIteratorTestAlg.cxx
+                    GeometryIteratorLoopTestAlg.cxx
+                    ChannelMapStandardTestAlg.cxx
                   LIBRARIES larcore_Geometry
                         larcore_TestUtils
                         art_Utilities canvas_Utilities
@@ -81,6 +85,21 @@ cet_test(geometry_iterator_loop_test
             ${MF_UTILITIES}
             ${FHICLCPP}
             ${CETLIB}
+)
+
+
+# test for standard channel mapping (BOOST unit test)
+cet_test(geometry_standardchannelmapping_test
+  SOURCES geometry_standardchannelmapping_test.cxx
+  LIBRARIES larcore_Geometry
+            GeometryTestLib
+            ${MF_MESSAGELOGGER}
+            ${MF_UTILITIES}
+            ${FHICLCPP}
+            ${CETLIB}
+  USE_BOOST_UNIT
+  DATAFILES test_geometry.fcl
+  TEST_ARGS ./test_geometry.fcl
 )
 
 
