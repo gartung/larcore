@@ -423,9 +423,9 @@ namespace geo{
     }
 
      mf::LogVerbatim("GeometryTest") << "OneSeg: "       << OneSeg 
-				     << ",  TwoSegs: "   << TwoSegs
-				     << ",  ThreeSegs: " << ThreeSegs
-				     << ",  FourSegs: "  << FourSegs;
+                                     << ",  TwoSegs: "   << TwoSegs
+                                     << ",  ThreeSegs: " << ThreeSegs
+                                     << ",  FourSegs: "  << FourSegs;
 
   }
 
@@ -435,15 +435,15 @@ namespace geo{
       double origin[3] = {0.};
       double world[3] = {0.};
       for(unsigned int c = 0; c < geom->Ncryostats(); ++c){
-	geom->Cryostat(c).LocalToWorld(origin, world);
+        geom->Cryostat(c).LocalToWorld(origin, world);
 
         mf::LogVerbatim("GeometryTest") << "Cryo " << c;
-	mf::LogVerbatim("GeometryTest") << "    -x: " << world[0] - geom->Cryostat(c).HalfWidth();
-	mf::LogVerbatim("GeometryTest") << "    +x: " << world[0] + geom->Cryostat(c).HalfWidth();
-	mf::LogVerbatim("GeometryTest") << "    -y: " << world[1] - geom->Cryostat(c).HalfHeight();
-	mf::LogVerbatim("GeometryTest") << "    +y: " << world[1] + geom->Cryostat(c).HalfHeight();
-	mf::LogVerbatim("GeometryTest") << "    -z: " << world[2] - geom->Cryostat(c).Length()/2;
-	mf::LogVerbatim("GeometryTest") << "    +z: " << world[2] + geom->Cryostat(c).Length()/2;
+        mf::LogVerbatim("GeometryTest") << "    -x: " << world[0] - geom->Cryostat(c).HalfWidth();
+        mf::LogVerbatim("GeometryTest") << "    +x: " << world[0] + geom->Cryostat(c).HalfWidth();
+        mf::LogVerbatim("GeometryTest") << "    -y: " << world[1] - geom->Cryostat(c).HalfHeight();
+        mf::LogVerbatim("GeometryTest") << "    +y: " << world[1] + geom->Cryostat(c).HalfHeight();
+        mf::LogVerbatim("GeometryTest") << "    -z: " << world[2] - geom->Cryostat(c).Length()/2;
+        mf::LogVerbatim("GeometryTest") << "    +z: " << world[2] + geom->Cryostat(c).Length()/2;
 
         for(unsigned int t = 0; t < geom->NTPC(c); ++t){
           geom->Cryostat(c).TPC(t).LocalToWorld(origin, world);
@@ -470,19 +470,19 @@ namespace geo{
 
       mf::LogVerbatim("GeometryTest") << "Cryo " << c;
       mf::LogVerbatim("GeometryTest") << "    width: "
-				      << geom->CryostatHalfWidth(c);
+                                      << geom->CryostatHalfWidth(c);
       mf::LogVerbatim("GeometryTest") << "    height: "
-				      << geom->CryostatHalfHeight(c);
+                                      << geom->CryostatHalfHeight(c);
       mf::LogVerbatim("GeometryTest") << "    length: "
-				      << geom->CryostatLength(c);
+                                      << geom->CryostatLength(c);
 
       mf::LogVerbatim("GeometryTest") << "  TPC 0";
       mf::LogVerbatim("GeometryTest") << "    width: "
-				      << geom->DetHalfWidth(0,c);
+                                      << geom->DetHalfWidth(0,c);
       mf::LogVerbatim("GeometryTest") << "    height: "
-				      << geom->DetHalfHeight(0,c);
+                                      << geom->DetHalfHeight(0,c);
       mf::LogVerbatim("GeometryTest") << "    length: "
-				      << geom->DetLength(0,c);      
+                                      << geom->DetLength(0,c);      
     }
   }
 
@@ -586,8 +586,8 @@ namespace geo{
       double CryoPos[3];
       cryostat.LocalToWorld(Origin, CryoPos);
       mf::LogVerbatim("GeometryTest") << "  cryostat #" << c << " at ("
-				      << CryoPos[0] << ", " << CryoPos[1] << ", " << CryoPos[2] << ") cm has "
-				      << nTPCs << " TPC(s):";
+                                      << CryoPos[0] << ", " << CryoPos[1] << ", " << CryoPos[2] << ") cm has "
+                                      << nTPCs << " TPC(s):";
       for(unsigned int t = 0;  t < nTPCs; ++t) {
         const geo::TPCGeo& tpc = cryostat.TPC(t);
         if (nTPCs > 1) mf::LogVerbatim("GeometryTest") << "    TPC #" << t;
@@ -595,7 +595,7 @@ namespace geo{
       } // for TPC
     } // for cryostat
     mf::LogVerbatim("GeometryTest") << "End of detector "
-				    << geom->DetectorName() << " geometry.";
+                                    << geom->DetectorName() << " geometry.";
   } // GeometryTestAlg::printAllGeometry()
 
   //......................................................................
@@ -606,32 +606,32 @@ namespace geo{
     for(unsigned int c = 0; c < geom->Ncryostats(); ++c){
 
       mf::LogVerbatim("GeometryTest") << "\n\t\tCryostat " << c 
-				      << " " << geom->Cryostat(c).Volume()->GetName()
-				      << " Dimensions: " << 2.*geom->Cryostat(c).HalfWidth()
-				      << " x "           << 2.*geom->Cryostat(c).HalfHeight() 
-				      << " x "           << geom->Cryostat(c).Length()
-				      << "\n\t\t mass: " << geom->Cryostat(c).Mass();
+                                      << " " << geom->Cryostat(c).Volume()->GetName()
+                                      << " Dimensions: " << 2.*geom->Cryostat(c).HalfWidth()
+                                      << " x "           << 2.*geom->Cryostat(c).HalfHeight() 
+                                      << " x "           << geom->Cryostat(c).Length()
+                                      << "\n\t\t mass: " << geom->Cryostat(c).Mass();
 
       double cryobound[6] = {0.};
       geom->CryostatBoundaries(cryobound, c);
       mf::LogVerbatim("GeometryTest") << "Cryostat boundaries are at:\n"
-				      << "\t-x:" << cryobound[0] << " +x:" << cryobound[1]
-				      << "\t-y:" << cryobound[2] << " +y:" << cryobound[3]
-				      << "\t-z:" << cryobound[4] << " +z:" << cryobound[5];
+                                      << "\t-x:" << cryobound[0] << " +x:" << cryobound[1]
+                                      << "\t-y:" << cryobound[2] << " +y:" << cryobound[3]
+                                      << "\t-z:" << cryobound[4] << " +z:" << cryobound[5];
 
       // pick a position in the middle of the cryostat in the world coordinates
       double worldLoc[3] = {0.5*(cryobound[1] - cryobound[0]) + cryobound[0],
-			    0.5*(cryobound[3] - cryobound[2]) + cryobound[2],
-			    0.5*(cryobound[5] - cryobound[4]) + cryobound[4]};
-		
+                            0.5*(cryobound[3] - cryobound[2]) + cryobound[2],
+                            0.5*(cryobound[5] - cryobound[4]) + cryobound[4]};
+                
       LOG_DEBUG("GeometryTest") << "\t testing GeometryCore::PoitionToCryostat....";
       try{
-	unsigned int cstat = 0;
-	geom->PositionToCryostat(worldLoc, cstat);
+        unsigned int cstat = 0;
+        geom->PositionToCryostat(worldLoc, cstat);
       }
       catch(cet::exception &e){
-	mf::LogWarning("FailedToLocateCryostat") << "\n exception caught:" << e;
-	if (fNonFatalExceptions.count(e.category()) == 0) throw;
+        mf::LogWarning("FailedToLocateCryostat") << "\n exception caught:" << e;
+        if (fNonFatalExceptions.count(e.category()) == 0) throw;
       }
       LOG_DEBUG("GeometryTest") << "done";
 
@@ -939,69 +939,69 @@ namespace geo{
 
     for(unsigned int cs = 0; cs < geom->Ncryostats(); ++cs){
       for(unsigned int tpc = 0; tpc < geom->Cryostat(cs).NTPC(); ++tpc){
-	for(unsigned int plane = 0; plane < geom->Cryostat(cs).TPC(tpc).Nplanes(); ++plane){
-	  for(unsigned int wire = 0; wire < geom->Cryostat(cs).TPC(tpc).Plane(plane).Nwires(); ++wire){
+        for(unsigned int plane = 0; plane < geom->Cryostat(cs).TPC(tpc).Nplanes(); ++plane){
+          for(unsigned int wire = 0; wire < geom->Cryostat(cs).TPC(tpc).Plane(plane).Nwires(); ++wire){
 
-	    uint32_t channel = geom->PlaneWireToChannel(plane, wire, tpc, cs);
-	    //std::cout << "WireID (" << cs << ", " << tpc << ", " << plane << ", " << wire 
-	    //	<< ") --> Channel " << channel << std::endl;    
-	    std::vector< geo::WireID > wireIDs = geom->ChannelToWire(channel);
-	    
+            uint32_t channel = geom->PlaneWireToChannel(plane, wire, tpc, cs);
+            //std::cout << "WireID (" << cs << ", " << tpc << ", " << plane << ", " << wire 
+            //        << ") --> Channel " << channel << std::endl;    
+            std::vector< geo::WireID > wireIDs = geom->ChannelToWire(channel);
+            
 
-	    if ( wireIDs.size() == 0 ) 
-	      throw cet::exception("BadChannelLookup") << "requested channel: " << channel 
-						       << ";" << cs << "," << tpc
-						       << "," << plane << "," << wire << "\n"
-						       << "got back an empty vector of WireID " << "\n";
+            if ( wireIDs.size() == 0 ) 
+              throw cet::exception("BadChannelLookup") << "requested channel: " << channel 
+                                                       << ";" << cs << "," << tpc
+                                                       << "," << plane << "," << wire << "\n"
+                                                       << "got back an empty vector of WireID " << "\n";
 
-	    bool goodLookup = false;
-	    for( auto const& wid : wireIDs){
-	      if(wid.Cryostat == cs    && 
-		 wid.TPC      == tpc   && 
-		 wid.Plane    == plane && 
-		 wid.Wire     == wire) goodLookup = true;
-	    }
-	    
-	    if(!goodLookup)
-	    {
-	      std::cout << "Returned: " << std::endl;
+            bool goodLookup = false;
+            for( auto const& wid : wireIDs){
+              if(wid.Cryostat == cs    && 
+                 wid.TPC      == tpc   && 
+                 wid.Plane    == plane && 
+                 wid.Wire     == wire) goodLookup = true;
+            }
+            
+            if(!goodLookup)
+            {
+              std::cout << "Returned: " << std::endl;
               for(unsigned int id=0; id<wireIDs.size(); ++id)
-	      {
-		std::cout << "wireIDs[" << id << "] = ("
-		          << wireIDs[id].Cryostat << ", "
-		          << wireIDs[id].TPC      << ", "
-		          << wireIDs[id].Plane    << ", "
-		          << wireIDs[id].Wire     << ")" << std::endl;
+              {
+                std::cout << "wireIDs[" << id << "] = ("
+                          << wireIDs[id].Cryostat << ", "
+                          << wireIDs[id].TPC      << ", "
+                          << wireIDs[id].Plane    << ", "
+                          << wireIDs[id].Wire     << ")" << std::endl;
               }
-	      throw cet::exception("BadChannelLookup") << "requested channel " << channel 
-						       << "expected to return" << cs << "," << tpc
-						       << "," << plane << "," << wire << "\n"
-						       << "no returned geo::WireID structs matched\n";
+              throw cet::exception("BadChannelLookup") << "requested channel " << channel 
+                                                       << "expected to return" << cs << "," << tpc
+                                                       << "," << plane << "," << wire << "\n"
+                                                       << "no returned geo::WireID structs matched\n";
             }
 
-	    if(geom->SignalType(channel) != geom->Plane(plane, tpc, cs).SignalType() )
-	      throw cet::exception("BadChannelLookup") << "expected signal type: SignalType(channel) = " 
-						       << geom->SignalType(channel)
-						       << " for channel " 
-						       << channel << ", WireID ("  
-						       << cs << ", " << tpc << ", " << plane << ", " << wire
-						       << "), got: Plane(" << plane << ", " << tpc 
-						                           << ", " << cs << ").SignalType() = "
-						       << geom->Plane(plane, tpc, cs).SignalType() << "\n";
+            if(geom->SignalType(channel) != geom->Plane(plane, tpc, cs).SignalType() )
+              throw cet::exception("BadChannelLookup") << "expected signal type: SignalType(channel) = " 
+                                                       << geom->SignalType(channel)
+                                                       << " for channel " 
+                                                       << channel << ", WireID ("  
+                                                       << cs << ", " << tpc << ", " << plane << ", " << wire
+                                                       << "), got: Plane(" << plane << ", " << tpc 
+                                                                           << ", " << cs << ").SignalType() = "
+                                                       << geom->Plane(plane, tpc, cs).SignalType() << "\n";
 
 
-	    if(geom->View(channel) != geom->Plane(plane, tpc, cs).View() )
-	      throw cet::exception("BadChannelLookup") << "expected view type: View(channel) = " 
-						       << ViewName(geom->View(channel))
-						       << " for channel " 
-						       << channel << ", WireID ("  
-						       << cs << ", " << tpc << ", " << plane << ", " << wire
-						       << "), got: Plane(" << plane << ", " << tpc 
-						                           << ", " << cs << ").View() = "
-						       << ViewName(geom->Plane(plane, tpc, cs).View()) << "\n";
+            if(geom->View(channel) != geom->Plane(plane, tpc, cs).View() )
+              throw cet::exception("BadChannelLookup") << "expected view type: View(channel) = " 
+                                                       << ViewName(geom->View(channel))
+                                                       << " for channel " 
+                                                       << channel << ", WireID ("  
+                                                       << cs << ", " << tpc << ", " << plane << ", " << wire
+                                                       << "), got: Plane(" << plane << ", " << tpc 
+                                                                           << ", " << cs << ").View() = "
+                                                       << ViewName(geom->Plane(plane, tpc, cs).View()) << "\n";
 
-	  }
-	}
+          }
+        }
       }
     }
 
@@ -1015,9 +1015,9 @@ namespace geo{
     for(size_t i = 0; i < geom->Nplanes(); ++i){ 
       geom->Plane(i).LocalToWorld(xyz,xyzW);
       mf::LogVerbatim("GeometryTest") << "\n\tplane " 
-				      << i << " is centered at (x,y,z) = (" 
-				      << xyzW[0] << "," << xyzW[1]
-				      << "," << xyzW[2] << ")";
+                                      << i << " is centered at (x,y,z) = (" 
+                                      << xyzW[0] << "," << xyzW[1]
+                                      << "," << xyzW[2] << ")";
     } 
   } 
 
@@ -1028,29 +1028,29 @@ namespace geo{
     double xyzprev[3] = {0.};
     for(size_t cs = 0; cs < geom->Ncryostats(); ++cs){
       for(size_t t = 0; t < geom->Cryostat(cs).NTPC(); ++t){
-	const geo::TPCGeo* tpc = &geom->Cryostat(cs).TPC(t); 
+        const geo::TPCGeo* tpc = &geom->Cryostat(cs).TPC(t); 
 
-	for (size_t i=0; i < tpc->Nplanes(); ++i) {
-	  const geo::PlaneGeo* plane = &tpc->Plane(i);
+        for (size_t i=0; i < tpc->Nplanes(); ++i) {
+          const geo::PlaneGeo* plane = &tpc->Plane(i);
 
-	  for (size_t j = 1; j < plane->Nwires(); ++j) {
+          for (size_t j = 1; j < plane->Nwires(); ++j) {
 
-	    const geo::WireGeo wire = plane->Wire(j);
-	    const geo::WireGeo wireprev = plane->Wire(j-1);
+            const geo::WireGeo wire = plane->Wire(j);
+            const geo::WireGeo wireprev = plane->Wire(j-1);
 
-	    wire.GetCenter(xyz);
-	    wireprev.GetCenter(xyzprev);
+            wire.GetCenter(xyz);
+            wireprev.GetCenter(xyzprev);
 
-	    // wires increase in +z order
-	    if(xyz[2] < xyzprev[2])
-	      throw cet::exception("WireOrderProblem") 	<< "\n\twires do not increase in +z order in"
-							<< "Cryostat " << cs
-							<< ", TPC " << t
-							<< ", Plane " << i
-							<< ";  at wire " << j << "\n";
+            // wires increase in +z order
+            if(xyz[2] < xyzprev[2])
+              throw cet::exception("WireOrderProblem")         << "\n\twires do not increase in +z order in"
+                                                        << "Cryostat " << cs
+                                                        << ", TPC " << t
+                                                        << ", Plane " << i
+                                                        << ";  at wire " << j << "\n";
 
-	  }// end loop over wires
-	}// end loop over planes
+          }// end loop over wires
+        }// end loop over planes
       }// end loop over tpcs
     }// end loop over cryostats
 
@@ -1065,35 +1065,35 @@ namespace geo{
     double xyzprev[3] = {0.};
     for(size_t cs = 0; cs < geom->Ncryostats(); ++cs){
       for(size_t t = 0; t < geom->Cryostat(cs).NTPC(); ++t){
-	const geo::TPCGeo* tpc = &geom->Cryostat(cs).TPC(t);
-	tpc->LocalToWorld(origin, tpcworld);
+        const geo::TPCGeo* tpc = &geom->Cryostat(cs).TPC(t);
+        tpc->LocalToWorld(origin, tpcworld);
 
-	for (size_t i=0; i < tpc->Nplanes(); ++i) {
-	  const geo::PlaneGeo* plane = &tpc->Plane(i);
+        for (size_t i=0; i < tpc->Nplanes(); ++i) {
+          const geo::PlaneGeo* plane = &tpc->Plane(i);
 
-	  for (size_t j = 1; j < plane->Nwires(); ++j) {
-	    const geo::WireGeo wire = plane->Wire(j);
-	    const geo::WireGeo wireprev = plane->Wire(j-1);
+          for (size_t j = 1; j < plane->Nwires(); ++j) {
+            const geo::WireGeo wire = plane->Wire(j);
+            const geo::WireGeo wireprev = plane->Wire(j-1);
 
-	    wire.GetCenter(xyz);
-	    wireprev.GetCenter(xyzprev);
+            wire.GetCenter(xyz);
+            wireprev.GetCenter(xyzprev);
 
             // top TPC wires increase in -y
-	    if(tpcworld[1] > 0 && xyz[1] > xyzprev[1])
-	      throw cet::exception("WireOrderProblem") 	<< "\n\ttop TPC wires do not increase in -y order in"
-							<< "Cryostat " << cs
-							<< ", TPC " << t
-							<< ", Plane " << i
-							<< ";  at wire " << j << "\n";
-            // bottom TPC wires increase in +y
-	    else if(tpcworld[1] < 0 && xyz[1] < xyzprev[1])
-	      throw cet::exception("WireOrderProblem") 	<< "\n\tbottom TPC wires do not increase in +y order in"
+            if(tpcworld[1] > 0 && xyz[1] > xyzprev[1])
+              throw cet::exception("WireOrderProblem")         << "\n\ttop TPC wires do not increase in -y order in"
                                                         << "Cryostat " << cs
-							<< ", TPC " << t
+                                                        << ", TPC " << t
+                                                        << ", Plane " << i
+                                                        << ";  at wire " << j << "\n";
+            // bottom TPC wires increase in +y
+            else if(tpcworld[1] < 0 && xyz[1] < xyzprev[1])
+              throw cet::exception("WireOrderProblem")         << "\n\tbottom TPC wires do not increase in +y order in"
+                                                        << "Cryostat " << cs
+                                                        << ", TPC " << t
                                                         << ", Plane " << i 
                                                         << ";  at wire " << j << "\n";
-	  }// end loop over wires
-	}// end loop over planes
+          }// end loop over wires
+        }// end loop over planes
       }// end loop over tpcs
     }// end loop over cryostats
 
@@ -2175,17 +2175,17 @@ namespace geo{
       const double* pos = gGeoManager->GetCurrentPoint();
       const double* dir = gGeoManager->GetCurrentDirection();
       mf::LogVerbatim("GeometryTest") << "\tnode = " 
-				      << gGeoManager->GetCurrentNode()->GetName()
-				      << "\n\t\tpos=" << "\t"
-				      << pos[0] << "\t"
-				      << pos[1] << "\t"
-				      << pos[2]
-				      << "\n\t\tdir=" << "\t"
-				      << dir[0] << "\t"
-				      << dir[1] << "\t"
-				      << dir[2]
-				      << "\n\t\tmat = " 
-				      << gGeoManager->GetCurrentNode()->GetVolume()->GetMaterial()->GetName();
+                                      << gGeoManager->GetCurrentNode()->GetName()
+                                      << "\n\t\tpos=" << "\t"
+                                      << pos[0] << "\t"
+                                      << pos[1] << "\t"
+                                      << pos[2]
+                                      << "\n\t\tdir=" << "\t"
+                                      << dir[0] << "\t"
+                                      << dir[1] << "\t"
+                                      << dir[2]
+                                      << "\n\t\tmat = " 
+                                      << gGeoManager->GetCurrentNode()->GetVolume()->GetMaterial()->GetName();
       
       gGeoManager->FindNextBoundary();
       gGeoManager->FindNormal();
@@ -2195,9 +2195,9 @@ namespace geo{
     xyz[0] = 306.108; xyz[1] = -7.23775; xyz[2] = 856.757;
     gGeoManager->InitTrack(xyz, dxyz);
     mf::LogVerbatim("GeometryTest") << "\tnode = " 
-				    << gGeoManager->GetCurrentNode()->GetName()
-				    << "\n\tmat = " 
-				    << gGeoManager->GetCurrentNode()->GetVolume()->GetMaterial()->GetName();
+                                    << gGeoManager->GetCurrentNode()->GetName()
+                                    << "\n\tmat = " 
+                                    << gGeoManager->GetCurrentNode()->GetVolume()->GetMaterial()->GetName();
 
     gGeoManager->GetCurrentNode()->GetVolume()->GetMaterial()->Print();
 
