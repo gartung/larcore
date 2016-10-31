@@ -10,8 +10,6 @@
 #include "test/Geometry/GeometryTestAlg.h"
 
 // LArSoft includes
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
@@ -20,6 +18,9 @@
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/geo.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
 
 // Framework includes
 #include "fhiclcpp/ParameterSet.h"
@@ -890,7 +891,7 @@ namespace geo{
       const double middle_coord = geom->WireCoordinate
         (middle_wire_center[1], middle_wire_center[2], planeid);
       
-      if (std::abs(middle_coord - double(middle_wire_id.Wire)) > 1e-3) {
+      if (std::abs(middle_coord - double(middle_wire_id.Wire)) > 2e-3) {
         throw cet::exception("WireCoordAngle")
           << "Center of " << std::string(middle_wire_id) << " at ("
           << middle_wire_center[0]
@@ -920,7 +921,7 @@ namespace geo{
       const double next_coord
         = geom->WireCoordinate(on_next_wire[1], on_next_wire[2], planeid);
       
-      if (std::abs(next_coord - double(next_wire_id.Wire)) > 1e-3) {
+      if (std::abs(next_coord - double(next_wire_id.Wire)) > 2e-3) {
         throw cet::exception("WireCoordAngle")
           << "Position (" << on_next_wire[0]
           << "; " << on_next_wire[1] << "; " << on_next_wire[2]
