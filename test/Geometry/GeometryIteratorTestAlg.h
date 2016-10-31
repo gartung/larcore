@@ -32,7 +32,7 @@ namespace geo {
     virtual void Setup(geo::GeometryCore const& new_geo) { geom = &new_geo; }
     
     /// Executes the test
-    virtual unsigned int Run();
+    virtual unsigned int Run() const;
    
     //@{
     /// All the ID iterator tests

@@ -273,6 +273,17 @@ namespace geo{
     UpdatePhiZ();
   } // PlaneGeo::UpdateWirePitch()
   
+  //......................................................................
+  void PlaneGeo::ResetIDs(geo::PlaneID planeid) {
+    
+    fID = planeid;
+    for (unsigned int wire = 0; wire < Nwires(); ++wire)
+      fWire[wire]->ResetID(geo::WireID(fID, wire));
+    
+  } // PlaneGeo::ResetIDs()
+  
+  //......................................................................
+  
   
 }
 ////////////////////////////////////////////////////////////////////////

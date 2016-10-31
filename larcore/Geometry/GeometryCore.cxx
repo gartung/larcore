@@ -71,6 +71,7 @@ namespace geo {
     (std::shared_ptr<geo::ChannelMapAlg> pChannelMap)
   {
     pChannelMap->Initialize(fGeoData);
+    ResetIDs(); // after channel mapping has sorted objects, set their IDs
     fChannelMapAlg = pChannelMap;
   } // GeometryCore::ApplyChannelMap()
 
@@ -131,6 +132,17 @@ namespace geo {
   } // GeometryCore::ClearGeometry()
 
 
+  //......................................................................
+  void GeometryCore::ResetIDs() {
+    
+    // This implementation is very low level because we want this to be working
+    // even if the geometry is not perfectly initialised yet
+    for (size_t c = 0; c < Ncryostats(); ++c)
+      Cryostats()[c]->ResetIDs(geo::CryostatID(c));
+    
+  } // GeometryCore::ResetIDs()
+  
+  
   //......................................................................
   TGeoManager* GeometryCore::ROOTGeoManager() const
   {

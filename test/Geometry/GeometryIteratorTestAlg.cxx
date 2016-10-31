@@ -92,7 +92,7 @@ namespace {
 
 
 //-----------------------------------------------------------------------------
-unsigned int geo::GeometryIteratorTestAlg::Run() {
+unsigned int geo::GeometryIteratorTestAlg::Run() const {
   // All the tests
   
   // - geometry ID iterators

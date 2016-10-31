@@ -148,6 +148,9 @@ namespace geo {
                                 unsigned int w2=1,
                                 unsigned int p=0)               const;
     
+    /// Returns the identifier of this TPC
+    geo::TPCID const& ID() const { return fID; }
+    
     /// @}
     
     
@@ -193,6 +196,8 @@ namespace geo {
     /// Apply sorting to the PlaneGeo objects
     void              SortSubVolumes(geo::GeoObjectSorter const& sorter);
     
+    /// Sets the TPC ID and resets the IDs of all planes in it
+    void ResetIDs(geo::TPCID tpcid);
     
     
     /**
@@ -241,6 +246,8 @@ namespace geo {
     double                             fHalfWidth;        ///< half width of total volume
     double                             fHalfHeight;       ///< half height of total volume
     double                             fLength;           ///< length of total volume
+    
+    geo::TPCID                         fID;             ///< ID of this TPC
     
     /// Index of the plane for each view (InvalidID if none)
     std::vector<geo::PlaneID::PlaneID_t> fViewToPlaneNumber;

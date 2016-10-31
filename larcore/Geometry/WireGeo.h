@@ -26,6 +26,10 @@ class TGeoMatrix;
 
 
 namespace geo {
+  
+  class WireID; // forward declaration
+  
+  
   /// \brief Encapsulate the cell geometry
   //
   /// A note on the cell geometry: Wires are constructed such that, in
@@ -103,6 +107,9 @@ namespace geo {
           : 0;
       } // DistanceFrom()
     
+    
+    /// Reset the wire ID (currently no-op since there is no ID to be reset)
+    void ResetID(geo::WireID const&) {}
     
     /// Returns the pitch (distance on y/z plane) between two wires, in cm
     static double WirePitch(geo::WireGeo const& w1, geo::WireGeo const& w2)

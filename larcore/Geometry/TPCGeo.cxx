@@ -220,6 +220,16 @@ namespace geo{
 
 
   //......................................................................
+  void TPCGeo::ResetIDs(geo::TPCID tpcid) {
+    
+    fID = tpcid;
+    for (unsigned int plane = 0; plane < Nplanes(); ++plane)
+      fPlanes[plane]->ResetIDs(geo::PlaneID(fID, plane));
+    
+  } // TPCGeo::ResetIDs()
+  
+  
+  //......................................................................
   const PlaneGeo& TPCGeo::Plane(unsigned int iplane) const
   {
     geo::PlaneGeo const* pPlane = PlanePtr(iplane);

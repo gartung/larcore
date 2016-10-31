@@ -3731,6 +3731,15 @@ namespace geo {
     
     void MakeAuxDet(std::vector<const TGeoNode*>& path, int depth);
     
+    /**
+     * @brief Rewrites the IDs of all geometry objects
+     * 
+     * Each cryostat is given an ID matching its position in the cryostat array.
+     * Cryostat objects (geo::CryostatGeo) are then asked to reset the IDs in
+     * cascade.
+     */
+    void ResetIDs();
+    
     /// Deletes the detector geometry structures
     void ClearGeometry();
     
