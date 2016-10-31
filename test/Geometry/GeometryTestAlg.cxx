@@ -934,79 +934,92 @@ namespace geo{
   
   
   //......................................................................
-  void GeometryTestAlg::testChannelToWire()
+  void GeometryTestAlg::testChannelToWire() const
   {
+    using std::begin;
+    using std::end;
+    
+    geo::PlaneID lastPlane; // starts invalid
+    geo::View_t planeView = geo::kUnknown;
+    geo::SigType_t planeSigType = geo::kMysteryType;
 
-    for(unsigned int cs = 0; cs < geom->Ncryostats(); ++cs){
-      for(unsigned int tpc = 0; tpc < geom->Cryostat(cs).NTPC(); ++tpc){
-        for(unsigned int plane = 0; plane < geom->Cryostat(cs).TPC(tpc).Nplanes(); ++plane){
-          for(unsigned int wire = 0; wire < geom->Cryostat(cs).TPC(tpc).Plane(plane).Nwires(); ++wire){
+    for(geo::WireID testWireID: geom->IterateWireIDs()){
+      
+      raw::ChannelID_t channel = geom->PlaneWireToChannel(testWireID);
+      
+      if (!raw::isValidChannelID(channel)) {
+        throw cet::exception("BadChannelLookup")
+          << "Invalid channel returned for wire " << std::string(testWireID)
+          << "\n";
+      }
+      
+      auto const wireIDs = geom->ChannelToWire(channel);
+      
+      if (wireIDs.empty()) {
+        throw cet::exception("BadChannelLookup")
+          << "List of wires for channel #" << channel << " is empty;"
+          << " it should have contained at least " << std::string(testWireID)
+         << "\n";
+      }
 
-            uint32_t channel = geom->PlaneWireToChannel(plane, wire, tpc, cs);
-            //std::cout << "WireID (" << cs << ", " << tpc << ", " << plane << ", " << wire 
-            //        << ") --> Channel " << channel << std::endl;    
-            std::vector< geo::WireID > wireIDs = geom->ChannelToWire(channel);
-            
-
-            if ( wireIDs.size() == 0 ) 
-              throw cet::exception("BadChannelLookup") << "requested channel: " << channel 
-                                                       << ";" << cs << "," << tpc
-                                                       << "," << plane << "," << wire << "\n"
-                                                       << "got back an empty vector of WireID " << "\n";
-
-            bool goodLookup = false;
-            for( auto const& wid : wireIDs){
-              if(wid.Cryostat == cs    && 
-                 wid.TPC      == tpc   && 
-                 wid.Plane    == plane && 
-                 wid.Wire     == wire) goodLookup = true;
-            }
-            
-            if(!goodLookup)
-            {
-              std::cout << "Returned: " << std::endl;
-              for(unsigned int id=0; id<wireIDs.size(); ++id)
-              {
-                std::cout << "wireIDs[" << id << "] = ("
-                          << wireIDs[id].Cryostat << ", "
-                          << wireIDs[id].TPC      << ", "
-                          << wireIDs[id].Plane    << ", "
-                          << wireIDs[id].Wire     << ")" << std::endl;
-              }
-              throw cet::exception("BadChannelLookup") << "requested channel " << channel 
-                                                       << "expected to return" << cs << "," << tpc
-                                                       << "," << plane << "," << wire << "\n"
-                                                       << "no returned geo::WireID structs matched\n";
-            }
-
-            if(geom->SignalType(channel) != geom->Plane(plane, tpc, cs).SignalType() )
-              throw cet::exception("BadChannelLookup") << "expected signal type: SignalType(channel) = " 
-                                                       << geom->SignalType(channel)
-                                                       << " for channel " 
-                                                       << channel << ", WireID ("  
-                                                       << cs << ", " << tpc << ", " << plane << ", " << wire
-                                                       << "), got: Plane(" << plane << ", " << tpc 
-                                                                           << ", " << cs << ").SignalType() = "
-                                                       << geom->Plane(plane, tpc, cs).SignalType() << "\n";
-
-
-            if(geom->View(channel) != geom->Plane(plane, tpc, cs).View() )
-              throw cet::exception("BadChannelLookup") << "expected view type: View(channel) = " 
-                                                       << ViewName(geom->View(channel))
-                                                       << " for channel " 
-                                                       << channel << ", WireID ("  
-                                                       << cs << ", " << tpc << ", " << plane << ", " << wire
-                                                       << "), got: Plane(" << plane << ", " << tpc 
-                                                                           << ", " << cs << ").View() = "
-                                                       << ViewName(geom->Plane(plane, tpc, cs).View()) << "\n";
-
-          }
+      if (std::count(begin(wireIDs), end(wireIDs), testWireID) != 1) {
+        mf::LogError log("GeometryTest");
+        log << wireIDs.size() << " wire IDs associated with channel #"
+          << channel << ":";
+        for (auto const& wid: wireIDs)
+          log << "\n  " << wid;
+        throw cet::exception("BadChannelLookup")
+          << "Wire " << std::string(testWireID) << " is on channel #" << channel 
+          << " but ChannelToWire() does not map the channel to that wire\n";
+      }
+      
+      // currently (LArSoft 6.12) signal type from channel and from plane use
+      // the same underlying code, so the following test is not very valuable
+      auto const channelSigType = geom->SignalType(channel);
+      if (channelSigType != geom->SignalType(testWireID.planeID())) {
+        throw cet::exception("BadChannelLookup")
+          << "Geometry service claims channel #" << channel
+          << " to be of type " << channelSigType
+          << " but that the plane of " << std::string(testWireID)
+          << " is of type " << geom->SignalType(testWireID.planeID()) << "\n";
+      }
+      
+      auto const channelView = geom->View(channel);
+      if (channelView != geom->Plane(testWireID).View()) {
+        throw cet::exception("BadChannelLookup")
+          << "Geometry service claims channel #" << channel
+          << " should be on view " << geom->View(channel)
+          << " but the plane of " << std::string(testWireID)
+          << " claims to be on view " << geom->Plane(testWireID).View() << "\n";
+      }
+      
+      // check that all the channels on the same plane are consistent
+      // (sort of: it's more like "all contiguous wires in the same plane")
+      if (testWireID.planeID() == lastPlane) {
+        if (planeView != channelView) {
+          throw cet::exception("BadChannelLookup")
+            << "Geometry service claims channel #" << channel
+            << " is on view " << channelView
+            << " but its plane " << std::string(lastPlane)
+            << " claims to be on view " << planeView << "\n";
+        }
+        if (planeSigType != channelSigType) {
+          throw cet::exception("BadChannelLookup")
+            << "Geometry service claims channel #" << channel
+            << " is if type " << channelSigType
+            << " but its plane " << std::string(lastPlane)
+            << " to be of type " << planeSigType << "\n";
         }
       }
-    }
-
-    return;
-  }
+      else {
+        lastPlane = testWireID.planeID();
+        planeView = channelView;
+        planeSigType = channelSigType;
+      }
+      
+    } // for wires in detector
+    
+  } // GeometryTestAlg::testChannelToWire()
 
   //......................................................................
   void GeometryTestAlg::testFindPlaneCenters()

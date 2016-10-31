@@ -430,8 +430,18 @@ namespace geo {
   //......................................................................
   SigType_t GeometryCore::SignalType(geo::PlaneID const& pid) const
   {
-    return Plane(pid.Plane).SignalType();
-  }
+    // map wire plane -> readout plane -> first channel,
+    // then use SignalType(channel)
+    
+    auto const ropid = WirePlaneToROP(pid);
+    if (!ropid.isValid) {
+      throw cet::exception("GeometryCore")
+        << "SignalType(): Mapping of wire plane " << std::string(pid)
+        << " to readout plane failed!\n";
+    }
+    return SignalType(ropid);
+    
+  } // GeometryCore::SignalType(PlaneID)
 
 
   //......................................................................
@@ -1535,8 +1545,10 @@ namespace geo {
   
   //--------------------------------------------------------------------
   geo::SigType_t GeometryCore::SignalType(readout::ROPID const& ropid) const {
-    return SignalType(fChannelMapAlg->FirstWirePlaneInROP(ropid));
-  } // GeometryCore::SignalType()
+    return fChannelMapAlg->SignalType(ropid);
+  } // GeometryCore::SignalType(ROPID)
+
+
   
   
   //============================================================================
