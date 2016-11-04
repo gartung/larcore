@@ -1,5 +1,5 @@
 /**
- * @file    ProviderPack_test.cxx
+ * @file    ProviderPack_test.cc
  * @brief   Unit test for ProviderPack class
  * @author  Gianluca Petrillo (petrillo@fnal.gov)
  * @date    November 20th, 2015

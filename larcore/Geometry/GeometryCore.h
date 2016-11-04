@@ -45,14 +45,15 @@
 
 
 // LArSoft libraries
-#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/ChannelMapAlg.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
+#include "larcore/CoreUtils/RealComparisons.h"
+#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // Framework and infrastructure libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -1070,10 +1071,17 @@ namespace geo {
   class GeometryCore {
   public:
     
+    /// Type used for expressing coordinates
+    using Coord_t = double;
+    
     /// Type of list of cryostats
     using CryostatList_t = GeometryData_t::CryostatList_t;
     /// Type of list of auxiliary detectors
     using AuxDetList_t = GeometryData_t::AuxDetList_t;
+    
+    
+    /// Value of tolerance for equality comparisons
+    static lar::util::RealComparisons<Coord_t> coordIs;
     
     
     // import iterators

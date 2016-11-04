@@ -45,6 +45,12 @@ namespace geo {
   inline T sqr(T v) { return v * v; }
   
   
+  
+  //......................................................................
+  lar::util::RealComparisons<GeometryCore::Coord_t> GeometryCore::coordIs
+    { 1e-8 };
+  
+  
   //......................................................................
   // Constructor.
   GeometryCore::GeometryCore(
