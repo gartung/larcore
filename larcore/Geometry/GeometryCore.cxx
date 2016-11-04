@@ -1121,9 +1121,21 @@ namespace geo {
   }
 
   //......................................................................
+  GeometryCore::Segment_t GeometryCore::WireEndPoints
+    (geo::WireID const& wireid) const
+  {
+    Segment_t result;
+    
+    WireEndPoints(wireid, result.start().data(), result.end().data());
+    
+    return result;
+  } // GeometryCore::WireEndPoints(WireID)
+  
+  //......................................................................
   void GeometryCore::WireEndPoints
     (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const
   {
+    
     geo::WireGeo const& wire = Wire(wireid);
     wire.GetStart(xyzStart);
     wire.GetEnd(xyzEnd);
@@ -1141,7 +1153,7 @@ namespace geo {
       std::swap(xyzStart[2],xyzEnd[2]);
     }
     
-  }
+  } // GeometryCore::WireEndPoints(WireID, 2x double*)
    
   //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
   //......................................................................
@@ -1150,18 +1162,35 @@ namespace geo {
                                    double &y, 
                                    double &z) const
   {
-
-    std::vector< geo::WireID > chan1wires, chan2wires; 
-
-    chan1wires = ChannelToWire(c1);
-    chan2wires = ChannelToWire(c2);
-
-    if ( chan1wires.size() == 0 || chan2wires.size() == 0 ) {
-      mf::LogWarning("ChannelsIntersect") << "one of the channels you gave was out of range " << std::endl
-                                          << "channel 1 " << c1 << std::endl
-                                          << "channel 2 " << c2 << std::endl;
+    
+    // [GP] these errors should be exceptions, and this function is deprecated
+    // because it violates interoperability
+    std::vector<geo::WireID> chan1wires = ChannelToWire(c1);
+    if (chan1wires.empty()) {
+      mf::LogError("ChannelsIntersect")
+        << "1st channel " << c1 << " maps to no wire (is it a real one?)";
       return false;
     }
+    std::vector<geo::WireID> chan2wires = ChannelToWire(c2);
+    if (chan2wires.empty()) {
+      mf::LogError("ChannelsIntersect")
+        << "2nd channel " << c2 << " maps to no wire (is it a real one?)";
+      return false;
+    }
+    
+    if (chan1wires.size() > 1) {
+      mf::LogWarning("ChannelsIntersect")
+        << "1st channel " << c1 << " maps to " << chan2wires.size()
+        << " wires; using the first!";
+      return false;
+    }
+    if (chan2wires.size() > 1) {
+      mf::LogError("ChannelsIntersect")
+        << "2nd channel " << c2 << " maps to " << chan2wires.size()
+        << " wires; using the first!";
+      return false;
+    }
+    
     geo::WireIDIntersection widIntersect;
     if (this->WireIDsIntersect(chan1wires[0],chan2wires[0],widIntersect)){
       y = widIntersect.y;
@@ -1175,8 +1204,68 @@ namespace geo {
     }
   }
 
-  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false. T.Yang
+  
   //......................................................................
+  bool GeometryCore::IntersectSegments(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double& x, double& y
+  ) const {
+    
+    // Equation from http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+    // T.Yang Nov, 2014
+    // Notation: x => coordinate orthogonal to the drift direction and to the beam direction
+    //           y => direction orthogonal to the previous and to beam direction
+    
+    double const denom = (A_start_x - A_end_x)*(B_start_y - B_end_y)
+      - (A_start_y - A_end_y)*(B_start_x - B_end_x);
+    
+    if (coordIs.zero(denom)) {
+      mf::LogWarning("IntersectSegments") << "The segments are parallel!";
+      return false;
+    }
+    
+    double const A = (A_start_x * A_end_y - A_start_y * A_end_x) / denom;
+    double const B = (B_start_x * B_end_y - B_start_y * B_end_x) / denom;
+    
+    x = (B_start_x - B_end_x) * A - (A_start_x - A_end_x) * B;
+    y = (B_start_y - B_end_y) * A - (A_start_y - A_end_y) * B;
+    
+    return coordIs.withinSorted(x, A_start_x, A_end_x)
+      && coordIs.withinSorted(y, A_start_y, A_end_y)
+      && coordIs.withinSorted(x, B_start_x, B_end_x)
+      && coordIs.withinSorted(y, B_start_y, B_end_y)
+      ;
+    
+  } // GeometryCore::IntersectSegments()
+  
+  
+  //......................................................................
+  bool GeometryCore::WireIDsIntersect(
+    const geo::WireID& wid1, const geo::WireID& wid2,
+    geo::WireIDIntersection & widIntersect
+  ) const {
+    
+    if (!WireIDIntersectionCheck(wid1, wid2)) return false;
+    
+    // get the endpoints to see if wires intersect
+    Segment_t const w1 = WireEndPoints(wid1);
+    Segment_t const w2 = WireEndPoints(wid2);
+    
+    // TODO extract the coordinates in the right way
+    bool within = IntersectSegments(
+      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
+      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      widIntersect.y, widIntersect.z
+      );
+    
+    widIntersect.TPC = (within? wid1.TPC: geo::TPCID::InvalidID);
+    
+    // return whether the intersection is within the length of both wires
+    return within;
+    
+  } // GeometryCore::WireIDsIntersect(WireIDIntersection)
+/*
   bool GeometryCore::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
                                    geo::WireIDIntersection & widIntersect   ) const
   {
@@ -1245,7 +1334,35 @@ namespace geo {
     }
 
     return false;
-  }
+  } // GeometryCore::WireIDsIntersect(widIntersect)
+*/  
+  
+  //......................................................................
+  bool GeometryCore::WireIDsIntersect
+    (const geo::WireID& wid1, const geo::WireID& wid2, Point3D_t& intersection)
+    const
+  {
+    if (!WireIDIntersectionCheck(wid1, wid2)) return false;
+    
+    // get the endpoints to see if wires intersect
+    Segment_t const w1 = WireEndPoints(wid1);
+    Segment_t const w2 = WireEndPoints(wid2);
+    
+    double x, y;
+    // TODO extract the coordinates in the right way
+    bool within = IntersectSegments(
+      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
+      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      x, y
+      );
+    
+    // set the result TODO compose the vector in the right way
+    intersection = { w1.start()[0], x, y };
+    
+    // return whether the intersection is within the length of both wires
+    return within;
+    
+  } // GeometryCore::WireIDsIntersect(Point3D_t)
   
   
   //----------------------------------------------------------------------------
@@ -1424,38 +1541,16 @@ namespace geo {
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
   // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
-  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
+  //--------------------------------------------------------------------
+  bool GeometryCore::IntersectionPoint(geo::WireID const& wid1,
                                    geo::WireID const& wid2,
-                                   double start_w1[3], 
-                                   double end_w1[3], 
-                                   double start_w2[3], 
-                                   double end_w2[3], 
-                                   double &y, double &z)
+                                   double &y, double &z) const
   {
     geo::WireIDIntersection widIntersect;
-    this->WireIDsIntersect(wid1,wid2,widIntersect);
+    bool const found = WireIDsIntersect(wid1, wid2, widIntersect);
     y = widIntersect.y;
     z = widIntersect.z;
-    return;    
-  }
-    
-  // Added shorthand function where start and endpoints are looked up automatically
-  //  - whether to use this or the full function depends on optimization of your
-  //    particular algorithm.  Ben J, Oct 2011
-  //--------------------------------------------------------------------
-  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
-                                   geo::WireID const& wid2,
-                                   double &y, double &z)
-  {
-    double WireStart1[3] = {0.};
-    double WireStart2[3] = {0.};
-    double WireEnd1[3]   = {0.};
-    double WireEnd2[3]   = {0.};
-
-    WireEndPoints(wid1, WireStart1, WireEnd1);
-    WireEndPoints(wid2, WireStart2, WireEnd2);
-    this->IntersectionPoint
-      (wid1, wid2, WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);
+    return found;
   }
   
   //============================================================================
@@ -1664,6 +1759,36 @@ namespace geo {
     int o = Cryostat(cid).GetClosestOpDet(xyz);
     return OpDetFromCryo(o, cid.Cryostat);
   }
+  
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::WireIDIntersectionCheck
+    (const geo::WireID& wid1, const geo::WireID& wid2) const
+  {
+    if (static_cast<geo::TPCID const&>(wid1) != wid2) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "Comparing two wires on different TPCs: return failure.";
+      return false;
+    }
+    if (wid1.Plane == wid2.Plane) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "Comparing two wires in the same plane: return failure";
+      return false;
+    }
+    if (!HasWire(wid1)) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "1st wire " << wid1 << " does not exist (max wire number: "
+        << Nwires(wid1.planeID());
+      return false;
+    }
+    if (!HasWire(wid2)) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "2nd wire " << wid2 << " does not exist (max wire number: "
+        << Nwires(wid2.planeID());
+      return false;
+    }
+    return true;
+  } // GeometryCore::WireIDIntersectionCheck()
   
   
   //--------------------------------------------------------------------

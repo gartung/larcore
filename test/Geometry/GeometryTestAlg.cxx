@@ -1066,7 +1066,7 @@ namespace geo{
     } // for wires in detector
     
   } // GeometryTestAlg::testChannelToWire()
-
+  
   //......................................................................
   void GeometryTestAlg::testFindPlaneCenters()
   {
