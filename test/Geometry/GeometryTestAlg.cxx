@@ -290,6 +290,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("ChannelToROP")) {
+        LOG_INFO("GeometryTest") << "test channel to ROP and back ...";
+        testChannelToROP();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("ChannelToWire")) {
         LOG_INFO("GeometryTest") << "test channel to plane wire and back ...";
         testChannelToWire();
@@ -933,6 +939,45 @@ namespace geo{
     
   } // GeometryTestAlg::testWireCoordAngle()
   
+
+  //......................................................................
+  void GeometryTestAlg::testChannelToROP() const {
+    
+    // test that an invalid channel yields an invalid ROP
+    try {
+      readout::ROPID invalidROP = geom->ChannelToROP(raw::InvalidChannelID);
+      if (invalidROP.isValid) {
+        throw cet::exception("testChannelToROP")
+          << "ROP from an invalid channel ("
+          << raw::InvalidChannelID << ") is " << std::string(invalidROP)
+          << " !?\n";
+      } // if invalid rop is not invalid
+    }
+    catch (cet::exception const& e) {
+      mf::LogWarning("testChannelToROP")
+        << "Non-compilant ChannelToROP() throws on invalid channel.";
+    }
+    
+    // for each channel, test that its ROP contains it;
+    // we assume each ROP contains contiguous channel IDs
+    for (raw::ChannelID_t channel = 0; channel < geom->Nchannels(); ++channel) {
+      
+      readout::ROPID const ropid = geom->ChannelToROP(channel);
+      
+      auto const firstChannel = geom->FirstChannelInROP(ropid);
+      auto const lastChannel = firstChannel + geom->Nchannels(ropid);
+      
+      if ((channel < firstChannel) || (channel >= lastChannel)) {
+        throw cet::exception("testChannelToROP")
+          << "Channel " << channel << " comes from ROP " << std::string(ropid)
+          << ", which contains only channels from " << firstChannel
+          << " to " << lastChannel << " (excluded)\n";
+      } // if
+      
+    } // for channel
+    
+    
+  } // GeometryTestAlg::testChannelToROP()
   
   //......................................................................
   void GeometryTestAlg::testChannelToWire() const

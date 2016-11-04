@@ -292,8 +292,15 @@ namespace geo{
     virtual std::vector<geo::TPCID> ROPtoTPCs
       (readout::ROPID const& ropid) const = 0;
     
-    /// Returns the ID of the ROP the channel belongs to
-    /// @throws cet::exception (category: "Geometry") if non-existent channel
+    /**
+     * @brief Returns the ID of the ROP the channel belongs to
+     * @return the ID of the ROP the channel belongs to (invalid if channel is)
+     * @see HasChannel()
+     * 
+     * The channel must exist, or be the invalid channel value.
+     * With a channel that is not present in the mapping and that is not the
+     * invalid channel (`raw::InvalidChannelID`), the result is undefined.
+     */
     virtual readout::ROPID ChannelToROP(raw::ChannelID_t channel) const = 0;
     
     /**

@@ -130,6 +130,7 @@ namespace geo {
     void testFindVolumes();
     void testCryostat();
     void testTPC(unsigned int const& c);
+    void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();
     void testProject();

@@ -467,11 +467,13 @@ namespace geo{
   readout::ROPID ChannelMapStandardAlg::ChannelToROP
     (raw::ChannelID_t channel) const
   {
+    if (!raw::isValidChannelID(channel)) return {}; // invalid ROP returned
+    
     // which wires does the channel cover?
     std::vector<geo::WireID> wires = ChannelToWire(channel);
     
     // - none:
-    if (wires.empty()) return {}; // default-constructed ID, invalid
+    if (wires.empty()) return {}; // invalid ROP returned
     
     // - one: maps its plane ID into a ROP ID
     return WirePlaneToROP(wires[0]);
