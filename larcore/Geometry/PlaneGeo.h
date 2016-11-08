@@ -43,6 +43,9 @@ namespace geo {
     Orient_t Orientation()                                    const { return fOrientation;   }
 
     /// What is the signal type for the plane
+    /// @deprecated Use `geo::GeometryCore::SignalType` instead
+    /// (see LArSoft issue #14365 at https://cdcvs.fnal.gov/redmine/issues/14365 )
+    [[deprecated("Use geo::GeometryCore::SignalType instead")]]
     SigType_t SignalType()                                    const { return fSignalType;    }
 
     /// Angle of the wires from positive z axis; @f$ \theta_{z} \in [ 0, \pi ]@f$.
@@ -222,8 +225,10 @@ namespace geo {
     /// @{
     /// @name Setters
     
-    /// Set the signal type and view from TPCGeo
+    /// Set the signal type from TPCGeo
+    /// @deprecated See LArSoft issue #14365 ( https://cdcvs.fnal.gov/redmine/issues/14365 )
     void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
+    /// Set the signal view (for TPCGeo)
     void SetView(geo::View_t view)                                  { fView = view; }
     
     /// @}
