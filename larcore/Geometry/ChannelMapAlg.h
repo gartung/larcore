@@ -138,7 +138,32 @@ namespace geo{
      { return PlaneWireToChannel(wireID.Plane, wireID.Wire, wireID.TPC, wireID.Cryostat); }
    //@}
    virtual View_t                           View( raw::ChannelID_t const channel )               const = 0;
-   virtual SigType_t                 SignalType( raw::ChannelID_t const channel )      const = 0;
+   
+   /**
+    * @brief Return the signal type of the specified channel
+    * @param channel ID of the channel
+    * @return signal type of the channel, or geo::kMysteryType if not known
+    * 
+    * On any type of error (e.g., invalid or unknown channel ID),
+    * geo::kMysteryType is returned.
+    */
+   virtual SigType_t SignalType( raw::ChannelID_t const channel )      const = 0;
+   
+   /**
+    * @brief Return the signal type on the specified readout plane
+    * @param ropid ID of the readout plane
+    * @return signal type on the plane, or geo::kMysteryType if not known
+    * 
+    * If the readout plane ID is marked invalid, geo::kMysteryType is returned.
+    * If the readout plane is not marked invalid, but it does not match an
+    * existing readout plane, the result is undefined.
+    * 
+    * The default implementation uses readout plane to channel mapping.
+    * Other implementation may decide to do the opposite.
+    */
+   virtual SigType_t SignalType(readout::ROPID const& ropid) const
+     { return SignalType(FirstChannelInROP(ropid)); }
+   
    virtual std::set<View_t>  const& Views()                                   const = 0;
    virtual std::set<PlaneID> const& PlaneIDs()                                const = 0;
    //@{
@@ -306,6 +331,7 @@ namespace geo{
    std::map<std::string, size_t>          fADNameToGeo;             ///< map the names of the dets to the AuxDetGeo objects
    std::map<size_t, std::vector<size_t> > fADChannelToSensitiveGeo; ///< map the AuxDetGeo index to a vector of 
                                                                     ///< indices corresponding to the AuxDetSensitiveGeo index
+   
    
    /**
     * @name Internal structure data access

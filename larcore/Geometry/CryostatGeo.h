@@ -14,6 +14,7 @@
 #include "TGeoVolume.h"
 
 #include "larcore/Geometry/GeoObjectSorter.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
 class TGeoNode;
 class TGeoHMatrix;
@@ -49,6 +50,9 @@ namespace geo {
     double            Mass()                                    const { return fVolume->Weight(); }
     /// Pointer to ROOT's volume descriptor
     const TGeoVolume* Volume()                                  const { return fVolume;           }
+    
+    /// Returns the identifier of this cryostat
+    geo::CryostatID const& ID() const { return fID; }
     
     /// @}
     
@@ -196,6 +200,9 @@ namespace geo {
     void              SortSubVolumes(geo::GeoObjectSorter const& sorter);
 
     
+    /// Sets the cryostat ID and resets the IDs of all TPCs in it
+    void ResetIDs(geo::CryostatID cryoid);
+    
   private:
 
     void FindTPC(std::vector<const TGeoNode*>& path,
@@ -215,6 +222,7 @@ namespace geo {
     std::vector<OpDetGeo*> fOpDets;         ///< List of opdets in this cryostat
     TGeoVolume*            fVolume;         ///< Total volume of cryostat, called volCryostat in GDML file
     std::string            fOpDetGeoName;   ///< Name of opdet geometry elements in gdml
+    geo::CryostatID        fID;             ///< ID of this cryostat
 
   };
 }

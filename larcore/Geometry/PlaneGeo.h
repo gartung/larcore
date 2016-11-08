@@ -58,6 +58,9 @@ namespace geo {
     /// Cosine of PhiZ()
     double CosPhiZ()                                          const { return fCosPhiZ; }
     
+    /// Returns the identifier of this plane
+    geo::PlaneID const& ID() const { return fID; }
+    
     /// @}
     
     
@@ -228,6 +231,9 @@ namespace geo {
     /// Apply sorting to WireGeo objects
     void SortWires(geo::GeoObjectSorter const& sorter);
     
+    /// Sets the plane ID and resets the IDs of all wires in it
+    void ResetIDs(geo::PlaneID planeid);
+  
   private:
     
     void FindWire(std::vector<const TGeoNode*>& path,
@@ -253,6 +259,8 @@ namespace geo {
     double                fWirePitch;   ///< pitch of wires in this plane
     double                fSinPhiZ;     ///< sine of phiZ
     double                fCosPhiZ;     ///< cosine of phiZ
+    
+    geo::PlaneID          fID;          ///< ID of this plane
   };
 }
 

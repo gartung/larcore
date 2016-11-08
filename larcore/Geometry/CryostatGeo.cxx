@@ -196,6 +196,16 @@ namespace geo{
 
 
   //......................................................................
+  void CryostatGeo::ResetIDs(geo::CryostatID cryoid) {
+    
+    fID = cryoid;
+    for (unsigned int tpc = 0; tpc < NTPC(); ++tpc)
+      fTPCs[tpc]->ResetIDs(geo::TPCID(fID, tpc));
+    
+  } // CryostatGeo::ResetIDs()
+  
+  
+  //......................................................................
   const TPCGeo& CryostatGeo::TPC(unsigned int itpc) const
   {
     TPCGeo const* pTPC = TPCPtr(itpc);
