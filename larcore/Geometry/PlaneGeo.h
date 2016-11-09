@@ -11,6 +11,7 @@
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
+#include "larcore/Geometry/TPCGeo.h" // FIXME remove when issue #14365 is fixed
 
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
@@ -225,9 +226,6 @@ namespace geo {
     /// @{
     /// @name Setters
     
-    /// Set the signal type from TPCGeo
-    /// @deprecated See LArSoft issue #14365 ( https://cdcvs.fnal.gov/redmine/issues/14365 )
-    void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
     /// Set the signal view (for TPCGeo)
     void SetView(geo::View_t view)                                  { fView = view; }
     
@@ -266,6 +264,15 @@ namespace geo {
     double                fCosPhiZ;     ///< cosine of phiZ
     
     geo::PlaneID          fID;          ///< ID of this plane
+
+    /// Set the signal type from TPCGeo
+    /// @deprecated See LArSoft issue #14365 ( https://cdcvs.fnal.gov/redmine/issues/14365 )
+    /// 
+    /// Moved to private with special friendship (needs inclusion of TPCGeo.h).
+    /// TODO Remove the inclusion of TPCGeo.h above when removing this code
+    void SetSignalType(geo::SigType_t sigtype)                      { fSignalType = sigtype; }
+    friend void geo::TPCGeo::SortSubVolumes(geo::GeoObjectSorter const&);
+    
   };
 }
 
