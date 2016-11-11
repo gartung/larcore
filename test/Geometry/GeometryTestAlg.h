@@ -67,6 +67,7 @@ namespace geo {
    *   explicitly marked as excluded by default in the list below:
    *   + `CheckOverlaps` (not in default) perform overlap checks
    *   + `ThoroughCheck` (not in default) makes ROOT perform full geometry check
+   *   + `DetectorIntro`: prints some information about the detector
    *   + `FindVolumes`: checks it can find the volumes corresponding to world
    *     and all cryostats
    *   + `Cryostat`:
@@ -121,6 +122,7 @@ namespace geo {
     // using as pointer just not to have to write the declaration in the header
     testing::NameSelector fRunTests; ///< test filter
     
+    void printDetectorIntro() const;
     void printChannelSummary();
     void printVolBounds();
     void printDetDim();

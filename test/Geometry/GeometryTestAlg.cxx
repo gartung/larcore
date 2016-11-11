@@ -122,33 +122,11 @@ namespace geo{
       << "\nGeometry file: " << geom->ROOTFile();
     
     try{
-      geo::WireGeo const& testWire = geom->Wire(geo::WireID(0, 0, 1, 10));
-      mf::LogVerbatim("GeometryTest")
-        <<   "Wire Rmax  "         << testWire.RMax()
-        << "\nWire length "        << testWire.Length()
-        << "\nWire Rmin  "         << testWire.RMin()
-        << "\nTotal mass "         << geom->TotalMass()
-        << "\nNumber of views "    << geom->Nviews()
-        << "\nNumber of channels " << geom->Nchannels()
-        << "\nMaximum number of:"
-        << "\n  TPC in a cryostat: " << geom->MaxTPCs()
-        << "\n  planes in a TPC:   " << geom->MaxPlanes()
-        << "\n  wires in a plane:  " << geom->MaxWires()
-        << "\nTotal number of TPCs " << geom->TotalNTPC()
-        ;
-
-      //LOG_DEBUG("GeometryTest") << "print channel information ...";
-      //printChannelSummary();
-      //LOG_DEBUG("GeometryTest") << "done printing.";
-      //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
-      //printVolBounds();
-      //mf::LogVerbatim("GeometryTest") << "done printing.";
-      //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC dimensions ...";
-      //printDetDim();
-      //mf::LogVerbatim("GeometryTest") << "done printing.";
-      //mf::LogVerbatim("GeometryTest") << "print wire center positions in world coordinates ...";
-      //printWirePos();
-      //mf::LogVerbatim("GeometryTest") << "done printing.";
+      if (shouldRunTests("DetectorIntro")) {
+        LOG_INFO("GeometryTest") << "detector introduction:";
+        printDetectorIntro();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
 
       if (shouldRunTests("CheckOverlaps")) {
         LOG_INFO("GeometryTest") << "test for overlaps ...";
@@ -305,6 +283,40 @@ namespace geo{
 
 
 
+  //......................................................................
+  void GeometryTestAlg::printDetectorIntro() const {
+    
+    geo::WireGeo const& testWire = geom->Wire(geo::WireID(0, 0, 1, 10));
+    mf::LogVerbatim("GeometryTest")
+      <<   "Wire Rmax  "         << testWire.RMax()
+      << "\nWire length "        << 2.*testWire.HalfL()
+      << "\nWire Rmin  "         << testWire.RMin()
+      << "\nTotal mass "         << geom->TotalMass()
+      << "\nNumber of views "    << geom->Nviews()
+      << "\nNumber of channels " << geom->Nchannels()
+      << "\nMaximum number of:"
+      << "\n  TPC in a cryostat: " << geom->MaxTPCs()
+      << "\n  planes in a TPC:   " << geom->MaxPlanes()
+      << "\n  wires in a plane:  " << geom->MaxWires()
+      << "\nTotal number of TPCs " << geom->TotalNTPC()
+      ;
+
+    //LOG_DEBUG("GeometryTest") << "print channel information ...";
+    //printChannelSummary();
+    //LOG_DEBUG("GeometryTest") << "done printing.";
+    //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
+    //printVolBounds();
+    //mf::LogVerbatim("GeometryTest") << "done printing.";
+    //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC dimensions ...";
+    //printDetDim();
+    //mf::LogVerbatim("GeometryTest") << "done printing.";
+    //mf::LogVerbatim("GeometryTest") << "print wire center positions in world coordinates ...";
+    //printWirePos();
+    //mf::LogVerbatim("GeometryTest") << "done printing.";
+    
+  } // GeometryTestAlg::printDetectorIntro()
+  
+  
   //......................................................................
   void GeometryTestAlg::printChannelSummary()
   {
