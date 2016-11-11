@@ -152,6 +152,12 @@ cet_test(geometry_iterator HANDBUILT
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
 
+cet_test(SimpleGeo_test
+  SOURCES SimpleGeo_test.cxx
+  USE_BOOST_UNIT
+)
+
+
 # set FHICL_FILE_PATH and FW_SEARCH_PATH for the case where building without mrb
 # this is not generic, we take advantage of knowing the subdirectories for the fcl and gdml files
 set( mrb_build_dir $ENV{MRB_BUILDDIR} )

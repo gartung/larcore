@@ -10,6 +10,7 @@
 #include "test/Geometry/GeometryTestAlg.h"
 
 // LArSoft includes
+#include "larcore/Geometry/SimpleGeo.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
@@ -52,14 +53,7 @@ namespace {
   template <typename T>
   inline T sqr(T v) { return v*v; }
   
-  template <typename T>
-  std::string to_string(const T& v) {
-    std::ostringstream sstr;
-    sstr << v;
-    return sstr.str();
-  } // ::to_string()
-  
-  
+
   /// Returns whether the CET exception e contains the specified category cat
   bool hasCategory(cet::exception const& e, std::string const& cat) {
     for (auto const& e_category: e.history())
@@ -68,104 +62,7 @@ namespace {
   } // hasCategory()
   
   
-  /// Returns a C-string with the name of the view
-  const char* ViewName(geo::View_t view) {
-    switch (view) {
-      case geo::kU:       return "U";
-      case geo::kV:       return "V";
-      case geo::kZ:       return "Z";
-      case geo::k3D:      return "3D";
-      case geo::kUnknown: return "?";
-      default:            return "<UNSUPPORTED>";
-    } // switch
-  } // ViewName()
-  
 } // local namespace
-
-
-namespace simple_geo {
-  
-  struct Point2D {
-    double y = 0.;
-    double z = 0.;
-    
-    Point2D() = default;
-    Point2D(double new_y, double new_z): y(new_y), z(new_z) {}
-  }; // struct Point2D
-  
-  Point2D operator+ (Point2D const& a, Point2D const& b)
-    { return { a.y + b.y, a.z + b.z }; }
-  Point2D operator* (Point2D const& p, double f)
-    { return { p.y * f, p.z * f }; }
-  Point2D operator/ (Point2D const& p, double f)
-    { return { p.y / f, p.z / f }; }
-  template <typename Stream>
-  Stream& operator<< (Stream& out, Point2D const& p)
-    { out << "( " << p.y << " ; " << p.z << " )"; return out; }
-  
-  class Area {
-      public:
-    Area() = default;
-    
-    Area(Point2D const& a, Point2D const& b)
-      {
-        set_sorted(min.y, max.y, a.y, b.y);
-        set_sorted(min.z, max.z, a.z, b.z);
-      } // Area(Point2D x2)
-    
-    Point2D const& Min() const { return min; }
-    Point2D const& Max() const { return max; }
-    Point2D Center() const { return (min + max) / 2; }
-    double DeltaY() const { return Max().y - Min().y; }
-    double DeltaZ() const { return Max().z - Min().z; }
-    bool isEmpty() const { return (DeltaY() == 0) || (DeltaZ() == 0); }
-    
-    void IncludePoint(Point2D const& point)
-      {
-        set_min_max(min.y, max.y, point.y);
-        set_min_max(min.z, max.z, point.z);
-      } // Include()
-    
-    void Include(Area const& area)
-      { IncludePoint(area.min); IncludePoint(area.max); }
-    
-    void Intersect(Area const& area)
-      {
-        set_max(min.y, area.min.y);
-        set_min(max.y, area.max.y);
-        set_max(min.z, area.min.z);
-        set_min(max.z, area.max.z);
-      }
-    
-      protected:
-    Point2D min, max;
-    
-    void set_min(double& var, double val) { if (val < var) var = val; }
-    void set_max(double& var, double val) { if (val > var) var = val; }
-    void set_min_max(double& min_var, double& max_var, double val)
-      { set_min(min_var, val); set_max(max_var, val); }
-    void set_sorted(double& min_var, double& max_var, double a, double b)
-      {
-        if (a > b) { min_var = b; max_var = a; }
-        else       { min_var = a; max_var = b; }
-      }
-  }; // class Area
-  
-  
-  simple_geo::Area PlaneCoverage(geo::PlaneGeo const& plane) {
-    simple_geo::Area plane_area;
-    // add both coordinates of first and last wire
-    std::array<double, 3> end;
-    geo::WireGeo const& first_wire = plane.FirstWire();
-    first_wire.GetStart(end.data());
-    plane_area.IncludePoint({ end[1], end[2] });
-    geo::WireGeo const& last_wire = plane.LastWire();
-    last_wire.GetEnd(end.data());
-    plane_area.IncludePoint({ end[1], end[2] });
-    return plane_area;
-  } // PlaneCoverage()
-  
-} // namespace simple_geo
 
 
 namespace geo{
@@ -532,33 +429,10 @@ namespace geo{
     for(unsigned int p = 0; p < nPlanes; ++p) {
       const geo::PlaneGeo& plane = tpc.Plane(p);
       const unsigned int nWires = plane.Nwires();
-      double PlanePos[3];
-      plane.LocalToWorld(Origin, PlanePos);
-      std::string coord, orientation;
-      switch (plane.View()) {
-        case geo::kU:       coord = "U direction"; break;
-        case geo::kV:       coord = "V direction"; break;
-        case geo::kZ:       coord = "Z direction"; break;
-        case geo::k3D:      coord = "3D coordinate"; break;
-        case geo::kUnknown: coord = "an unknown direction"; break;
-        default:            coord = "unexpected direction"; break;
-      } // switch
-      switch (plane.Orientation()) {
-        case geo::kHorizontal: orientation = "horizontal"; break;
-        case geo::kVertical:   orientation = "vertical"; break;
-        default:               orientation = "unexpected"; break;
-      }
       
-      // get the area spanned by the wires
-      simple_geo::Area plane_area = simple_geo::PlaneCoverage(plane);
+      // large verbosity
+      plane.printPlaneInfo(mf::LogVerbatim("GeometryTest"), indent, 8);
       
-      mf::LogVerbatim("GeometryTest") << indent << "  plane #" << p << " at ("
-        << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2]
-        << ") cm, covers " << plane_area.DeltaY() << " x "
-        << plane_area.DeltaZ() << " cm around " << plane_area.Center()
-        << ", has " << orientation << " orientation and "
-        << nWires << " wires measuring " << coord << " with a pitch of "
-        << plane.WirePitch() << " mm:";
       for(unsigned int w = 0;  w < nWires; ++w) {
         const geo::WireGeo& wire = plane.Wire(w);
         double xyz[3] = { 0. };
@@ -822,7 +696,7 @@ namespace geo{
             << ");"
           << "\n\t\t\tpitch from plane 0 is " << tpc.Plane0Pitch(p) << ";"
           << "\n\t\t\tOrientation " << plane.Orientation()
-            << ", View " << ViewName(plane.View())
+            << ", View " << plane.ViewName(plane.View())
           << "\n\t\t\tWire angle " << plane.Wire(0).ThetaZ()
             << ", Wire coord. angle " << plane.PhiZ()
             << ", Pitch " << plane.WirePitch();
@@ -1182,21 +1056,17 @@ namespace geo{
     bool bTestWireCoordinate = true;
     
     // get a wire and find its center
-    geo::GeometryCore::plane_id_iterator iPlane(&*geom);
-    while (iPlane) {
-      unsigned int cs = iPlane->Cryostat;
-      unsigned int t = iPlane->TPC;
-      unsigned int p = iPlane->Plane;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
       
-      const geo::PlaneGeo& plane = *(iPlane.get());
+      geo::PlaneID const& planeID = plane.ID();
       const unsigned int NWires = plane.Nwires();
       
       const std::array<double, 3> IncreasingWireDir
         = GetIncreasingWireDirection(plane);
       
       LOG_DEBUG("GeoTestWireCoordinate")
-        << "The direction of increasing wires for plane C=" << cs << " T=" << t
-        << " P=" << p << " (theta=" << plane.Wire(0).ThetaZ() << " pitch="
+        << "The direction of increasing wires for plane " << planeID
+        << " (theta=" << plane.Wire(0).ThetaZ() << " pitch="
         << plane.WirePitch() << " orientation="
         << (plane.Orientation() == geo::kHorizontal? "H": "V")
         << (plane.WireIDincreasesWithZ()? "+": "-")
@@ -1205,7 +1075,7 @@ namespace geo{
       
       for (unsigned int w = 0; w < NWires; ++w) {
         
-        geo::WireID wireID(*iPlane, w);
+        geo::WireID wireID(planeID, w);
         
         const geo::WireGeo& wire = plane.Wire(w);
         const double pos[3] = {0., 0.0, 0.};
@@ -1533,14 +1403,22 @@ namespace geo{
       // rectangles; x is chosen in the middle of the TPC
       constexpr unsigned int SplitZ = 19, SplitY = 17;
       // get the area spanned by the wires
+      lar::util::simple_geo::Volume<> covered_area;
+      for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
+        auto plane_area = TPC.Plane(p).Coverage();
+        if (covered_area.isEmpty()) covered_area = plane_area;
+        else covered_area.Intersect(plane_area);
+      } // for
+      /*
       simple_geo::Area covered_area;
       for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
         simple_geo::Area plane_area = simple_geo::PlaneCoverage(TPC.Plane(p));
         if (covered_area.isEmpty()) covered_area = plane_area;
         else covered_area.Intersect(plane_area);
       } // for
-      
-      if (covered_area.isEmpty()) { // if so, debugging is needed
+      */
+      if (covered_area.thinnestSize() > 1.0) {
+        // if the wire plane is thicker than 1 cm, debugging is needed
         throw cet::exception("GeometryTestAlg")
           << "testWireIntersection(): failed to find plane coverage";
       }

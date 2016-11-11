@@ -28,6 +28,8 @@ namespace geo{
 
   //......................................................................
   PlaneGeo::PlaneGeo(std::vector<const TGeoNode*>& path, int depth)
+    : fView(geo::kUnknown)
+    , fSignalType(geo::kMysteryType)
   {
     // build a matrix to take us from the local to the world coordinates
     // in one step
@@ -193,6 +195,19 @@ namespace geo{
   
   
   //......................................................................
+  lar::util::simple_geo::Volume<> PlaneGeo::Coverage() const {
+    
+    // add both coordinates of first and last wire
+    std::array<double, 3> A, B;
+    
+    FirstWire().GetStart(A.data());
+    LastWire().GetEnd(B.data());
+    
+    return { A.data(), B.data() };
+  } // PlaneGeo::Coverage()
+  
+  
+  //......................................................................
   double PlaneGeo::ThetaZ() const { return FirstWire().ThetaZ(); }
   
   
@@ -255,6 +270,27 @@ namespace geo{
     fGeoMatrix->MasterToLocalVect(world,plane);
   }
 
+  //......................................................................
+  std::string PlaneGeo::ViewName(geo::View_t view) {
+    switch (view) {
+      case geo::kU:       return "U";
+      case geo::kV:       return "V";
+      case geo::kZ:       return "Z";
+      case geo::k3D:      return "3D";
+      case geo::kUnknown: return "?";
+      default:            return "<UNSUPPORTED>";
+    } // switch
+  } // PlaneGeo::ViewName()
+  
+  //......................................................................
+  std::string PlaneGeo::OrientationName(geo::Orient_t orientation) {
+    switch (orientation) {
+      case geo::kHorizontal: return "horizontal"; break;
+      case geo::kVertical:   return "vertical"; break;
+      default:               return "unexpected"; break;
+    } // switch
+  } // PlaneGeo::OrientationName()
+  
   //......................................................................
   void PlaneGeo::UpdateWirePitch() {
     fWirePitch = geo::WireGeo::WirePitch(Wire(0), Wire(1));

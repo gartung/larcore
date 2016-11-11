@@ -11,10 +11,13 @@
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
+#include "larcore/Geometry/SimpleGeo.h"
 
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
 #include <vector>
+#include <array>
+#include <string>
 
 class TGeoNode;
 class TGeoHMatrix;
@@ -192,6 +195,33 @@ namespace geo {
      */
     TVector3 GetIncreasingWireDirection() const;
     
+    
+    /// Returns a volume including all the wires in the plane
+    lar::util::simple_geo::Volume<> Coverage() const;
+    
+    /**
+     * @brief Prints information about this plane
+     * @tparam Stream type of output stream to use
+     * @param out stream to send the information to
+     * @param indent prepend each line with this string
+     * @param verbosity amount of information printed
+     * 
+     * Information on single wires is not printed.
+     * 
+     * Verbosity levels
+     * -----------------
+     * 
+     * * 0: only plane ID
+     * * 1 _(default)_: also wire angle
+     * * 2: also information about position and wires
+     * * 3: also information about increasing coordinate direction
+     * * 4: also coverage
+     * 
+     */
+    template <typename Stream>
+    void printPlaneInfo
+      (Stream&& out, std::string indent = "", unsigned int verbosity = 1) const;
+    
     /// @}
     
     
@@ -232,7 +262,13 @@ namespace geo {
     
     /// Sets the plane ID and resets the IDs of all wires in it
     void ResetIDs(geo::PlaneID planeid);
-  
+    
+    /// Returns the name of the specified view
+    static std::string ViewName(geo::View_t view);
+    
+    /// Returns the name of the specified orientation
+    static std::string OrientationName(geo::Orient_t orientation);
+    
   private:
     
     void FindWire(std::vector<const TGeoNode*>& path,
@@ -263,6 +299,80 @@ namespace geo {
 
   };
 }
+
+
+//------------------------------------------------------------------------------
+//--- template implementation
+//---
+template <typename Stream>
+void geo::PlaneGeo::printPlaneInfo(
+  Stream&& out,
+  std::string indent /* = "" */,
+  unsigned int verbosity /* = 1 */
+) const {
+  
+  unsigned int const nWires = Nwires();
+  std::array<double, 3> Origin = { 0., 0., 0. };
+  std::array<double, 3> PlanePos;
+  LocalToWorld(Origin.data(), PlanePos.data());
+      
+  // get the area spanned by the wires
+  auto plane_area = Coverage();
+
+  out << indent
+    << "plane " << std::string(ID());
+  
+  if (--verbosity <= 0) return; // 0
+  
+  out
+    << " at (" << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2]
+      << ") cm"
+    << ", theta: " << ThetaZ() << " rad";
+  
+  if (--verbosity <= 0) return; // 1
+  
+  out << "\n" << indent
+    << "  normal to wire: " << PhiZ() << " rad"
+    << ", with orientation " << OrientationName(Orientation())
+    << ", has " << nWires << " wires measuring " << ViewName(View())
+    << " with a pitch of " << WirePitch() << " mm";
+  
+  if (--verbosity <= 0) return; // 2
+  
+  auto normal = GetNormalDirection();
+  auto incrZdir = GetIncreasingWireDirection();
+  out << "\n" << indent
+    << "  normal to plane: ("
+      << normal.X() << ", " << normal.Y() << ", " << normal.Z() << ")"
+    << ", direction of increasing wire number: ("
+      << incrZdir.X() << ", " << incrZdir.Y() << ", " << incrZdir.Z() << ")"
+    << " (" << (WireIDincreasesWithZ()? "increases": "decreases") << " with z)";
+    
+  if (--verbosity <= 0) return; // 3
+  
+  out << "\n" << indent << "  covers ";
+  bool bPrint2D = false;
+  if (plane_area.isPlane()) {
+    switch (Orientation()) {
+      case geo::kVertical:
+        out << plane_area.DeltaY() << " x " << plane_area.DeltaZ() << " cm";
+        bPrint2D = true;
+        break;
+      case geo::kHorizontal:
+        out << plane_area.DeltaX() << " x " << plane_area.DeltaZ() << " cm";
+        bPrint2D = true;
+        break;
+      default: break;
+    } // switch
+  }
+  if (!bPrint2D) {
+    out << "between " << plane_area.Min() << " and " << plane_area.Max()
+      << " (cm)";
+  }
+  out << " around " << plane_area.Center();
+  
+} // geo::PlaneGeo::printPlaneInfo()
+
 
 #endif
 ////////////////////////////////////////////////////////////////////////
