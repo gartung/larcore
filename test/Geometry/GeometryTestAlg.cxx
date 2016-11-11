@@ -1100,14 +1100,14 @@ namespace geo{
         try{
           // The double[] version tested here falls back on the
           // TVector3 version, so this test both.
-          nearest = geom->NearestChannel(wire_center.data(), p, t, cs);
+          nearest = geom->NearestChannel(wire_center.data(), planeID);
           
-          // We also want to test the std::vector<duoble> version
+          // We also want to test the std::vector<double> version
           std::array<double, 3> posWorldV;
           for (int i=0; i<3; ++i) {
             posWorldV[i] = wire_center[i] + 0.001;
           }
-          nearest = geom->NearestChannel(posWorldV.data(), p, t, cs);
+          nearest = geom->NearestChannel(posWorldV.data(), planeID);
         }
         catch(cet::exception &e){
           mf::LogWarning("GeoTestCaughtException") << e;
@@ -1124,8 +1124,8 @@ namespace geo{
                                                          << wire_center[2] << "\n"
                                                          << "nearest channel is " 
                                                          << nearest << " for " 
-                                                         << cs << " " << t << " "
-                                                         << p << " " << w << "\n";
+                                                         << std::string(wireID)
+                                                         << "\n";
           }
         }
         catch(cet::exception &e){
@@ -1135,18 +1135,18 @@ namespace geo{
         
         if(std::find(wireIDs.begin(), wireIDs.end(), wireID) == wireIDs.end()) {
           throw cet::exception("BadPositionToChannel") << "Current WireID ("
-                                                       << cs << "," << t << "," << p << "," << w << ") "
+                                                       << std::string(wireID) << ") "
                                                        << "has a world position at "
                                                        << wire_center[0] << " " 
                                                        << wire_center[1] << " " 
                                                        << wire_center[2] << "\n"
                                                        << "NearestWire for this position is "
-                                                       << geom->NearestWire(wire_center.data(),p,t,cs) << "\n"
+                                                       << geom->NearestWire(wire_center.data(),planeID) << "\n"
                                                        << "NearestChannel is " 
                                                        << nearest << " for " 
-                                                       << cs << " " << t << " " << p << " " << w << "\n"
+                                                       << std::string(wireID) << "\n"
                                                        << "Should be channel "
-                                                       << geom->PlaneWireToChannel(p,w,t,cs);
+                                                       << geom->PlaneWireToChannel(wireID);
         } // if good lookup fails
         
         
@@ -1158,7 +1158,7 @@ namespace geo{
           
           // using absolute value just in case (what happens if w1 > w2?)
           const double pitch
-            = std::abs(geom->WirePitch((w > 0)? w - 1: 1, w, p, t, cs));
+            = std::abs(geom->WirePitch(planeID, (w > 0)? w - 1: 1, w));
           
           double wire_shifted[3];
           double step[3];
@@ -1186,7 +1186,7 @@ namespace geo{
                 // why? because WireCoordinate() has 2D input
                 LOG_ERROR("WireCoordinateNotImplemented")
                   << "The direction of increasing wires for plane "
-                  << "C=" << cs << " T=" << t << " P=" << p
+                  << std::string(planeID)
                   << " (theta=" << plane.Wire(0).ThetaZ() << " orientation="
                   << (plane.Orientation() == geo::kHorizontal? "H": "V")
                   << ") is ( " << IncreasingWireDir[0] << " ; "
@@ -1198,7 +1198,7 @@ namespace geo{
               } // if
               try {
                 wire_from_wc = geom->WireCoordinate
-                  (wire_shifted[1], wire_shifted[2], p, t, cs);
+                  (wire_shifted[1], wire_shifted[2], planeID);
               }
               catch (cet::exception& e) {
                 if (hasCategory(e, "NotImplemented")) {
@@ -1214,7 +1214,7 @@ namespace geo{
               if (std::abs(wire_from_wc - expected_wire) > 1e-3) {
               //  throw cet::exception("GeoTestErrorWireCoordinate")
                 mf::LogError("GeoTestErrorWireCoordinate")
-                  << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                  << "wire " << wireID
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
                   << i << "/" << NSteps
@@ -1230,12 +1230,12 @@ namespace geo{
               const unsigned int expected_wire_number = std::round(expected_wire);
               unsigned int wire_number_from_wc;
               try {
-                wire_number_from_wc = geom->NearestWire(wire_shifted, p, t, cs);
+                wire_number_from_wc = geom->NearestWire(wire_shifted, planeID);
               }
               catch (cet::exception& e) {
                 throw cet::exception("GeoTestErrorWireCoordinate", "", e)
               //  LOG_ERROR("GeoTestErrorWireCoordinate")
-                  << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                  << "wire " << std::string(wireID)
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
                   << i << "/" << NSteps
@@ -1248,7 +1248,7 @@ namespace geo{
               if (mf::isDebugEnabled()) {
                 // In debug mode, we print a lot and we don't (fatally) complain
                 std::stringstream e;
-                e << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                e << "wire " << wireID
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
                   << i << "/" << NSteps
@@ -1268,7 +1268,7 @@ namespace geo{
               else if (wire_number_from_wc != expected_wire_number) {
                 // In production mode, we don't print anything and throw on error
                 throw cet::exception("GeoTestErrorWireCoordinate")
-                  << "wire C:" << cs << " T:" << t << " P:" << p << " W:" << w
+                  << "wire " << std::string(wireID)
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
                   << i << "/" << NSteps
@@ -1289,7 +1289,6 @@ namespace geo{
         }
         
       } // for all wires in the plane
-      ++iPlane;
     } // end loop over planes
 
     stopWatch.Stop();
