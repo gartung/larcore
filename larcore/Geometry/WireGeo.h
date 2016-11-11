@@ -47,6 +47,9 @@ namespace geo {
     double RMax() const;
     double HalfL() const;
     double RMin() const;
+
+    /// Returns the wire length in centimeters
+    double Length() const { return 2. * HalfL(); }
     
     /// Returns angle of wire with respect to z axis in the Y-Z plane in radians
     double ThetaZ() const { return fThetaZ; }

@@ -1119,9 +1119,8 @@ namespace geo {
     (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const
   {
     geo::WireGeo const& wire = Wire(wireid);
-    const double halfL = wire.HalfL();//half-length of wire
-    wire.GetCenter(xyzStart,halfL);
-    wire.GetCenter(xyzEnd,-halfL);
+    wire.GetStart(xyzStart);
+    wire.GetEnd(xyzEnd);
     
     if(xyzEnd[2]<xyzStart[2]){
       //ensure that "End" has higher z-value than "Start"

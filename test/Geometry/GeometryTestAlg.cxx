@@ -228,7 +228,7 @@ namespace geo{
       geo::WireGeo const& testWire = geom->Wire(geo::WireID(0, 0, 1, 10));
       mf::LogVerbatim("GeometryTest")
         <<   "Wire Rmax  "         << testWire.RMax()
-        << "\nWire length "        << 2.*testWire.HalfL()
+        << "\nWire length "        << testWire.Length()
         << "\nWire Rmin  "         << testWire.RMin()
         << "\nTotal mass "         << geom->TotalMass()
         << "\nNumber of views "    << geom->Nviews()

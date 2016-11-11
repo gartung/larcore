@@ -164,18 +164,15 @@ namespace geo{
   TVector3 geo::WireGeo::Direction() const {
     // determine the orientation of the wire
     double xyzEnd[3], xyzStart[3];
-    
-    double local[3] = { 0., 0., fHalfL };
-    LocalToWorld(local, xyzEnd);
-    local[2] = -fHalfL;
-    LocalToWorld(local, xyzStart);
-    
+    GetStart(xyzStart);
+    GetEnd(xyzEnd);
+
     // get the cosines in each direction, ie dx/dS, etc
     return TVector3(
-      (xyzEnd[0]-xyzStart[0])/(2.*fHalfL),
-      (xyzEnd[1]-xyzStart[1])/(2.*fHalfL),
-      (xyzEnd[2]-xyzStart[2])/(2.*fHalfL)
-      );
+      (xyzEnd[0] - xyzStart[0]) / Length(),
+      (xyzEnd[1] - xyzStart[1]) / Length(),
+      (xyzEnd[2] - xyzStart[2]) / Length()
+      );                     
   } // geo::WireGeo::Direction()
   
   //......................................................................
