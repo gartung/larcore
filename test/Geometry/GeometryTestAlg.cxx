@@ -1184,7 +1184,7 @@ namespace geo{
             if (bTestWireCoordinate) {
               if (IncreasingWireDir[0] != 0.) {
                 // why? because WireCoordinate() has 2D input
-                LOG_ERROR("WireCoordinateNotImplemented")
+                LOG_ERROR("GeoTestWireCoordinate")
                   << "The direction of increasing wires for plane "
                   << std::string(planeID)
                   << " (theta=" << plane.Wire(0).ThetaZ() << " orientation="
@@ -1202,7 +1202,7 @@ namespace geo{
               }
               catch (cet::exception& e) {
                 if (hasCategory(e, "NotImplemented")) {
-                  LOG_ERROR("WireCoordinateNotImplemented")
+                  LOG_ERROR("GeoTestWireCoordinate")
                     << "WireCoordinate() is not implemented for your ChannelMap;"
                     " skipping the test";
                   bTestWireCoordinate = false;
@@ -1213,7 +1213,7 @@ namespace geo{
             if (bTestWireCoordinate) {
               if (std::abs(wire_from_wc - expected_wire) > 1e-3) {
               //  throw cet::exception("GeoTestErrorWireCoordinate")
-                mf::LogError("GeoTestErrorWireCoordinate")
+                mf::LogError("GeoTestWireCoordinate")
                   << "wire " << wireID
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
@@ -1234,7 +1234,7 @@ namespace geo{
               }
               catch (cet::exception& e) {
                 throw cet::exception("GeoTestErrorWireCoordinate", "", e)
-              //  LOG_ERROR("GeoTestErrorWireCoordinate")
+              //  LOG_ERROR("GeoTestWireCoordinate")
                   << "wire " << std::string(wireID)
                   << " [center: (" << wire_center[0] << "; "
                   << wire_center[1] << "; " << wire_center[2] << ")] on step of "
@@ -1259,7 +1259,7 @@ namespace geo{
                   e << ", " << expected_wire_number
                     << " expected (more precisely, " << expected_wire << ").";
                 // throw e;
-                  LOG_ERROR("GeoTestErrorWireCoordinate") << e.str();
+                  LOG_ERROR("GeoTestWireCoordinate") << e.str();
                 }
                 else {
                   mf::LogVerbatim("GeoTestWireCoordinate") << e.str();
@@ -1292,12 +1292,12 @@ namespace geo{
     } // end loop over planes
 
     stopWatch.Stop();
-    LOG_DEBUG("GeometryTest") << "\tdone testing closest channel";
+    LOG_DEBUG("GeoTestWireCoordinate") << "\tdone testing closest channel";
     stopWatch.Print();
     
     // trigger an exception with NearestChannel
-    mf::LogVerbatim("GeometryTest") << "\tattempt to cause an exception to be caught "
-                                    << "when looking for a nearest channel";
+    mf::LogVerbatim("GeoTestWireCoordinate") << "\tattempt to cause an exception to be caught "
+                                             << "when looking for a nearest channel";
 
     // pick a position out of the world
     double posWorld[3];
@@ -1325,7 +1325,7 @@ namespace geo{
         // ok, then why do we disable it?
         // an implementation might prefer to cap the wire number and go on
         // instead of throwing.
-        LOG_WARNING("GeoTestErrorNearestChannel")
+        LOG_WARNING("GeoTestWireCoordinate")
           << "GeometryCore::NearestChannel() did not raise an exception"
           " on out-of-world position (" << posWorld[0] << "; "
           << posWorld[1] << "; " << posWorld[2] << "), and returned "
