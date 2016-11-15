@@ -2127,11 +2127,10 @@ namespace geo {
      * @brief Returns a list of possible PlaneIDs in the detector
      * @return a constant reference to the set of plane IDs
      * 
-     * @todo verify the implementation
-     * @todo verify the use
-     * @deprecated This function smells a lot... do we really need a list of 720
+     * @deprecated use IteratePlaneIDs() instead
      * plane IDs of DUNE FD? probably better to use iterators instead
      */
+    [[deprecated("Iterate through geo::GeometryCore::IteratePlaneIDs() instead")]]
     std::set<PlaneID> const& PlaneIDs() const;
     
     
