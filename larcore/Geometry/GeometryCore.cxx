@@ -98,7 +98,7 @@ namespace geo {
     }
     
     ClearGeometry();
-
+    
     // Open the GDML file, and convert it into ROOT TGeoManager format.
     // Then lock the gGeoManager to prevent future imports, for example
     // in AuxDetGeometry
@@ -1757,13 +1757,13 @@ namespace geo {
     if (!HasWire(wid1)) {
       mf::LogError("WireIDIntersectionCheck")
         << "1st wire " << wid1 << " does not exist (max wire number: "
-        << Nwires(wid1.planeID());
+        << Nwires(wid1.planeID()) << ")";
       return false;
     }
     if (!HasWire(wid2)) {
       mf::LogError("WireIDIntersectionCheck")
         << "2nd wire " << wid2 << " does not exist (max wire number: "
-        << Nwires(wid2.planeID());
+        << Nwires(wid2.planeID()) << ")";
       return false;
     }
     return true;
