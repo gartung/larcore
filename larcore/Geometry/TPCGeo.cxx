@@ -118,6 +118,7 @@ namespace geo{
       }
     }
     
+    ResetDriftDirection();
     InitTPCBoundaries();
     
   } // TPCGeo::TPCGeo()
@@ -167,6 +168,49 @@ namespace geo{
   }
 
 
+  //......................................................................
+  short int TPCGeo::DetectDriftDirection() const {
+    
+    //
+    // 1. determine the drift axis
+    // 2. determine the drift direction on it
+    // 
+    // We assume that all the planes cover most of the TPC face; therefore,
+    // the centre of the plane and the one of the TPC should be very close
+    // to each other, when projected on the same drift plane.
+    // Here we find which is the largest coordinate difference.
+    
+    if (Nplanes() == 0) {
+      // chances are that we get this because stuff is not initialised yet,
+      // and then even the ID might be wrong
+      throw cet::exception("TPCGeo")
+        << "DetectDriftDirection(): no planes in TPC " << std::string(ID())
+        << "\n";
+    }
+    
+    auto const TPCcenter = GetCenter();
+    auto const PlaneCenter = Plane(0).GetCenter(); // any will do
+    
+    auto const driftVector = PlaneCenter - TPCcenter; // approximation!
+    
+    if ((std::abs(driftVector.X()) > std::abs(driftVector.Y()))
+      && (std::abs(driftVector.X()) > std::abs(driftVector.Z())))
+    {
+      // x is the solution
+      return (driftVector.X() > 0)? +1: -1;
+    }
+    else if (std::abs(driftVector.Y()) > std::abs(driftVector.Z()))
+    {
+      // y is the man
+      return (driftVector.Y() > 0)? +2: -2;
+    }
+    else {
+      // z is the winner
+      return (driftVector.Z() > 0)? +3: -3;
+    }
+    
+  } // TPCGeo::DetectDriftDirection()
+  
   //......................................................................
   // sort the PlaneGeo objects and the WireGeo objects inside 
   void TPCGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
@@ -358,6 +402,36 @@ namespace geo{
     fGeoMatrix->MasterToLocalVect(world,plane);
   }
 
+  
+  //......................................................................
+  void TPCGeo::ResetDriftDirection() {
+    
+    auto const driftDirCode = DetectDriftDirection();
+    switch (driftDirCode) {
+      case +1:
+        fDriftDirection = geo::kPosX; // this is the same as kPos!
+        break;
+      case -1:
+        fDriftDirection = geo::kNegX; // this is the same as kNeg!
+        break;
+      case +2: case +3:
+        fDriftDirection = geo::kPos;
+        break;
+      case -2: case -3:
+        fDriftDirection = geo::kNeg;
+        break;
+      default:
+        // TPC ID is likely not yet set
+        fDriftDirection = kUnknownDrift;
+        mf::LogError("TPCGeo")
+          << "Unable to detect drift direction (result: " << driftDirCode
+          << ")";
+        break;
+    } // switch
+    
+  } // TPCGeo::ResetDriftDirection()
+  
+  
   //......................................................................
   void TPCGeo::InitTPCBoundaries() {
     // note that this assumes no rotations of the TPC

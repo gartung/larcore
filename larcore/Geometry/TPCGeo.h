@@ -161,21 +161,6 @@ namespace geo {
     
     
     /// @{
-    /// @name Setters
-    
-    /**
-     * @brief Method to set the drift direction of a TPCGeo from CryostatGeo
-     *
-     * Must be done before TPCGeo level since this information is
-     * needed at the beginning of the plane sorting in TPCGeo.
-     */
-    void              SetDriftDirection(geo::DriftDirection_t drift)  { fDriftDirection = drift; }
-    
-    
-    /// @}
-    
-    
-    /// @{
     /// @name Coordinate transformation
     
     //@{
@@ -197,6 +182,27 @@ namespace geo {
     void WorldToLocalVect(const double* world, double* tpc)     const;
     
     /// @}
+    
+    
+    /**
+     * @brief Returns the expected drift direction based on geometry
+     * 
+     * The return value is coded as follow:
+     * 
+     * * +1: positive x
+     * * +2: positive y
+     * * +3: positive z
+     * * -1: negative x
+     * * -2: negative y
+     * * -3: negative z
+     * *  0: other (or algorithm failed)
+     * 
+     * The current implementation is based on the assumption that electrons in
+     * the middle of TPC will drift toward the wire planes, and it "never
+     * fails".
+     */
+    short int DetectDriftDirection() const;
+    
     
     
     /// Apply sorting to the PlaneGeo objects
@@ -258,6 +264,10 @@ namespace geo {
     /// Index of the plane for each view (InvalidID if none)
     std::vector<geo::PlaneID::PlaneID_t> fViewToPlaneNumber;
   
+    /// Recomputes the drift direction; needs planes to have been initialised
+    void ResetDriftDirection();
+    
+    
     /// Recomputes the TPC boundary
     void InitTPCBoundaries();
   

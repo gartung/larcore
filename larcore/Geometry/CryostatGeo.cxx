@@ -166,36 +166,9 @@ namespace geo{
   void CryostatGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
   {
     sorter.SortTPCs(fTPCs);
-    for(size_t t = 0; t < fTPCs.size(); ++t) { 
-      TPCGeo* TPC = fTPCs[t];
-
-      // determine the drift direction of the electrons in the TPC
-      // and the drift distance.  The electrons always drift in the x direction
-      // first get the location of the planes in the world coordinates
-      double origin[3]     = { 0., 0., 0. };
-      double planeworld[3] = { 0., 0., 0. };
-      double tpcworld[3]   = { 0., 0., 0. };
-
-      TPC->Plane(0).LocalToWorld(origin, planeworld);
-
-      // now get the origin of the TPC in world coordinates
-      TPC->LocalToWorld(origin, tpcworld);
-  
-      // check to see if the x coordinates change between the tpc
-      // origin and the plane origin, and if so in which direction
-      if     ( tpcworld[0] > 1.01*planeworld[0] ) TPC->SetDriftDirection(geo::kNegX);
-      else if( tpcworld[0] < 0.99*planeworld[0] ) TPC->SetDriftDirection(geo::kPosX);
-      else {
-        throw cet::exception("CryostatGeo")
-          << "Can't determine drift direction of TPC #" << t << " at ("
-          << tpcworld[0] << "; " << tpcworld[1] << "; " << tpcworld[2]
-          << " to planes (plane 0 at "
-          << planeworld[0] << "; " << planeworld[1] << "; " << planeworld[2]
-          << ")\n";
-      }
-
+    for (geo::TPCGeo* TPC: fTPCs) { 
       TPC->SortSubVolumes(sorter);
-    }
+    } // for TPCs
 
   }
 
