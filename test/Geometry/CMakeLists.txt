@@ -152,6 +152,21 @@ cet_test(geometry_iterator HANDBUILT
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
 
+# drift direction descriptor tests
+cet_test(XDriftDescriptor_test
+  LIBRARIES
+    ${ROOT_PHYSICS}
+    ${ROOT_CORE} # TVersionCheck
+  USE_BOOST_UNIT
+  )
+cet_test(YDriftDescriptor_test
+  LIBRARIES
+    ${ROOT_PHYSICS}
+    ${ROOT_CORE} # TVersionCheck
+  USE_BOOST_UNIT
+  )
+
+
 cet_test(SimpleGeo_test
   SOURCES SimpleGeo_test.cxx
   USE_BOOST_UNIT
