@@ -196,6 +196,10 @@ namespace geo {
     TVector3 GetIncreasingWireDirection() const;
     
     
+    /// Returns the centre of the plane in world coordinates [cm]
+    TVector3 GetCenter() const;
+    
+    
     /// Returns a volume including all the wires in the plane
     lar::util::simple_geo::Volume<> Coverage() const;
     

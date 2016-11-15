@@ -160,6 +160,15 @@ namespace geo{
   
   
   //......................................................................
+  TVector3 PlaneGeo::GetCenter() const {
+    
+    // convert the origin (default constructed TVector)
+    return LocalToWorld({});
+    
+  } // PlaneGeo::GetCenter()
+  
+  
+  //......................................................................
   TVector3 PlaneGeo::GetIncreasingWireDirection() const {
     const unsigned int NWires = Nwires();
     if (NWires < 2) {

@@ -40,7 +40,9 @@ namespace geo {
     double            ActiveHalfHeight()                        const { return fActiveHalfHeight;       }
     double            ActiveLength()                            const { return fActiveLength;           }
     double            HalfWidth()                               const { return fHalfWidth;              }
+    double            Width()                                   const { return 2.0 * HalfWidth();       }
     double            HalfHeight()                              const { return fHalfHeight;             }
+    double            Height()                                  const { return 2.0 * HalfHeight();      }
     double            Length()                                  const { return fLength;                 }
     double            ActiveMass()                              const { return fActiveVolume->Weight(); }
     const TGeoVolume* ActiveVolume()                            const { return fActiveVolume;           }
@@ -132,7 +134,7 @@ namespace geo {
       { return PlanePtr(planeid); }
     //@}
     
-    /// @brief Returns the largest number of wires amongthe planes in this TPC
+    /// @brief Returns the largest number of wires among the planes in this TPC
     unsigned int MaxWires() const;
     
     /// @}
@@ -140,6 +142,10 @@ namespace geo {
     /// @{
     /// @name TPC geometry properties
     
+    /// Returns the center of the TPC volume in world coordinates [cm]
+    TVector3 GetCenter() const;
+    
+    /// Returns the coordinates of the center of the specified plane [cm]
     const double*     PlaneLocation(unsigned int p)             const; 
     double            Plane0Pitch(unsigned int p)               const;
     double            PlanePitch(unsigned int p1=0,

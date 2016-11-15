@@ -269,6 +269,15 @@ namespace geo{
   }
 
   //......................................................................
+  TVector3 TPCGeo::GetCenter() const {
+    
+    // convert the origin (default constructed TVector)
+    return LocalToWorld({});
+    
+  } // TPCGeo::GetCenter()
+  
+  
+  //......................................................................
   // returns xyz location of planes in TPC
   const double* TPCGeo::PlaneLocation(unsigned int p) const
   {
