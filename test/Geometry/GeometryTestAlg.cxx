@@ -1413,26 +1413,18 @@ namespace geo{
       // sample the area covered by all planes, split into SplitY and SplitZ
       // rectangles; x is chosen in the middle of the TPC
       constexpr unsigned int SplitZ = 19, SplitY = 17;
-      // get the area spanned by the wires
-      lar::util::simple_geo::Volume<> covered_area;
+      // get the area spanned by the wires;
+      // this area is described as (x,y), regardless the global coordinate names
+      lar::util::simple_geo::Area<> covered_area;
       for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
-        auto plane_area = TPC.Plane(p).Coverage();
+        auto plane_volume = TPC.Plane(p).Coverage(); // this is a volume
+        lar::util::simple_geo::Area<> plane_area(
+          { plane_volume.Min().y, plane_volume.Min().z },
+          { plane_volume.Max().y, plane_volume.Max().z }
+          );
         if (covered_area.isEmpty()) covered_area = plane_area;
         else covered_area.Intersect(plane_area);
       } // for
-      /*
-      simple_geo::Area covered_area;
-      for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
-        simple_geo::Area plane_area = simple_geo::PlaneCoverage(TPC.Plane(p));
-        if (covered_area.isEmpty()) covered_area = plane_area;
-        else covered_area.Intersect(plane_area);
-      } // for
-      */
-      if (covered_area.thinnestSize() > 1.0) {
-        // if the wire plane is thicker than 1 cm, debugging is needed
-        throw cet::exception("GeometryTestAlg")
-          << "testWireIntersection(): failed to find plane coverage";
-      }
       
       std::array<double, 3> origin, TPC_center;
       origin.fill(0);
@@ -1443,13 +1435,13 @@ namespace geo{
       for (unsigned int iZ = 0; iZ < SplitZ; ++iZ) {
         
         // pick the coordinate in the middle of the iZ-th region:
-        const double z = covered_area.Min().z
-          + covered_area.DeltaZ() * (2*iZ + 1) / (2*SplitZ);
+        const double z = covered_area.Min().y
+          + covered_area.DeltaY() * (2*iZ + 1) / (2*SplitZ);
         
         for (unsigned int iY = 0; iY < SplitY; ++iY) {
           // pick the coordinate in the middle of the iY-th region:
-          const double y = covered_area.Min().y
-            + covered_area.DeltaY() * (2*iY + 1) / (2*SplitY);
+          const double y = covered_area.Min().x
+            + covered_area.DeltaX() * (2*iY + 1) / (2*SplitY);
           
           // finally, let's test this point...
           nErrors += testWireIntersectionAt(*iTPC, x, y, z);
