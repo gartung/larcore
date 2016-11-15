@@ -13,6 +13,7 @@
 #include "TVector3.h"
 #include "TGeoVolume.h"
 
+#include "larcore/Geometry/BoxBoundedGeo.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
@@ -27,7 +28,7 @@ namespace geo {
 
   //......................................................................
   /// Geometry information for a single cryostat
-  class CryostatGeo {
+  class CryostatGeo: public geo::BoxBoundedGeo {
   public:
     
     /// Construct a representation of a single cryostat of the detector
@@ -44,12 +45,25 @@ namespace geo {
     double            HalfWidth()                               const;
     /// Half height of the cryostat
     double            HalfHeight()                              const;
+    /// Full width of the cryostat
+    double            Width()                                   const { return 2. * HalfWidth(); }
+    /// Full height of the cryostat
+    double            Height()                                  const { return 2. * HalfHeight(); }
     /// Length of the cryostat
     double            Length()                                  const;
     /// Mass of the cryostat
     double            Mass()                                    const { return fVolume->Weight(); }
     /// Pointer to ROOT's volume descriptor
     const TGeoVolume* Volume()                                  const { return fVolume;           }
+    
+    /// @brief Returns boundaries of the cryostat (in centimetres)
+    /// @return boundaries in a geo::BoxBoundedGeo
+    geo::BoxBoundedGeo const& Boundaries() const { return *this; }
+    
+    /// @brief Fills boundaries of the cryostat (in centimetres)
+    /// @param boundaries filled as: [0] -x [1] +x [2] -y [3] +y [4] -z [5] +z
+    void Boundaries(double* boundaries) const;
+    
     
     /// Returns the identifier of this cryostat
     geo::CryostatID const& ID() const { return fID; }
@@ -215,6 +229,9 @@ namespace geo {
     void MakeOpDet(std::vector<const TGeoNode*>& path,
 		   int depth);
 
+    /// Fill the boundary information of the cryostat
+    void InitCryoBoundaries();
+
   private:
 
     TGeoHMatrix*           fGeoMatrix;      ///< TPC to world transform
@@ -223,7 +240,7 @@ namespace geo {
     TGeoVolume*            fVolume;         ///< Total volume of cryostat, called volCryostat in GDML file
     std::string            fOpDetGeoName;   ///< Name of opdet geometry elements in gdml
     geo::CryostatID        fID;             ///< ID of this cryostat
-
+    
   };
 }
 

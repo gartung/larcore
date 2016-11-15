@@ -337,7 +337,7 @@ namespace geo {
     
     
       private:
-    // we don't alow the derived classes to mess with the boundaries
+    // we don't allow the derived classes to mess with the boundaries
     Coords_t c_min; ///< minimum coordinates (x, y, z)
     Coords_t c_max; ///< maximum coordinates (x, y, z)
     

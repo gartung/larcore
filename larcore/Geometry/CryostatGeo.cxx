@@ -16,7 +16,8 @@
 #include "TGeoManager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
-#include <TGeoBBox.h>
+#include "TClass.h"
+#include "TGeoBBox.h"
 
 // Framework includes
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -91,6 +92,9 @@ namespace geo{
       fGeoMatrix->Multiply(path[i]->GetMatrix());
     }
   
+    // set the bounding box
+    InitCryoBoundaries();
+    
     // find the tpcs for the cryostat so that you can use them later
     this->FindTPC(path, depth);
 
@@ -156,6 +160,7 @@ namespace geo{
     fTPCs.push_back(new TPCGeo(path, depth));
   }
 
+  
   //......................................................................
   // sort the TPCGeo objects, and the PlaneGeo objects inside
   void CryostatGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
@@ -287,7 +292,7 @@ namespace geo{
   {
     tpc = FindTPCAtPosition(worldLoc, wiggle);
     if(tpc == std::numeric_limits<unsigned int>::max())
-      throw cet::exception("Geometry") << "Can't find TPC for position (" 
+      throw cet::exception("CryostatGeo") << "Can't find TPC for position (" 
 				       << worldLoc[0] << ","
 				       << worldLoc[1] << "," 
 				       << worldLoc[2] << ")\n";
@@ -335,6 +340,17 @@ namespace geo{
     return 2.0*((TGeoBBox*)fVolume->GetShape())->GetDZ();
   }
 
+  //......................................................................
+  void CryostatGeo::Boundaries(double* boundaries) const {
+    boundaries[0] = MinX();
+    boundaries[1] = MaxX();
+    boundaries[2] = MinY();
+    boundaries[3] = MaxY();
+    boundaries[4] = MinZ();
+    boundaries[5] = MaxZ();
+  } // CryostatGeo::CryostatBoundaries(double*)
+  
+  
   //......................................................................
   void CryostatGeo::LocalToWorld(const double* tpc, double* world) const
   {
@@ -414,6 +430,36 @@ namespace geo{
     return ClosestDet;
     
   }
+  
+  //......................................................................
+  void CryostatGeo::InitCryoBoundaries() {
+    
+    // check that this is indeed a box
+    if (!dynamic_cast<TGeoBBox*>(Volume()->GetShape())) {
+      // at initialisation time we don't know yet our real ID
+      throw cet::exception("CryostatGeo") << "Cryostat is not a box! (it is a "
+        << Volume()->GetShape()->IsA()->GetName() << ")\n";
+    }
+    
+    // get the half width, height, etc of the cryostat
+    const double halflength = Length() / 2.0;
+    const double halfwidth  = HalfWidth();
+    const double halfheight = HalfHeight();
+    
+    std::array<double, 3> const pos = { halfwidth,  halfheight,  halflength};
+    std::array<double, 3> const neg = {-halfwidth, -halfheight, -halflength};
+    std::array<double, 3> posW, negW;
+    
+    LocalToWorld(neg.data(), negW.data());
+    LocalToWorld(pos.data(), posW.data());
+    
+    SetBoundaries(negW, posW);
+    
+  } // CryostatGeo::InitCryoBoundaries()
+  
+  //......................................................................
+
+  
 
 }
 ////////////////////////////////////////////////////////////////////////
