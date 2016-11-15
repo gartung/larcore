@@ -359,6 +359,13 @@ namespace geo {
 
   //......................................................................
   const CryostatGeo& GeometryCore::PositionToCryostat
+    (double const worldLoc[3]) const
+  {
+    geo::CryostatID cid;
+    return PositionToCryostat(worldLoc, cid);
+  } // GeometryCore::PositionToCryostat(double[3])
+  
+  const CryostatGeo& GeometryCore::PositionToCryostat
     (double const  worldLoc[3], geo::CryostatID& cid) const
   {
     geo::CryostatID::CryostatID_t cstat = FindCryostatAtPosition(worldLoc);
@@ -370,7 +377,7 @@ namespace geo {
                                        << worldLoc[2] << ")\n";
     cid = geo::CryostatID(cstat);
     return Cryostat(cid);
-  }
+  } // GeometryCore::PositionToCryostat(double[3], CryostatID)
   
   const CryostatGeo& GeometryCore::PositionToCryostat
     (double const worldLoc[3], unsigned int &cstat) const
@@ -379,7 +386,7 @@ namespace geo {
     geo::CryostatGeo const& cryo = PositionToCryostat(worldLoc, cid);
     cstat = cid.Cryostat;
     return cryo;
-  }
+  } // GeometryCore::PositionToCryostat(double[3], unsigned int)
   
   //......................................................................
   unsigned int GeometryCore::FindAuxDetAtPosition(double const  worldPos[3]) const
@@ -630,40 +637,12 @@ namespace geo {
   }
 
   //......................................................................
-  // Boundaries of the cryostat in 3 pairs
-  // [0]: -x
-  // [1]: +x
-  // [2]: -y
-  // [3]: +y
-  // [4]: -z
-  // [5]: +z
-  void GeometryCore::CryostatBoundaries(double* boundaries,
-                                    geo::CryostatID const& cid) const
+  void GeometryCore::CryostatBoundaries
+    (double* boundaries, geo::CryostatID const& cid) const
   {
     geo::CryostatGeo const& cryo = Cryostat(cid);
-    TGeoBBox const* CryoShape = ((TGeoBBox*) cryo.Volume()->GetShape());
-    // get the half width, height, etc of the cryostat
-    const double halflength = CryoShape->GetDZ();
-    const double halfwidth  = CryoShape->GetDX();
-    const double halfheight = CryoShape->GetDY();
-    
-    double posW[3] = {0.};
-    double negW[3] = {0.};
-    double pos[3]  = { halfwidth,  halfheight,  halflength};
-    double neg[3]  = {-halfwidth, -halfheight, -halflength};
-    
-    cryo.LocalToWorld(pos, posW);
-    cryo.LocalToWorld(neg, negW);
-
-    boundaries[0] = negW[0];
-    boundaries[1] = posW[0];
-    boundaries[2] = negW[1];
-    boundaries[3] = posW[1];
-    boundaries[4] = negW[2];
-    boundaries[5] = posW[2];
-    
-    return;
-  }
+    cryo.Boundaries(boundaries);
+  } // GeometryCore::CryostatBoundaries()
 
   //......................................................................
   // This method returns the distance between the specified planes.

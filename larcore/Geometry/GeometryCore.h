@@ -1528,7 +1528,6 @@ namespace geo {
      * of ID.
      *
      * @todo Make the cryostat number mandatory (as CryostatID)
-     * @todo what happens if it does not exist?
      */
     CryostatGeo const& Cryostat(geo::CryostatID const& cryoid) const;
     CryostatGeo const& Cryostat(unsigned int const cstat = 0) const
@@ -1563,24 +1562,43 @@ namespace geo {
      */
     unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
     
-    //@{
     /**
      * @brief Returns the cryostat at specified location
      * @param worldLoc 3D coordinates of the point (world reference frame)
-     * @param cstat (output) number of cryostat
+     * @return a constant reference to the CryostatGeo object of the cryostat
+     * @throws cet::exception ("Geometry" category) if no cryostat matches
+     * 
+     * The tolerance used here is the one returned by DefaultWiggle().
+     */
+    CryostatGeo const& PositionToCryostat(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Returns the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
      * @param cid (output) cryostat ID
      * @return a constant reference to the CryostatGeo object of the cryostat
      * @throws cet::exception ("Geometry" category) if no cryostat matches
      * 
      * The tolerance used here is the one returned by DefaultWiggle().
      * 
-     * @todo replace the output parameters with a cryostat ID
      */
     CryostatGeo const& PositionToCryostat
       (double const worldLoc[3], geo::CryostatID& cid) const;
+    
+    /**
+     * @brief Returns the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param cstat (output) number of cryostat
+     * @return a constant reference to the CryostatGeo object of the cryostat
+     * @throws cet::exception ("Geometry" category) if no cryostat matches
+     * 
+     * The tolerance used here is the one returned by DefaultWiggle().
+     * 
+     * @deprecated Use PositionToCryostat(double const[3], geo::CryostatID&)
+     *             instead.
+     */
     CryostatGeo const& PositionToCryostat
       (double const worldLoc[3], unsigned int &cstat) const;
-    //@}
     
     //
     // iterators
@@ -1674,11 +1692,13 @@ namespace geo {
       { return CryostatLength(geo::CryostatID(cstat)); }
     //@}
     
-    //@{
+
     /**
      * @brief Returns the boundaries of the specified cryostat
      * @param boundaries (output) pointer to an area of 6 doubles for boundaries
-     * @param cstat number of cryostat
+     * @param cid cryostat ID
+     * @throws cet::exception ("GeometryCore" category) if cryostat not present
+     * @see CryostatGeo::Boundaries()
      * 
      * The boundaries array is filled with:
      * [0] lower x coordinate  [1] upper x coordinate
@@ -1686,15 +1706,29 @@ namespace geo {
      * [4] lower z coordinate  [5] upper z coordinate
      * 
      * @todo What happen on invalid cryostat?
-     * @todo Use a CryostatID instead
-     * @todo Check the implementation in TPC and use that one instead
      */
     void CryostatBoundaries
       (double* boundaries, geo::CryostatID const& cid) const;
+    
+    /**
+     * @brief Returns the boundaries of the specified cryostat
+     * @param boundaries (output) pointer to an area of 6 doubles for boundaries
+     * @param cstat number of cryostat
+     * @throws cet::exception ("GeometryCore" category) if cryostat not present
+     * @see CryostatGeo::Boundaries()
+     * 
+     * The boundaries array is filled with:
+     * [0] lower x coordinate  [1] upper x coordinate
+     * [2] lower y coordinate  [3] upper y coordinate
+     * [4] lower z coordinate  [5] upper z coordinate
+     * 
+     * @deprecated Use CryostatBoundaries(double*, geo::CryostatID const&)
+     * or (recommended) CryostatGeo::Boundaries() instead
+     */
     void CryostatBoundaries
       (double* boundaries, unsigned int cstat = 0) const
       { CryostatBoundaries(boundaries, geo::CryostatID(cstat)); }
-    //@}
+    
     
     //
     // object description
