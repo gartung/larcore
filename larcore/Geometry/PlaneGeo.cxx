@@ -40,10 +40,10 @@ namespace geo{
   
     // find the wires for the plane so that you can use them later
     this->FindWire(path, depth);
-
-    // view and signal are now set at TPC level with SetView and SetSignal
-    fOrientation = kVertical;
-
+    
+    // view is now set at TPC level with SetView
+    
+    UpdateOrientation();
     // perform initialization that is mapping-dependent;
     // when the mapping changes, this will have to be repeated
     // assumes same pitch between all wires in this plane
@@ -300,6 +300,37 @@ namespace geo{
     } // switch
   } // PlaneGeo::OrientationName()
   
+  //......................................................................
+  void PlaneGeo::UpdateOrientation() {
+    
+    fOrientation = kVertical;
+    return;
+    
+    // sanity check
+    if (fWire.size() < 2) {
+      // this likely means construction is not complete yet
+      throw cet::exception("NoWireInPlane")
+        << "PlaneGeo::UpdateOrientation(): only " << fWire.size()
+        << " wires!\n";
+    } // if
+    
+    auto normal = GetNormalDirection();
+    
+    if (std::abs(std::abs(normal.X()) - 1.) < 1e-3)
+      fOrientation = kVertical;
+    else if (std::abs(std::abs(normal.Z()) - 1.) < 1e-3)
+      fOrientation = kHorizontal;
+    else {
+      // at this point, the only problem is the lack of a label for this
+      // orientation; probably introducing a geo::kOtherOrientation would
+      // suffice
+      throw cet::exception("Geometry")
+        << "Plane with unsupported orientation (normal: { "
+        << normal.X() << " ; " << normal.Y() << " ; " << normal.Z() << " })\n";
+    }
+    
+  } // PlaneGeo::UpdateOrientation()
+
   //......................................................................
   void PlaneGeo::UpdateWirePitch() {
     fWirePitch = geo::WireGeo::WirePitch(Wire(0), Wire(1));

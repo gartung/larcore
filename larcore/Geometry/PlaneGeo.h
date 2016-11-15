@@ -280,6 +280,9 @@ namespace geo {
     void MakeWire(std::vector<const TGeoNode*>& path, 
 		  int depth);
     
+    /// Updates plane orientation
+    void UpdateOrientation();
+    
     /// Updates the stored wire pitch
     void UpdateWirePitch();
     
