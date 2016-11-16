@@ -131,7 +131,7 @@ namespace geo {
     void printAllGeometry() const;
     void testFindVolumes();
     void testCryostat();
-    void testTPC(unsigned int const& c);
+    void testTPC(geo::CryostatID const& cid);
     void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();

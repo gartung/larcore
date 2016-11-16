@@ -494,42 +494,44 @@ namespace geo{
   //......................................................................
   void GeometryTestAlg::testCryostat()
   {
-    mf::LogVerbatim("GeometryTest") << "\tThere are " << geom->Ncryostats() << " cryostats in the detector";
+    mf::LogVerbatim("GeometryTest") << "There are " << geom->Ncryostats() << " cryostats in the detector";
 
-    for(unsigned int c = 0; c < geom->Ncryostats(); ++c){
-
-      mf::LogVerbatim("GeometryTest") << "\n\t\tCryostat " << c 
-                                      << " " << geom->Cryostat(c).Volume()->GetName()
-                                      << " Dimensions: " << 2.*geom->Cryostat(c).HalfWidth()
-                                      << " x "           << 2.*geom->Cryostat(c).HalfHeight() 
-                                      << " x "           << geom->Cryostat(c).Length()
-                                      << "\n\t\t mass: " << geom->Cryostat(c).Mass();
-
-      double cryobound[6] = {0.};
-      geom->CryostatBoundaries(cryobound, c);
-      mf::LogVerbatim("GeometryTest") << "Cryostat boundaries are at:\n"
-                                      << "\t-x:" << cryobound[0] << " +x:" << cryobound[1]
-                                      << "\t-y:" << cryobound[2] << " +y:" << cryobound[3]
-                                      << "\t-z:" << cryobound[4] << " +z:" << cryobound[5];
+    for(geo::CryostatGeo const& cryo: geom->IterateCryostats()) {
+      
+      mf::LogVerbatim("GeometryTest") 
+        << "\n\tCryostat " << cryo.ID()
+        <<   " " << cryo.Volume()->GetName()
+        <<   " Dimensions [cm]: " << cryo.Width()
+        <<                  " x " << cryo.Height() 
+        <<                  " x " << cryo.Length()
+        << "\n\t\tmass [kg]: " << cryo.Mass()
+        << "\n\t\tCryostat boundaries:"
+        <<   "  -x:" << cryo.MinX() << " +x:" << cryo.MaxX()
+        <<   "  -y:" << cryo.MinY() << " +y:" << cryo.MaxY()
+        <<   "  -z:" << cryo.MinZ() << " +z:" << cryo.MaxZ();
 
       // pick a position in the middle of the cryostat in the world coordinates
-      double worldLoc[3] = {0.5*(cryobound[1] - cryobound[0]) + cryobound[0],
-                            0.5*(cryobound[3] - cryobound[2]) + cryobound[2],
-                            0.5*(cryobound[5] - cryobound[4]) + cryobound[4]};
+      double const worldLoc[3]
+        = { cryo.CenterX(), cryo.CenterY(), cryo.CenterZ() };
                 
       LOG_DEBUG("GeometryTest") << "\t testing GeometryCore::PoitionToCryostat....";
+      geo::CryostatID cid;
       try{
-        unsigned int cstat = 0;
-        geom->PositionToCryostat(worldLoc, cstat);
+        geom->PositionToCryostat(worldLoc, cid);
       }
       catch(cet::exception &e){
         mf::LogWarning("FailedToLocateCryostat") << "\n exception caught:" << e;
         if (fNonFatalExceptions.count(e.category()) == 0) throw;
       }
+      if (cid != cryo.ID()) {
+        throw cet::exception("CryostatTest")
+          << "Geometry points the middle of cryostat " << std::string(cryo.ID())
+          << " to a different one (" << std::string(cid) << ")\n";
+      }
       LOG_DEBUG("GeometryTest") << "done";
 
       LOG_DEBUG("GeometryTest") << "\t Now test the TPCs associated with this cryostat";
-      this->testTPC(c);
+      testTPC(cryo.ID());
     }
 
     return;
@@ -661,50 +663,43 @@ namespace geo{
   
   
   //......................................................................
-  void GeometryTestAlg::testTPC(unsigned int const& c)
+  void GeometryTestAlg::testTPC(geo::CryostatID const& cid)
   {
-    geo::CryostatGeo const& cryo = geom->Cryostat(c);
+    geo::CryostatGeo const& cryo = geom->Cryostat(cid);
 
     mf::LogVerbatim("GeometryTest") << "\tThere are " << cryo.NTPC() 
                                     << " TPCs in the detector";
     
     for(size_t t = 0; t < cryo.NTPC(); ++t){
-      geo::TPCGeo const& tpc = cryo.TPC(t);
-      
-      // figure out the TPC coordinates
-      
-      std::array<double, 3> TPClocalTemp, TPCstart, TPCstop;
-      TPClocalTemp[0] = -tpc.HalfWidth(); // x
-      TPClocalTemp[1] = -tpc.HalfHeight(); // y
-      TPClocalTemp[2] = -tpc.Length() / 2.; // z
-      tpc.LocalToWorld(TPClocalTemp.data(), TPCstart.data());
-      for (size_t i = 0; i < TPClocalTemp.size(); ++i) TPClocalTemp[i] = -TPClocalTemp[i];
-      tpc.LocalToWorld(TPClocalTemp.data(), TPCstop.data());
+      geo::TPCID const tpcid(cid, t);
+      geo::TPCGeo const& tpc = cryo.TPC(tpcid);
       
       mf::LogVerbatim("GeometryTest")
-        << "\n\t\tTPC " << t 
-          << " " << geom->GetLArTPCVolumeName(t, c) 
+        << "\n\t\tTPC " << tpcid
+          << " " << geom->GetLArTPCVolumeName(tpcid) 
           << " has " << tpc.Nplanes() << " planes."
         << "\n\t\tTPC location: ( "
-          << TPCstart[0] << " ; " << TPCstart[1] << " ; "<< TPCstart[2]
+          << tpc.MinX() << " ; " << tpc.MinY() << " ; "<< tpc.MinZ()
           << " ) =>  ( "
-          << TPCstop[0] << " ; " << TPCstop[1] << " ; "<< TPCstop[2]
+          << tpc.MaxX() << " ; " << tpc.MaxY() << " ; "<< tpc.MaxZ()
           << " ) [cm]"
         << "\n\t\tTPC Dimensions: "
-          << 2.*tpc.HalfWidth() << " x " << 2.*tpc.HalfHeight() << " x " << tpc.Length()
+          << tpc.Width() << " x " << tpc.Height() << " x " << tpc.Length()
         << "\n\t\tTPC Active Dimensions: " 
           << 2.*tpc.ActiveHalfWidth() << " x " << 2.*tpc.ActiveHalfHeight() << " x " << tpc.ActiveLength()
         << "\n\t\tTPC mass: " << tpc.ActiveMass()
         << "\n\t\tTPC drift distance: " << tpc.DriftDistance();
       
       for(size_t p = 0; p < tpc.Nplanes(); ++p) {
+        geo::PlaneID const planeid(tpcid, p);
         geo::PlaneGeo const& plane = tpc.Plane(p);
+        auto const planeLocation = tpc.PlaneLocation(p);
         mf::LogVerbatim("GeometryTest")
           << "\t\tPlane " << p << " has " << plane.Nwires() 
             << " wires and is at (x,y,z) = (" 
-            << tpc.PlaneLocation(p)[0] << "," 
-            << tpc.PlaneLocation(p)[1] << "," 
-            << tpc.PlaneLocation(p)[2] 
+            << planeLocation[0] << "," 
+            << planeLocation[1] << "," 
+            << planeLocation[2] 
             << ");"
           << "\n\t\t\tpitch from plane 0 is " << tpc.Plane0Pitch(p) << ";"
           << "\n\t\t\tOrientation " << plane.Orientation()
@@ -723,7 +718,7 @@ namespace geo{
       }
 
       LOG_DEBUG("GeometryTest") << "\t testing PositionToTPC...";
-      // pick a position in the middle of the cryostat in the world coordinates
+      // pick a position in the middle of the TPC in the world coordinates
       double worldLoc[3] = {0.};
       double localLoc[3] = {0.};
       tpc.LocalToWorld(localLoc, worldLoc);
