@@ -10,7 +10,7 @@
 
 // C/C++ libraries
 #include <cmath>
-#include <iostream>
+#include <iomanip>
 #include <algorithm> // std::copy()
 
 // ROOT
@@ -56,14 +56,14 @@ namespace geo{
     // in one step
     TGeoHMatrix mat(*path[0]->GetMatrix());
     for(int i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
-
+    
     const Double_t* translation = mat.GetTranslation();
     // there are not many ways to set a HepGeom::Transform3D...
     fGeoMatrix = HepGeom::Transform3D(
       CLHEP::HepRotation(CLHEP::HepRep3x3(mat.GetRotationMatrix())),
       CLHEP::Hep3Vector(translation[0], translation[1], translation[2])
       );
-
+    
     // determine the orientation of the wire
     double local[3] = { 0., 0., 0. };
     LocalToWorld(local, fCenter);
@@ -71,7 +71,7 @@ namespace geo{
     double xyzEnd[3];
     local[2] = fHalfL;
     LocalToWorld(local, xyzEnd);
-
+    
     fThetaZ = std::acos((xyzEnd[2] - fCenter[2])/fHalfL);
     
     // check to see if it runs "forward" or "backwards" in z
@@ -162,6 +162,8 @@ namespace geo{
 
   //......................................................................
   TVector3 geo::WireGeo::Direction() const {
+    // to make it faster, we could compare GetStart() with GetCenter()
+    
     // determine the orientation of the wire
     double xyzEnd[3], xyzStart[3];
     GetStart(xyzStart);
