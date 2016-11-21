@@ -10,8 +10,10 @@
 
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcore/CoreUtils/DereferenceIterator.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/SimpleGeo.h"
+#include "larcore/Geometry/BoxBoundedGeo.h"
 
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
@@ -34,6 +36,7 @@ namespace geo {
   //       (see LArSoft issue #14365 at https://cdcvs.fnal.gov/redmine/issues/14365 )
   class PlaneGeo {
   public:
+    
     /// Construct a representation of a single plane of the detector
     PlaneGeo(std::vector<const TGeoNode*>& path, int depth);
     ~PlaneGeo();
@@ -155,6 +158,33 @@ namespace geo {
     /// Return the last wire in the plane.
     const WireGeo& LastWire()                                 const { return Wire(Nwires()-1); }
     
+    /**
+     * @brief Allows range-for iteration on all wires in this plane
+     * @return an object suitable for range-for iteration on all wires
+     * 
+     * This example uses geometry to iterate on all planes in an outer loop,
+     * and then iterates on all wires in the plane in the inner loop:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * 
+     * auto geom = lar::providerFrom<geo::Geometry>();
+     * for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+     *   
+     *   // collect plane information
+     *   
+     *   for (geo::WireGeo const& wire: plane.IterateWires()) {
+     *     
+     *     // do something with each single wire
+     *     
+     *   }
+     * } // for planes
+     * 
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * (note that all data types here can be replaced with `auto`).
+     * 
+     */
+    auto IterateWires() const
+      { return lar::util::dereferenceConstIteratorLoop(fWire); }
+    
     /// @}
     
     
@@ -211,6 +241,7 @@ namespace geo {
      * @param verbosity amount of information printed
      * 
      * Information on single wires is not printed.
+     * Note that the first line out the output is _not_ indented.
      * 
      * Verbosity levels
      * -----------------
@@ -323,11 +354,7 @@ void geo::PlaneGeo::printPlaneInfo(
   std::array<double, 3> PlanePos;
   LocalToWorld(Origin.data(), PlanePos.data());
       
-  // get the area spanned by the wires
-  auto plane_area = Coverage();
-
-  out << indent
-    << "plane " << std::string(ID());
+  out << "plane " << std::string(ID());
   
   if (--verbosity <= 0) return; // 0
   
@@ -339,17 +366,18 @@ void geo::PlaneGeo::printPlaneInfo(
   if (--verbosity <= 0) return; // 1
   
   out << "\n" << indent
-    << "  normal to wire: " << PhiZ() << " rad"
-    << ", with orientation " << OrientationName(Orientation())
-    << ", has " << nWires << " wires measuring " << ViewName(View())
-    << " with a pitch of " << WirePitch() << " mm";
+    << "normal to wire: " << PhiZ() << " rad"
+      << ", with orientation " << OrientationName(Orientation())
+      << ", has " << nWires << " wires measuring " << ViewName(View())
+      << " with a wire pitch of " << WirePitch() << " cm"
+    ;
   
   if (--verbosity <= 0) return; // 2
   
   auto normal = GetNormalDirection();
   auto incrZdir = GetIncreasingWireDirection();
   out << "\n" << indent
-    << "  normal to plane: ("
+    << "normal to plane: ("
       << normal.X() << ", " << normal.Y() << ", " << normal.Z() << ")"
     << ", direction of increasing wire number: ("
       << incrZdir.X() << ", " << incrZdir.Y() << ", " << incrZdir.Z() << ")"
@@ -357,7 +385,10 @@ void geo::PlaneGeo::printPlaneInfo(
     
   if (--verbosity <= 0) return; // 3
   
-  out << "\n" << indent << "  covers ";
+  // get the area spanned by the wires
+  auto plane_area = Coverage();
+
+  out << "\n" << indent << "its wires cover ";
   bool bPrint2D = false;
   if (plane_area.isPlane()) {
     switch (Orientation()) {

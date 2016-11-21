@@ -100,6 +100,11 @@ namespace geo {
     /// Returns the world z coordinate of the center of the box
     double CenterZ() const { return (MinZ() + MaxZ()) / 2.; }
     
+    /// Returns the center point of the box
+    Coords_t Center() const
+      { return { CenterX(), CenterY(), CenterZ() }; }
+      
+    
     /// @}
     
     
