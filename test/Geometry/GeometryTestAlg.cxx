@@ -445,7 +445,7 @@ namespace geo{
     const double Origin[3] = { 0., 0., 0. };
     double TPCpos[3];
     tpc.LocalToWorld(Origin, TPCpos);
-    mf::LogVerbatim("GeometryTest") << indent << "TPC at ("
+    mf::LogVerbatim("GeometryTest") << indent << "TPC " << tpc.ID() << " at ("
       << TPCpos[0] << ", " << TPCpos[1] << ", " << TPCpos[2]
       << ") cm has " << nPlanes << " wire planes (max wires: " << tpc.MaxWires()
       << "):";
@@ -454,8 +454,10 @@ namespace geo{
       const geo::PlaneGeo& plane = tpc.Plane(p);
       const unsigned int nWires = plane.Nwires();
       
-      // large verbosity
-      plane.printPlaneInfo(mf::LogVerbatim("GeometryTest"), indent, 8);
+      plane.printPlaneInfo(
+        mf::LogVerbatim("GeometryTest") << indent << "  ", indent + "      ",
+        8 /* large verbosity */
+        );
       
       for(unsigned int w = 0;  w < nWires; ++w) {
         const geo::WireGeo& wire = plane.Wire(w);
@@ -495,7 +497,6 @@ namespace geo{
                                       << nTPCs << " TPC(s):";
       for(unsigned int t = 0;  t < nTPCs; ++t) {
         const geo::TPCGeo& tpc = cryostat.TPC(t);
-        if (nTPCs > 1) mf::LogVerbatim("GeometryTest") << "    TPC #" << t;
         printWiresInTPC(tpc, "    ");
       } // for TPC
     } // for cryostat
@@ -703,22 +704,16 @@ namespace geo{
         << "\n\t\tTPC drift distance: " << tpc.DriftDistance();
       
       for(size_t p = 0; p < tpc.Nplanes(); ++p) {
-        geo::PlaneID const planeid(tpcid, p);
         geo::PlaneGeo const& plane = tpc.Plane(p);
-        auto const planeLocation = tpc.PlaneLocation(p);
-        mf::LogVerbatim("GeometryTest")
-          << "\t\tPlane " << p << " has " << plane.Nwires() 
-            << " wires and is at (x,y,z) = (" 
-            << planeLocation[0] << "," 
-            << planeLocation[1] << "," 
-            << planeLocation[2] 
-            << ");"
-          << "\n\t\t\tpitch from plane 0 is " << tpc.Plane0Pitch(p) << ";"
-          << "\n\t\t\tOrientation " << plane.Orientation()
-            << ", View " << plane.ViewName(plane.View())
-          << "\n\t\t\tWire angle " << plane.Wire(0).ThetaZ()
-            << ", Wire coord. angle " << plane.PhiZ()
-            << ", Pitch " << plane.WirePitch();
+        
+        // first line indented with two tabs, the others with two more spaces;
+        // very verbose (8)
+        plane.printPlaneInfo
+          (mf::LogVerbatim("GeometryTest") << "\t\t", "\t\t  ", 8);
+        
+        mf::LogVerbatim("GeometryTest") 
+          << "\t\t  pitch from plane 0 is " << tpc.Plane0Pitch(p);
+        
       } // for plane
       geo::DriftDirection_t dir = tpc.DriftDirection();
       if     (dir == geo::kNegX) 
