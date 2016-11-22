@@ -174,13 +174,16 @@ namespace geo{
 
 
   //......................................................................
-  void CryostatGeo::ResetIDs(geo::CryostatID cryoid) {
+  void CryostatGeo::UpdateAfterSorting(geo::CryostatID cryoid) {
     
+    // update the cryostat ID
     fID = cryoid;
-    for (unsigned int tpc = 0; tpc < NTPC(); ++tpc)
-      fTPCs[tpc]->ResetIDs(geo::TPCID(fID, tpc));
     
-  } // CryostatGeo::ResetIDs()
+    // trigger all the TPCs to update as well
+    for (unsigned int tpc = 0; tpc < NTPC(); ++tpc)
+      fTPCs[tpc]->UpdateAfterSorting(geo::TPCID(fID, tpc));
+    
+  } // CryostatGeo::UpdateAfterSorting()
   
   
   //......................................................................

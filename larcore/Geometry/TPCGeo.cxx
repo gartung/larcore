@@ -118,8 +118,8 @@ namespace geo{
       }
     }
     
-    ResetDriftDirection();
     InitTPCBoundaries();
+    ResetDriftDirection();
     
   } // TPCGeo::TPCGeo()
 
@@ -254,19 +254,21 @@ namespace geo{
     }
 
     for(size_t p = 0; p < fPlanes.size(); ++p) fPlanes[p]->SortWires(sorter);
-
-    return;
+    
   }
 
 
   //......................................................................
-  void TPCGeo::ResetIDs(geo::TPCID tpcid) {
+  void TPCGeo::UpdateAfterSorting(geo::TPCID tpcid) {
     
+    // reset the ID
     fID = tpcid;
-    for (unsigned int plane = 0; plane < Nplanes(); ++plane)
-      fPlanes[plane]->ResetIDs(geo::PlaneID(fID, plane));
     
-  } // TPCGeo::ResetIDs()
+    // ask the planes to update
+    for (unsigned int plane = 0; plane < Nplanes(); ++plane)
+      fPlanes[plane]->UpdateAfterSorting(geo::PlaneID(fID, plane), *this);
+    
+  } // TPCGeo::UpdateAfterSorting()
   
   
   //......................................................................

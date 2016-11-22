@@ -11,6 +11,7 @@
 
 // lar includes
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
+#include "larcore/CoreUtils/DereferenceIterator.h" // lar::util::dereferenceIteratorLoop()
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/AuxDetSensitiveGeo.h"
@@ -77,8 +78,8 @@ namespace geo {
     (std::shared_ptr<geo::ChannelMapAlg> pChannelMap)
   {
     SortGeometry(pChannelMap->Sorter());
+    UpdateAfterSorting(); // after channel mapping has sorted objects, set their IDs
     pChannelMap->Initialize(fGeoData);
-    ResetIDs(); // after channel mapping has sorted objects, set their IDs
     fChannelMapAlg = pChannelMap;
   } // GeometryCore::ApplyChannelMap()
 
@@ -159,14 +160,12 @@ namespace geo {
   
   
   //......................................................................
-  void GeometryCore::ResetIDs() {
+  void GeometryCore::UpdateAfterSorting() {
     
-    // This implementation is very low level because we want this to be working
-    // even if the geometry is not perfectly initialised yet
     for (size_t c = 0; c < Ncryostats(); ++c)
-      Cryostats()[c]->ResetIDs(geo::CryostatID(c));
+      Cryostats()[c]->UpdateAfterSorting(geo::CryostatID(c));
     
-  } // GeometryCore::ResetIDs()
+  } // GeometryCore::UpdateAfterSorting()
   
   
   //......................................................................

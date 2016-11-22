@@ -165,6 +165,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("WireOrientations")) {
+        LOG_INFO("GeometryTest") << "test wire orientations...";
+        testWireOrientations();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("ChannelToROP")) {
         LOG_INFO("GeometryTest") << "test channel to ROP and back ...";
         testChannelToROP();
@@ -180,6 +186,12 @@ namespace geo{
       if (shouldRunTests("FindPlaneCenters")) {
         LOG_INFO("GeometryTest") << "test find plane centers...";
         testFindPlaneCenters();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("WireCoordFromPlane")) {
+        LOG_INFO("GeometryTest") << "test PlaneGeo::WireCoordinate...";
+        testWireCoordFromPlane();
         LOG_INFO("GeometryTest") << "complete.";
       }
 
@@ -735,6 +747,133 @@ namespace geo{
     return;
   }
 
+
+  //......................................................................
+  void GeometryTestAlg::testWireOrientations() const {
+    /*
+     * The test verifies that all the wires in the geometry respect the
+     * orientation requirement described in geo::WireGeo documentation:
+     * 
+     *   { (wire direction) , (wire coordinate increase), (plane normal) }
+     * 
+     * be a positively defined base.
+     * 
+     */
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+      
+      // this funny way declares a reference or not, depending on return type
+      decltype(auto) planeNormal = plane.GetNormalDirection();
+      decltype(auto) wireCoordDir = plane.GetIncreasingWireDirection();
+      
+      unsigned int nWires = plane.Nwires();
+      for (unsigned int wireNo = 0; wireNo < nWires; ++wireNo) {
+        
+        geo::WireGeo const& wire = plane.Wire(wireNo);
+        
+        double positive = wire.Direction().Cross(wireCoordDir).Dot(planeNormal);
+        
+        if (positive < 0.5) {
+          ++nErrors;
+          
+          // detail the problem; details of the plane should be read in the
+          // output from other tests
+          decltype(auto) wireDir = wire.Direction();
+          mf::LogProblem("GeometryTestAlg")
+            << "Wire " << plane.ID() << " W: " << wireNo
+            << " has direction ( " << wireDir.X() << " ; " << wireDir.Y()
+            << " ; " << wireDir.Z()
+            << " ), yielding to a non-positive plane-coordinate definition"
+            << " (l x w . n = " << positive << ")";
+        } // if error
+        
+      } // for wire
+      
+    } // for plane
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testWireOrientations() accumulated " << nErrors
+        << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testWireOrientations()
+  
+  
+  //......................................................................
+  void GeometryTestAlg::testWireCoordFromPlane() const {
+    
+    //
+    // For each wire:
+    // 
+    // * picks points lying on the planes including a wire and the normal to the
+    //   wire plane (which have all the same wire coordinate)
+    // 
+    // * tests that the coordinates are as expected (wire number times pitch)
+    //
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+      
+      auto const nWires = plane.Nwires();
+      auto const wirePitch = plane.WirePitch();
+      
+      double const driftDistance = geom->TPC(plane.ID()).DriftDistance();
+      
+      decltype(auto) planeNormal = plane.GetNormalDirection();
+      
+      for (geo::WireID::WireID_t wireNo = 0; wireNo < nWires; ++wireNo) {
+        
+        geo::WireGeo const& wire = plane.Wire(wireNo);
+        
+        double const expected = wireNo * wirePitch;
+        
+        // sample 7 points on wire
+        constexpr int shifts = 3;
+        double const step = wire.HalfL() / (std::abs(shifts) + 1);
+        for (int iOfs = -shifts; iOfs <= shifts; ++iOfs) {
+          
+          double const offset = iOfs * step;
+          
+          auto const basePoint = wire.GetPositionFromCenter(offset);
+          
+          // at 4 different distances from the plane
+          constexpr int quotas = 4;
+          double const jump = driftDistance / (std::abs(quotas) + 1);
+          for (int iQuota = 0; iQuota < quotas; ++iQuota) {
+            
+            // translate the point along the normal to the plane;
+            // this should not change the result
+            auto const point = basePoint + iQuota * jump * planeNormal;
+            
+            double const distance = plane.WireCoordinate(point);
+            
+            if (std::abs(distance - expected) > 1e-4) {
+              mf::LogProblem("GeometryTestAlg") << "Point ( "
+                << point.X() << " ; " << point.Y() << " ; " << point.Z()
+                << " ) (offset: " << iOfs << "x" << step << ", at " << iQuota
+                << "x" << jump << " from plane) is reported to be " << distance
+                << " cm far from wire " << plane.ID() << " W: " << wireNo
+                << " (" << expected << " expected)";
+              ++nErrors;
+            } // if unexpected
+            
+          } // for quotas
+          
+        } // for iOfs
+        
+      } // for wires
+      
+    } // for planes
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testWireCoordFromPlane() accumulated " << nErrors
+        << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testWireCoordFromPlane()
 
   //......................................................................
   void GeometryTestAlg::testWireCoordAngle() const {

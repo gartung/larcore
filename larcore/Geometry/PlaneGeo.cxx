@@ -23,13 +23,31 @@
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
 
+
+namespace {
+  
+  // print a TVector3, for debugging purpose
+  template <typename Stream>
+  Stream& operator<< (Stream&& out, TVector3 const& v) {
+    out << "( " << v.X() << " ; " << v.Y() << " ; " << v.Z() << " )";
+    return out;
+  }
+  
+} // local namespace
+
 namespace geo{
 
 
   //......................................................................
   PlaneGeo::PlaneGeo(std::vector<const TGeoNode*>& path, int depth)
     : fView(geo::kUnknown)
+    , fOrientation(geo::kVertical)
     , fSignalType(geo::kMysteryType)
+    , fWirePitch(0.)
+    , fSinPhiZ(0.)
+    , fCosPhiZ(0.)
+    , fNormal()
+    , fWireCoordDir()
   {
     // build a matrix to take us from the local to the world coordinates
     // in one step
@@ -39,16 +57,13 @@ namespace geo{
     }
   
     // find the wires for the plane so that you can use them later
-    this->FindWire(path, depth);
+    FindWire(path, depth);
     
     // view is now set at TPC level with SetView
     
-    UpdateOrientation();
-    // perform initialization that is mapping-dependent;
-    // when the mapping changes, this will have to be repeated
-    // assumes same pitch between all wires in this plane
-    UpdateFromMapping();
-  }
+    UpdateWirePitchSlow();
+    
+  } // PlaneGeo::PlaneGeo()
 
   //......................................................................
 
@@ -80,9 +95,10 @@ namespace geo{
 			  unsigned int depth) 
   {
     // Check if the current node is a wire
-    const char* wire = "volTPCWire";
-    if(strncmp(path[depth]->GetName(), wire, strlen(wire)) == 0){
-      this->MakeWire(path, depth);
+    const char* wireLabel = "volTPCWire";
+    auto const labelLength = strlen(wireLabel);
+    if(strncmp(path[depth]->GetName(), wireLabel, labelLength) == 0){
+      MakeWire(path, depth);
       return;
     }
   
@@ -95,7 +111,7 @@ namespace geo{
     int nd = v->GetNdaughters();
     for (int i=0; i<nd; ++i) {
       path[deeper] = v->GetNode(i);
-      this->FindWire(path, deeper);
+      FindWire(path, deeper);
     }
   }
 
@@ -112,50 +128,12 @@ namespace geo{
   void PlaneGeo::SortWires(geo::GeoObjectSorter const& sorter )
   {
     sorter.SortWires(fWire);
-    UpdateFromMapping();
   }
   
   
   //......................................................................
-  TVector3 PlaneGeo::GetNormalDirection() const {
-    const unsigned int NWires = Nwires();
-    if (NWires < 2) return TVector3(); // why are we even here?
-    
-    // 1) get the direction of the middle wire
-    TVector3 WireDir = Wire(NWires / 2).Direction();
-    
-    // 2) get the direction between the middle wire and the next one
-    double MiddleWireCenter[3], NextToMiddleWireCenter[3];
-    Wire(NWires / 2).GetCenter(MiddleWireCenter);
-    Wire(NWires / 2 + 1).GetCenter(NextToMiddleWireCenter);
-    TVector3 ToNextWire(NextToMiddleWireCenter);
-    ToNextWire -= TVector3(MiddleWireCenter);
-    
-    // 3) get the direction perpendicular to the plane
-    TVector3 PlaneNorm = WireDir.Cross(ToNextWire);
-    
-    // 4) round it
-    for (int i = 0; i < 3; ++i)
-      if (std::abs(PlaneNorm[i]) < 1e-4) PlaneNorm[i] = 0.;
-    
-    // 5) return its norm
-    return PlaneNorm.Unit();
-  } // GeometryTest::GetNormalDirection()
-  
-  
   bool PlaneGeo::WireIDincreasesWithZ() const {
-    // If the first wire is shorter than the next one (they are in a corner),
-    // the ordering of z exactly matches the order of wire IDs:
-    // if the second wire has larger z than the first one, it has larger
-    // intercept with the z axis, and we want to see if it has also larger
-    // wire number.
-    // In the middle of a plane narrow in z, wires may have the same z,
-    // spoiling this shortcut.
-    double FirstWireCenter[3], SecondWireCenter[3];
-    Wire(0).GetCenter(FirstWireCenter);
-    Wire(1).GetCenter(SecondWireCenter);
-    
-    return SecondWireCenter[2] > FirstWireCenter[2];
+    return GetIncreasingWireDirection().Z() > 0.;
   } // PlaneGeo::WireIDincreasesWithZ()
   
   
@@ -169,39 +147,22 @@ namespace geo{
   
   
   //......................................................................
-  TVector3 PlaneGeo::GetIncreasingWireDirection() const {
-    const unsigned int NWires = Nwires();
-    if (NWires < 2) {
-      // this likely means construction is not complete yet
-      throw cet::exception("NoWireInPlane")
-        << "GetIncreasingWireDirection() has only " << NWires << " wires.\n";
-    } // if
+  double PlaneGeo::WireCoordinateFrom
+    (TVector3 const& point, geo::WireGeo const& refWire) const
+  {
+    // a vector connecting to the point
+    auto toPoint = point - refWire.GetCenter();
     
-    // 1) get the direction of the middle wire
-    TVector3 WireDir = Wire(NWires / 2).Direction();
+    // The distance is the projection of that vector on the plane, times the
+    // sine of the angle with the wire.
+    // All this machinery is realized by a "mixed" product.
+    // The component of the point orthogonal to the plane is suppressed
+    // (just separate point in the two components, and notice that one of the
+    // two resulting mixed products has two vectors lying on the plane normal
+    // and therefore vanishes).
+    return refWire.Direction().Cross(toPoint).Dot(GetNormalDirection());
     
-    // 2) get the direction between the middle wire and the next one
-    double MiddleWireCenter[3], NextToMiddleWireCenter[3];
-    Wire(NWires / 2).GetCenter(MiddleWireCenter);
-    Wire(NWires / 2 + 1).GetCenter(NextToMiddleWireCenter);
-    TVector3 ToNextWire(NextToMiddleWireCenter);
-    ToNextWire -= TVector3(MiddleWireCenter);
-    
-    // 3) get the direction perpendicular to the plane
-    TVector3 PlaneNorm = WireDir.Cross(ToNextWire);
-    PlaneNorm = PlaneNorm.Unit();
-    
-    // 4) finally, get the direction perpendicular to the wire,
-    //    lying on the plane, toward increasing wire numbers
-    TVector3 IncreasingWireDir = PlaneNorm.Cross(WireDir);
-    
-    // 5) round it
-    for (int i = 0; i < 3; ++i)
-      if (std::abs(IncreasingWireDir[i]) < 1e-4) IncreasingWireDir[i] = 0.;
-    
-    return IncreasingWireDir;
-  } // GeometryTest::GetIncreasingWireDirection()
-  
+  } // PlaneGeo::WireCoordinateFrom()
   
   //......................................................................
   lar::util::simple_geo::Volume<> PlaneGeo::Coverage() const {
@@ -280,6 +241,33 @@ namespace geo{
   }
 
   //......................................................................
+  void PlaneGeo::UpdateAfterSorting
+    (geo::PlaneID planeid, geo::BoxBoundedGeo const& TPCbox)
+  {
+    // the order here matters
+    
+    // reset our ID
+    fID = planeid;
+    
+    UpdatePlaneNormal(TPCbox);
+    UpdateIncreasingWireDir();
+    
+    // update wires
+    geo::WireID::WireID_t wireNo = 0;
+    for (geo::WireGeo* wire: fWire) {
+      
+      wire->UpdateAfterSorting(geo::WireID(fID, wireNo), shouldFlipWire(*wire));
+      
+      ++wireNo;
+    } // for wires
+    
+    UpdateOrientation();
+    UpdateWirePitch();
+    UpdatePhiZ();
+    
+  } // PlaneGeo::UpdateAfterSorting()
+  
+  //......................................................................
   std::string PlaneGeo::ViewName(geo::View_t view) {
     switch (view) {
       case geo::kU:       return "U";
@@ -300,11 +288,42 @@ namespace geo{
     } // switch
   } // PlaneGeo::OrientationName()
   
+  
+  //......................................................................
+  TVector3 PlaneGeo::GetNormalAxis() const {
+    const unsigned int NWires = Nwires();
+    if (NWires < 2) return TVector3(); // why are we even here?
+    
+    // 1) get the direction of the middle wire
+    TVector3 WireDir = Wire(NWires / 2).Direction();
+    
+    // 2) get the direction between the middle wire and the next one
+    double MiddleWireCenter[3], NextToMiddleWireCenter[3];
+    Wire(NWires / 2).GetCenter(MiddleWireCenter);
+    Wire(NWires / 2 + 1).GetCenter(NextToMiddleWireCenter);
+    TVector3 ToNextWire(NextToMiddleWireCenter);
+    ToNextWire -= TVector3(MiddleWireCenter);
+    
+    // 3) get the direction perpendicular to the plane
+    TVector3 PlaneNorm = WireDir.Cross(ToNextWire);
+    
+    // 4) round it
+    for (int i = 0; i < 3; ++i)
+      if (std::abs(PlaneNorm[i]) < 1e-4) PlaneNorm[i] = 0.;
+    
+    // 5) return its norm
+    return PlaneNorm.Unit();
+  } // GeometryTest::GetNormalAxis()
+  
+  
   //......................................................................
   void PlaneGeo::UpdateOrientation() {
     
-    fOrientation = kVertical;
-    return;
+    //
+    // this algorithm needs to know about the axis;
+    // the normal may be not set yet because it requires external information
+    // from the TPC; we can't use GetNormalDirection().
+    //
     
     // sanity check
     if (fWire.size() < 2) {
@@ -318,7 +337,7 @@ namespace geo{
     
     if (std::abs(std::abs(normal.X()) - 1.) < 1e-3)
       fOrientation = kVertical;
-    else if (std::abs(std::abs(normal.Z()) - 1.) < 1e-3)
+    else if (std::abs(std::abs(normal.Y()) - 1.) < 1e-3)
       fOrientation = kHorizontal;
     else {
       // at this point, the only problem is the lack of a label for this
@@ -338,28 +357,114 @@ namespace geo{
   
   //......................................................................
   void PlaneGeo::UpdatePhiZ() {
-    TVector3 wire_coord_dir = GetIncreasingWireDirection();
+    TVector3 const& wire_coord_dir = GetIncreasingWireDirection();
+  /*
+    TVector3 const& normal = GetNormalDirection();
+    TVector3 z(0., 0., 1.);
+    
+    // being defined in absolute terms as angle respect to z axis,
+    // we take the z component as cosine, and all the rest as sine
+    fCosPhiZ = wire_coord_dir.Dot(z);
+    fSinPhiZ = wire_coord_dir.Cross(z).Dot(normal);
+  */  
     fCosPhiZ = wire_coord_dir.Z();
     fSinPhiZ = wire_coord_dir.Y();
   } // PlaneGeo::UpdatePhiZ()
   
   //......................................................................
-  void PlaneGeo::UpdateFromMapping() {
-    UpdateWirePitch();
-    UpdatePhiZ();
-  } // PlaneGeo::UpdateWirePitch()
+  void PlaneGeo::UpdatePlaneNormal(geo::BoxBoundedGeo const& TPCbox) {
+    
+    //
+    // direction normal to the wire plane, points toward the center of TPC
+    //
+    
+    // start from the axis
+    fNormal = GetNormalAxis();
+    
+    // now evaluate where we are pointing
+    TVector3 TPCcenter(TPCbox.Center().data());
+    TVector3 towardCenter = TPCcenter - GetCenter();
+    
+    // if they are pointing in opposite directions, flip the normal
+    if (fNormal.Dot(towardCenter) < 0) fNormal = -fNormal;
+    roundVector(fNormal, 1e-3);
+    
+  } // PlaneGeo::UpdatePlaneNormal()
+  
   
   //......................................................................
-  void PlaneGeo::ResetIDs(geo::PlaneID planeid) {
+  void PlaneGeo::UpdateIncreasingWireDir() {
     
-    fID = planeid;
-    for (unsigned int wire = 0; wire < Nwires(); ++wire)
-      fWire[wire]->ResetID(geo::WireID(fID, wire));
+    //
+    // Direction measured by the wires, pointing toward increasing wire number;
+    // requires:
+    // - the normal to the plane to be correct
+    // - wires to be sorted
+    //
     
-  } // PlaneGeo::ResetIDs()
+    // 1) get the direction of the middle wire
+    auto refWireNo = Nwires() / 2;
+    if (refWireNo == Nwires() - 1) --refWireNo;
+    auto const& refWire = Wire(refWireNo);
+    TVector3 WireDir = refWire.Direction(); // we only rely on the axis
+    
+    
+    // 2) get the axis perpendicular to it on the wire plane
+    //    (arbitrary direction)
+    fWireCoordDir = GetNormalDirection().Cross(WireDir).Unit();
+    
+    // 3) where is the next wire?
+    TVector3 toNextWire
+      = Wire(refWireNo + 1).GetCenter() - refWire.GetCenter();
+    
+    // 4) if fWireCoordDir is pointing away from the next wire, flip it
+    if (fWireCoordDir.Dot(toNextWire) < 0) {
+      fWireCoordDir = -fWireCoordDir;
+    }
+    roundVector(fWireCoordDir, 1e-3);
+    
+  } // PlaneGeo::UpdateIncreasingWireDir()
+  
   
   //......................................................................
+  void PlaneGeo::UpdateWirePitchSlow() {
+    
+    // 
+    // Compare one wire (the first one, for convenience) with all other wires;
+    // the wire pitch is the smallest distance we find.
+    // 
+    // This algorithm assumes wire pitch is constant, but it does not assume
+    // wire ordering (which UpdateWirePitch() does).
+    // 
+    auto firstWire = fWire.cbegin(), wire = firstWire, wend = fWire.cend();
+    fWirePitch = geo::WireGeo::WirePitch(**firstWire, **(++wire));
+    
+    while (++wire != wend) {
+      auto wirePitch = geo::WireGeo::WirePitch(**firstWire, **wire);
+      if (wirePitch < 1e-4) continue; // it's 0!
+      if (wirePitch < fWirePitch) fWirePitch = wirePitch;
+    } // while
+    
+  } // PlaneGeo::UpdateWirePitchSlow()
   
+  
+  //......................................................................
+  bool PlaneGeo::shouldFlipWire(geo::WireGeo const& wire) const {
+    //
+    // The correct orientation is so that:
+    //
+    // (direction) x (wire coordinate direction) . (plane normal)
+    // 
+    // is positive; it it's negative, then we should flip the wire.
+    
+    return wire.Direction()
+      .Cross(GetIncreasingWireDirection())
+      .Dot(GetNormalDirection())
+      < +0.5; // should be in fact exactly +1
+    
+  } // PlaneGeo::shouldFlipWire()
+  
+  //......................................................................
   
 }
 ////////////////////////////////////////////////////////////////////////

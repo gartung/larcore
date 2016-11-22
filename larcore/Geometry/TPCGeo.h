@@ -208,8 +208,8 @@ namespace geo {
     /// Apply sorting to the PlaneGeo objects
     void              SortSubVolumes(geo::GeoObjectSorter const& sorter);
     
-    /// Sets the TPC ID and resets the IDs of all planes in it
-    void ResetIDs(geo::TPCID tpcid);
+    /// Performs all updates after cryostat has sorted TPCs
+    void UpdateAfterSorting(geo::TPCID tpcid);
     
     
     /**

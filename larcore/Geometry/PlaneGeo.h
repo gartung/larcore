@@ -209,12 +209,10 @@ namespace geo {
      * @return a TVector3 versor with a direction normal to the plane
      *
      * The versor is orthogonal to the plane.
-     * Its direction is defined so that the cross product of it and the wires
-     * direction points to wires of larger ID.
-     * The wire direction is as returned by geo::WireGeo::Direction(),
-     * and defined by the geometry.
+     * The direction is defined so that the semi-space pointed to contains
+     * the TPC center.
      */
-    TVector3 GetNormalDirection() const;
+    TVector3 const& GetNormalDirection() const { return fNormal; }
 
     /**
      * @brief Returns the direction of increasing wires
@@ -223,11 +221,52 @@ namespace geo {
      * The versor is orthogonal to the wires (assumed parallel),
      * lies on the plane and its direction goes toward increasing wire IDs.
      */
-    TVector3 GetIncreasingWireDirection() const;
+    TVector3 const& GetIncreasingWireDirection() const { return fWireCoordDir; }
     
     
     /// Returns the centre of the plane in world coordinates [cm]
     TVector3 GetCenter() const;
+    
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane respect to a wire
+     * @param point world coordinate of the point to get the coordinate of [cm]
+     * @param refWire reference wire
+     * @return the coordinate of the point [cm]
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting from the specified reference wire,
+     * in world units (that is, centimeters).
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     * The reference wire, instead, must belong to this plane. This assumption
+     * is not checked, and if violated the results are undefined (in the current
+     * implementation, they are just wrong).
+     * 
+     * @note This method needs to be validated.
+     */
+    double WireCoordinateFrom
+      (TVector3 const& point, geo::WireGeo const& refWire) const;
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane
+     * @param point world coordinate of the point to get the coordinate of [cm]
+     * @return the coordinate of the point [cm]
+     * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting on the first wire, in world units
+     * (that is, centimeters).
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     * 
+     * @note This method needs to be validated.
+     */
+    double WireCoordinate(TVector3 const& point) const
+      { return WireCoordinateFrom(point, FirstWire()); }
+    
     
     
     /// Returns a volume including all the wires in the plane
@@ -295,8 +334,9 @@ namespace geo {
     /// Apply sorting to WireGeo objects
     void SortWires(geo::GeoObjectSorter const& sorter);
     
-    /// Sets the plane ID and resets the IDs of all wires in it
-    void ResetIDs(geo::PlaneID planeid);
+    /// Performs all needed updates after the TPC has sorted the planes
+    void UpdateAfterSorting
+      (geo::PlaneID planeid, geo::BoxBoundedGeo const& TPCbox);
     
     /// Returns the name of the specified view
     static std::string ViewName(geo::View_t view);
@@ -304,12 +344,39 @@ namespace geo {
     /// Returns the name of the specified orientation
     static std::string OrientationName(geo::Orient_t orientation);
     
+    
+    /// Returns value, but rounds it to 0, -1 or +1 if value is closer than tol
+    template <typename T>
+    static T roundUnit(T value, T tol)
+      {
+        if (std::abs(value) < tol) return 0.;
+        if (std::abs(std::abs(value) - 1.) < tol) return (value > 0.)? 1.: -1.;
+        return value;
+      } // roundUnit()
+    
+    /// Rounds in place all components of a vector using roundUnit()
+    static void roundVector(TVector3& v, double tol)
+      {
+        v.SetX(roundUnit(v.X(), tol)); 
+        v.SetY(roundUnit(v.Y(), tol));
+        v.SetZ(roundUnit(v.Z(), tol));
+      } // roundVector()
+    
   private:
     
     void FindWire(std::vector<const TGeoNode*>& path,
 		  unsigned int depth);
     void MakeWire(std::vector<const TGeoNode*>& path, 
 		  int depth);
+    
+    /// Returns a direction normal to the plane (pointing is not defined)
+    TVector3 GetNormalAxis() const;
+    
+    /// Updates the cached normal to plane versor; needs the TPC box coordinates
+    void UpdatePlaneNormal(geo::BoxBoundedGeo const& TPCbox);
+    
+    /// Updates the cached direction to increasing wires
+    void UpdateIncreasingWireDir();
     
     /// Updates plane orientation
     void UpdateOrientation();
@@ -320,8 +387,12 @@ namespace geo {
     /// Updates the stored phi_z
     void UpdatePhiZ();
     
-    /// Performs all the updates needed after mapping changes
-    void UpdateFromMapping();
+    /// Updates the stored wire pitch with a slower, more robust algorithm
+    void UpdateWirePitchSlow();
+    
+    /// Whether the specified wire should have start and end swapped
+    bool shouldFlipWire(geo::WireGeo const& wire) const;
+
     
   private:
     TGeoHMatrix*          fGeoMatrix;   ///< Plane to world transform
@@ -332,6 +403,9 @@ namespace geo {
     double                fWirePitch;   ///< pitch of wires in this plane
     double                fSinPhiZ;     ///< sine of phiZ
     double                fCosPhiZ;     ///< cosine of phiZ
+    
+    TVector3 fNormal; ///< normal to the plane, points to TPC center
+    TVector3 fWireCoordDir; ///< direction measured by the wires
     
     geo::PlaneID          fID;          ///< ID of this plane
 

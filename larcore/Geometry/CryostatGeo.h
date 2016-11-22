@@ -214,8 +214,8 @@ namespace geo {
     void              SortSubVolumes(geo::GeoObjectSorter const& sorter);
 
     
-    /// Sets the cryostat ID and resets the IDs of all TPCs in it
-    void ResetIDs(geo::CryostatID cryoid);
+    /// Performs all needed updates after geometry has sorted the cryostats
+    void UpdateAfterSorting(geo::CryostatID cryoid);
     
   private:
 

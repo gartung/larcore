@@ -3814,14 +3814,8 @@ namespace geo {
     /// Runs the sorting of geometry with the sorter provided by channel mapping
     void SortGeometry(geo::GeoObjectSorter const& sorter);
     
-    /**
-     * @brief Rewrites the IDs of all geometry objects
-     * 
-     * Each cryostat is given an ID matching its position in the cryostat array.
-     * Cryostat objects (geo::CryostatGeo) are then asked to reset the IDs in
-     * cascade.
-     */
-    void ResetIDs();
+    /// Performs all the updates needed after sorting
+    void UpdateAfterSorting();
     
     /// Deletes the detector geometry structures
     void ClearGeometry();

@@ -71,6 +71,9 @@ namespace geo {
    *   + `FindVolumes`: checks it can find the volumes corresponding to world
    *     and all cryostats
    *   + `Cryostat`:
+   *   + `WireOrientations`: checks that the definition of wire coordinates is
+   *     matching the prescription
+   *   + `WireCoordFromPlane`: checks `PlaneGeo::WireCoordinateFrom`
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
    *   + `Projection`:
@@ -132,10 +135,12 @@ namespace geo {
     void testFindVolumes();
     void testCryostat();
     void testTPC(geo::CryostatID const& cid);
+    void testWireOrientations() const;
     void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();
     void testProject();
+    void testWireCoordFromPlane() const;
     void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
