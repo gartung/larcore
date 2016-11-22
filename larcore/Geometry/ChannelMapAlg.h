@@ -10,6 +10,7 @@
 
 // LArSoft  libraries
 #include "larcore/Geometry/DriftDescriptor.h"
+#include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
@@ -77,7 +78,7 @@ namespace geo{
     /// @name Geometry and mapping initialization and management
     
     /// Geometry initialisation
-    virtual void Initialize(GeometryData_t& geodata) = 0;
+    virtual void Initialize(GeometryData_t const& geodata) = 0;
     
     /// Deconfiguration: prepare for a following call of Initialize()
     virtual void Uninitialize() = 0;
@@ -588,6 +589,10 @@ namespace geo{
       { return std::make_unique<geo::XDriftDescriptor>(); }
     
     
+    //--------------------------------------------------------------------------
+    /// Returns the object to sort geometry with
+    virtual geo::GeoObjectSorter const& Sorter() const = 0;
+
     //--------------------------------------------------------------------------
     /// @{
     /// @name Testing (not in the interface)

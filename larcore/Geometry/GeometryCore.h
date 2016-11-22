@@ -45,6 +45,7 @@
 
 
 // LArSoft libraries
+#include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
@@ -3809,6 +3810,9 @@ namespace geo {
     /// Wire ID check for WireIDsIntersect methods
     bool WireIDIntersectionCheck
       (const geo::WireID& wid1, const geo::WireID& wid2) const;
+    
+    /// Runs the sorting of geometry with the sorter provided by channel mapping
+    void SortGeometry(geo::GeoObjectSorter const& sorter);
     
     /**
      * @brief Rewrites the IDs of all geometry objects

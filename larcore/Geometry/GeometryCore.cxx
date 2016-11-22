@@ -76,6 +76,7 @@ namespace geo {
   void GeometryCore::ApplyChannelMap
     (std::shared_ptr<geo::ChannelMapAlg> pChannelMap)
   {
+    SortGeometry(pChannelMap->Sorter());
     pChannelMap->Initialize(fGeoData);
     ResetIDs(); // after channel mapping has sorted objects, set their IDs
     fChannelMapAlg = pChannelMap;
@@ -138,6 +139,25 @@ namespace geo {
   } // GeometryCore::ClearGeometry()
 
 
+  //......................................................................
+  void GeometryCore::SortGeometry(geo::GeoObjectSorter const& sorter) {
+    
+    mf::LogInfo("GeometryCore") << "Sorting volumes...";
+    
+    sorter.SortAuxDets(AuxDets());
+    sorter.SortCryostats(Cryostats());
+    
+    geo::CryostatID::CryostatID_t c = 0;
+    for (geo::CryostatGeo& cryo: lar::util::dereferenceIteratorLoop(Cryostats()))
+    {
+      cryo.SortSubVolumes(sorter);
+      cryo.UpdateAfterSorting(geo::CryostatID(c));
+      ++c;
+    } // for
+    
+  } // GeometryCore::SortGeometry()
+  
+  
   //......................................................................
   void GeometryCore::ResetIDs() {
     
