@@ -56,7 +56,10 @@ namespace geo {
     const TGeoVolume* ActiveVolume()                            const { return fActiveVolume;           }
     const TGeoVolume* TotalVolume()                             const { return fTotalVolume;            }
     DriftDirection_t  DriftDirection()                          const { return fDriftDirection;         }
-    double            DriftDistance()                           const { return 2.*ActiveHalfWidth();    }
+    
+    /// Drift distance is defined as the distance between the last anode plane
+    /// and the opposite face of the TPC, in centimeters.
+    double            DriftDistance()                           const { return ComputeDriftDistance();  }
     
     /// @}
     
@@ -283,6 +286,9 @@ namespace geo {
     /// Recomputes the drift direction; needs planes to have been initialised
     void ResetDriftDirection();
     
+    /// Computes the distance between the cathode and the last wire plane
+    /// (last respect to the sorting order)
+    double ComputeDriftDistance() const;
     
     /// Recomputes the TPC boundary
     void InitTPCBoundaries();

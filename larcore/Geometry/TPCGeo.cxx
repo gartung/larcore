@@ -491,6 +491,20 @@ namespace geo{
   
   
   //......................................................................
+  double TPCGeo::ComputeDriftDistance() const {
+    
+    //
+    // 1. find the center of the face of the TPC opposite to the anode
+    // 2. compute the distance of it from the last wire plane
+    //
+    
+    geo::PlaneGeo const& plane = *(fPlanes.back());
+    return std::abs(plane.DistanceFromPlane(GetCathodeCenter()));
+    
+  } // TPCGeo::ComputeDriftDistance()
+  
+  
+  //......................................................................
   void TPCGeo::InitTPCBoundaries() {
     // note that this assumes no rotations of the TPC
     // (except for rotations of a flat angle around one of the three main axes);

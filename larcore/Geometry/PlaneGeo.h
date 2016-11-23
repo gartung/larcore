@@ -229,6 +229,20 @@ namespace geo {
     
     
     /**
+     * @brief Returns the distance of the specified point from the plane
+     * @param point a point in world coordinates [cm]
+     * @return the signed distance from the plane
+     * 
+     * The distance is defined positive if the point lies in the side the normal
+     * vector (GetNormalDirection()) points to.
+     * 
+     * It should match the drift distance from this plane.
+     */
+    double DistanceFromPlane(TVector3 const& point) const
+      { return GetNormalDirection().Dot(point - GetCenter()); }
+    
+    
+    /**
      * @brief Returns the coordinate of the point on the plane respect to a wire
      * @param point world coordinate of the point to get the coordinate of [cm]
      * @param refWire reference wire
@@ -423,21 +437,23 @@ void geo::PlaneGeo::printPlaneInfo(
   unsigned int verbosity /* = 1 */
 ) const {
   
-  unsigned int const nWires = Nwires();
-  std::array<double, 3> Origin = { 0., 0., 0. };
-  std::array<double, 3> PlanePos;
-  LocalToWorld(Origin.data(), PlanePos.data());
-      
+  //----------------------------------------------------------------------------
   out << "plane " << std::string(ID());
   
   if (--verbosity <= 0) return; // 0
   
+  //----------------------------------------------------------------------------
+  decltype(auto) center = GetCenter();
+  
   out
-    << " at (" << PlanePos[0] << ", " << PlanePos[1] << ", " << PlanePos[2]
+    << " at (" << center.X() << ", " << center.Y() << ", " << center.Z()
       << ") cm"
     << ", theta: " << ThetaZ() << " rad";
   
   if (--verbosity <= 0) return; // 1
+  
+  //----------------------------------------------------------------------------
+  unsigned int const nWires = Nwires();
   
   out << "\n" << indent
     << "normal to wire: " << PhiZ() << " rad"
@@ -448,6 +464,7 @@ void geo::PlaneGeo::printPlaneInfo(
   
   if (--verbosity <= 0) return; // 2
   
+  //----------------------------------------------------------------------------
   auto normal = GetNormalDirection();
   auto incrZdir = GetIncreasingWireDirection();
   out << "\n" << indent
@@ -459,6 +476,7 @@ void geo::PlaneGeo::printPlaneInfo(
     
   if (--verbosity <= 0) return; // 3
   
+  //----------------------------------------------------------------------------
   // get the area spanned by the wires
   auto plane_area = Coverage();
 
@@ -483,6 +501,7 @@ void geo::PlaneGeo::printPlaneInfo(
   }
   out << " around " << plane_area.Center();
   
+  //----------------------------------------------------------------------------
 } // geo::PlaneGeo::printPlaneInfo()
 
 
