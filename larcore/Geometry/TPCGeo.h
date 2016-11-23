@@ -36,13 +36,21 @@ namespace geo {
     /// @{
     /// @name TPC properties
     
+    /// Width is associated with x coordinate [cm]
     double            ActiveHalfWidth()                         const { return fActiveHalfWidth;        }
+    /// Height is associated with y coordinate [cm]
     double            ActiveHalfHeight()                        const { return fActiveHalfHeight;       }
+    /// Length is associated with z coordinate [cm]
     double            ActiveLength()                            const { return fActiveLength;           }
+    /// Width is associated with x coordinate [cm]
     double            HalfWidth()                               const { return fHalfWidth;              }
+    /// Width is associated with x coordinate [cm]
     double            Width()                                   const { return 2.0 * HalfWidth();       }
+    /// Height is associated with y coordinate [cm]
     double            HalfHeight()                              const { return fHalfHeight;             }
+    /// Height is associated with y coordinate [cm]
     double            Height()                                  const { return 2.0 * HalfHeight();      }
+    /// Length is associated with z coordinate [cm]
     double            Length()                                  const { return fLength;                 }
     double            ActiveMass()                              const { return fActiveVolume->Weight(); }
     const TGeoVolume* ActiveVolume()                            const { return fActiveVolume;           }
@@ -144,6 +152,13 @@ namespace geo {
     
     /// Returns the center of the TPC volume in world coordinates [cm]
     TVector3 GetCenter() const;
+    
+    /// Returns the center of the TPC active volume in world coordinates [cm]
+    TVector3 const& GetActiveVolumeCenter() const { return fActiveCenter; }
+    
+    /// Returns the center of the active volume face opposite to the wire planes
+    /// [cm]
+    TVector3 GetCathodeCenter() const;
     
     /// Returns the coordinates of the center of the specified plane [cm]
     const double*     PlaneLocation(unsigned int p)             const; 
@@ -251,6 +266,7 @@ namespace geo {
     DriftDirection_t                   fDriftDirection; ///< Direction of the electron drift in the TPC
     std::vector<double>                fPlane0Pitch;    ///< Pitch between planes
     std::vector< std::vector<double> > fPlaneLocation;  ///< xyz locations of planes in the TPC
+    TVector3                           fActiveCenter;   ///< center of the active volume, in world coordinates [cm]
 
     double                             fActiveHalfWidth;  ///< half width of active volume
     double                             fActiveHalfHeight; ///< half height of active volume

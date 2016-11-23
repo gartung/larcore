@@ -686,6 +686,7 @@ namespace geo{
     for(size_t t = 0; t < cryo.NTPC(); ++t){
       geo::TPCID const tpcid(cid, t);
       geo::TPCGeo const& tpc = cryo.TPC(tpcid);
+      decltype(auto) activeCenter = tpc.GetActiveVolumeCenter();
       
       mf::LogVerbatim("GeometryTest")
         << "\n\t\tTPC " << tpcid
@@ -700,6 +701,8 @@ namespace geo{
           << tpc.Width() << " x " << tpc.Height() << " x " << tpc.Length()
         << "\n\t\tTPC Active Dimensions: " 
           << 2.*tpc.ActiveHalfWidth() << " x " << 2.*tpc.ActiveHalfHeight() << " x " << tpc.ActiveLength()
+          << " around ( " << activeCenter.X() << " ; " << activeCenter.Y()
+          << " ; "<< activeCenter.Z() << " ) cm"
         << "\n\t\tTPC mass: " << tpc.ActiveMass()
         << "\n\t\tTPC drift distance: " << tpc.DriftDistance();
       

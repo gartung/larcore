@@ -43,27 +43,29 @@ namespace geo{
     // all planes are going to be contained in the volume named volTPC
     // now get the total volume of the TPC
     TGeoVolume *vc = path[depth]->GetVolume();
-    if(vc){
-      fTotalVolume = vc;
-      if(!vc){ 
-	throw cet::exception("Geometry") << "cannot find detector outline volume - bail ungracefully\n";
-      }
+    if(!vc){ 
+      throw cet::exception("Geometry") << "cannot find detector outline volume - bail ungracefully\n";
+    }
+    
+    fTotalVolume = vc;
+    
+    // loop over the daughters of this node and look for the active volume
+    int nd = vc->GetNdaughters();
+    TGeoNode const* pActiveVolNode = nullptr;
+    for(int i = 0; i < nd; ++i){
+      if(strncmp(vc->GetNode(i)->GetName(), "volTPCActive", 12) != 0) continue;
       
-      // loop over the daughters of this node and look for the active volume
-      int nd = vc->GetNdaughters();
-      for(int i = 0; i < nd; ++i){
-	if(strncmp(vc->GetNode(i)->GetName(), "volTPCActive", 12) == 0){
-	  TGeoVolume *vca = vc->GetNode(i)->GetVolume();
-	  if(vca) fActiveVolume = vca;
-	}// end if the active part of the volume
-      }// end loop over daughters of the volume
+      pActiveVolNode = vc->GetNode(i);
+      TGeoVolume *vca = pActiveVolNode->GetVolume();
+      if(vca) fActiveVolume = vca;
+      break;
       
-      if(!fActiveVolume) fActiveVolume = fTotalVolume;
-
-    }// end if found total volume
-
+    }// end loop over daughters of the volume
+    
+    if(!fActiveVolume) fActiveVolume = fTotalVolume;
+    
     LOG_DEBUG("Geometry") << "detector total  volume is " << fTotalVolume->GetName()
-			  << "\ndetector active volume is " << fActiveVolume->GetName();
+                          << "\ndetector active volume is " << fActiveVolume->GetName();
 
     // build a matrix to take us from the local to the world coordinates
     // in one step
@@ -71,7 +73,18 @@ namespace geo{
     for(int i = 1; i <= depth; ++i){
       fGeoMatrix->Multiply(path[i]->GetMatrix());
     }
-  
+    
+    // compute the active volume transformation too
+    TGeoHMatrix ActiveHMatrix(*fGeoMatrix);
+    if (pActiveVolNode) ActiveHMatrix.Multiply(pActiveVolNode->GetMatrix());
+    // we don't keep the active volume information... just store its center:
+    std::array<double, 3> localActiveCenter, worldActiveCenter;
+    localActiveCenter.fill(0.0);
+    ActiveHMatrix.LocalToMaster
+      (localActiveCenter.data(), worldActiveCenter.data());
+    fActiveCenter = TVector3(worldActiveCenter.data());
+    
+    
     // find the wires for the plane so that you can use them later
     this->FindPlane(path, depth);
 
@@ -321,6 +334,49 @@ namespace geo{
     return LocalToWorld({});
     
   } // TPCGeo::GetCenter()
+  
+  
+  //......................................................................
+  TVector3 TPCGeo::GetCathodeCenter() const {
+    
+    //
+    // 1. find the center of the face of the TPC opposite to the anode
+    // 2. compute the distance of it from the last wire plane
+    //
+    
+    //
+    // find the cathode center
+    //
+    TVector3 cathodeCenter = GetActiveVolumeCenter();
+    switch (DetectDriftDirection()) {
+      case -1:
+        cathodeCenter.SetX(cathodeCenter.X() + ActiveHalfWidth());
+        break;
+      case +1:
+        cathodeCenter.SetX(cathodeCenter.X() - ActiveHalfWidth());
+        break;
+      case -2:
+        cathodeCenter.SetY(cathodeCenter.Y() + ActiveHalfHeight());
+        break;
+      case +2:
+        cathodeCenter.SetY(cathodeCenter.Y() - ActiveHalfHeight());
+        break;
+      case -3:
+        cathodeCenter.SetZ(cathodeCenter.Z() + ActiveLength() / 2.0);
+        break;
+      case +3:
+        cathodeCenter.SetZ(cathodeCenter.Z() - ActiveLength() / 2.0);
+        break;
+      case 0:
+      default:
+        // in this case, a better algorithm is probably needed
+        throw cet::exception("TPCGeo")
+          << "CathodeCenter(): Can't determine the cathode plane (code="
+          << DetectDriftDirection() << ")\n";
+    } // switch
+    return cathodeCenter;
+    
+  } // TPCGeo::GetCathodeCenter()
   
   
   //......................................................................
