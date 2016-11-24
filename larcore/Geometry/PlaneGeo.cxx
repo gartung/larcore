@@ -4,9 +4,17 @@
 /// \version $Id: PlaneGeo.cxx,v 1.12 2010/03/05 19:47:51 bpage Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
-#include <iostream>
-#include <cmath>
 
+
+
+// LArSoft includes
+#include "larcore/Geometry/Exceptions.h" // geo::InvalidWireError
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
+
+// Framework includes
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "cetlib/exception.h"
 
 // ROOT includes
 #include "TMath.h"
@@ -15,25 +23,16 @@
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
 
-// Framework includes
-#include "messagefacility/MessageLogger/MessageLogger.h"
-#include "cetlib/exception.h"
-
-// LArSoft includes
-#include "larcore/Geometry/PlaneGeo.h"
-#include "larcore/Geometry/WireGeo.h"
+// C/C++ standard library
+#include <array>
 
 
-namespace {
-  
-  // print a TVector3, for debugging purpose
-  template <typename Stream>
-  Stream& operator<< (Stream&& out, TVector3 const& v) {
-    out << "( " << v.X() << " ; " << v.Y() << " ; " << v.Z() << " )";
-    return out;
-  }
-  
-} // local namespace
+// print a TVector3, for debugging purpose
+std::ostream& operator<< (std::ostream& out, TVector3 const& v) {
+  out << "( " << v.X() << " ; " << v.Y() << " ; " << v.Z() << " )";
+  return out;
+}
+
 
 namespace geo{
 
@@ -147,7 +146,7 @@ namespace geo{
   
   
   //......................................................................
-  double PlaneGeo::WireCoordinateFrom
+  double PlaneGeo::PlaneCoordinateFrom
     (TVector3 const& point, geo::WireGeo const& refWire) const
   {
     // a vector connecting to the point
@@ -162,7 +161,39 @@ namespace geo{
     // and therefore vanishes).
     return refWire.Direction().Cross(toPoint).Dot(GetNormalDirection());
     
-  } // PlaneGeo::WireCoordinateFrom()
+  } // PlaneGeo::PlaneCoordinateFrom()
+  
+  //......................................................................
+  geo::WireID PlaneGeo::NearestWireID(TVector3 const& pos) const {
+    
+    //
+    // 1) compute the wire coordinate of the point
+    // 2) get the closest wire number
+    // 3) check if the wire does exist
+    // 4) build and return the wire ID
+    //
+    
+    // this line merges parts (1) and (2); add 0.5 to have the correct rounding:
+    int nearestWireNo = int(0.5 + WireCoordinate(pos));
+    
+    // if we are outside of the wireplane range, throw an exception
+    if ((nearestWireNo < 0) || ((unsigned int) nearestWireNo >= Nwires())) {
+      
+      auto wireNo = nearestWireNo; // save for the output
+      
+      if (nearestWireNo < 0 ) wireNo = 0;
+      else                    wireNo = Nwires() - 1;
+      
+      throw InvalidWireError("Geometry", ID(), nearestWireNo, wireNo)
+        << "Can't find nearest wire for position " << pos
+        << " in plane " << std::string(ID()) << " approx wire number # "
+        << wireNo << " (capped from " << nearestWireNo << ")\n";
+    } // if invalid
+
+    return { ID(), (geo::WireID::WireID_t) nearestWireNo };
+    
+  } // PlaneGeo::NearestWireID()
+  
   
   //......................................................................
   lar::util::simple_geo::Volume<> PlaneGeo::Coverage() const {

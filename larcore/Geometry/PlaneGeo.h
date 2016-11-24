@@ -18,7 +18,6 @@
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
 #include <vector>
-#include <array>
 #include <string>
 
 class TGeoNode;
@@ -191,7 +190,8 @@ namespace geo {
     /// @{
     /// @name Plane geometry properties
     
-    double WirePitch()                                        const { return fWirePitch; }
+    /// Return the wire pitch (in centimeters). It is assumed constant.
+    double WirePitch() const { return fWirePitch; }
     
     /**
      * @brief Returns whether the higher z wires have higher wire ID
@@ -260,27 +260,68 @@ namespace geo {
      * 
      * @note This method needs to be validated.
      */
-    double WireCoordinateFrom
+    double PlaneCoordinateFrom
       (TVector3 const& point, geo::WireGeo const& refWire) const;
     
     /**
      * @brief Returns the coordinate of the point on the plane
      * @param point world coordinate of the point to get the coordinate of [cm]
      * @return the coordinate of the point [cm]
-     * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
+     * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
      * 
      * The method returns the coordinate of the point in the direction measured
      * by the wires on this plane starting on the first wire, in world units
-     * (that is, centimeters).
+     * (that is, centimeters). A point on the first wire will have coordinate
+     * 0.0, one on the next wire will have coordinate equal to a single wire
+     * pitch, etc.
      *  
      * The point does not need to be on the plane, and the projection of the
      * point to the plane is considered.
+     */
+    double PlaneCoordinate(TVector3 const& point) const
+      { return PlaneCoordinateFrom(point, FirstWire()); }
+    
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane, in wire units
+     * @param point wire coordinate of the point to get the coordinate of
+     * @return the coordinate of the point, in wire pitch units
+     * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
      * 
-     * @note This method needs to be validated.
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting on the first wire, in wire units
+     * (that is, wire pitches). A point on the first wire will have coordinate
+     * 0.0, one on the next wire will have coordinate 1.0, etc.
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
      */
     double WireCoordinate(TVector3 const& point) const
-      { return WireCoordinateFrom(point, FirstWire()); }
+      { return PlaneCoordinate(point) / WirePitch(); }
     
+    
+    /**
+     * @brief Returns the ID of wire closest to the specificed position
+     * @param pos world coordinates of the point [cm]
+     * @return the ID of the wire closest to the projection of pos on the plane
+     * @throw InvalidWireError (category: `"Geometry"`) if out of range
+     *
+     * The position is projected on the wire plane, and the ID of the nearest
+     * wire to the projected point is returned.
+     * 
+     * If the wire does not exist, an exception is thrown that contains both the
+     * wire that would be the closest one (`badWireID()`), and also the wire
+     * that is actually the closest one (`betterWireID()`). When this happens,
+     * the specified position was outside the wire plane.
+     * 
+     * Note that the caller should check for containment: this function may or
+     * may not report the position being outside the plane, depending on where
+     * it is. In the current implementation, the wires are considered infinitely
+     * long, and if the position projection is closer than half the wire pitch
+     * from any of these extrapolated wires, the method will not report error.
+     * 
+     */
+    geo::WireID NearestWireID(TVector3 const& pos) const;
     
     
     /// Returns a volume including all the wires in the plane

@@ -9,6 +9,7 @@
 #define GEO_CHANNELMAPALG_H
 
 // LArSoft  libraries
+#include "larcore/Geometry/Exceptions.h" // geo::InvalidWireIDError
 #include "larcore/Geometry/DriftDescriptor.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
@@ -35,21 +36,6 @@ namespace geo{
   class AuxDetGeo;
   
   
-  /// Exception thrown on invalid wire number (e.g. NearestWireID())
-  class InvalidWireIDError: public cet::exception {
-      public:
-    InvalidWireIDError(std::string cat): cet::exception(cat) {}
-    
-    InvalidWireIDError(std::string cat, int bad_wire, int better_wire = -1):
-      cet::exception(cat),
-      wire_number(bad_wire), better_wire_number(better_wire)
-      {}
-    
-    int wire_number = -1; ///< the invalid wire number
-    int better_wire_number = -1; ///< a suggestion for a good wire number
-  }; // class InvalidWireIDError
-  
- 
   /**
    * @brief Interface for a class providing readout channel mapping to geometry
    * 
