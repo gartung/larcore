@@ -77,6 +77,10 @@ namespace lar {
       constexpr bool equal(Value_t a, Value_t b) const
         { return zero(a - b); }
       
+      /// Returns whether a and b are farther than the threshold
+      constexpr bool nonEqual(Value_t a, Value_t b) const
+        { return !equal(a, b); }
+      
       /// Returns whether value is larger than zero beyond tolerance
       constexpr bool strictlyNegative(Value_t value) const
         { return value < -threshold; }

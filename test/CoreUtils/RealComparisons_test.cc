@@ -45,7 +45,9 @@ BOOST_AUTO_TEST_CASE(test_RealComparisons) {
   
   // check equal()
   BOOST_CHECK(!check.equal(sqrt2, 1.4142));
+  BOOST_CHECK( check.nonEqual(sqrt2, 1.4142));
   BOOST_CHECK( check.equal(sqrt2, 1.414213));
+  BOOST_CHECK(!check.nonEqual(sqrt2, 1.414213));
   
   // check strictlyNegative()
   BOOST_CHECK(!check.strictlyNegative(+1e-5 + 1e-7));
