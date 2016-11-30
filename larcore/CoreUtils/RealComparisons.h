@@ -7,6 +7,11 @@
  * This is a header-only library.
  * 
  */
+
+#ifndef LARCORE_COREUTILS_REALCOMPARISONS_H
+#define LARCORE_COREUTILS_REALCOMPARISONS_H
+
+
 namespace lar {
   namespace util {
     
@@ -109,3 +114,6 @@ namespace lar {
     
   } // namespace util
 } // namespace lar
+
+
+#endif // LARCORE_COREUTILS_REALCOMPARISONS_H
