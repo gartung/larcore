@@ -50,32 +50,60 @@ BOOST_AUTO_TEST_CASE(test_RealComparisons) {
   BOOST_CHECK(!check.nonEqual(sqrt2, 1.414213));
   
   // check strictlyNegative()
-  BOOST_CHECK(!check.strictlyNegative(+1e-5 + 1e-7));
-  BOOST_CHECK(!check.strictlyNegative(+1e-5 - 1e-7));
-  BOOST_CHECK(!check.strictlyNegative(0.0));
-  BOOST_CHECK(!check.strictlyNegative(-1e-5 + 1e-7));
-  BOOST_CHECK( check.strictlyNegative(-1e-5 - 1e-7));
+  BOOST_CHECK(!check.strictlyNegative(+1e-5 + 1e-7)); // outside tolerance
+  BOOST_CHECK(!check.strictlyNegative(+1e-5 - 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlyNegative(0.0));          // zero
+  BOOST_CHECK(!check.strictlyNegative(-1e-5 + 1e-7)); // within tolerance
+  BOOST_CHECK( check.strictlyNegative(-1e-5 - 1e-7)); // outside tolerance
   
   // check strictlyPositive()
-  BOOST_CHECK( check.strictlyPositive(+1e-5 + 1e-7));
-  BOOST_CHECK(!check.strictlyPositive(+1e-5 - 1e-7));
-  BOOST_CHECK(!check.strictlyPositive(0.0));
-  BOOST_CHECK(!check.strictlyPositive(-1e-5 + 1e-7));
-  BOOST_CHECK(!check.strictlyPositive(-1e-5 - 1e-7));
+  BOOST_CHECK( check.strictlyPositive(+1e-5 + 1e-7)); // outside tolerance
+  BOOST_CHECK(!check.strictlyPositive(+1e-5 - 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlyPositive(0.0));          // zero
+  BOOST_CHECK(!check.strictlyPositive(-1e-5 + 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlyPositive(-1e-5 - 1e-7)); // outside tolerance
   
   // check nonNegative()
-  BOOST_CHECK( check.nonNegative(+1e-5 + 1e-7));
-  BOOST_CHECK( check.nonNegative(+1e-5 - 1e-7));
-  BOOST_CHECK( check.nonNegative(0.0));
-  BOOST_CHECK( check.nonNegative(-1e-5 + 1e-7));
-  BOOST_CHECK(!check.nonNegative(-1e-5 - 1e-7));
+  BOOST_CHECK( check.nonNegative(+1e-5 + 1e-7)); // outside tolerance
+  BOOST_CHECK( check.nonNegative(+1e-5 - 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonNegative(0.0));          // zero
+  BOOST_CHECK( check.nonNegative(-1e-5 + 1e-7)); // within tolerance
+  BOOST_CHECK(!check.nonNegative(-1e-5 - 1e-7)); // outside tolerance
   
   // check nonPositive()
-  BOOST_CHECK(!check.nonPositive(+1e-5 + 1e-7));
-  BOOST_CHECK( check.nonPositive(+1e-5 - 1e-7));
-  BOOST_CHECK( check.nonPositive(0.0));
-  BOOST_CHECK( check.nonPositive(-1e-5 + 1e-7));
-  BOOST_CHECK( check.nonPositive(-1e-5 - 1e-7));
+  BOOST_CHECK(!check.nonPositive(+1e-5 + 1e-7)); // outside tolerance
+  BOOST_CHECK( check.nonPositive(+1e-5 - 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonPositive(0.0));          // zero
+  BOOST_CHECK( check.nonPositive(-1e-5 + 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonPositive(-1e-5 - 1e-7)); // outside tolerance
+  
+  // check strictlySmaller()
+  BOOST_CHECK(!check.strictlySmaller(1.0, 1.0 - 1e-4)); // outside tolerance
+  BOOST_CHECK(!check.strictlySmaller(1.0, 1.0 - 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlySmaller(1.0, 1.0));        // equal
+  BOOST_CHECK(!check.strictlySmaller(1.0, 1.0 + 1e-7)); // within tolerance
+  BOOST_CHECK( check.strictlySmaller(1.0, 1.0 + 1e-4)); // outside tolerance
+  
+  // check nonSmaller()
+  BOOST_CHECK( check.nonSmaller(1.0, 1.0 - 1e-4)); // outside tolerance
+  BOOST_CHECK( check.nonSmaller(1.0, 1.0 - 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonSmaller(1.0, 1.0));        // equal
+  BOOST_CHECK( check.nonSmaller(1.0, 1.0 + 1e-7)); // within tolerance
+  BOOST_CHECK(!check.nonSmaller(1.0, 1.0 + 1e-4)); // outside tolerance
+  
+  // check strictlyGreater()
+  BOOST_CHECK( check.strictlyGreater(1.0, 1.0 - 1e-4)); // outside tolerance
+  BOOST_CHECK(!check.strictlyGreater(1.0, 1.0 - 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlyGreater(1.0, 1.0));        // equal
+  BOOST_CHECK(!check.strictlyGreater(1.0, 1.0 + 1e-7)); // within tolerance
+  BOOST_CHECK(!check.strictlyGreater(1.0, 1.0 + 1e-4)); // outside tolerance
+  
+  // check nonGreater()
+  BOOST_CHECK(!check.nonGreater(1.0, 1.0 - 1e-4)); // outside tolerance
+  BOOST_CHECK( check.nonGreater(1.0, 1.0 - 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonGreater(1.0, 1.0));        // equal
+  BOOST_CHECK( check.nonGreater(1.0, 1.0 + 1e-7)); // within tolerance
+  BOOST_CHECK( check.nonGreater(1.0, 1.0 + 1e-4)); // outside tolerance
   
   // check within()
   BOOST_CHECK(!check.within(sqrt2, 0., 1.41420));

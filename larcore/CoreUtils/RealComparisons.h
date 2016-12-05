@@ -97,6 +97,22 @@ namespace lar {
       constexpr bool nonPositive(Value_t value) const
         { return value <= threshold; }
       
+      /// Returns whether a is strictly smaller than b
+      constexpr bool strictlySmaller(Value_t a, Value_t b) const
+        { return strictlyNegative(a - b); }
+      
+      /// Returns whether a is greater than (or equal to) b
+      constexpr bool nonSmaller(Value_t a, Value_t b) const
+        { return nonNegative(a - b); }
+      
+      /// Returns whether a is strictly greater than b
+      constexpr bool strictlyGreater(Value_t a, Value_t b) const
+        { return strictlyPositive(a - b); }
+      
+      /// Returns whether a is smaller than (or equal to) b
+      constexpr bool nonGreater(Value_t a, Value_t b) const
+        { return nonPositive(a - b); }
+      
       /// Returns whether value is between the bounds (included)
       constexpr bool within(Value_t value, Value_t lower, Value_t upper) const
         { return nonNegative(value - lower) && nonPositive(value - upper); }
@@ -114,6 +130,58 @@ namespace lar {
       Value_t threshold; /// Threshold to compare the values to
       
     }; // struct RealComparisons<>
+    
+    
+    //--------------------------------------------------------------------------
+    /// Class comparing 2D vectors
+    template <typename RealType>
+    struct Vector3DComparison {
+      
+      using Comp_t = RealComparisons<RealType>;
+      
+      
+      Comp_t const& comp; ///< actual comparison object
+      
+      
+      /// Use the specified comparison
+      Vector3DComparison(Comp_t const& comp): comp(comp) {}
+      
+      
+      /// Returns whether the specified vector is null (within tolerance)
+      template <typename Vect>
+      constexpr bool zero(Vect const& v) const
+        { return comp.zero(v.X()) && comp.zero(v.Y()) && comp.zero(v.Z()); }
+      
+      /// Returns whether the specified vector is not null (within tolerance)
+      template <typename Vect>
+      constexpr bool nonZero(Vect const& v) const { return !zero(v); }
+      
+      /// Returns whether the specified vectors match (within tolerance)
+      template <typename VectA, typename VectB>
+      constexpr bool equal(VectA const& a, VectB const& b) const
+        {
+          return comp.equal(a.X(), b.X()) && comp.equal(a.Y(), b.Y())
+            && comp.equal(a.Z(), b.Z());
+        }
+      
+      /// Returns whether the specified vectors do not match (within tolerance)
+      template <typename VectA, typename VectB>
+      constexpr bool nonEqual(VectA const& a, VectB const& b) const
+        { return !equal(a, b); }
+      
+      
+    }; // struct Vector3DComparison
+    
+    
+    //--------------------------------------------------------------------------
+    /// Utility class to create Vector3DComparison from a RealComparisons object
+    template <typename RealType>
+    auto makeVector3DComparison
+      (lar::util::RealComparisons<RealType> const& comp)
+      { return Vector3DComparison<RealType>(comp); }
+    
+    
+    //--------------------------------------------------------------------------
     
     
   } // namespace util
