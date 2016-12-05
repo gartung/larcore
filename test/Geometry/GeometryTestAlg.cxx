@@ -19,6 +19,7 @@
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/geo.h"
+#include "larcore/CoreUtils/RealComparisons.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
@@ -49,6 +50,36 @@
 #include <initializer_list> 
 
 
+//------------------------------------------------------------------------------
+// custom stream insertion operators; they need to be defined in the "right"
+// namespace
+std::ostream& operator<< (std::ostream& out, TVector3 const& v) {
+  out << "( " << v.X() << " ; " << v.Y() << " ; " << v.Z() << " )";
+  return out;
+} // operator<< (TVector3)
+
+std::ostream& operator<< (std::ostream& out, TVector2 const& v) {
+  out << "( " << v.X() << " ; " << v.Y() << " )";
+  return out;
+} // operator<< (TVector2)
+
+
+namespace std {
+  
+  template <typename T, size_t N>
+  std::ostream& operator<<
+    (std::ostream& out, std::array<T, N> const& v)
+  {
+    out << "{";
+    for (auto c: v) out << " " << c;
+    out << " }";
+    return out;
+  } // operator<< (geo::GeometryCore::Point3D_t)
+  
+} // namespace std
+
+
+//------------------------------------------------------------------------------
 namespace {
   template <typename T>
   inline T sqr(T v) { return v*v; }
@@ -61,6 +92,19 @@ namespace {
     return false;
   } // hasCategory()
   
+  
+  /// Returns a convenience string for the specified direction
+  std::string directionName(TVector3 const& v) {
+    if (v == geo::TPCGeo::DirX) return "x";
+    if (v == geo::TPCGeo::DirY) return "y";
+    if (v == geo::TPCGeo::DirZ) return "z";
+    if (v == -geo::TPCGeo::DirX) return "-x";
+    if (v == -geo::TPCGeo::DirY) return "-y";
+    if (v == -geo::TPCGeo::DirZ) return "-z";
+    std::ostringstream sstr;
+    sstr << v;
+    return sstr.str();
+  } // directionName()
   
 } // local namespace
 
@@ -165,6 +209,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("PlaneDirections")) {
+        LOG_INFO("GeometryTest") << "test plane directions...";
+        testPlaneDirections();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("WireOrientations")) {
         LOG_INFO("GeometryTest") << "test wire orientations...";
         testWireOrientations();
@@ -189,9 +239,27 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("PlaneProjections")) {
+        LOG_INFO("GeometryTest") << "test PlaneGeo::PointProjection...";
+        testPlaneProjection();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("WireCoordFromPlane")) {
         LOG_INFO("GeometryTest") << "test PlaneGeo::WireCoordinate...";
         testWireCoordFromPlane();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("ParallelWires")) {
+        LOG_INFO("GeometryTest") << "test wire parallelism...";
+        testParallelWires();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PlanePointDecomposition")) {
+        LOG_INFO("GeometryTest") << "test plane point decomposition...";
+        testPlanePointDecomposition();
         LOG_INFO("GeometryTest") << "complete.";
       }
 
@@ -271,7 +339,7 @@ namespace geo{
     if (!fRunTests.CheckQueryRegistry(out)) {
       throw cet::exception("GeometryTest")
         << "(postumous) configuration error detected!\n"
-        << out.rdbuf();
+        << out.rdbuf(); // FIXME it seems this does not produce the desired output
     }
     
     mf::LogInfo log("GeometryTest");
@@ -697,14 +765,17 @@ namespace geo{
           << " ) =>  ( "
           << tpc.MaxX() << " ; " << tpc.MaxY() << " ; "<< tpc.MaxZ()
           << " ) [cm]"
-        << "\n\t\tTPC Dimensions: "
-          << tpc.Width() << " x " << tpc.Height() << " x " << tpc.Length()
+        << "\n\t\tTPC Dimensions (W x H x L, cm): "
+          << tpc.Width() << " (" << directionName(tpc.WidthDir()) << ")"
+          << " x " << tpc.Height() << " (" << directionName(tpc.HeightDir()) << ")"
+          << " x " << tpc.Length() << " (" << directionName(tpc.LengthDir()) << ")"
         << "\n\t\tTPC Active Dimensions: " 
           << 2.*tpc.ActiveHalfWidth() << " x " << 2.*tpc.ActiveHalfHeight() << " x " << tpc.ActiveLength()
           << " around ( " << activeCenter.X() << " ; " << activeCenter.Y()
           << " ; "<< activeCenter.Z() << " ) cm"
         << "\n\t\tTPC mass: " << tpc.ActiveMass()
-        << "\n\t\tTPC drift distance: " << tpc.DriftDistance();
+        << "\n\t\tTPC drift distance: " << tpc.DriftDistance()
+          << ", direction: " << tpc.DriftDir();
       
       for(size_t p = 0; p < tpc.Nplanes(); ++p) {
         geo::PlaneGeo const& plane = tpc.Plane(p);
@@ -719,10 +790,16 @@ namespace geo{
         
       } // for plane
       geo::DriftDirection_t dir = tpc.DriftDirection();
-      if     (dir == geo::kNegX) 
-        mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards negative x values";
-      else if(dir == geo::kPosX) 
-        mf::LogVerbatim("GeometryTest") << "\t\tdrift direction is towards positive x values";
+      if     (dir == geo::kNegX) {
+        mf::LogVerbatim("GeometryTest")
+          << "\t\tdrift direction is towards negative values: "
+          << tpc.DriftDir();
+      }
+      else if(dir == geo::kPosX) {
+        mf::LogVerbatim("GeometryTest")
+          << "\t\tdrift direction is towards positive values: "
+          << tpc.DriftDir();
+      }
       else{
         throw cet::exception("UnknownDriftDirection") << "\t\tdrift direction is unknown\n";
       }
@@ -746,6 +823,78 @@ namespace geo{
   }
 
 
+  //......................................................................
+  void GeometryTestAlg::testPlaneDirections() const {
+    /*
+     * The test verifies that all the planes in the geometry respect the
+     * orientation requirements:
+     * 
+     *   { (wire direction) , (wire coordinate increase), (plane normal) }
+     * 
+     *   { (width direction) , (length direction), (plane normal) }
+     * 
+     * both be a positively defined base.
+     */
+    
+    lar::util::RealComparisons<double> coordIs(1e-5);
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+      
+      //
+      // check the ( wire ; wire coordinate ; normal) base
+      //
+      
+      // this funny way declares a reference or not, depending on return type
+      decltype(auto) planeNormal = plane.GetNormalDirection();
+      decltype(auto) wireCoordDir = plane.GetIncreasingWireDirection();
+      decltype(auto) wireDir = plane.GetWireDirection();
+      
+      double const wireFrame = wireDir.Cross(wireCoordDir).Dot(planeNormal);
+        
+      if (coordIs.nonEqual(wireFrame, 1.0)) {
+        ++nErrors;
+        
+        mf::LogProblem("GeometryTestAlg")
+          << "Plane " << plane.ID() 
+          << " has wire direction " << wireDir
+          << " wire coordinate direction " << wireCoordDir
+          << " and normal " << planeNormal
+          << " , yielding to a non-positive plane-coordinate definition"
+          << " (l x w . n = " << wireFrame << ")";
+      } // if error
+      
+      //
+      // check the ( width ; depth ; normal) base
+      //
+      
+      decltype(auto) widthDir = plane.WidthDir();
+      decltype(auto) depthDir = plane.DepthDir();
+      double const geoFrame = widthDir.Cross(depthDir).Dot(planeNormal);
+        
+      if (coordIs.nonEqual(geoFrame, 1.0)) {
+        ++nErrors;
+        
+        mf::LogProblem("GeometryTestAlg")
+          << "Plane " << plane.ID() 
+          << " has width direction " << widthDir
+          << " depth direction " << depthDir
+          << " and normal " << planeNormal
+          << " , yielding to a non-positive plane-coordinate definition"
+          << " (w x d . n = " << geoFrame << ")";
+      } // if error
+      
+    } // for plane
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testWireOrientations() accumulated " << nErrors
+        << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testWireOrientations()
+  
+  
   //......................................................................
   void GeometryTestAlg::testWireOrientations() const {
     /*
@@ -780,9 +929,8 @@ namespace geo{
           decltype(auto) wireDir = wire.Direction();
           mf::LogProblem("GeometryTestAlg")
             << "Wire " << plane.ID() << " W: " << wireNo
-            << " has direction ( " << wireDir.X() << " ; " << wireDir.Y()
-            << " ; " << wireDir.Z()
-            << " ), yielding to a non-positive plane-coordinate definition"
+            << " has direction ( " << wireDir
+            << " , yielding to a non-positive plane-coordinate definition"
             << " (l x w . n = " << positive << ")";
         } // if error
         
@@ -845,11 +993,10 @@ namespace geo{
             // this should not change the result
             auto const point = basePoint + iQuota * jump * planeNormal;
             
-            double const distance = plane.WireCoordinate(point);
+            double const distance = plane.PlaneCoordinate(point);
             
             if (std::abs(distance - expected) > 1e-4) {
-              mf::LogProblem("GeometryTestAlg") << "Point ( "
-                << point.X() << " ; " << point.Y() << " ; " << point.Z()
+              mf::LogProblem("GeometryTestAlg") << "Point " << point
                 << " ) (offset: " << iOfs << "x" << step << ", at " << iQuota
                 << "x" << jump << " from plane) is reported to be " << distance
                 << " cm far from wire " << plane.ID() << " W: " << wireNo
@@ -873,6 +1020,229 @@ namespace geo{
     
   } // GeometryTestAlg::testWireCoordFromPlane()
 
+  
+  //......................................................................
+  void GeometryTestAlg::testParallelWires() const {
+    
+    //
+    // checks that all the wires in the same plane are parallel
+    //
+    auto const vectorIs = lar::util::makeVector3DComparison(geom->coordIs);
+    
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+      
+      decltype(auto) genDir = plane.GetWireDirection();
+      
+      geo::WireID::WireID_t wireNo = 0;
+      for (geo::WireGeo const& wire: plane.IterateWires()) {
+        
+        geo::WireID const wireID(plane.ID(), wireNo++);
+        
+        decltype(auto) wireDir = wire.Direction();
+        
+        if (vectorIs.nonEqual(wireDir, genDir)) {
+          throw cet::exception("ParallelWires")
+            << "Wire " << std::string(wireID) << " has direction " << wireDir
+            << ", not parallel to wire direction " << genDir
+            << " according to the plane " << std::string(plane.ID()) << "\n";
+        } 
+        
+      } // for wires in plane
+      
+    } // for planes
+    
+  } // GeometryTestAlg::testParallelWires()
+  
+  
+  //......................................................................
+  void GeometryTestAlg::testPlanePointDecomposition() const {
+    
+    //
+    // For each plane:
+    // 
+    // 1) create a plane point with arbitrary distance from the plane,
+    //    wire coordinate multiple (N) of wire pitch, and wire direction
+    //    coordinate 0 or half a wire length in either directions
+    // 
+    // 2) compose into a 3D vector, and verify that the nearest wire is the one
+    //    expected (N)
+    // 
+    // 3) decompose back the 3D vector, and verify that the result matches the
+    //    starting decomposition
+    // 
+    // 4) also verify singly PointProjection() and DistanceFromPlane()
+    // 
+    // 5) verify DriftPoint()
+    // 
+    //
+    
+    lar::util::RealComparisons<double> coordIs(1e-5);
+    auto vectorIs = lar::util::makeVector3DComparison(coordIs);
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+      
+      decltype(auto) const planeNorm = plane.GetNormalDirection();
+      decltype(auto) const wirePitch = plane.WirePitch();
+      decltype(auto) const refPoint = plane.ProjectionReferencePoint();
+      
+      geo::WireID::WireID_t wireNo = 0;
+      for (geo::WireGeo const& wire: plane.IterateWires()) {
+        
+        geo::WireID const wireID(plane.ID(), wireNo++);
+        
+        constexpr double distance = 5.0; // 5 cm from the plane
+        
+        auto const wireDirStep = wire.HalfL() / 2.0; // quarter of the length
+        
+        for (int iWDStep = -1; iWDStep <= 1; ++iWDStep) {
+          
+          //
+          // prepare expectation
+          //
+          auto const wireDirOffset = iWDStep * wireDirStep;
+          
+          auto const expectedPoint = wire.GetCenter()
+            + wireDirOffset * wire.Direction()
+            + distance * planeNorm;
+          
+          auto const expectedWireCoord = wirePitch * wireID.Wire;
+          auto const expectedWireDirCoord = wireDirOffset
+            + wire.Direction().Dot(wire.GetCenter() - refPoint);
+          
+          geo::PlaneGeo::DecomposedVector_t::Projection_t const expectedProj
+            (expectedWireDirCoord, expectedWireCoord);
+          
+          //
+          // composition
+          //
+          auto point = plane.ComposePoint(distance, expectedProj);
+          
+          if (vectorIs.nonEqual(point, expectedPoint)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] ComposePoint(): "
+              << "Point with projection " << expectedProj
+              << " and distance from plane " << distance
+              << " was reported as " << point
+              << " while it is expected to be at " << expectedPoint
+              << " (on wire " << std::string(wireID) << ")";
+          } // if wrong point
+          
+          //
+          // decomposition
+          //
+          auto const decomp = plane.DecomposePoint(point);
+          if (coordIs.nonEqual(decomp.distance, distance)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePoint(): "
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have distance from plane " << decomp.distance
+              << " cm, while " << distance << " is expected";
+          } // if wrong distance
+          if (coordIs.nonEqual(decomp.projection.X(), expectedWireDirCoord)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePoint(): "
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have wire direction coordinate "
+                << decomp.projection.X()
+              << " cm, while " << expectedWireDirCoord << " is expected";
+          } // if wrong coordinate along the wire
+          if (coordIs.nonEqual(decomp.projection.Y(), expectedWireCoord)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePoint(): "
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have wire coordinate "
+                << decomp.projection.Y()
+              << " cm, while " << expectedWireCoord << " is expected";
+          } // if wrong wire coordinate
+          
+          //
+          // projection
+          //
+          auto const proj = plane.PointProjection(point);
+          if (coordIs.nonEqual(proj.X(), expectedWireDirCoord)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] PointProjection(): "
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have wire direction coordinate " << proj.X()
+              << " cm, while " << expectedWireDirCoord << " is expected";
+          } // if wrong wire coordinate
+          if (coordIs.nonEqual(proj.Y(), expectedWireCoord)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] PointProjection(): "
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have wire coordinate " << proj.Y()
+              << " cm, while " << expectedWireCoord << " is expected";
+          } // if wrong wire coordinate
+          
+          //
+          // distance
+          //
+          auto const dist = plane.DistanceFromPlane(point);
+          if (coordIs.nonEqual(dist, distance)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DistanceFromPlane():"
+              << "Point " << point << " (on wire " << std::string(wireID) << ")"
+              << " is reported to have distance from plane " << dist
+              << " cm, while " << distance << " is expected";
+          } // if wrong distance
+          
+          //
+          // drift
+          //
+          std::array<double, 3> drifts { -distance, distance, 2.*distance };
+          for (double drift: drifts) {
+            
+            // DriftPoint() moves the point in the drift direction,
+            // which is opposite to the plane normal:
+            auto const expectedDistance = distance - drift;
+            
+            //
+            // drift it by a known value
+            //
+            auto point = expectedPoint;
+            plane.DriftPoint(point, drift);
+            
+            //
+            // check the new distance
+            //
+            auto dist = plane.DistanceFromPlane(point);
+            if (coordIs.nonEqual(dist, expectedDistance)) {
+              ++nErrors;
+              mf::LogProblem("GeometryTestAlg")
+                << "[testPlanePointDecomposition] DriftPoint():"
+                << "Point " << expectedPoint
+                << " (distant " << distance << " cm from the plane)"
+                << " (on wire " << std::string(wireID) << ")"
+                << " drifted by " << drift << " became " << point
+                << " which has distance from plane " << dist
+                << " cm, while " << expectedDistance << " was expected";
+            } // if wrong distance
+            
+          } // for drifts
+          
+        } // for different wire direction steps
+        
+      } // for wires in plane
+      
+    } // for planes
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testPlanePointDecomposition() accumulated " << nErrors
+        << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testPlanePointDecomposition()
+  
+  
   //......................................................................
   void GeometryTestAlg::testWireCoordAngle() const {
     /*
@@ -903,17 +1273,13 @@ namespace geo{
       
       
       geo::WireGeo const& middle_wire = geom->Wire(middle_wire_id);
-      std::array<double, 3> middle_wire_center;
-      middle_wire.GetCenter(middle_wire_center.data());
+      decltype(auto) middle_wire_center = middle_wire.GetCenter();
       LOG_TRACE("GeometryTest")
-        << "Center of " << std::string(middle_wire_id) << " at ("
-          << middle_wire_center[0]
-          << "; " << middle_wire_center[1] << "; " << middle_wire_center[2]
-          << ")";
+        << "Center of " << middle_wire_id << " at " << middle_wire_center;
       
       // cross check: we can find the middle wire
       const double middle_coord = geom->WireCoordinate
-        (middle_wire_center[1], middle_wire_center[2], planeid);
+        (middle_wire_center, planeid);
       
       if (std::abs(middle_coord - double(middle_wire_id.Wire)) > 2e-3) {
         throw cet::exception("WireCoordAngle")
@@ -925,31 +1291,27 @@ namespace geo{
       } // if
       
       // the check: this coordinate should lie on the next wire
-      std::array<double, 3> on_next_wire = middle_wire_center;
       const double pitch = plane.WirePitch();
+      decltype(auto) wireCoordDir = plane.GetIncreasingWireDirection();
       
       LOG_TRACE("GeometryTest")
-        << "  pitch: " << pitch << " cos(phi_z): " << plane.CosPhiZ()
-        << "  sin(phi_z): " << plane.SinPhiZ();
-    
-    /*
-      // this would test GeometryCore::GetIncreasingWireDirection()
-      TVector3 wire_coord_dir = plane.GetIncreasingWireDirection();
-      on_next_wire[0] += wire_coord_dir.X();
-      on_next_wire[1] += pitch * wire_coord_dir.Y();
-      on_next_wire[2] += pitch * wire_coord_dir.Z();
-    */
-      on_next_wire[1] += pitch * plane.SinPhiZ();
-      on_next_wire[2] += pitch * plane.CosPhiZ();
+        << "  pitch: " << pitch << " wire coord dir: cos(phi_z): "
+        << wireCoordDir;
       
-      const double next_coord
-        = geom->WireCoordinate(on_next_wire[1], on_next_wire[2], planeid);
+      auto on_next_wire = middle_wire_center + pitch * wireCoordDir;
+      
+      const double next_coord = geom->WireCoordinate(on_next_wire, planeid);
       
       if (std::abs(next_coord - double(next_wire_id.Wire)) > 2e-3) {
+        std::cerr 
+          << "  pitch: " << pitch << " wire coord dir: " << wireCoordDir
+          << "\n  start wire: " << middle_wire_id
+          << " centered at " << middle_wire_center
+          << "\n  querying point " << on_next_wire
+          << std::endl;
         throw cet::exception("WireCoordAngle")
-          << "Position (" << on_next_wire[0]
-          << "; " << on_next_wire[1] << "; " << on_next_wire[2]
-          << ") is expected to be on wire " << std::string(next_wire_id)
+          << "Position " << on_next_wire
+          << " is expected to be on wire " << std::string(next_wire_id)
           << " but it has wire coordinate " << next_coord << "\n";
       } // if
       
@@ -1099,6 +1461,55 @@ namespace geo{
   } 
 
   //......................................................................
+  void GeometryTestAlg::testPlaneProjectionReference() const {
+    
+    //
+    // Check the definition of the projection reference
+    //
+    unsigned int nErrors = 0;
+    for (auto const& plane: geom->IteratePlanes()) {
+      
+      TVector3 reference = plane.ProjectionReferencePoint();
+      
+      auto decomp = plane.DecomposePoint(reference);
+      
+      if (geom->coordIs.nonZero(decomp.distance)) {
+        LOG_ERROR("GeometryTest")
+          << "Plane " << plane.ID() << " reference point " << reference
+          << " has distance " << decomp.distance << " cm (should be 0)";
+        ++nErrors;
+      }
+      
+      if (geom->coordIs.nonZero(decomp.projection.X())
+        || geom->coordIs.nonZero(decomp.projection.Y())
+        )
+      {
+        LOG_ERROR("GeometryTest")
+          << "Plane " << plane.ID() << " reference point " << reference
+          << " has projection ( " << decomp.projection.X()
+          << " ; " << decomp.projection.Y() << " ) cm (should be (0;0) )";
+        ++nErrors;
+      }
+      
+    } // for planes
+    if (nErrors > 0) {
+      throw cet::exception("GeoTestPlaneProjectionReference")
+        << "Accumulated " << nErrors << " errors (see messages above)\n";
+    }
+  } // GeometryTestAlg::testPlaneProjectionReference()
+
+  //......................................................................
+  void GeometryTestAlg::testPlaneProjection() const {
+    
+    //
+    // Check the definition of the reference
+    //
+    
+    testPlaneProjectionReference();
+    
+  } // GeometryTestAlg::testPlaneProjection()
+
+  //......................................................................
   void GeometryTestAlg::testStandardWirePos() 
   {
     double xyz[3] = {0.};
@@ -1205,8 +1616,7 @@ namespace geo{
       geo::PlaneID const& planeID = plane.ID();
       const unsigned int NWires = plane.Nwires();
       
-      const std::array<double, 3> IncreasingWireDir
-        = GetIncreasingWireDirection(plane);
+      decltype(auto) IncreasingWireDir = plane.GetIncreasingWireDirection();
       
       LOG_DEBUG("GeoTestWireCoordinate")
         << "The direction of increasing wires for plane " << planeID
@@ -1214,17 +1624,14 @@ namespace geo{
         << plane.WirePitch() << " orientation="
         << (plane.Orientation() == geo::kHorizontal? "H": "V")
         << (plane.WireIDincreasesWithZ()? "+": "-")
-        << ") is ( " << IncreasingWireDir[0] << " ; "
-        << IncreasingWireDir[1] << " ; " << IncreasingWireDir[2] << ")";
+        << ") is " << IncreasingWireDir;
       
-      for (unsigned int w = 0; w < NWires; ++w) {
+      geo::WireID::WireID_t w = 0;
+      for (geo::WireGeo const& wire: plane.IterateWires()) {
         
-        geo::WireID wireID(planeID, w);
+        geo::WireID wireID(planeID, w++);
         
-        const geo::WireGeo& wire = plane.Wire(w);
-        const double pos[3] = {0., 0.0, 0.};
-        std::array<double, 3> wire_center;
-        wire.LocalToWorld(pos, wire_center.data());
+        decltype(auto) wire_center = wire.GetCenter();
         
         uint32_t nearest = 0;
         std::vector< geo::WireID > wireIDs;
@@ -1232,14 +1639,14 @@ namespace geo{
         try{
           // The double[] version tested here falls back on the
           // TVector3 version, so this test both.
-          nearest = geom->NearestChannel(wire_center.data(), planeID);
+          nearest = geom->NearestChannel(wire_center, planeID);
           
           // We also want to test the std::vector<double> version
-          std::array<double, 3> posWorldV;
+          std::vector<double> posWorldV(3);
           for (int i=0; i<3; ++i) {
             posWorldV[i] = wire_center[i] + 0.001;
           }
-          nearest = geom->NearestChannel(posWorldV.data(), planeID);
+          nearest = geom->NearestChannel(posWorldV, planeID);
         }
         catch(cet::exception &e){
           mf::LogWarning("GeoTestCaughtException") << e;
@@ -1250,14 +1657,11 @@ namespace geo{
           wireIDs = geom->ChannelToWire(nearest);
           
           if ( wireIDs.empty() ) {
-            throw cet::exception("BadPositionToChannel") << "test point is at " 
-                                                         << wire_center[0] << " " 
-                                                         << wire_center[1] << " " 
-                                                         << wire_center[2] << "\n"
-                                                         << "nearest channel is " 
-                                                         << nearest << " for " 
-                                                         << std::string(wireID)
-                                                         << "\n";
+            throw cet::exception("BadPositionToChannel")
+              << "test point is at " << wire_center
+              << " nearest channel is " << nearest
+              << " for " << std::string(wireID)
+              << "\n";
           }
         }
         catch(cet::exception &e){
@@ -1266,19 +1670,13 @@ namespace geo{
         }
         
         if(std::find(wireIDs.begin(), wireIDs.end(), wireID) == wireIDs.end()) {
-          throw cet::exception("BadPositionToChannel") << "Current WireID ("
-                                                       << std::string(wireID) << ") "
-                                                       << "has a world position at "
-                                                       << wire_center[0] << " " 
-                                                       << wire_center[1] << " " 
-                                                       << wire_center[2] << "\n"
-                                                       << "NearestWire for this position is "
-                                                       << geom->NearestWire(wire_center.data(),planeID) << "\n"
-                                                       << "NearestChannel is " 
-                                                       << nearest << " for " 
-                                                       << std::string(wireID) << "\n"
-                                                       << "Should be channel "
-                                                       << geom->PlaneWireToChannel(wireID);
+          throw cet::exception("BadPositionToChannel")
+            << "Current wire " << std::string(wireID)
+            << " has a world position at " << wire_center
+            << "\nNearestWire for this position is "
+              << geom->NearestWire(wire_center, planeID)
+            << "\nNearestChannel is " << nearest
+            << "\nShould be channel " << geom->PlaneWireToChannel(wireID);
         } // if good lookup fails
         
         
@@ -1289,12 +1687,15 @@ namespace geo{
           // We expect WireCoordinate() to reflect the same shift.
           
           // using absolute value just in case (what happens if w1 > w2?)
-          const double pitch
-            = std::abs(geom->WirePitch(planeID, (w > 0)? w - 1: 1, w));
           
-          double wire_shifted[3];
-          double step[3];
-          for (size_t i = 0; i < 3; ++i) step[i] = pitch * IncreasingWireDir[i];
+          const double pitch = std::abs(geom->WirePitch(
+            planeID,
+            (wireID.Wire > 0)? wireID.Wire - 1: 1,
+            wireID.Wire
+            ));
+          
+          TVector3 wire_shifted;
+          TVector3 const step = pitch * IncreasingWireDir;
           
           constexpr int NSteps = 5; // odd value avoids testing half-way
           for (int i = -NSteps; i <= +NSteps; ++i) {
@@ -1302,35 +1703,16 @@ namespace geo{
             const double f = NSteps? (double(i) / NSteps): 0.0;
             
             // these are the actual shifts on the positive directions y and z
-            std::array<double, 3> delta;
-            
-            for (size_t i = 0; i < 3; ++i) {
-              delta[i] = f * step[i];
-              wire_shifted[i] = wire_center[i] + delta[i];
-            } // for
+            TVector3 const delta = f * step;
+            TVector3 const wire_shifted = wire_center + delta;
             
             // we expect this wire number
-            const double expected_wire = w + f;
+            const double expected_wire = wireID.Wire + f;
             
             double wire_from_wc = 0;
             if (bTestWireCoordinate) {
-              if (IncreasingWireDir[0] != 0.) {
-                // why? because WireCoordinate() has 2D input
-                LOG_ERROR("GeoTestWireCoordinate")
-                  << "The direction of increasing wires for plane "
-                  << std::string(planeID)
-                  << " (theta=" << plane.Wire(0).ThetaZ() << " orientation="
-                  << (plane.Orientation() == geo::kHorizontal? "H": "V")
-                  << ") is ( " << IncreasingWireDir[0] << " ; "
-                  << IncreasingWireDir[1] << " ; " << IncreasingWireDir[2]
-                  << "), not orthogonal to x axis."
-                  << " This configuration is not supported"
-                  << "\n";
-                bTestWireCoordinate = false;
-              } // if
               try {
-                wire_from_wc = geom->WireCoordinate
-                  (wire_shifted[1], wire_shifted[2], planeID);
+                wire_from_wc = geom->WireCoordinate(wire_shifted, planeID);
               }
               catch (cet::exception& e) {
                 if (hasCategory(e, "NotImplemented")) {
@@ -1347,12 +1729,10 @@ namespace geo{
               //  throw cet::exception("GeoTestErrorWireCoordinate")
                 mf::LogError("GeoTestWireCoordinate")
                   << "wire " << wireID
-                  << " [center: (" << wire_center[0] << "; "
-                  << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                  << " [center: " << wire_center << "] on step of "
                   << i << "/" << NSteps
-                  << " x" << step[1] << "cm along y (" << delta[1]
-                  << ") x" << step[2] << "cm along z (" << delta[2]
-                  << ") shows " << wire_from_wc << ", " << expected_wire
+                  << " x" << step << " = " << delta
+                  << " cm shows " << wire_from_wc << ", " << expected_wire
                   << " expected.\n";
               } // if mismatch
               
@@ -1368,12 +1748,10 @@ namespace geo{
                 throw cet::exception("GeoTestErrorWireCoordinate", "", e)
               //  LOG_ERROR("GeoTestWireCoordinate")
                   << "wire " << std::string(wireID)
-                  << " [center: (" << wire_center[0] << "; "
-                  << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                  << " [center: " << wire_center << "] on step of "
                   << i << "/" << NSteps
-                  << " x" << step[1] << "cm along y (" << delta[1]
-                  << ") x" << step[2] << "cm along z (" << delta[2]
-                  << ") failed NearestWire(), " << expected_wire_number
+                  << " x" << step << " = " << delta
+                  << " cm failed NearestWire(), " << expected_wire_number
                   << " expected (more precisely, " << expected_wire << ").\n";
               }
               
@@ -1381,12 +1759,10 @@ namespace geo{
                 // In debug mode, we print a lot and we don't (fatally) complain
                 std::stringstream e;
                 e << "wire " << wireID
-                  << " [center: (" << wire_center[0] << "; "
-                  << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                  << " [center: " << wire_center << "] on step of "
                   << i << "/" << NSteps
-                  << " x" << step[1] << "cm along y (" << delta[1]
-                  << ") x" << step[2] << "cm along z (" << delta[2]
-                  << ") near to " << wire_number_from_wc;
+                  << " x" << step << " = " << delta << " cm near to "
+                  << wire_number_from_wc;
                 if (wire_number_from_wc != expected_wire_number) {
                   e << ", " << expected_wire_number
                     << " expected (more precisely, " << expected_wire << ").";
@@ -1401,12 +1777,10 @@ namespace geo{
                 // In production mode, we don't print anything and throw on error
                 throw cet::exception("GeoTestErrorWireCoordinate")
                   << "wire " << std::string(wireID)
-                  << " [center: (" << wire_center[0] << "; "
-                  << wire_center[1] << "; " << wire_center[2] << ")] on step of "
+                  << " [center: " << wire_center << "] on step of "
                   << i << "/" << NSteps
-                  << " x" << step[1] << "cm along y (" << delta[1]
-                  << ") x" << step[2] << "cm along z (" << delta[2]
-                  << ") near to " << wire_number_from_wc
+                  << " x" << step << " = " << delta
+                  << " cm near to " << wire_number_from_wc
                   << ", " << expected_wire_number
                   << " expected (more precisely, " << expected_wire << ").";
               }
@@ -1502,12 +1876,11 @@ namespace geo{
       if (iTPC->Cryostat < geom->Ncryostats() - 1) {
         geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, 0, 0 },
           w2 { iTPC->Cryostat + 1, iTPC->TPC, 1, 1 };
-        geo::WireIDIntersection xing;
-        if (geom->WireIDsIntersect(w1, w2, xing)) {
+        geo::GeometryCore::Point3D_t xingPoint;
+        if (geom->WireIDsIntersect(w1, w2, xingPoint)) {
           LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
-            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
-            << ") in TPC=" << xing.TPC
-            << ", while should have reported no intersection at all";
+            << " and " << w2 << " returned " << xingPoint
+            << " cm, while should have reported no intersection at all";
           ++nErrors;
         } // if intersect
       } // if not the last cryostat
@@ -1516,11 +1889,10 @@ namespace geo{
       if (iTPC->TPC < geom->NTPC(iTPC->Cryostat) - 1) {
         geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, 0, 0 },
           w2 { iTPC->Cryostat, iTPC->TPC + 1, 1, 1 };
-        geo::WireIDIntersection xing;
-        if (geom->WireIDsIntersect(w1, w2, xing)) {
+        geo::GeometryCore::Point3D_t xingPoint;
+        if (geom->WireIDsIntersect(w1, w2, xingPoint)) {
           LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
-            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
-            << ") in TPC=" << xing.TPC
+            << " and " << w2 << " returned " << xingPoint
             << ", while should have reported no intersection at all";
           ++nErrors;
         } // if intersect
@@ -1531,52 +1903,42 @@ namespace geo{
       for (unsigned int plane = 0; plane < nPlanes; ++plane) {
         geo::WireID w1 { iTPC->Cryostat, iTPC->TPC, plane, 0 },
           w2 { iTPC->Cryostat, iTPC->TPC, plane, 1 };
-        geo::WireIDIntersection xing;
-        if (geom->WireIDsIntersect(w1, w2, xing)) {
+        geo::GeometryCore::Point3D_t xingPoint;
+        if (geom->WireIDsIntersect(w1, w2, xingPoint)) {
           LOG_ERROR("GeometryTest") << "WireIDsIntersect() on " << w1
-            << " and " << w2 << " returned (" << xing.y << "; " << xing.z
-            << ") in TPC=" << xing.TPC
+            << " and " << w2 << " returned " << xingPoint
             << ", while should have reported no intersection at all";
           ++nErrors;
         } // if intersect
       } // for all planes
       
       
-      // sample the area covered by all planes, split into SplitY and SplitZ
-      // rectangles; x is chosen in the middle of the TPC
-      constexpr unsigned int SplitZ = 19, SplitY = 17;
-      // get the area spanned by the wires;
-      // this area is described as (x,y), regardless the global coordinate names
-      lar::util::simple_geo::Area<> covered_area;
-      for (geo::PlaneID::PlaneID_t p = 0; p < nPlanes; ++p) {
-        auto plane_volume = TPC.Plane(p).Coverage(); // this is a volume
-        lar::util::simple_geo::Area<> plane_area(
-          { plane_volume.Min().y, plane_volume.Min().z },
-          { plane_volume.Max().y, plane_volume.Max().z }
-          );
-        if (covered_area.isEmpty()) covered_area = plane_area;
-        else covered_area.Intersect(plane_area);
-      } // for
+      // sample the area covered by all planes, split into SplitW and SplitD
+      // rectangles; drift coordinate is chosen roughly in the middle of the TPC
+      geo::PlaneGeo const& refPlane = TPC.SmallestPlane();
+      constexpr unsigned int SplitW = 19, SplitD = 17;
       
-      std::array<double, 3> origin, TPC_center;
-      origin.fill(0);
-      TPC.LocalToWorld(origin.data(), TPC_center.data());
-      const double x = TPC_center[0];
+      auto const driftOffset = -TPC.DriftDistance() / 2.0 * TPC.DriftDir();
+      auto const refPoint = TPC.GetCenter() + driftOffset;
+      
+      const double stepW = refPlane.Width() / SplitW;
+      const double stepD = refPlane.Depth() / SplitD;
+      const int stepsW = SplitW / 2;
+      const int stepsD = SplitD / 2;
       
       // let's pick a point:
-      for (unsigned int iZ = 0; iZ < SplitZ; ++iZ) {
+      for (int iW = -stepsW; iW <= +stepsW; ++iW) {
         
-        // pick the coordinate in the middle of the iZ-th region:
-        const double z = covered_area.Min().y
-          + covered_area.DeltaY() * (2*iZ + 1) / (2*SplitZ);
+        auto const widthOffset = (iW * stepW) * refPlane.WidthDir();
         
-        for (unsigned int iY = 0; iY < SplitY; ++iY) {
-          // pick the coordinate in the middle of the iY-th region:
-          const double y = covered_area.Min().x
-            + covered_area.DeltaX() * (2*iY + 1) / (2*SplitY);
+        for (unsigned int iD = -stepsD; iD < +stepsD; ++iD) {
+          
+          auto const depthOffset = (iD * stepD) * refPlane.DepthDir();
+          
+          auto const point = refPoint + widthOffset + driftOffset;
           
           // finally, let's test this point...
-          nErrors += testWireIntersectionAt(*iTPC, x, y, z);
+          nErrors += testWireIntersectionAt(TPC, point);
         } // for y
       } // for z
     } // for iTPC
@@ -1590,7 +1952,7 @@ namespace geo{
   
   
   unsigned int GeometryTestAlg::testWireIntersectionAt
-    (const TPCID& tpcid, double x, double y, double z) const
+    (const geo::TPCGeo& TPC, TVector3 const& point) const
   {
     /* Tests WireIDsIntersect() on the specified point on the wire planes of
      * a given TPC.
@@ -1606,7 +1968,6 @@ namespace geo{
     
     unsigned int nErrors = 0;
     
-    const geo::TPCGeo& TPC = geom->TPC(tpcid);
     const unsigned int NPlanes = TPC.Nplanes();
     
     // collect information per plane:
@@ -1619,50 +1980,38 @@ namespace geo{
       ThetaZ[iPlane] = plane.FirstWire().ThetaZ();
       WirePitch[iPlane] = plane.WirePitch();
       
-      const double WireDistance
-        = geom->WireCoordinate(y, z, iPlane, tpcid.TPC, tpcid.Cryostat);
-      WireIDs.emplace_back(
-        tpcid.Cryostat, tpcid.TPC, iPlane,
-        (unsigned int) std::round(WireDistance)
-        );
+      const double WireDistance = geom->WireCoordinate(point, plane.ID());
+      WireIDs.emplace_back(plane.ID(), (unsigned int) std::round(WireDistance));
       WireDistances[iPlane]
         = (WireDistance - std::round(WireDistance)) * WirePitch[iPlane];
       
-      LOG_DEBUG("GeometryTest") << "Nearest wire to"
-        " (" << x << ", " << y << ", " << z << ") on plane #" << iPlane
+      LOG_DEBUG("GeometryTest") << "Nearest wire to " << point
+        << " on plane " << std::string(plane.ID())
         << " (pitch: " << WirePitch[iPlane] << ", thetaZ=" << ThetaZ[iPlane]
         << ") is " << WireIDs[iPlane] << " (position: " << WireDistance << ")";
     } // for planes
     
     // test all the combinations
+    
+    lar::util::RealComparisons<double> coordIs(1e-3);
     for (unsigned int iPlane1 = 0; iPlane1 < NPlanes; ++iPlane1) {
       
       const geo::WireID& w1 = WireIDs[iPlane1];
+      geo::PlaneGeo const& plane1 = TPC.Plane(w1);
       
       for (unsigned int iPlane2 = iPlane1 + 1; iPlane2 < NPlanes; ++iPlane2) {
         const geo::WireID& w2 = WireIDs[iPlane2];
         
-        geo::WireIDIntersection xing;
-        if (!geom->WireIDsIntersect(w1, w2, xing)) {
+        GeometryCore::Point3D_t xingPoint;
+        if (!geom->WireIDsIntersect(w1, w2, xingPoint)) {
           LOG_ERROR("GeometryTest") << "Wires " << w1 << " and " << w2
-            << " should intersect around (" << x << ", " << y << ", " << z
-            << ") of TPC " << tpcid
+            << " should intersect around " << point << " of TPC " << TPC.ID()
             << ", but they seem not to intersect at all!";
           ++nErrors;
           continue;
         }
         
-        if (xing.TPC != tpcid.TPC) {
-          LOG_ERROR("GeometryTest") << "Wires " << w1 << " and " << w2
-            << " should intersect around (" << x << ", " << y << ", " << z
-            << ") of TPC " << tpcid
-            << ", but they seem to intersect in TPC #" << xing.TPC
-            << " at (x, " << xing.y << "; " << xing.z << ")";
-          ++nErrors;
-          continue;
-        }
-        
-        // the expected distance between the probe point (y, z) and the
+        // the expected distance between the probe point and the
         // intersection point is geometrically determined, given the distances
         // of the probe point from the two wires and the angle between the wires
         // the formula is a mix between the Carnot theorem and sine definition;
@@ -1672,20 +2021,20 @@ namespace geo{
           std::sqrt(sqr(d1) + sqr(d2) - 2. * d1 * d2 * std::cos(dTheta))
           / std::abs(std::sin(dTheta));
         // the actual distance we have found:
-        const double d = std::sqrt(sqr(xing.y - y) + sqr(xing.z - z));
+        double const d = plane1.VectorProjection(xingPoint - point).Mod();
         LOG_DEBUG("GeometryTest")
-          << " - wires " << w1 << " and " << w2 << " intersect in TPC #"
-          << xing.TPC << " at (x, " << xing.y << "; " << xing.z << "), "
-          << d << " cm far from starting point (expected: " << expected_d << ")";
+          << " - wires " << w1 << " and " << w2 << " intersect at " << xingPoint
+          << ", " << d << " cm far from starting point (expected: "
+          << expected_d << ")";
         
         // precision of the test is an issue; the 10^-3 x pitch threshold
         // is roughly tuned so that we don't get errors
-        if (std::abs(d - expected_d)
-          > std::max(WirePitch[iPlane1], WirePitch[iPlane2]) * 1e-3) // cm
-        {
+        lar::util::RealComparisons<double> coordIs
+          (std::max(WirePitch[iPlane1], WirePitch[iPlane2]) * 1e-3); // cm
+        if (coordIs.nonEqual(d, expected_d)) {
           LOG_ERROR("GeometryTest")
-            << "wires " << w1 << " and " << w2 << " intersect in TPC #"
-            << xing.TPC << " at (x, " << xing.y << "; " << xing.z << "), "
+            << "wires " << w1 << " and " << w2 << " intersect at " << xingPoint
+            << ", "
             << d << " cm far from starting point: too far from the expected "
             << expected_d << " cm!";
           ++nErrors;

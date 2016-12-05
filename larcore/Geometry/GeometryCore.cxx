@@ -53,6 +53,21 @@ namespace geo {
   
   
   //......................................................................
+  void GeometryCore::DriftDescManager::setDescriptors
+    (geo::ChannelMapAlg const& mapping)
+  {
+    // so far, we assume all TPCs have the same drift direction, and they
+    // go well with the same drift descriptor
+    geo::TPCID tpcid(0, 0);
+    fDriftDir = std::move(mapping.driftDescriptor(tpcid));
+    if (!fDriftDir) {
+      throw cet::exception("GeometryCore")
+        << "Channel mapping returned no drift direction descriptor for TPC"
+        << std::string(tpcid) << "!\n";
+    }
+  } // GeometryCore::DriftDescManager::setDescriptors()
+  
+  //......................................................................
   // Constructor.
   GeometryCore::GeometryCore(
     fhicl::ParameterSet const& pset
@@ -81,6 +96,9 @@ namespace geo {
     UpdateAfterSorting(); // after channel mapping has sorted objects, set their IDs
     pChannelMap->Initialize(fGeoData);
     fChannelMapAlg = pChannelMap;
+    
+    fDrift.setDescriptors(*fChannelMapAlg);
+    
   } // GeometryCore::ApplyChannelMap()
 
   //......................................................................
@@ -1012,6 +1030,13 @@ namespace geo {
   
   //----------------------------------------------------------------------------
   double GeometryCore::WireCoordinate
+    (TVector3 const& pos, geo::PlaneID const& planeid) const
+  {
+    return Plane(planeid).WireCoordinate(pos);
+  }
+
+  //----------------------------------------------------------------------------
+  double GeometryCore::WireCoordinate
     (double YPos, double ZPos, geo::PlaneID const& planeid) const
   {
     return fChannelMapAlg->WireCoordinate(YPos, ZPos, planeid);
@@ -1027,7 +1052,8 @@ namespace geo {
   unsigned int GeometryCore::NearestWire
     (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWire(worldPos, planeid);
+    return NearestWireID(worldPos, planeid).Wire;
+    // return fChannelMapAlg->NearestWire(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
@@ -1052,7 +1078,8 @@ namespace geo {
   geo::WireID GeometryCore::NearestWireID
     (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWireID(worldPos, planeid);
+    return Plane(planeid).NearestWireID(worldPos); 
+  //  return fChannelMapAlg->NearestWireID(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
@@ -1122,21 +1149,22 @@ namespace geo {
   GeometryCore::Segment_t GeometryCore::WireEndPoints
     (geo::WireID const& wireid) const
   {
-    Segment_t result;
-    
-    WireEndPoints(wireid, result.start().data(), result.end().data());
-    
-    return result;
+    geo::WireGeo const& wire = Wire(wireid);
+    return { wire.GetStart(), wire.GetEnd() };
   } // GeometryCore::WireEndPoints(WireID)
   
   //......................................................................
   void GeometryCore::WireEndPoints
     (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const
   {
+    Segment_t result = WireEndPoints(wireid);
     
-    geo::WireGeo const& wire = Wire(wireid);
-    wire.GetStart(xyzStart);
-    wire.GetEnd(xyzEnd);
+    xyzStart[0] = result.start().X();
+    xyzStart[1] = result.start().Y();
+    xyzStart[2] = result.start().Z();
+    xyzEnd[0]   = result.end().X();
+    xyzEnd[1]   = result.end().Y();
+    xyzEnd[2]   = result.end().Z();
     
     if(xyzEnd[2]<xyzStart[2]){
       //ensure that "End" has higher z-value than "Start"
@@ -1237,7 +1265,16 @@ namespace geo {
     
   } // GeometryCore::IntersectSegments()
   
-  
+/*  FIXME
+  //......................................................................
+  bool GeometryCore::IntersectSegments(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double& x, double& y
+  ) const {
+    
+  } // GeometryCore::IntersectSegments()
+    */
   //......................................................................
   bool GeometryCore::WireIDsIntersect(
     const geo::WireID& wid1, const geo::WireID& wid2,
@@ -1263,99 +1300,48 @@ namespace geo {
     return within;
     
   } // GeometryCore::WireIDsIntersect(WireIDIntersection)
-/*
-  bool GeometryCore::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
-                                   geo::WireIDIntersection & widIntersect   ) const
-  {
-    widIntersect.y = -9999;
-    widIntersect.z = -9999;
-    widIntersect.TPC = 9999;
-
-    double w1_Start[3] = {0.};
-    double w1_End[3]   = {0.};
-    double w2_Start[3] = {0.};
-    double w2_End[3]   = {0.};
-
-    if( wid1.Plane == wid2.Plane ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in the same plane, return false";
-      return false;     }
-    if( wid1.TPC != wid2.TPC ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different TPCs, return false";
-      return false;     }
-    if( wid1.Cryostat != wid2.Cryostat ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different Cryostats, return false";
-      return false;     }
-    if( wid1.Wire<0 || wid1.Wire>=this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat)){
-      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid1.Wire<< "max wire number = "<< this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat);
-      return false;
-    }
-    if( wid2.Wire<0 || wid2.Wire>=this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat)){
-      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid2.Wire<< "max wire number = "<< this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat);
-      return false;
-    }
   
-
-    // get the endpoints to see if i1 and i2 even intersect
-    this->WireEndPoints(wid1.Cryostat, wid1.TPC, wid1.Plane, wid1.Wire, w1_Start, w1_End);
-    this->WireEndPoints(wid2.Cryostat, wid2.TPC, wid2.Plane, wid2.Wire, w2_Start, w2_End);
-
-    //Equation from http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
-    //T.Yang Nov, 2014
-    double x1 = w1_Start[1];
-    double y1 = w1_Start[2];
-    double x2 = w1_End[1];
-    double y2 = w1_End[2];
-    double x3 = w2_Start[1];
-    double y3 = w2_Start[2];
-    double x4 = w2_End[1];
-    double y4 = w2_End[2];
-
-    double denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
-    if (!denom) {
-      mf::LogWarning("WireIDsIntersect") << "Two wires are parallel, return false";
-      return false;
-    }
-    double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
-    double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
-
-    widIntersect.y = x;
-    widIntersect.z = y;
-    widIntersect.TPC = wid1.TPC;
-    if (this->ValueInRange(x,x1,x2) &&
-        this->ValueInRange(x,x3,x4) &&
-        this->ValueInRange(y,y1,y2) &&
-        this->ValueInRange(y,y3,y4)){
-      return true;
-    }
-    else{
-      return false;
-    }
-
-    return false;
-  } // GeometryCore::WireIDsIntersect(widIntersect)
-*/  
   
   //......................................................................
   bool GeometryCore::WireIDsIntersect
     (const geo::WireID& wid1, const geo::WireID& wid2, Point3D_t& intersection)
     const
   {
+    //
+    // This is not a real 3D intersection: the wires do not cross, since they
+    // are required to belong to two different planes.
+    // 
+    // Therefore, the wires are projected on the same plane and the intersection
+    // is found there, and then we are brought back to the 3D world.
+    // 
+    // The coordinate of the intersection that is from the component orthogonal
+    // to the plane is arbitrarily set to 0.
+    //
+    
+    
     if (!WireIDIntersectionCheck(wid1, wid2)) return false;
     
     // get the endpoints to see if wires intersect
     Segment_t const w1 = WireEndPoints(wid1);
     Segment_t const w2 = WireEndPoints(wid2);
     
+    // we need a consistent representation of the projections;
+    // so we pick the first plane
+    // (when issue #14365 will be solved, we'll be able to talk to the TPC instead)
+    auto const& plane1 = Plane(wid1);
+    auto w1startProj = plane1.PointWidthDepthProjection(w1.start());
+    auto w1endProj   = plane1.PointWidthDepthProjection(w1.end());
+    auto w2startProj = plane1.PointWidthDepthProjection(w2.start());
+    auto w2endProj   = plane1.PointWidthDepthProjection(w2.end());
+    
     double x, y;
-    // TODO extract the coordinates in the right way
     bool within = IntersectSegments(
-      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
-      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
+      w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
       x, y
       );
     
-    // set the result TODO compose the vector in the right way
-    intersection = { w1.start()[0], x, y };
+    intersection = plane1.ComposePoint(0., { x, y });
     
     // return whether the intersection is within the length of both wires
     return within;

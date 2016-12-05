@@ -13,7 +13,10 @@
 #include "larcore/CoreUtils/DereferenceIterator.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/SimpleGeo.h"
+#include "larcore/Geometry/LocalTransformation.h" // geo::LocalTransformationFromPath
 #include "larcore/Geometry/BoxBoundedGeo.h"
+#include "larcore/Geometry/Decomposer.h"
+#include "larcore/Geometry/WireGeo.h"
 
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
@@ -25,19 +28,46 @@ class TGeoHMatrix;
 class TVector3;
 
 namespace geo {
-  class WireGeo;
 
   //......................................................................
   
-  /// Geometry information for a single readout plane
+  /**
+   * @brief Geometry information for a single wire plane
+   * 
+   * The plane defines two local reference frames.
+   * The first, depending on wire directions and therefore called "wire base",
+   * is defined by the normal to the plane (pointing toward the center of the
+   * TPC), the direction of the wires, and the direction that the wires measure.
+   * This is a positive orthogonal base.
+   * Note that for this base to be correctly defined, the Geometry service has
+   * to provide external information (for example, where the center of the
+   * TPC is).
+   * 
+   * The second, depending only on the shape of the plane and called "frame
+   * base", is defined by the normal (the same as for the previous one), and two
+   * orthogonal axes, "width" and "depth", aligned with the sides of the plane.
+   * If the plane has not the shape of a box, this reference frame is not
+   * available. This coordinate system is also positive defined.
+   * 
+   */
   // Note: SignalType() and SetSignalType() have been removed.
   //       Use `geo::GeometryCore::SignalType` instead.
   //       (see LArSoft issue #14365 at https://cdcvs.fnal.gov/redmine/issues/14365 )
   class PlaneGeo {
   public:
     
+    using GeoNodePath_t = std::vector<TGeoNode const*>;
+    
+    /// Type used for plane decompositions
+    using Decomposer_t
+      = geo::Decomposer<geo::vect::Vector_t, geo::vect::Point_t, TVector2>;
+    
+    /// Type describing a 3D point or vector decomposed on a plane
+    using DecomposedVector_t = Decomposer_t::DecomposedVector_t;
+      
+    
     /// Construct a representation of a single plane of the detector
-    PlaneGeo(std::vector<const TGeoNode*>& path, int depth);
+    PlaneGeo(GeoNodePath_t& path, size_t depth);
     ~PlaneGeo();
 
     
@@ -66,6 +96,30 @@ namespace geo {
     /// Returns the identifier of this plane
     geo::PlaneID const& ID() const { return fID; }
     
+    
+    /// @{
+    /**
+     * @brief Return the direction of plane width and depth.
+     * 
+     * The precise definition of the two is arbitrary, but they are defined
+     * to lie on the wire plane and so that WidthDir(), DepthDir() and
+     * GetNormalDirection() make a orthonormal base.
+     * That base (width, depth, normal) is guaranteed to be positive defined.
+     */
+    TVector3 const& WidthDir() const { return fDecompFrame.MainDir(); }
+    TVector3 const& DepthDir() const { return fDecompFrame.SecondaryDir(); }
+    /// @}
+    
+    /// @{
+    /**
+     * @brief Return the dimensions of plane (width and depth).
+     * @see WidthDir(), DepthDir()
+     * 
+     * The precise definition of the two is arbitrary (see `WidthDir()` and
+     * `DepthDir()`).
+     */
+    double Width() const { return fFrameSize.width; }
+    double Depth() const { return fFrameSize.depth; }
     /// @}
     
     
@@ -211,6 +265,13 @@ namespace geo {
      * The versor is orthogonal to the plane.
      * The direction is defined so that the semi-space pointed to contains
      * the TPC center.
+     * 
+     * @note Each decomposition base (wire-based and frame-based) has its own
+     *       normal, defined solely from its two decomposition plane axes.
+     *       The wire-based frame is nevertheless required to have a normal
+     *       matching this one, while the frame-based normal might happen to be
+     *       in the opposite direction depending on the original geometry
+     *       description.
      */
     TVector3 const& GetNormalDirection() const { return fNormal; }
 
@@ -221,83 +282,20 @@ namespace geo {
      * The versor is orthogonal to the wires (assumed parallel),
      * lies on the plane and its direction goes toward increasing wire IDs.
      */
-    TVector3 const& GetIncreasingWireDirection() const { return fWireCoordDir; }
+    TVector3 const& GetIncreasingWireDirection() const
+      { return fDecompWire.SecondaryDir(); }
     
     
     /// Returns the centre of the plane in world coordinates [cm]
     TVector3 GetCenter() const;
     
-    
     /**
-     * @brief Returns the distance of the specified point from the plane
-     * @param point a point in world coordinates [cm]
-     * @return the signed distance from the plane
+     * @brief Returns the direction of the wires
+     * @return a unit vector following the direction of the wires
      * 
-     * The distance is defined positive if the point lies in the side the normal
-     * vector (GetNormalDirection()) points to.
-     * 
-     * It should match the drift distance from this plane.
+     * All wires in the plane are assumed parallel.
      */
-    double DistanceFromPlane(TVector3 const& point) const
-      { return GetNormalDirection().Dot(point - GetCenter()); }
-    
-    
-    /**
-     * @brief Returns the coordinate of the point on the plane respect to a wire
-     * @param point world coordinate of the point to get the coordinate of [cm]
-     * @param refWire reference wire
-     * @return the coordinate of the point [cm]
-     * 
-     * The method returns the coordinate of the point in the direction measured
-     * by the wires on this plane starting from the specified reference wire,
-     * in world units (that is, centimeters).
-     *  
-     * The point does not need to be on the plane, and the projection of the
-     * point to the plane is considered.
-     * The reference wire, instead, must belong to this plane. This assumption
-     * is not checked, and if violated the results are undefined (in the current
-     * implementation, they are just wrong).
-     * 
-     * @note This method needs to be validated.
-     */
-    double PlaneCoordinateFrom
-      (TVector3 const& point, geo::WireGeo const& refWire) const;
-    
-    /**
-     * @brief Returns the coordinate of the point on the plane
-     * @param point world coordinate of the point to get the coordinate of [cm]
-     * @return the coordinate of the point [cm]
-     * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
-     * 
-     * The method returns the coordinate of the point in the direction measured
-     * by the wires on this plane starting on the first wire, in world units
-     * (that is, centimeters). A point on the first wire will have coordinate
-     * 0.0, one on the next wire will have coordinate equal to a single wire
-     * pitch, etc.
-     *  
-     * The point does not need to be on the plane, and the projection of the
-     * point to the plane is considered.
-     */
-    double PlaneCoordinate(TVector3 const& point) const
-      { return PlaneCoordinateFrom(point, FirstWire()); }
-    
-    
-    /**
-     * @brief Returns the coordinate of the point on the plane, in wire units
-     * @param point wire coordinate of the point to get the coordinate of
-     * @return the coordinate of the point, in wire pitch units
-     * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
-     * 
-     * The method returns the coordinate of the point in the direction measured
-     * by the wires on this plane starting on the first wire, in wire units
-     * (that is, wire pitches). A point on the first wire will have coordinate
-     * 0.0, one on the next wire will have coordinate 1.0, etc.
-     *  
-     * The point does not need to be on the plane, and the projection of the
-     * point to the plane is considered.
-     */
-    double WireCoordinate(TVector3 const& point) const
-      { return PlaneCoordinate(point) / WirePitch(); }
+    TVector3 const& GetWireDirection() const { return fDecompWire.MainDir(); }
     
     
     /**
@@ -324,6 +322,38 @@ namespace geo {
     geo::WireID NearestWireID(TVector3 const& pos) const;
     
     
+    /**
+     * @brief Returns the distance of the specified point from the plane
+     * @param point a point in world coordinates [cm]
+     * @return the signed distance from the plane
+     * 
+     * The distance is defined positive if the point lies in the side the normal
+     * vector (GetNormalDirection()) points to.
+     * 
+     * It should match the drift distance from this plane.
+     */
+    double DistanceFromPlane(TVector3 const& point) const
+      { return fDecompWire.PointNormalComponent(point); }
+    
+    
+    /**
+     * @brief Shifts the position of an electron drifted by a distance
+     * @param position _(modified)_ the position of the electron
+     * @param drift drift distance to shift the electron by [cm]
+     * 
+     * This is a pure geometry computation: the position is shifted by the drift
+     * distance in the direction opposite to the normal to the plane (as
+     * returned by `GetNormalDirection()`), no matter where the position is
+     * relative to the plane.
+     * The wording about "electron position" is just meant to remind that the
+     * drift shift is taken with opposite sign: since the point is assumed to be
+     * an electron, a positive drift normally moves its position toward the wire
+     * plane.
+     */
+    void DriftPoint(TVector3& position, double distance) const
+      { position -= distance * GetNormalDirection(); }
+    
+    
     /// Returns a volume including all the wires in the plane
     lar::util::simple_geo::Volume<> Coverage() const;
     
@@ -341,10 +371,11 @@ namespace geo {
      * -----------------
      * 
      * * 0: only plane ID
-     * * 1 _(default)_: also wire angle
-     * * 2: also information about position and wires
-     * * 3: also information about increasing coordinate direction
-     * * 4: also coverage
+     * * 1 _(default)_: also center and wire angle
+     * * 2: also information about wires
+     * * 3: also information about normal and increasing coordinate direction
+     * * 4: also information about wire direction, width and depth
+     * * 5: also coverage
      * 
      */
     template <typename Stream>
@@ -355,27 +386,309 @@ namespace geo {
     
     
     /// @{
+    /// @name Projections on wire length/wire coordinate plane
+    /// 
+    /// These methods deal with projection of points and vectors on the plane,
+    /// using a geometric reference base which is dependent on the wire
+    /// direction. This is useful for plane reconstruction.
+    /// 
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane respect to a wire
+     * @param point world coordinate of the point to get the coordinate of [cm]
+     * @param refWire reference wire
+     * @return the coordinate of the point [cm]
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting from the specified reference wire,
+     * in world units (that is, centimeters).
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     * The reference wire, instead, must belong to this plane. This assumption
+     * is not checked, and if violated the results are undefined (in the current
+     * implementation, they are just wrong).
+     */
+    double PlaneCoordinateFrom
+      (TVector3 const& point, geo::WireGeo const& refWire) const
+      {
+        return
+          fDecompWire.VectorSecondaryComponent(point - refWire.GetCenter());
+      }
+    
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane
+     * @param point world coordinate of the point to get the coordinate of [cm]
+     * @return the coordinate of the point [cm]
+     * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting on the first wire, in world units
+     * (that is, centimeters). A point on the first wire will have coordinate
+     * 0.0, one on the next wire will have coordinate equal to a single wire
+     * pitch, etc.
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     */
+    double PlaneCoordinate(TVector3 const& point) const
+      { return fDecompWire.PointSecondaryComponent(point); }
+    
+    
+    /**
+     * @brief Returns the coordinate of the point on the plane, in wire units
+     * @param point wire coordinate of the point to get the coordinate of
+     * @return the coordinate of the point, in wire pitch units
+     * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting on the first wire, in wire units
+     * (that is, wire pitches). A point on the first wire will have coordinate
+     * 0.0, one on the next wire will have coordinate 1.0, etc.
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     */
+    double WireCoordinate(TVector3 const& point) const
+      { return PlaneCoordinate(point) / WirePitch(); }
+    
+    
+    /**
+     * @brief Decomposes a 3D point in two components
+     * @param point the point to be decomposed
+     * @return the two components of point, on the plane and orthogonal to it
+     * 
+     * The point is decomposed in:
+     * 
+     * 1. a component orthogonal to the plane, expressed as a signed real number
+     * 2. a component lying on the plane, expressed as a 2D vector
+     * 
+     * The distance is obtained as by DistanceFromPlane().
+     * The projection on the plane is obtained following the same convention
+     * as PointProjection().
+     */
+    DecomposedVector_t DecomposePoint(TVector3 const& point) const
+      { return fDecompWire.DecomposePoint(point); }
+    
+    /**
+     * @brief Returns the reference point used by PointProjection
+     * 
+     * The returned point is such that its decomposition results in a null
+     * projection and a 0 distance from the plane.
+     */
+    TVector3 ProjectionReferencePoint() const
+      { return fDecompWire.ReferencePoint(); }
+    
+    /**
+     * @brief Returns the projection of the specified point on the plane
+     * @param point the 3D point to be projected, in world coordinates
+     * @return a 2D vector representing the projection of point on the plane
+     * 
+     * The returned vector is a 2D vector expressing the projection of the point
+     * (from world coordinates) on the wire plane.
+     * The vector is expressed as @f$ ( w, \ell ) @f$. The component @f$ w @f$
+     * is defined on the wire coordinate direction (see
+     * `GetIncreasingWireDirection()`), relative to the first wire, as it is
+     * returned by PlaneCoordinate(). The component @f$ \ell @f$ is measured
+     * on the direction of the first wire (see `WireGeo::Direction()`), using
+     * its center (see `WireGeo::GetCenter()`) as reference point.
+     * 
+     * The reference point is also returned by ProjectionReferencePoint().
+     */
+    DecomposedVector_t::Projection_t PointProjection
+      (TVector3 const& point) const
+      { return fDecompWire.ProjectPointOnPlane(point); }
+    
+    /**
+     * @brief Returns the projection of the specified vector on the plane
+     * @param v the 3D vector to be projected, in world units
+     * @return a 2D vector representing the projection of v on the plane
+     * 
+     * The returned vector is a 2D vector expressing the projection of the
+     * vector (from world units) on the wire plane.
+     * The vector is expressed as @f$ ( w, \ell ) @f$. The component @f$ w @f$
+     * is defined on the wire coordinate direction (see
+     * `GetIncreasingWireDirection()`). The component @f$ \ell @f$ is measured
+     * on the direction of the first wire (see `WireGeo::Direction()`).
+     */
+    DecomposedVector_t::Projection_t VectorProjection
+      (TVector3 const& v) const
+      { return fDecompWire.ProjectVectorOnPlane(v); }
+    
+    /**
+     * @brief Returns the 3D vector from composition of projection and distance
+     * @param decomp decomposed point
+     * @return the 3D vector from composition of projection and distance
+     * @see DecomposePoint(),
+     *      ComposePoint(double, DecomposedVector_t::Projection_t const&)
+     * 
+     * See `ComposePoint(double, DecomposedVector_t::Projection_t const&)` for
+     * details.
+     */
+    TVector3 ComposePoint(DecomposedVector_t const& decomp) const
+      { return fDecompWire.ComposePoint(decomp); }
+    
+    /**
+     * @brief Returns the 3D point from composition of projection and distance
+     * @param distance distance of the target point from the wire plane
+     * @param proj projection of the target point on the wire plane
+     * @return the 3D vector from composition of projection and distance
+     * @see DecomposePoint()
+     * 
+     * The returned vector is the sum of two 3D vectors:
+     * 
+     * 1. a vector parallel to the plane normal, with norm the input distance
+     * 2. a vector lying on the plane, whose projection via PointProjection()
+     *    gives the input projection
+     * 
+     * Given the arbitrary definition of the projection reference, it is assumed
+     * that the same convention is used as in PointProjection() and
+     * DecomposePoint().
+     * 
+     */
+    TVector3 ComposePoint
+      (double distance, DecomposedVector_t::Projection_t const& proj) const
+      { return fDecompWire.ComposePoint(distance, proj); }
+    
+    
+    /// @}
+    
+    
+    /// @{
+    /// @name Projection on width/depth plane
+    /// 
+    /// These methods deal with projection of points and vectors on the plane,
+    /// using a geometric reference base which is not dependent on the wire
+    /// direction. This is more useful when comparing with the TPC or other
+    /// planes.
+    /// 
+    
+    /**
+     * @brief Decomposes a 3D point in two components
+     * @param point the point to be decomposed
+     * @return the two components of point, on the plane and orthogonal to it
+     * 
+     * The point is decomposed in:
+     * 
+     * 1. a component orthogonal to the plane, expressed as a signed real number
+     * 2. a component lying on the plane, expressed as a 2D vector
+     * 
+     * The distance is obtained as by DistanceFromPlane().
+     * The projection on the plane is obtained following the same convention
+     * as PointWidthDepthProjection().
+     */
+    DecomposedVector_t DecomposePointWidthDepth(TVector3 const& point) const
+      { return fDecompFrame.DecomposePoint(point); }
+    
+    /**
+     * @brief Returns the projection of the specified point on the plane
+     * @param point the 3D point to be projected, in world coordinates
+     * @return a 2D vector representing the projection of point on the plane
+     * 
+     * The returned vector is a 2D vector expressing the projection of the point
+     * (from world coordinates) on the wire plane.
+     * The vector is expressed as @f$ ( w, d ) @f$, components following the
+     * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
+     * respectively. The origin point is the center of the plane.
+     */
+    DecomposedVector_t::Projection_t PointWidthDepthProjection
+      (TVector3 const& point) const
+      { return fDecompFrame.ProjectPointOnPlane(point); }
+    
+    /**
+     * @brief Returns the projection of the specified vector on the plane
+     * @param v the 3D vector to be projected, in world units
+     * @return a 2D vector representing the projection of v on the plane
+     * 
+     * The returned vector is a 2D vector expressing the projection of the
+     * vector (from world units) on the wire plane.
+     * The vector is expressed as @f$ ( w, d ) @f$, components following the
+     * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
+     * respectively.
+     */
+    DecomposedVector_t::Projection_t VectorWidthDepthProjection
+      (TVector3 const& v) const
+      { return fDecompFrame.ProjectVectorOnPlane(v); }
+      
+    
+    /**
+     * @brief Returns the 3D vector from composition of projection and distance
+     * @param decomp decomposed point
+     * @return the 3D vector from composition of projection and distance
+     * @see DecomposePointWidthDepth(),
+     *      ComposePointWidthDepth(double, DecomposedVector_t::Projection_t const&)
+     * 
+     * See
+     * `ComposePointWidthDepth(double, DecomposedVector_t::Projection_t const&)`
+     * for details.
+     */
+    TVector3 ComposePointWidthDepth(DecomposedVector_t const& decomp) const
+      { return fDecompFrame.ComposePoint(decomp); }
+    
+    /**
+     * @brief Returns the 3D point from composition of projection and distance
+     * @param distance distance of the target point from the wire plane
+     * @param proj projection of the target point on the wire plane
+     * @return the 3D vector from composition of projection and distance
+     * @see DecomposePointWidthDepth()
+     * 
+     * The returned vector is the sum of two 3D vectors:
+     * 
+     * 1. a vector parallel to the plane normal, with norm the input distance
+     * 2. a vector lying on the plane, whose projection via
+     *    `PointWidthDepthProjection()` gives the input projection
+     * 
+     * Given the arbitrary definition of the projection reference, it is assumed
+     * that the same convention is used as in PointWidthDepthProjection() and
+     * DecomposePointWidthDepth().
+     * 
+     */
+    TVector3 ComposePointWidthDepth
+      (double distance, DecomposedVector_t::Projection_t const& proj) const
+      { return fDecompFrame.ComposePoint(distance, proj); }
+    
+    
+    /// @}
+    
+    
+    /// @{
     /// @name Coordinate transformation
     
     /// Transform point from local plane frame to world frame
-    void LocalToWorld(const double* plane, double* world)     const;
+    void LocalToWorld(const double* plane, double* world) const
+      { fTrans.LocalToWorld(plane, world); }
+      
+    /// Transform point from local plane frame to world frame
+    TVector3 LocalToWorld(const TVector3& local) const
+      { return fTrans.LocalToWorld(local); }
     
     /// Transform direction vector from local to world
-    void LocalToWorldVect(const double* plane, double* world) const;
-
-    // Again, with TVectors
-    const TVector3 LocalToWorld( const TVector3& local )      const;
-
-    /// Transform point from world frame to local plane frame
-    void WorldToLocal(const double* world, double* plane)     const;
-
-    /// Transform direction vector from world to local
-    void WorldToLocalVect(const double* world, double* plane) const;
+    void LocalToWorldVect(const double* plane, double* world) const
+      { fTrans.LocalToWorldVect(plane, world); }
     
-    // Again, with TVectors
-    const TVector3 WorldToLocal( const TVector3& world )      const;
+    /// Transform direction vector from local to world
+    TVector3 LocalToWorldVect(const TVector3& local) const
+      { return fTrans.LocalToWorldVect(local); }
+    
+    /// Transform point from world frame to local plane frame
+    void WorldToLocal(const double* world, double* plane) const
+      { fTrans.WorldToLocal(world, plane); }
+    
+    /// Transform point from world frame to local plane frame
+    TVector3 WorldToLocal(TVector3 const& world) const
+      { return fTrans.WorldToLocal(world); }
+    
+    /// Transform direction vector from world to local
+    void WorldToLocalVect(const double* world, double* plane) const
+      { fTrans.WorldToLocalVect(world, plane); }
+    
+    /// Transform direction vector from world to local
+    TVector3 WorldToLocalVect(TVector3 const& world) const
+      { return fTrans.WorldToLocalVect(world); }
     
     /// @}
+    
     
     
     /// @{
@@ -409,20 +722,21 @@ namespace geo {
         return value;
       } // roundUnit()
     
-    /// Rounds in place all components of a vector using roundUnit()
+    /// Rounds in place all components of a vector using geo::vect::RoundValue01()
     static void roundVector(TVector3& v, double tol)
-      {
-        v.SetX(roundUnit(v.X(), tol)); 
-        v.SetY(roundUnit(v.Y(), tol));
-        v.SetZ(roundUnit(v.Z(), tol));
-      } // roundVector()
+      { geo::vect::Round01(v, tol); }
+    
+    /// Returns a vector with all components rounded using roundUnit()
+    static TVector3 roundedVector(TVector3 const& v, double tol)
+      { return geo::vect::Rounded01(v, tol); }
     
   private:
     
-    void FindWire(std::vector<const TGeoNode*>& path,
-		  unsigned int depth);
-    void MakeWire(std::vector<const TGeoNode*>& path, 
-		  int depth);
+    void FindWire(GeoNodePath_t& path, size_t depth);
+    void MakeWire(GeoNodePath_t& path, size_t depth);
+    
+    /// Sets the geometry directions
+    void DetectGeometryDirections();
     
     /// Returns a direction normal to the plane (pointing is not defined)
     TVector3 GetNormalAxis() const;
@@ -430,8 +744,14 @@ namespace geo {
     /// Updates the cached normal to plane versor; needs the TPC box coordinates
     void UpdatePlaneNormal(geo::BoxBoundedGeo const& TPCbox);
     
+    /// Updates the cached depth and width direction 
+    void UpdateWidthDepthDir();
+    
     /// Updates the cached direction to increasing wires
     void UpdateIncreasingWireDir();
+    
+    /// Updates the cached direction to wire
+    void UpdateWireDir();
     
     /// Updates plane orientation
     void UpdateOrientation();
@@ -445,13 +765,24 @@ namespace geo {
     /// Updates the stored wire pitch with a slower, more robust algorithm
     void UpdateWirePitchSlow();
     
+    /// Updates the position of the wire coordinate decomposition
+    void UpdateDecompWireOrigin();
+    
     /// Whether the specified wire should have start and end swapped
     bool shouldFlipWire(geo::WireGeo const& wire) const;
 
     
   private:
-    TGeoHMatrix*          fGeoMatrix;   ///< Plane to world transform
-    View_t                fView;        ///< Does this plane measure U,V, or W?
+    using LocalTransformation_t = geo::LocalTransformation<TGeoHMatrix>;
+    
+    struct RectSpecs {
+      double width;
+      double depth;
+    }; // RectSpecs
+    
+    LocalTransformation_t fTrans;       ///< Plane to world transform
+    TGeoVolume const*     fVolume;      ///< Plane volume description
+    View_t                fView;        ///< Does this plane measure U, V, or W?
     Orient_t              fOrientation; ///< Is the plane vertical or horizontal?
     SigType_t             fSignalType;  ///< Is the plane induction or collection?
     std::vector<WireGeo*> fWire;        ///< List of wires in this plane
@@ -459,9 +790,17 @@ namespace geo {
     double                fSinPhiZ;     ///< sine of phiZ
     double                fCosPhiZ;     ///< cosine of phiZ
     
-    TVector3 fNormal; ///< normal to the plane, points to TPC center
-    TVector3 fWireCoordDir; ///< direction measured by the wires
-    
+    TVector3              fNormal;      ///< normal to the plane, inward in TPC
+    /// Decomposition on wire coordinates; the main direction is along the wire,
+    /// the secondary one is the one measured by the wire, the normal matches
+    /// the plane's normal.
+    Decomposer_t          fDecompWire;
+    /// Decomposition on frame coordinates; the main direction is a "width",
+    /// the secondary one is just orthogonal to it ("depth").
+    /// Normal can differ in sign from the plane one.
+    Decomposer_t          fDecompFrame;
+    RectSpecs             fFrameSize;   ///< size of the frame of the plane
+
     geo::PlaneID          fID;          ///< ID of this plane
 
   };
@@ -508,20 +847,43 @@ void geo::PlaneGeo::printPlaneInfo(
   //----------------------------------------------------------------------------
   auto normal = GetNormalDirection();
   auto incrZdir = GetIncreasingWireDirection();
+  decltype(auto) wireNormalDir = fDecompWire.NormalDir();
   out << "\n" << indent
     << "normal to plane: ("
       << normal.X() << ", " << normal.Y() << ", " << normal.Z() << ")"
     << ", direction of increasing wire number: ("
       << incrZdir.X() << ", " << incrZdir.Y() << ", " << incrZdir.Z() << ")"
+    << " [wire frame normal: (" << wireNormalDir.X()
+      << ", " << wireNormalDir.Y() << ", " << wireNormalDir.Z() << ")]"
     << " (" << (WireIDincreasesWithZ()? "increases": "decreases") << " with z)";
     
   if (--verbosity <= 0) return; // 3
   
   //----------------------------------------------------------------------------
+  
+  decltype(auto) wireDir = GetWireDirection();
+  decltype(auto) widthDir = WidthDir();
+  decltype(auto) depthDir = DepthDir();
+  decltype(auto) frameNormalDir = fDecompFrame.NormalDir();
+  
+  out << "\n" << indent
+    << "wire direction: ("
+      << wireDir.X() << ", " << wireDir.Y() << ", " << wireDir.Z() << ")"
+    << "; width " << Width() << " cm in direction: ("
+      << widthDir.X() << ", " << widthDir.Y() << ", " << widthDir.Z() << ")"
+    << ", depth " << Depth() << " cm in direction: ("
+      << depthDir.X() << ", " << depthDir.Y() << ", " << depthDir.Z() << ")"
+    << " [normal: (" << frameNormalDir.X()
+      << ", " << frameNormalDir.Y() << ", " << frameNormalDir.Z() << ")]"
+    ;
+    
+  if (--verbosity <= 0) return; // 4
+  
+  //----------------------------------------------------------------------------
   // get the area spanned by the wires
   auto plane_area = Coverage();
 
-  out << "\n" << indent << "its wires cover ";
+  out << "\n" << indent << "wires cover ";
   bool bPrint2D = false;
   if (plane_area.isPlane()) {
     switch (Orientation()) {

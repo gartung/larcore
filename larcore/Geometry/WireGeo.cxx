@@ -38,7 +38,7 @@ namespace geo{
   /// \param depth : Size of "path" list
 
   //-----------------------------------------
-  WireGeo::WireGeo(std::vector<const TGeoNode*>& path, int depth) 
+  WireGeo::WireGeo(GeoNodePath_t const& path, size_t depth) 
     : flipped(false)
   {
     fWireNode = path[depth];
@@ -55,7 +55,7 @@ namespace geo{
     // build a matrix to take us from the local to the world coordinates
     // in one step
     TGeoHMatrix mat(*path[0]->GetMatrix());
-    for(int i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
+    for(size_t i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
     
     const Double_t* translation = mat.GetTranslation();
     // there are not many ways to set a HepGeom::Transform3D...

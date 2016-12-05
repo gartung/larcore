@@ -15,6 +15,9 @@
 #include "larcore/TestUtils/NameSelector.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+// ROOT
+#include "TVector3.h"
+
 // C/C++ standard libraries
 #include <string>
 #include <set>
@@ -135,12 +138,17 @@ namespace geo {
     void testFindVolumes();
     void testCryostat();
     void testTPC(geo::CryostatID const& cid);
+    void testPlaneDirections() const;
     void testWireOrientations() const;
     void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();
     void testProject();
+    void testPlaneProjectionReference() const;
+    void testPlaneProjection() const;
     void testWireCoordFromPlane() const;
+    void testParallelWires() const;
+    void testPlanePointDecomposition() const;
     void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
@@ -161,7 +169,7 @@ namespace geo {
     
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
-      (const TPCID& tpcid, double x, double y, double z) const;
+      (geo::TPCGeo const& TPC, TVector3 const& point) const;
     
     /// Returns dT/dW expected from the specified segment A-to-B
     std::vector<std::pair<geo::PlaneID, double>> ExpectedPlane_dTdW(

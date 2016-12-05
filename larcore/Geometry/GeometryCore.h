@@ -47,6 +47,7 @@
 // LArSoft libraries
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
+#include "larcore/Geometry/DriftDescriptor.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
@@ -1077,11 +1078,15 @@ namespace geo {
     using Coord_t = double;
     
     /// Type used to represent a point in global coordinates
-    using Point3D_t = std::array<Coord_t, 3>; // one day it will be standard...
+  //  using Point3D_t = std::array<Coord_t, 3>; // one day it will be standard...
+    using Point3D_t = TVector3; // terrible choice... we know
     
     
     /// Simple class with two points (a pair with aliases)
     struct Segment_t: public std::pair<Point3D_t, Point3D_t> {
+      
+      // use the base class constructors
+      using std::pair<Point3D_t, Point3D_t>::pair;
       
       Point3D_t const& start() const { return this->first; }
       Point3D_t& start() { return this->first; }
@@ -2609,7 +2614,8 @@ namespace geo {
      * 
      * The starting point is the wire end with lower z coordinate.
      * 
-     * @deprecated use the wire ID interface instead
+     * @deprecated use the wire ID interface instead (but note that it does not
+     *             sort the ends)
      */
     void WireEndPoints(
       unsigned int cstat, unsigned int tpc, unsigned int plane, unsigned int wire,
@@ -2623,7 +2629,8 @@ namespace geo {
      * @return a segment whose ends are the wire end points
      * @throws cet::exception wire not present
      * 
-     * The starting point is the wire end with lower z coordinate.
+     * The start and end are assigned as returned from the geo::WireGeo object.
+     * The rules for this assignment are documented in that class.
      */
     Segment_t WireEndPoints(geo::WireID const& wireID) const;
     
@@ -2711,15 +2718,11 @@ namespace geo {
     //@}
     
     
-    //@{
     /**
      * @brief Returns the index of the nearest wire to the specified position
      * @param YPos y coordinate on the wire plane
      * @param ZPos z coordinate on the wire plane
      * @param planeid ID of the plane
-     * @param PlaneNo number of plane
-     * @param TPCNo number of TPC
-     * @param cstat number of cryostat
      * @return an index interpolation between the two nearest wires
      * @see ChannelMapAlg::WireCoordinate()
      *
@@ -2728,16 +2731,42 @@ namespace geo {
      * values corresponding to the actual wires.
      * 
      * @todo Unify (y, z) coordinate
-     * @todo use plane ID instead
      */
     double WireCoordinate
       (double YPos, double ZPos, geo::PlaneID const& planeid) const;
+    
+    /**
+     * @brief Returns the index of the nearest wire to the specified position
+     * @param YPos y coordinate on the wire plane
+     * @param ZPos z coordinate on the wire plane
+     * @param PlaneNo number of plane
+     * @param TPCNo number of TPC
+     * @param cstat number of cryostat
+     * @return an index interpolation between the two nearest wires
+     * @see ChannelMapAlg::WireCoordinate()
+     *
+     * @deprecated Use the version with plane ID instead
+     */
     double WireCoordinate(double YPos, double ZPos,
                           unsigned int PlaneNo,
                           unsigned int TPCNo,
                           unsigned int cstat) const
       { return WireCoordinate(YPos, ZPos, geo::PlaneID(cstat, TPCNo, PlaneNo)); }
-    //@}
+    
+    /**
+     * @brief Returns the index of the nearest wire to the specified position
+     * @param pos world coordinates of the position (it will be projected)
+     * @param ZPos z coordinate on the wire plane
+     * @param planeid ID of the plane
+     * @return an index interpolation between the two nearest wires
+     * @see ChannelMapAlg::WireCoordinate()
+     *
+     * Respect to NearestWireID(), this method returns a real number,
+     * representing a continuous coordinate in the wire axis, with the round
+     * values corresponding to the actual wires.
+     */
+    double WireCoordinate
+      (TVector3 const& pos, geo::PlaneID const& planeid) const;
     
     //
     // wire intersections
@@ -3799,6 +3828,23 @@ namespace geo {
     
   private:
     
+    /// Class delivering drift descriptors;
+    /// currently supports only one descriptor for the whole detector
+    class DriftDescManager {
+      std::unique_ptr<geo::DriftDescriptor> fDriftDir; ///< single drift dir
+        
+        public:
+      
+      /// Constructor: extracts descriptors from channel mapping
+      void setDescriptors(ChannelMapAlg const& mapping);
+      
+      /// Returns a pointer to the drift descriptor for the specified TPC
+      geo::DriftDescriptor const* operator() (geo::TPCID const&) const
+        { return fDriftDir.get(); }
+      
+    }; // class DriftDescManager
+    
+    
     void FindCryostat(std::vector<const TGeoNode*>& path, unsigned int depth);
     
     void MakeCryostat(std::vector<const TGeoNode*>& path, int depth);
@@ -3834,7 +3880,11 @@ namespace geo {
     double         fMinWireZDist;   ///< Minimum distance in Z from a point in which
                                     ///< to look for the closest wire
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
-    std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;  ///< Object containing the channel to wire mapping
+    std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;
+                                    ///< Object containing the channel to wire mapping
+    
+    DriftDescManager fDrift; ///< object delivering drift descriptions
+    
   }; // class GeometryCore
   
   

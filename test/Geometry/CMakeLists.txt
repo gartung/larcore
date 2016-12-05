@@ -152,6 +152,16 @@ cet_test(geometry_iterator HANDBUILT
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
 
+# decomposition engine tests
+cet_test(Decomposer_test
+  SOURCES Decomposer_test.cxx
+  LIBRARIES
+    ${ROOT_PHYSICS}
+    ${ROOT_GENVECTOR}
+    ${ROOT_CORE} # TVersionCheck
+  USE_BOOST_UNIT
+  )
+
 # drift direction descriptor tests
 cet_test(XDriftDescriptor_test
   LIBRARIES

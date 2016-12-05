@@ -12,7 +12,7 @@
 #include "TGeoManager.h"
 #include "TGeoNode.h"
 #include "TGeoMatrix.h"
-#include <TGeoBBox.h>
+#include "TGeoBBox.h"
 
 // Framework includes
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -22,9 +22,11 @@
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
+#include "larcore/CoreUtils/RealComparisons.h"
 
 // C/C++ standard libraries
 #include <cmath>
+#include <cassert>
 #include <map>
 #include <algorithm> // std::max()
 
@@ -33,11 +35,21 @@ namespace geo{
 
 
   //......................................................................
-  TPCGeo::TPCGeo(std::vector<const TGeoNode*>& path, int depth)
+  TVector3 const TPCGeo::DirX(1.0, 0.0, 0.0);
+  TVector3 const TPCGeo::DirY(0.0, 1.0, 0.0);
+  TVector3 const TPCGeo::DirZ(0.0, 0.0, 1.0);
+  
+  //......................................................................
+  TPCGeo::TPCGeo(GeoNodePath_t& path, size_t depth)
     : BoxBoundedGeo() // we initialize boundaries at the end of construction
+    , fTrans(path, depth)
     , fActiveVolume(0)
     , fTotalVolume(0)
     , fDriftDirection(geo::kUnknownDrift)
+    , fWidthDir (DirX)
+    , fHeightDir(DirY)
+    , fLengthDir(DirZ)
+    , fDriftDir() // null until known
   {
     
     // all planes are going to be contained in the volume named volTPC
@@ -67,15 +79,8 @@ namespace geo{
     LOG_DEBUG("Geometry") << "detector total  volume is " << fTotalVolume->GetName()
                           << "\ndetector active volume is " << fActiveVolume->GetName();
 
-    // build a matrix to take us from the local to the world coordinates
-    // in one step
-    fGeoMatrix = new TGeoHMatrix(*path[0]->GetMatrix());
-    for(int i = 1; i <= depth; ++i){
-      fGeoMatrix->Multiply(path[i]->GetMatrix());
-    }
-    
     // compute the active volume transformation too
-    TGeoHMatrix ActiveHMatrix(*fGeoMatrix);
+    TGeoHMatrix ActiveHMatrix(fTrans.Matrix());
     if (pActiveVolNode) ActiveHMatrix.Multiply(pActiveVolNode->GetMatrix());
     // we don't keep the active volume information... just store its center:
     std::array<double, 3> localActiveCenter, worldActiveCenter;
@@ -99,35 +104,41 @@ namespace geo{
 
     // check that the rotation matrix to the world is the identity, if not
     // we need to change the width, height and length values
-    double* rotMatrix = fGeoMatrix->GetRotationMatrix();
+    double const* rotMatrix = fTrans.Matrix().GetRotationMatrix();
     if(rotMatrix[0] != 1){
       if(std::abs(rotMatrix[2]) == 1){
         fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
         fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+        fWidthDir        = DirZ;
       }
       if(std::abs(rotMatrix[1]) == 1){
         fActiveHalfWidth = ((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
         fHalfWidth       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
+        fWidthDir        = DirY;
       }
     }
     if(rotMatrix[4] != 1){
       if(std::abs(rotMatrix[3]) == 1){
         fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
         fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+        fHeightDir        = DirX;
       }
       if(std::abs(rotMatrix[5]) == 1){
         fActiveHalfHeight = ((TGeoBBox*)fActiveVolume->GetShape())->GetDZ();
         fHalfHeight       = ((TGeoBBox*)fTotalVolume->GetShape())->GetDZ();
+        fHeightDir        = DirZ;
       }
     }
     if(rotMatrix[8] != 1){
       if(std::abs(rotMatrix[6]) == 1){
         fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDX();
         fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDX();
+        fLengthDir    = DirX;
       }
       if(std::abs(rotMatrix[7]) == 1){
         fActiveLength = 2.*((TGeoBBox*)fActiveVolume->GetShape())->GetDY();
         fLength       = 2.*((TGeoBBox*)fTotalVolume->GetShape())->GetDY();
+        fLengthDir    = DirY;
       }
     }
     
@@ -144,12 +155,10 @@ namespace geo{
   
     fPlanes.clear();
 
-    if(fGeoMatrix)    delete fGeoMatrix;
   }
 
   //......................................................................
-  void TPCGeo::FindPlane(std::vector<const TGeoNode*>& path,
-			 unsigned int depth) 
+  void TPCGeo::FindPlane(GeoNodePath_t& path, size_t depth) 
   {
 
     const char* nm = path[depth]->GetName();
@@ -175,7 +184,7 @@ namespace geo{
 
 
   //......................................................................
-  void TPCGeo::MakePlane(std::vector<const TGeoNode*>& path, int depth) 
+  void TPCGeo::MakePlane(GeoNodePath_t& path, size_t depth) 
   {
     fPlanes.push_back(new PlaneGeo(path, depth));
   }
@@ -277,9 +286,20 @@ namespace geo{
     // reset the ID
     fID = tpcid;
     
-    // ask the planes to update
-    for (unsigned int plane = 0; plane < Nplanes(); ++plane)
+    // ask the planes to update; also check
+    
+    // (the following may be unused in non-debug mode)
+    lar::util::RealComparisons<double> const comp(1e-5);
+    auto const vectComp = lar::util::makeVector3DComparison(comp);
+    
+    for (unsigned int plane = 0; plane < Nplanes(); ++plane) {
       fPlanes[plane]->UpdateAfterSorting(geo::PlaneID(fID, plane), *this);
+      
+      // check that the plane normal is opposite to the TPC drift direction
+      assert
+        (vectComp.equal(-(fPlanes[plane]->GetNormalDirection()), DriftDir()));
+      
+    } // for
     
   } // TPCGeo::UpdateAfterSorting()
   
@@ -307,6 +327,28 @@ namespace geo{
     return *fPlanes[p];
   } // TPCGeo::Plane(geo::View_t)
 
+  
+  //......................................................................
+  geo::PlaneGeo const& TPCGeo::SmallestPlane() const {
+    
+    //
+    // Returns the plane with the smallest width x depth. No nonsense here.
+    //
+    
+    auto iPlane = fPlanes.begin(), pend = fPlanes.end();
+    geo::PlaneGeo const* smallestPlane = *iPlane;
+    double smallestSurface = smallestPlane->Width() * smallestPlane->Depth();
+    while (++iPlane != pend) {
+      double const surface = (*iPlane)->Width() * (*iPlane)->Depth();
+      if (surface > smallestSurface) continue;
+      smallestSurface = surface;
+      smallestPlane = *iPlane;
+    } // while
+    return *smallestPlane;
+    
+  } // TPCGeo::SmallestPlane()
+  
+  
   //......................................................................
   unsigned int TPCGeo::MaxWires() const {
     unsigned int maxWires = 0;
@@ -404,88 +446,49 @@ namespace geo{
   }
 
   //......................................................................
-  void TPCGeo::LocalToWorld(const double* tpc, double* world) const
-  {
-    fGeoMatrix->LocalToMaster(tpc, world);
-  }
-
-  //......................................................................
-  void TPCGeo::LocalToWorldVect(const double* tpc, double* world) const
-  {
-    fGeoMatrix->LocalToMasterVect(tpc, world);
-  }
-
-  //......................................................................
-
-  void TPCGeo::WorldToLocal(const double* world, double* tpc) const
-  {
-    fGeoMatrix->MasterToLocal(world, tpc);
-  }
-
-  //......................................................................
-
-  TVector3 TPCGeo::WorldToLocal( const TVector3& world ) const
-  {
-    double worldArray[4];
-    double localArray[4];
-    worldArray[0] = world.X();
-    worldArray[1] = world.Y();
-    worldArray[2] = world.Z();
-    worldArray[3] = 1.; 
-    fGeoMatrix->MasterToLocal(worldArray,localArray);
-    return TVector3(localArray);
-  }
-
-  //......................................................................
-
-  TVector3 TPCGeo::LocalToWorld( const TVector3& local ) const
-  {
-    double worldArray[4];
-    double localArray[4];
-    localArray[0] = local.X();
-    localArray[1] = local.Y();
-    localArray[2] = local.Z();
-    localArray[3] = 1.;
-    fGeoMatrix->LocalToMaster(localArray,worldArray);
-    return TVector3(worldArray);
-  }
-
-  //......................................................................
-
-  // Convert a vector from world frame to the local plane frame
-  // \param world : 3-D array. Vector in world coordinates; input.
-  // \param plane : 3-D array. Vector in plane coordinates; plane.
-  void TPCGeo::WorldToLocalVect(const double* world, double* plane) const
-  {
-    fGeoMatrix->MasterToLocalVect(world,plane);
-  }
-
-  
-  //......................................................................
   void TPCGeo::ResetDriftDirection() {
     
     auto const driftDirCode = DetectDriftDirection();
     switch (driftDirCode) {
       case +1:
         fDriftDirection = geo::kPosX; // this is the same as kPos!
+        fDriftDir = DirX;
         break;
       case -1:
         fDriftDirection = geo::kNegX; // this is the same as kNeg!
+        fDriftDir = -DirX;
         break;
-      case +2: case +3:
+      case +2:
+        fDriftDir = DirY;
         fDriftDirection = geo::kPos;
         break;
-      case -2: case -3:
+      case -2:
+        fDriftDir = -DirY;
+        fDriftDirection = geo::kNeg;
+        break;
+      case +3:
+        fDriftDir = DirZ;
+        fDriftDirection = geo::kPos;
+        break;
+      case -3:
+        fDriftDir = -DirZ;
         fDriftDirection = geo::kNeg;
         break;
       default:
         // TPC ID is likely not yet set
         fDriftDirection = kUnknownDrift;
+        
+        // we estimate the drift direction roughly from the geometry
+        fDriftDir = Plane(0).GetCenter() - GetCenter();
+        
         mf::LogError("TPCGeo")
           << "Unable to detect drift direction (result: " << driftDirCode
-          << ")";
+          << ", drift: ( " << fDriftDir.X() << " ; " << fDriftDir.Y() << " ; "
+          << fDriftDir.Z() << " )";
         break;
     } // switch
+    
+    geo::PlaneGeo::roundVector(fDriftDir, 1e-4);
     
   } // TPCGeo::ResetDriftDirection()
   

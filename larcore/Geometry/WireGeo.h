@@ -15,6 +15,7 @@
 
 // CLHEP
 #include "CLHEP/Geometry/Transform3D.h"
+#include "larcore/Geometry/LocalTransformation.h"
 
 // ROOT
 #include "TVector3.h"
@@ -58,7 +59,10 @@ namespace geo {
    */
   class WireGeo {
   public:
-    WireGeo(std::vector<const TGeoNode*>& path, int depth);
+    
+    using GeoNodePath_t = std::vector<TGeoNode const*>;
+    
+    WireGeo(GeoNodePath_t const& path, size_t depth);
     
     
     /// @{

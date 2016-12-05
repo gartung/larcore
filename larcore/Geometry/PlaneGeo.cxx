@@ -11,6 +11,7 @@
 #include "larcore/Geometry/Exceptions.h" // geo::InvalidWireError
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
+#include "larcore/CoreUtils/RealComparisons.h"
 
 // Framework includes
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -21,10 +22,13 @@
 #include "TVector3.h"
 #include "TGeoManager.h"
 #include "TGeoNode.h"
+#include "TGeoBBox.h"
 #include "TGeoMatrix.h"
+#include "TClass.h"
 
 // C/C++ standard library
 #include <array>
+#include <cassert>
 
 
 // print a TVector3, for debugging purpose
@@ -38,28 +42,35 @@ namespace geo{
 
 
   //......................................................................
-  PlaneGeo::PlaneGeo(std::vector<const TGeoNode*>& path, int depth)
-    : fView(geo::kUnknown)
+  PlaneGeo::PlaneGeo(GeoNodePath_t& path, size_t depth)
+    : fTrans(path, depth)
+    , fVolume(path[depth]->GetVolume())
+    , fView(geo::kUnknown)
     , fOrientation(geo::kVertical)
     , fSignalType(geo::kMysteryType)
     , fWirePitch(0.)
     , fSinPhiZ(0.)
     , fCosPhiZ(0.)
-    , fNormal()
-    , fWireCoordDir()
+    , fDecompWire()
+    , fDecompFrame()
+
   {
-    // build a matrix to take us from the local to the world coordinates
-    // in one step
-    fGeoMatrix = new TGeoHMatrix(*path[0]->GetMatrix());
-    for(int i = 1; i <= depth; ++i){
-      fGeoMatrix->Multiply(path[i]->GetMatrix());
+    assert(depth < path.size());
+    
+    if (!fVolume) {
+      TGeoNode const* pNode = path[depth];
+      throw cet::exception("PlaneGeo")
+        << "Plane geometry node " << pNode->IsA()->GetName()
+        << "[" << pNode->GetName() << ", #" << pNode->GetNumber()
+        << "] has no volume!\n";
     }
-  
+    
     // find the wires for the plane so that you can use them later
     FindWire(path, depth);
     
     // view is now set at TPC level with SetView
     
+    DetectGeometryDirections();
     UpdateWirePitchSlow();
     
   } // PlaneGeo::PlaneGeo()
@@ -72,8 +83,6 @@ namespace geo{
       if(fWire[i]) delete fWire[i];
   
     fWire.clear();
-
-    if(fGeoMatrix) delete fGeoMatrix;
 
   }
 
@@ -90,8 +99,7 @@ namespace geo{
   
   //......................................................................
 
-  void PlaneGeo::FindWire(std::vector<const TGeoNode*>& path,
-			  unsigned int depth) 
+  void PlaneGeo::FindWire(GeoNodePath_t& path, size_t depth) 
   {
     // Check if the current node is a wire
     const char* wireLabel = "volTPCWire";
@@ -116,7 +124,7 @@ namespace geo{
 
   //......................................................................
 
-  void PlaneGeo::MakeWire(std::vector<const TGeoNode*>& path, int depth) 
+  void PlaneGeo::MakeWire(GeoNodePath_t& path, size_t depth) 
   {
     fWire.push_back(new WireGeo(path, depth));
   }
@@ -146,22 +154,17 @@ namespace geo{
   
   
   //......................................................................
-  double PlaneGeo::PlaneCoordinateFrom
-    (TVector3 const& point, geo::WireGeo const& refWire) const
-  {
-    // a vector connecting to the point
-    auto toPoint = point - refWire.GetCenter();
+  lar::util::simple_geo::Volume<> PlaneGeo::Coverage() const {
     
-    // The distance is the projection of that vector on the plane, times the
-    // sine of the angle with the wire.
-    // All this machinery is realized by a "mixed" product.
-    // The component of the point orthogonal to the plane is suppressed
-    // (just separate point in the two components, and notice that one of the
-    // two resulting mixed products has two vectors lying on the plane normal
-    // and therefore vanishes).
-    return refWire.Direction().Cross(toPoint).Dot(GetNormalDirection());
+    // add both coordinates of first and last wire
+    std::array<double, 3> A, B;
     
-  } // PlaneGeo::PlaneCoordinateFrom()
+    FirstWire().GetStart(A.data());
+    LastWire().GetEnd(B.data());
+    
+    return { A.data(), B.data() };
+  } // PlaneGeo::Coverage()
+  
   
   //......................................................................
   geo::WireID PlaneGeo::NearestWireID(TVector3 const& pos) const {
@@ -196,81 +199,9 @@ namespace geo{
   
   
   //......................................................................
-  lar::util::simple_geo::Volume<> PlaneGeo::Coverage() const {
-    
-    // add both coordinates of first and last wire
-    std::array<double, 3> A, B;
-    
-    FirstWire().GetStart(A.data());
-    LastWire().GetEnd(B.data());
-    
-    return { A.data(), B.data() };
-  } // PlaneGeo::Coverage()
-  
-  
-  //......................................................................
   double PlaneGeo::ThetaZ() const { return FirstWire().ThetaZ(); }
   
   
-  //......................................................................
-
-  void PlaneGeo::LocalToWorld(const double* plane, double* world) const
-  {
-    fGeoMatrix->LocalToMaster(plane, world);
-  }
-
-  //......................................................................
-
-  void PlaneGeo::LocalToWorldVect(const double* plane, double* world) const
-  {
-    fGeoMatrix->LocalToMasterVect(plane, world);
-  }
-
-  //......................................................................
-
-  void PlaneGeo::WorldToLocal(const double* world, double* plane) const
-  {
-    fGeoMatrix->MasterToLocal(world, plane);
-  }
-
-  //......................................................................
-
-  const TVector3 PlaneGeo::WorldToLocal( const TVector3& world ) const
-  {
-    double worldArray[4];
-    double localArray[4];
-    worldArray[0] = world.X();
-    worldArray[1] = world.Y();
-    worldArray[2] = world.Z();
-    worldArray[3] = 1.; 
-    fGeoMatrix->MasterToLocal(worldArray,localArray);
-    return TVector3(localArray);
-  }
-
-  //......................................................................
-
-  const TVector3 PlaneGeo::LocalToWorld( const TVector3& local ) const
-  {
-    double worldArray[4];
-    double localArray[4];
-    localArray[0] = local.X();
-    localArray[1] = local.Y();
-    localArray[2] = local.Z();
-    localArray[3] = 1.;
-    fGeoMatrix->LocalToMaster(localArray,worldArray);
-    return TVector3(worldArray);
-  }
-
-  //......................................................................
-
-  // Convert a vector from world frame to the local plane frame
-  // \param world : 3-D array. Vector in world coordinates; input.
-  // \param plane : 3-D array. Vector in plane coordinates; plane.
-  void PlaneGeo::WorldToLocalVect(const double* world, double* plane) const
-  {
-    fGeoMatrix->MasterToLocalVect(world,plane);
-  }
-
   //......................................................................
   void PlaneGeo::UpdateAfterSorting
     (geo::PlaneID planeid, geo::BoxBoundedGeo const& TPCbox)
@@ -281,6 +212,7 @@ namespace geo{
     fID = planeid;
     
     UpdatePlaneNormal(TPCbox);
+    UpdateWidthDepthDir();
     UpdateIncreasingWireDir();
     
     // update wires
@@ -292,6 +224,8 @@ namespace geo{
       ++wireNo;
     } // for wires
     
+    UpdateDecompWireOrigin();
+    UpdateWireDir();
     UpdateOrientation();
     UpdateWirePitch();
     UpdatePhiZ();
@@ -320,6 +254,84 @@ namespace geo{
   } // PlaneGeo::OrientationName()
   
   
+  //......................................................................
+  void PlaneGeo::DetectGeometryDirections() {
+    
+    //
+    // We need to identify which are the "long" directions of the plane.
+    // We assume it is a box, and the shortest side is excluded.
+    // The first direction ("width") is given by preference to z.
+    // If z is the direction of the normal to the plane... oh well.
+    // Let's say privilege to the one which comes from local z, then y.
+    // That means: undefined.
+    //
+    
+    //
+    // how do they look like in the world?
+    //
+    TGeoBBox const* pShape = dynamic_cast<TGeoBBox const*>(fVolume->GetShape());
+    if (!pShape) {
+      mf::LogError("BoxInfo")
+        << "Volume " << fVolume->IsA()->GetName() << "['" << fVolume->GetName()
+        << "'] has a shape which is a " << pShape->IsA()->GetName()
+        << ", not a TGeoBBox! Dimensions won't be available.";
+      // set it invalid
+      fDecompFrame.SetOrigin({ 0., 0., 0. });
+      fDecompFrame.SetMainDir({ 0., 0., 0. });
+      fDecompFrame.SetSecondaryDir({ 0., 0., 0. });
+      fFrameSize = { 0.0, 0.0 };
+      return;
+    }
+    
+    TVector3 sides[3];
+    size_t iSmallest = 3;
+    {
+      
+      size_t iSide = 0;
+      TVector3 dir;
+      
+      sides[iSide] = LocalToWorldVect({ pShape->GetDX(), 0.0, 0.0 });
+      iSmallest = iSide;
+      ++iSide;
+      
+      sides[iSide] = LocalToWorldVect({ 0.0, pShape->GetDY(), 0.0 });
+      if (sides[iSide].Mag2() < sides[iSmallest].Mag2()) iSmallest = iSide;
+      ++iSide;
+      
+      sides[iSide] = LocalToWorldVect({ 0.0, 0.0, pShape->GetDZ() });
+      if (sides[iSide].Mag2() < sides[iSmallest].Mag2()) iSmallest = iSide;
+      ++iSide;
+      
+    }
+    
+    //
+    // which are the largest ones?
+    //
+    size_t kept[2];
+    {
+      size_t iKept = 0;
+      for (size_t i = 0; i < 3; ++i) if (i != iSmallest) kept[iKept++] = i;
+    }
+    
+    //
+    // which is which?
+    // 
+    // Pick width as the most z-like.
+    //
+    size_t const iiWidth =
+      std::abs(sides[kept[0]].Unit().Z()) > std::abs(sides[kept[1]].Unit().Z())
+      ? 0: 1;
+    size_t const iWidth = kept[iiWidth];
+    size_t const iDepth = kept[1 - iiWidth]; // the other
+    
+    fDecompFrame.SetOrigin(GetCenter());
+    fDecompFrame.SetMainDir(roundedVector(sides[iWidth].Unit(), 1e-4));
+    fDecompFrame.SetSecondaryDir(roundedVector(sides[iDepth].Unit(), 1e-4));
+    fFrameSize.width    = sides[iWidth].Mag() * 2.0;
+    fFrameSize.depth    = sides[iDepth].Mag() * 2.0;
+    
+  } // PlaneGeo::DetectGeometryDirections()
+
   //......................................................................
   TVector3 PlaneGeo::GetNormalAxis() const {
     const unsigned int NWires = Nwires();
@@ -352,8 +364,7 @@ namespace geo{
     
     //
     // this algorithm needs to know about the axis;
-    // the normal may be not set yet because it requires external information
-    // from the TPC; we can't use GetNormalDirection().
+    // the normal is expected to be already updated.
     //
     
     // sanity check
@@ -424,6 +435,26 @@ namespace geo{
   
   
   //......................................................................
+  void PlaneGeo::UpdateWidthDepthDir() {
+    
+    //
+    // fix the positiveness of the width/depth/normal frame
+    //
+    
+    // The basis is already set and orthonormal, with only the width
+    // and depth directions arbitrary.
+    // We choose the direction of the secondary axis ("depth")
+    // so that the frame normal is oriented in the general direction of the
+    // plane normal (the latter is computed independently).
+    if (WidthDir().Cross(DepthDir()).Dot(GetNormalDirection()) < 0.0) {
+      fDecompFrame.SetSecondaryDir
+        (roundedVector(-fDecompFrame.SecondaryDir(), 1e-4));
+    }
+    
+  } // PlaneGeo::UpdateWidthDepthDir()
+  
+  
+  //......................................................................
   void PlaneGeo::UpdateIncreasingWireDir() {
     
     //
@@ -442,19 +473,36 @@ namespace geo{
     
     // 2) get the axis perpendicular to it on the wire plane
     //    (arbitrary direction)
-    fWireCoordDir = GetNormalDirection().Cross(WireDir).Unit();
+    auto wireCoordDir = GetNormalDirection().Cross(WireDir).Unit();
     
     // 3) where is the next wire?
     TVector3 toNextWire
       = Wire(refWireNo + 1).GetCenter() - refWire.GetCenter();
     
-    // 4) if fWireCoordDir is pointing away from the next wire, flip it
-    if (fWireCoordDir.Dot(toNextWire) < 0) {
-      fWireCoordDir = -fWireCoordDir;
+    // 4) if wireCoordDir is pointing away from the next wire, flip it
+    if (wireCoordDir.Dot(toNextWire) < 0) {
+      wireCoordDir = -wireCoordDir;
     }
-    roundVector(fWireCoordDir, 1e-3);
+    fDecompWire.SetSecondaryDir(roundedVector(wireCoordDir, 1e-4));
     
   } // PlaneGeo::UpdateIncreasingWireDir()
+  
+  
+  //......................................................................
+  void PlaneGeo::UpdateWireDir() {
+    
+    fDecompWire.SetMainDir(roundedVector(FirstWire().Direction(), 1e-4));
+    
+    //
+    // check that the resulting normal matches the plane one
+    //
+    
+    // (the following may be unused in non-debug mode)
+    lar::util::RealComparisons<double> const comp(1e-5);
+    auto const vectComp = lar::util::makeVector3DComparison(comp);
+    assert(vectComp.equal(fDecompWire.NormalDir(), GetNormalDirection()));
+    
+  } // PlaneGeo::UpdateWireDir()
   
   
   //......................................................................
@@ -480,6 +528,17 @@ namespace geo{
   
   
   //......................................................................
+  void PlaneGeo::UpdateDecompWireOrigin() {
+    
+    //
+    // update the origin of the reference frame (the middle of the first wire)
+    //
+    fDecompWire.SetOrigin(FirstWire().GetCenter());
+    
+  } // PlaneGeo::UpdateDecompWireOrigin()
+  
+  
+  //......................................................................
   bool PlaneGeo::shouldFlipWire(geo::WireGeo const& wire) const {
     //
     // The correct orientation is so that:
@@ -487,6 +546,13 @@ namespace geo{
     // (direction) x (wire coordinate direction) . (plane normal)
     // 
     // is positive; it it's negative, then we should flip the wire.
+    // 
+    // Note that the increasing wire direction comes from the wire frame, while
+    // the normal direction is computed independently by geometry.
+    // The resulting normal in the wire frame is expected to be the same as the
+    // plane normal from GetNormalDirection(); if this is not the case, flipping
+    // the wire direction should restore it.
+    // 
     
     return wire.Direction()
       .Cross(GetIncreasingWireDirection())
