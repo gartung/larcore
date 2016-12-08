@@ -37,6 +37,10 @@
 #include "fhiclcpp/intermediate_table.h"
 #include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/parse.h"
+#include "fhiclcpp/types/Comment.h"
+#include "fhiclcpp/types/Name.h"
+#include "fhiclcpp/types/Atom.h"
+#include "fhiclcpp/types/Table.h"
 // #include "fhiclcpp/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -661,8 +665,16 @@ namespace testing {
     static fhicl::ParameterSet ParseParameters(std::string config_path);
     
       private:
-    Configuration_t config; ///< instance of the configurer
+    /// Test environment options
+    struct Options_t {
+      bool MessageLevels = false; ///< print message levels on screen
+    }; // Options_t
     
+    Configuration_t config; ///< instance of the configurer
+    Options_t options; ///< options for the test environment
+    
+    /// Parses the configuration, looking for the test environment options 
+    void ParseEnvironmentOptions();
     
     void FillArgumentsFromCommandLine();
     
@@ -1146,12 +1158,17 @@ namespace testing {
     mf::StartMessageFacility(mf::MessageFacilityService::SingleThread, mf_pset);
     if (!appl_name.empty()) mf::SetApplicationName(appl_name);
     mf::SetContext("Initialization");
-  //  mf::LogProblem("MessageFacility") << "Error messages are shown.";
-  //  mf::LogPrint("MessageFacility") << "Warning messages are shown.";
-  //  mf::LogVerbatim("MessageFacility") << "Info messages are shown.";
-  //  mf::LogTrace("MessageFacility") << "Debug messages are shown.";
-  //  LOG_TRACE("MessageFacility")
-  //    << "LOG_TRACE/LOG_DEBUG messages are not compiled away.";
+    if (options.MessageLevels) {
+      std::cout << "Printing message levels in 'MessageFacility' category."
+        << std::endl;
+      
+      mf::LogProblem("MessageFacility") << "Error messages are shown.";
+      mf::LogPrint("MessageFacility") << "Warning messages are shown.";
+      mf::LogVerbatim("MessageFacility") << "Info messages are shown.";
+      mf::LogTrace("MessageFacility") << "Debug messages are shown.";
+      LOG_TRACE("MessageFacility")
+        << "LOG_TRACE/LOG_DEBUG messages are not compiled away.";
+    } // if print message levels
     mf::LogInfo("MessageFacility") << "MessageFacility started.";
     mf::SetModuleName("main");
   } // BasicTesterEnvironment::SetupMessageFacility()
@@ -1166,6 +1183,11 @@ namespace testing {
     // get the configuration
     //
     Configure();
+    
+    //
+    // parse the options specific to the test environment
+    //
+    ParseEnvironmentOptions();
     
     //
     // set up the message facility
@@ -1188,6 +1210,67 @@ namespace testing {
     
   } // BasicTesterEnvironment<>::Setup()
   
+
+    
+  template <typename ConfigurationClass>
+  void BasicTesterEnvironment<ConfigurationClass>::ParseEnvironmentOptions() {
+    
+    struct OptionsFromConfig_t {
+      fhicl::Atom<bool> messageLevels{
+        fhicl::Name("messageLevels"),
+        fhicl::Comment("prints a message per level (to verify the visible ones"),
+        false // default: no
+        };
+      fhicl::Atom<bool> printOptions{
+        fhicl::Name("printOptions"),
+        fhicl::Comment("prints a the list of options (this is one of them!)"),
+        false // default: no
+        };
+    }; // OptionsFromConfig_t
+    
+    
+    struct ValidationHelper {
+      static void printDummy(std::ostream& out)
+        {
+          fhicl::Table<OptionsFromConfig_t>
+            (fhicl::Name("test"), fhicl::Comment("Test environment options"))
+            .print_allowed_configuration(out);
+        } // printDummy()
+        
+      static fhicl::Table<OptionsFromConfig_t> validate
+        (fhicl::ParameterSet const& pset)
+        {
+          try {
+            return fhicl::Table<OptionsFromConfig_t>(pset, {});
+          }
+          catch (...) {
+            std::cerr << "Error parsing environment test options! Valid options:"
+              << std::endl;
+            ValidationHelper::printDummy(std::cerr);
+            throw; 
+          }
+        } // validate()
+    };
+    
+    
+    fhicl::ParameterSet pset = params.get<fhicl::ParameterSet>("test", {});
+    
+    // automatically performs validation
+    fhicl::Table<OptionsFromConfig_t> configTable
+      (ValidationHelper::validate(pset));
+    
+    if (configTable().printOptions()) {
+      std::cout
+        << "The following options can be passed to the test environment"
+        << " by putting them in the \"test: {}\" table of the configuration file:"
+        << std::endl;
+      ValidationHelper::printDummy(std::cout);
+    }
+    
+    options.MessageLevels = configTable().messageLevels();
+    
+  } // BasicTesterEnvironment<>::ParseEnvironmentOptions()
+
   
 } // namespace testing
 
