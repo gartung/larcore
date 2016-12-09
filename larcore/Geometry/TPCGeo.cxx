@@ -198,7 +198,6 @@ namespace geo{
     fViewToPlaneNumber.resize
       (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
     for(size_t p = 0; p < this->Nplanes(); ++p){
-      fPlanes[p]->SetSignalType(geo::kInduction); //<set all planes to be induction for now
       fPlanes[p]->LocalToWorld(origin,xyz1);
       if(p > 0) fPlane0Pitch[p] = fPlane0Pitch[p-1] + std::abs(xyz1[0]-xyz[0]);
       else      fPlane0Pitch[p] = 0.;
@@ -209,9 +208,6 @@ namespace geo{
 
       fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
     }
-
-    // now set the last plane in drift direction to be collection
-    fPlanes[fPlanes.size()-1]->SetSignalType(geo::kCollection);
 
     for(size_t p = 0; p < fPlanes.size(); ++p) fPlanes[p]->SortWires(sorter);
 
