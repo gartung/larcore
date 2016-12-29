@@ -53,21 +53,6 @@ namespace geo {
   
   
   //......................................................................
-  void GeometryCore::DriftDescManager::setDescriptors
-    (geo::ChannelMapAlg const& mapping)
-  {
-    // so far, we assume all TPCs have the same drift direction, and they
-    // go well with the same drift descriptor
-    geo::TPCID tpcid(0, 0);
-    fDriftDir = std::move(mapping.driftDescriptor(tpcid));
-    if (!fDriftDir) {
-      throw cet::exception("GeometryCore")
-        << "Channel mapping returned no drift direction descriptor for TPC"
-        << std::string(tpcid) << "!\n";
-    }
-  } // GeometryCore::DriftDescManager::setDescriptors()
-  
-  //......................................................................
   // Constructor.
   GeometryCore::GeometryCore(
     fhicl::ParameterSet const& pset
@@ -96,8 +81,6 @@ namespace geo {
     UpdateAfterSorting(); // after channel mapping has sorted objects, set their IDs
     pChannelMap->Initialize(fGeoData);
     fChannelMapAlg = pChannelMap;
-    
-    fDrift.setDescriptors(*fChannelMapAlg);
     
   } // GeometryCore::ApplyChannelMap()
 

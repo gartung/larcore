@@ -47,7 +47,6 @@
 // LArSoft libraries
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
-#include "larcore/Geometry/DriftDescriptor.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
@@ -3828,23 +3827,6 @@ namespace geo {
     
   private:
     
-    /// Class delivering drift descriptors;
-    /// currently supports only one descriptor for the whole detector
-    class DriftDescManager {
-      std::unique_ptr<geo::DriftDescriptor> fDriftDir; ///< single drift dir
-        
-        public:
-      
-      /// Constructor: extracts descriptors from channel mapping
-      void setDescriptors(ChannelMapAlg const& mapping);
-      
-      /// Returns a pointer to the drift descriptor for the specified TPC
-      geo::DriftDescriptor const* operator() (geo::TPCID const&) const
-        { return fDriftDir.get(); }
-      
-    }; // class DriftDescManager
-    
-    
     void FindCryostat(std::vector<const TGeoNode*>& path, unsigned int depth);
     
     void MakeCryostat(std::vector<const TGeoNode*>& path, int depth);
@@ -3882,8 +3864,6 @@ namespace geo {
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
     std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;
                                     ///< Object containing the channel to wire mapping
-    
-    DriftDescManager fDrift; ///< object delivering drift descriptions
     
   }; // class GeometryCore
   

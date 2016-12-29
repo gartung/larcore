@@ -10,7 +10,6 @@
 
 // LArSoft  libraries
 #include "larcore/Geometry/Exceptions.h" // geo::InvalidWireIDError
-#include "larcore/Geometry/DriftDescriptor.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -547,32 +546,7 @@ namespace geo{
     virtual raw::ChannelID_t FirstChannelInROP
       (readout::ROPID const& ropid) const = 0;
     
-    /// @} Readout plane mapping
-    
-    
-    //--------------------------------------------------------------------------
-    /**
-     * @brief Initialised and returns a new drift descriptor
-     * @param tpcid the TPC we need drift information for
-     * @return a new drift descriptor
-     * @see geo::DriftDescriptor
-     * 
-     * A drift descriptor is an abstraction characterizing the drift direction
-     * of the detector. It can be used to compose and decompose 3D vectors into
-     * a drift component and a drift-orthogonal component.
-     * 
-     * The default implementation returns a descriptor of drift along the
-     * positive @f$ x @f$ direction, for all TPCs.
-     * Note that channel mapping can flip the drift direction without changing
-     * this information.
-     * 
-     * @todo Default implementation should be removed, and the implementations
-     * are in charge of picking their descriptor. This will allow this header
-     * to be independent of any DriftDescriptor implementation.
-     */
-    virtual std::unique_ptr<geo::DriftDescriptor> driftDescriptor
-      (geo::TPCID const& tpcid [[gnu::unused]]) const
-      { return std::make_unique<geo::XDriftDescriptor>(); }
+    /// @}
     
     
     //--------------------------------------------------------------------------
