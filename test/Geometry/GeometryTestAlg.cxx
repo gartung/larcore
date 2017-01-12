@@ -339,7 +339,7 @@ namespace geo{
     if (!fRunTests.CheckQueryRegistry(out)) {
       throw cet::exception("GeometryTest")
         << "(postumous) configuration error detected!\n"
-        << out.rdbuf(); // FIXME it seems this does not produce the desired output
+        << out.str();
     }
     
     mf::LogInfo log("GeometryTest");
