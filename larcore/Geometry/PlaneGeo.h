@@ -487,12 +487,12 @@ namespace geo {
      * 
      * The returned vector is a 2D vector expressing the projection of the point
      * (from world coordinates) on the wire plane.
-     * The vector is expressed as @f$ ( w, \ell ) @f$. The component @f$ w @f$
-     * is defined on the wire coordinate direction (see
-     * `GetIncreasingWireDirection()`), relative to the first wire, as it is
-     * returned by PlaneCoordinate(). The component @f$ \ell @f$ is measured
-     * on the direction of the first wire (see `WireGeo::Direction()`), using
-     * its center (see `WireGeo::GetCenter()`) as reference point.
+     * The vector is expressed as @f$ ( \ell, w ) @f$. The component
+     * @f$ \ell @f$ is measured on the direction of the first wire (see
+     * `WireGeo::Direction()`), using its center (see `WireGeo::GetCenter()`) as
+     * reference point. The component @f$ w @f$ is defined on the wire
+     * coordinate direction (see `GetIncreasingWireDirection()`), relative to
+     * the first wire, as it is returned by PlaneCoordinate(). 
      * 
      * The reference point is also returned by ProjectionReferencePoint().
      */
@@ -507,10 +507,10 @@ namespace geo {
      * 
      * The returned vector is a 2D vector expressing the projection of the
      * vector (from world units) on the wire plane.
-     * The vector is expressed as @f$ ( w, \ell ) @f$. The component @f$ w @f$
-     * is defined on the wire coordinate direction (see
-     * `GetIncreasingWireDirection()`). The component @f$ \ell @f$ is measured
-     * on the direction of the first wire (see `WireGeo::Direction()`).
+     * The vector is expressed as @f$ ( \ell, w ) @f$. The component
+     * @f$ \ell @f$ is measured on the direction of the first wire (see
+     * `WireGeo::Direction()`). The component @f$ w @f$ is defined on the wire
+     * coordinate direction (see `GetIncreasingWireDirection()`). 
      */
     DecomposedVector_t::Projection_t VectorProjection
       (TVector3 const& v) const
