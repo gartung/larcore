@@ -140,11 +140,17 @@ namespace lar {
       using Comp_t = RealComparisons<RealType>;
       
       
-      Comp_t const& comp; ///< actual comparison object
+      Comp_t const comp; ///< Comparison object.
       
       
-      /// Use the specified comparison
+      /// Copy the specified comparison
       Vector3DComparison(Comp_t const& comp): comp(comp) {}
+      
+      /// Steal the specified comparison
+      Vector3DComparison(Comp_t&& comp): comp(std::move(comp)) {}
+      
+      /// Use the specified threshold
+      Vector3DComparison(RealType threshold): comp(threshold) {}
       
       
       /// Returns whether the specified vector is null (within tolerance)
@@ -175,6 +181,10 @@ namespace lar {
     
     //--------------------------------------------------------------------------
     /// Utility class to create Vector3DComparison from a RealComparisons object
+    template <typename RealType>
+    auto makeVector3DComparison(RealType threshold)
+      { return Vector3DComparison<RealType>(threshold); }
+    
     template <typename RealType>
     auto makeVector3DComparison
       (lar::util::RealComparisons<RealType> const& comp)

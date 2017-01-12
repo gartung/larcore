@@ -288,16 +288,12 @@ namespace geo{
     
     // ask the planes to update; also check
     
-    // (the following may be unused in non-debug mode)
-    lar::util::RealComparisons<double> const comp(1e-5);
-    auto const vectComp = lar::util::makeVector3DComparison(comp);
-    
     for (unsigned int plane = 0; plane < Nplanes(); ++plane) {
       fPlanes[plane]->UpdateAfterSorting(geo::PlaneID(fID, plane), *this);
       
       // check that the plane normal is opposite to the TPC drift direction
-      assert
-        (vectComp.equal(-(fPlanes[plane]->GetNormalDirection()), DriftDir()));
+      assert(lar::util::makeVector3DComparison(1e-5)
+        .equal(-(fPlanes[plane]->GetNormalDirection()), DriftDir()));
       
     } // for
     

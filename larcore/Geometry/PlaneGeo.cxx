@@ -496,11 +496,8 @@ namespace geo{
     //
     // check that the resulting normal matches the plane one
     //
-    
-    // (the following may be unused in non-debug mode)
-    lar::util::RealComparisons<double> const comp(1e-5);
-    auto const vectComp = lar::util::makeVector3DComparison(comp);
-    assert(vectComp.equal(fDecompWire.NormalDir(), GetNormalDirection()));
+    assert(lar::util::makeVector3DComparison(1e-5)
+      .equal(fDecompWire.NormalDir(), GetNormalDirection()));
     
   } // PlaneGeo::UpdateWireDir()
   
