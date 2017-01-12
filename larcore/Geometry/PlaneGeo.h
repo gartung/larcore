@@ -224,6 +224,8 @@ namespace geo {
     
     /// Set the signal view (for TPCGeo)
     void SetView(geo::View_t view)                                  { fView = view; }
+      
+      void SetSignalType(geo::SigType_t signalType) {fSignalType = signalType;}
     
     /// @}
     

@@ -91,6 +91,7 @@ namespace geo{
     }
     const TGeoVolume* v = path[depth]->GetVolume();
     int nd = v->GetNdaughters();
+      std::cout<<nd<<" GetNdaughters"<<std::endl;
     for (int i=0; i<nd; ++i) {
       path[deeper] = v->GetNode(i);
       this->FindWire(path, deeper);

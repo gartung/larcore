@@ -45,12 +45,13 @@ namespace geo{
     fHalfL    = ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetDZ();
 
     /// uncomment the following to check the paths to the wires
-    ///   std::string p(base);
-    ///   for(int i = 0; i <= depth; ++i){
-    ///     p += "/";
-    ///     p += path[i]->GetName();
-    ///   }
-    ///   std::cout << p.c_str() << std::endl;
+       std::string p;
+       for(int i = 0; i <= depth; ++i){
+         p += "/";
+         p += path[i]->GetName();
+       }
+       //commento CH//std::cout << p.c_str() << std::endl;
+      //std::cout <<fWireNode<<std::endl;
   
     // build a matrix to take us from the local to the world coordinates
     // in one step
@@ -84,7 +85,7 @@ namespace geo{
     //This ensures we are looking at the angle between 0 and Pi
     //as if the wire runs at one angle it also runs at that angle +-Pi
     if(fThetaZ < 0) fThetaZ +=TMath::Pi(); 
-    
+      //commento CH//std::cout<<fCenter[0]<<" "<<fCenter[1]<<" "<<fCenter[2]<<std::endl;
     return;
   }
 
@@ -164,15 +165,18 @@ namespace geo{
   TVector3 geo::WireGeo::Direction() const {
     // determine the orientation of the wire
     double xyzEnd[3], xyzStart[3];
-    GetStart(xyzStart);
-    GetEnd(xyzEnd);
-
+    
+    double local[3] = { 0., 0., fHalfL };
+    LocalToWorld(local, xyzEnd);
+    local[2] = -fHalfL;
+    LocalToWorld(local, xyzStart);
+    
     // get the cosines in each direction, ie dx/dS, etc
     return TVector3(
-      (xyzEnd[0] - xyzStart[0]) / Length(),
-      (xyzEnd[1] - xyzStart[1]) / Length(),
-      (xyzEnd[2] - xyzStart[2]) / Length()
-      );                     
+      (xyzEnd[0]-xyzStart[0])/(2.*fHalfL),
+      (xyzEnd[1]-xyzStart[1])/(2.*fHalfL),
+      (xyzEnd[2]-xyzStart[2])/(2.*fHalfL)
+      );
   } // geo::WireGeo::Direction()
   
   //......................................................................
