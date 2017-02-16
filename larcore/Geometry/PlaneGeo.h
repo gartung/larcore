@@ -32,7 +32,7 @@ namespace geo {
   //......................................................................
   
   /**
-   * @brief Geometry information for a single wire plane
+   * @brief Geometry information for a single wire plane.
    * 
    * The plane defines two local reference frames.
    * The first, depending on wire directions and therefore called "wire base",
@@ -134,7 +134,7 @@ namespace geo {
     
     //@{
     /**
-     * @brief Returns whether a wire with index iwire is present in this plane
+     * @brief Returns whether a wire with index iwire is present in this plane.
      * @param iwire index of wire in this plane
      * @return whether the wire with index iwire is present in this plane
      */
@@ -144,7 +144,7 @@ namespace geo {
     
     //@{
     /**
-     * @brief Returns whether the wire in wireid is present in this plane
+     * @brief Returns whether the wire in wireid is present in this plane.
      * @param wireid full wire ID
      * @return whether the wire in wireid is present in this plane
      *
@@ -164,7 +164,7 @@ namespace geo {
     
     //@{
     /**
-     * @brief Returns the wire in wireid from this plane
+     * @brief Returns the wire in wireid from this plane.
      * @param wireid full wire ID
      * @return a constant reference to the wire in wireid
      * @throws cet::exception (category "WireOutOfRange") if no such wire
@@ -179,7 +179,7 @@ namespace geo {
     //@}
     
     /**
-     * @brief Returns the wire number iwire from this plane
+     * @brief Returns the wire number iwire from this plane.
      * @param iwire the number of local wire
      * @return a constant pointer to the wire, or nullptr if it does not exist
      */
@@ -188,7 +188,7 @@ namespace geo {
     
     //@{
     /**
-     * @brief Returns the wire in wireid from this plane
+     * @brief Returns the wire in wireid from this plane.
      * @param wireid full wire ID
      * @return a constant pointer to the wire, or nullptr if it does not exist
      *
@@ -212,7 +212,7 @@ namespace geo {
     const WireGeo& LastWire()                                 const { return Wire(Nwires()-1); }
     
     /**
-     * @brief Allows range-for iteration on all wires in this plane
+     * @brief Allows range-for iteration on all wires in this plane.
      * @return an object suitable for range-for iteration on all wires
      * 
      * This example uses geometry to iterate on all planes in an outer loop,
@@ -248,7 +248,7 @@ namespace geo {
     double WirePitch() const { return fWirePitch; }
     
     /**
-     * @brief Returns whether the higher z wires have higher wire ID
+     * @brief Returns whether the higher z wires have higher wire ID.
      * @return whether the higher z wires have higher wire ID
      * @see GetIncreasingWireDirection()
      * 
@@ -259,7 +259,7 @@ namespace geo {
     bool WireIDincreasesWithZ() const;
     
     /**
-     * @brief Returns the direction normal to the plane
+     * @brief Returns the direction normal to the plane.
      * @return a TVector3 versor with a direction normal to the plane
      *
      * The versor is orthogonal to the plane.
@@ -276,7 +276,7 @@ namespace geo {
     TVector3 const& GetNormalDirection() const { return fNormal; }
 
     /**
-     * @brief Returns the direction of increasing wires
+     * @brief Returns the direction of increasing wires.
      * @return a TVector3 versor with the direction of increasing wires
      *
      * The versor is orthogonal to the wires (assumed parallel),
@@ -290,7 +290,7 @@ namespace geo {
     TVector3 GetCenter() const;
     
     /**
-     * @brief Returns the direction of the wires
+     * @brief Returns the direction of the wires.
      * @return a unit vector following the direction of the wires
      * 
      * All wires in the plane are assumed parallel.
@@ -299,7 +299,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the ID of wire closest to the specificed position
+     * @brief Returns the ID of wire closest to the specificed position.
      * @param pos world coordinates of the point [cm]
      * @return the ID of the wire closest to the projection of pos on the plane
      * @throw InvalidWireError (category: `"Geometry"`) if out of range
@@ -323,7 +323,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the distance of the specified point from the plane
+     * @brief Returns the distance of the specified point from the plane.
      * @param point a point in world coordinates [cm]
      * @return the signed distance from the plane
      * 
@@ -337,7 +337,7 @@ namespace geo {
     
     
     /**
-     * @brief Shifts the position of an electron drifted by a distance
+     * @brief Shifts the position of an electron drifted by a distance.
      * @param position _(modified)_ the position of the electron
      * @param drift drift distance to shift the electron by [cm]
      * 
@@ -358,7 +358,7 @@ namespace geo {
     lar::util::simple_geo::Volume<> Coverage() const;
     
     /**
-     * @brief Prints information about this plane
+     * @brief Prints information about this plane.
      * @tparam Stream type of output stream to use
      * @param out stream to send the information to
      * @param indent prepend each line with this string
@@ -394,7 +394,7 @@ namespace geo {
     /// 
     
     /**
-     * @brief Returns the coordinate of the point on the plane respect to a wire
+     * @brief Returns the coordinate of the point on the plane respect to a wire.
      * @param point world coordinate of the point to get the coordinate of [cm]
      * @param refWire reference wire
      * @return the coordinate of the point [cm]
@@ -418,7 +418,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the coordinate of the point on the plane
+     * @brief Returns the coordinate of the point on the plane.
      * @param point world coordinate of the point to get the coordinate of [cm]
      * @return the coordinate of the point [cm]
      * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
@@ -437,7 +437,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the coordinate of the point on the plane, in wire units
+     * @brief Returns the coordinate of the point on the plane, in wire units.
      * @param point wire coordinate of the point to get the coordinate of
      * @return the coordinate of the point, in wire pitch units
      * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
@@ -455,7 +455,7 @@ namespace geo {
     
     
     /**
-     * @brief Decomposes a 3D point in two components
+     * @brief Decomposes a 3D point in two components.
      * @param point the point to be decomposed
      * @return the two components of point, on the plane and orthogonal to it
      * 
@@ -472,7 +472,7 @@ namespace geo {
       { return fDecompWire.DecomposePoint(point); }
     
     /**
-     * @brief Returns the reference point used by PointProjection
+     * @brief Returns the reference point used by PointProjection.
      * 
      * The returned point is such that its decomposition results in a null
      * projection and a 0 distance from the plane.
@@ -481,7 +481,7 @@ namespace geo {
       { return fDecompWire.ReferencePoint(); }
     
     /**
-     * @brief Returns the projection of the specified point on the plane
+     * @brief Returns the projection of the specified point on the plane.
      * @param point the 3D point to be projected, in world coordinates
      * @return a 2D vector representing the projection of point on the plane
      * 
@@ -501,7 +501,24 @@ namespace geo {
       { return fDecompWire.ProjectPointOnPlane(point); }
     
     /**
-     * @brief Returns the projection of the specified vector on the plane
+     * @brief Returns if the projection of specified point is within the plane.
+     * @param point world coordinate of the point to get the coordinate of [cm]
+     * @return the coordinate of the point [cm]
+     * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
+     * 
+     * The method returns the coordinate of the point in the direction measured
+     * by the wires on this plane starting on the first wire, in world units
+     * (that is, centimeters). A point on the first wire will have coordinate
+     * 0.0, one on the next wire will have coordinate equal to a single wire
+     * pitch, etc.
+     *  
+     * The point does not need to be on the plane, and the projection of the
+     * point to the plane is considered.
+     */
+    bool isProjectionOnPlane(TVector3 const& point) const;
+    
+    /**
+     * @brief Returns the projection of the specified vector on the plane.
      * @param v the 3D vector to be projected, in world units
      * @return a 2D vector representing the projection of v on the plane
      * 
@@ -517,7 +534,7 @@ namespace geo {
       { return fDecompWire.ProjectVectorOnPlane(v); }
     
     /**
-     * @brief Returns the 3D vector from composition of projection and distance
+     * @brief Returns the 3D vector from composition of projection and distance.
      * @param decomp decomposed point
      * @return the 3D vector from composition of projection and distance
      * @see DecomposePoint(),
@@ -530,7 +547,7 @@ namespace geo {
       { return fDecompWire.ComposePoint(decomp); }
     
     /**
-     * @brief Returns the 3D point from composition of projection and distance
+     * @brief Returns the 3D point from composition of projection and distance.
      * @param distance distance of the target point from the wire plane
      * @param proj projection of the target point on the wire plane
      * @return the 3D vector from composition of projection and distance
@@ -565,7 +582,7 @@ namespace geo {
     /// 
     
     /**
-     * @brief Decomposes a 3D point in two components
+     * @brief Decomposes a 3D point in two components.
      * @param point the point to be decomposed
      * @return the two components of point, on the plane and orthogonal to it
      * 
@@ -582,7 +599,7 @@ namespace geo {
       { return fDecompFrame.DecomposePoint(point); }
     
     /**
-     * @brief Returns the projection of the specified point on the plane
+     * @brief Returns the projection of the specified point on the plane.
      * @param point the 3D point to be projected, in world coordinates
      * @return a 2D vector representing the projection of point on the plane
      * 
@@ -597,7 +614,7 @@ namespace geo {
       { return fDecompFrame.ProjectPointOnPlane(point); }
     
     /**
-     * @brief Returns the projection of the specified vector on the plane
+     * @brief Returns the projection of the specified vector on the plane.
      * @param v the 3D vector to be projected, in world units
      * @return a 2D vector representing the projection of v on the plane
      * 
@@ -613,7 +630,7 @@ namespace geo {
       
     
     /**
-     * @brief Returns the 3D vector from composition of projection and distance
+     * @brief Returns the 3D vector from composition of projection and distance.
      * @param decomp decomposed point
      * @return the 3D vector from composition of projection and distance
      * @see DecomposePointWidthDepth(),
@@ -627,7 +644,7 @@ namespace geo {
       { return fDecompFrame.ComposePoint(decomp); }
     
     /**
-     * @brief Returns the 3D point from composition of projection and distance
+     * @brief Returns the 3D point from composition of projection and distance.
      * @param distance distance of the target point from the wire plane
      * @param proj projection of the target point on the wire plane
      * @return the 3D vector from composition of projection and distance
@@ -655,35 +672,35 @@ namespace geo {
     /// @{
     /// @name Coordinate transformation
     
-    /// Transform point from local plane frame to world frame
+    /// Transform point from local plane frame to world frame.
     void LocalToWorld(const double* plane, double* world) const
       { fTrans.LocalToWorld(plane, world); }
       
-    /// Transform point from local plane frame to world frame
+    /// Transform point from local plane frame to world frame.
     TVector3 LocalToWorld(const TVector3& local) const
       { return fTrans.LocalToWorld(local); }
     
-    /// Transform direction vector from local to world
+    /// Transform direction vector from local to world.
     void LocalToWorldVect(const double* plane, double* world) const
       { fTrans.LocalToWorldVect(plane, world); }
     
-    /// Transform direction vector from local to world
+    /// Transform direction vector from local to world.
     TVector3 LocalToWorldVect(const TVector3& local) const
       { return fTrans.LocalToWorldVect(local); }
     
-    /// Transform point from world frame to local plane frame
+    /// Transform point from world frame to local plane frame.
     void WorldToLocal(const double* world, double* plane) const
       { fTrans.WorldToLocal(world, plane); }
     
-    /// Transform point from world frame to local plane frame
+    /// Transform point from world frame to local plane frame.
     TVector3 WorldToLocal(TVector3 const& world) const
       { return fTrans.WorldToLocal(world); }
     
-    /// Transform direction vector from world to local
+    /// Transform direction vector from world to local.
     void WorldToLocalVect(const double* world, double* plane) const
       { fTrans.WorldToLocalVect(world, plane); }
     
-    /// Transform direction vector from world to local
+    /// Transform direction vector from world to local.
     TVector3 WorldToLocalVect(TVector3 const& world) const
       { return fTrans.WorldToLocalVect(world); }
     
@@ -694,26 +711,26 @@ namespace geo {
     /// @{
     /// @name Setters
     
-    /// Set the signal view (for TPCGeo)
+    /// Set the signal view (for TPCGeo).
     void SetView(geo::View_t view)                                  { fView = view; }
     
     /// @}
     
-    /// Apply sorting to WireGeo objects
+    /// Apply sorting to WireGeo objects.
     void SortWires(geo::GeoObjectSorter const& sorter);
     
-    /// Performs all needed updates after the TPC has sorted the planes
+    /// Performs all needed updates after the TPC has sorted the planes.
     void UpdateAfterSorting
       (geo::PlaneID planeid, geo::BoxBoundedGeo const& TPCbox);
     
-    /// Returns the name of the specified view
+    /// Returns the name of the specified view.
     static std::string ViewName(geo::View_t view);
     
-    /// Returns the name of the specified orientation
+    /// Returns the name of the specified orientation.
     static std::string OrientationName(geo::Orient_t orientation);
     
     
-    /// Returns value, but rounds it to 0, -1 or +1 if value is closer than tol
+    /// Returns value, but rounds it to 0, -1 or +1 if value is closer than tol.
     template <typename T>
     static T roundUnit(T value, T tol)
       {
@@ -722,11 +739,12 @@ namespace geo {
         return value;
       } // roundUnit()
     
-    /// Rounds in place all components of a vector using geo::vect::RoundValue01()
+    /// Rounds in place all components of a vector using
+    /// `geo::vect::RoundValue01()`.
     static void roundVector(TVector3& v, double tol)
       { geo::vect::Round01(v, tol); }
     
-    /// Returns a vector with all components rounded using roundUnit()
+    /// Returns a vector with all components rounded using `roundUnit()`.
     static TVector3 roundedVector(TVector3 const& v, double tol)
       { return geo::vect::Rounded01(v, tol); }
     
@@ -735,40 +753,40 @@ namespace geo {
     void FindWire(GeoNodePath_t& path, size_t depth);
     void MakeWire(GeoNodePath_t& path, size_t depth);
     
-    /// Sets the geometry directions
+    /// Sets the geometry directions.
     void DetectGeometryDirections();
     
-    /// Returns a direction normal to the plane (pointing is not defined)
+    /// Returns a direction normal to the plane (pointing is not defined).
     TVector3 GetNormalAxis() const;
     
-    /// Updates the cached normal to plane versor; needs the TPC box coordinates
+    /// Updates the cached normal to plane versor; needs the TPC box coordinates.
     void UpdatePlaneNormal(geo::BoxBoundedGeo const& TPCbox);
     
-    /// Updates the cached depth and width direction 
+    /// Updates the cached depth and width direction.
     void UpdateWidthDepthDir();
     
-    /// Updates the cached direction to increasing wires
+    /// Updates the cached direction to increasing wires.
     void UpdateIncreasingWireDir();
     
-    /// Updates the cached direction to wire
+    /// Updates the cached direction to wire.
     void UpdateWireDir();
     
-    /// Updates plane orientation
+    /// Updates plane orientation.
     void UpdateOrientation();
     
-    /// Updates the stored wire pitch
+    /// Updates the stored wire pitch.
     void UpdateWirePitch();
     
-    /// Updates the stored phi_z
+    /// Updates the stored @f$ \phi_{z} @f$.
     void UpdatePhiZ();
     
-    /// Updates the stored wire pitch with a slower, more robust algorithm
+    /// Updates the stored wire pitch with a slower, more robust algorithm.
     void UpdateWirePitchSlow();
     
-    /// Updates the position of the wire coordinate decomposition
+    /// Updates the position of the wire coordinate decomposition.
     void UpdateDecompWireOrigin();
     
-    /// Whether the specified wire should have start and end swapped
+    /// Whether the specified wire should have start and end swapped.
     bool shouldFlipWire(geo::WireGeo const& wire) const;
 
     
@@ -780,17 +798,17 @@ namespace geo {
       double depth;
     }; // RectSpecs
     
-    LocalTransformation_t fTrans;       ///< Plane to world transform
-    TGeoVolume const*     fVolume;      ///< Plane volume description
+    LocalTransformation_t fTrans;       ///< Plane to world transform.
+    TGeoVolume const*     fVolume;      ///< Plane volume description.
     View_t                fView;        ///< Does this plane measure U, V, or W?
     Orient_t              fOrientation; ///< Is the plane vertical or horizontal?
     SigType_t             fSignalType;  ///< Is the plane induction or collection?
-    std::vector<WireGeo*> fWire;        ///< List of wires in this plane
-    double                fWirePitch;   ///< pitch of wires in this plane
-    double                fSinPhiZ;     ///< sine of phiZ
-    double                fCosPhiZ;     ///< cosine of phiZ
+    std::vector<WireGeo*> fWire;        ///< List of wires in this plane.
+    double                fWirePitch;   ///< Pitch of wires in this plane.
+    double                fSinPhiZ;     ///< Sine of @f$ \phi_{z} @f$.
+    double                fCosPhiZ;     ///< Cosine of @f$ \phi_{z} @f$.
     
-    TVector3              fNormal;      ///< normal to the plane, inward in TPC
+    TVector3              fNormal;      ///< Normal to the plane, inward in TPC.
     /// Decomposition on wire coordinates; the main direction is along the wire,
     /// the secondary one is the one measured by the wire, the normal matches
     /// the plane's normal.
@@ -799,9 +817,9 @@ namespace geo {
     /// the secondary one is just orthogonal to it ("depth").
     /// Normal can differ in sign from the plane one.
     Decomposer_t          fDecompFrame;
-    RectSpecs             fFrameSize;   ///< size of the frame of the plane
+    RectSpecs             fFrameSize;   ///< Size of the frame of the plane.
 
-    geo::PlaneID          fID;          ///< ID of this plane
+    geo::PlaneID          fID;          ///< ID of this plane.
 
   };
 }
