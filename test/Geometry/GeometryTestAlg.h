@@ -76,11 +76,15 @@ namespace geo {
    *   + `Cryostat`:
    *   + `WireOrientations`: checks that the definition of wire coordinates is
    *     matching the prescription
-   *   + `WireCoordFromPlane`: checks `PlaneGeo::WireCoordinateFrom`
+   *   + `WireCoordFromPlane`: checks `PlaneGeo::WireCoordinateFrom()`
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
    *   + `Projection`:
    *   + `WirePos`: currently disabled
+   *   + `PlanePointDecomposition`: methods for projections and decompositions
+   *     on the wire coordinate reference system
+   *   + `PlaneProjections`: methods for projections on the wire planes in the
+   *     reference system of the frame of the plane
    *   + `WireCoordAngle`: tests geo::PlaneGeo::PhiZ()
    *   + `NearestWire`: tests `WireCoordinate()` and `NearestWire()`
    *   + `WireIntersection`: tests `WireIDsIntersect()`
@@ -145,6 +149,8 @@ namespace geo {
     void testFindPlaneCenters();
     void testProject();
     void testPlaneProjectionReference() const;
+    void testPlanePointDecompositionFrame() const;
+    void testPlaneProjectionOnFrame() const;
     void testPlaneProjection() const;
     void testWireCoordFromPlane() const;
     void testParallelWires() const;

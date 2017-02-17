@@ -118,8 +118,8 @@ namespace geo {
      * The precise definition of the two is arbitrary (see `WidthDir()` and
      * `DepthDir()`).
      */
-    double Width() const { return fFrameSize.width; }
-    double Depth() const { return fFrameSize.depth; }
+    double Width() const { return fFrameSize.Width(); }
+    double Depth() const { return fFrameSize.Depth(); }
     /// @}
     
     
@@ -472,7 +472,7 @@ namespace geo {
       { return fDecompWire.DecomposePoint(point); }
     
     /**
-     * @brief Returns the reference point used by PointProjection.
+     * @brief Returns the reference point used by `PointProjection()`.
      * 
      * The returned point is such that its decomposition results in a null
      * projection and a 0 distance from the plane.
@@ -499,23 +499,6 @@ namespace geo {
     DecomposedVector_t::Projection_t PointProjection
       (TVector3 const& point) const
       { return fDecompWire.ProjectPointOnPlane(point); }
-    
-    /**
-     * @brief Returns if the projection of specified point is within the plane.
-     * @param point world coordinate of the point to get the coordinate of [cm]
-     * @return the coordinate of the point [cm]
-     * @see PlaneCoordinateFrom(TVector3 const&, geo::Wire const&)
-     * 
-     * The method returns the coordinate of the point in the direction measured
-     * by the wires on this plane starting on the first wire, in world units
-     * (that is, centimeters). A point on the first wire will have coordinate
-     * 0.0, one on the next wire will have coordinate equal to a single wire
-     * pitch, etc.
-     *  
-     * The point does not need to be on the plane, and the projection of the
-     * point to the plane is considered.
-     */
-    bool isProjectionOnPlane(TVector3 const& point) const;
     
     /**
      * @brief Returns the projection of the specified vector on the plane.
@@ -627,7 +610,64 @@ namespace geo {
     DecomposedVector_t::Projection_t VectorWidthDepthProjection
       (TVector3 const& v) const
       { return fDecompFrame.ProjectVectorOnPlane(v); }
-      
+    
+    /**
+     * @brief Returns if the projection of specified point is within the plane.
+     * @param point world coordinate of the point to test [cm]
+     * @return whether the projection of specified point is within the plane
+     * @see PointWidthDepthProjection(), Width(), Height()
+     * 
+     * The method extracts the projection of the specified point on the plane,
+     * as in `PointWidthDepthProjection()`, and then verifies that the
+     * projection falls within the wire plane area, as defined by the dimensions
+     * from the geometry description.
+     */
+    bool isWidthDepthProjectionOnPlane(TVector3 const& point) const;
+    
+    /**
+     * @brief Returns a projection vector that, added to the argument, gives a
+     *        projection inside (or at the border of) the plane.
+     * @param proj starting projection
+     * @return a projection displacement
+     * 
+     * If the projection is already on the plane, the returned displacement is
+     * null.
+     */
+    DecomposedVector_t::Projection_t deltaWidthDepthFromPlane
+      (DecomposedVector_t::Projection_t const& proj) const;
+    
+    /**
+     * @brief Returns the projection, moved onto the plane if necessary.
+     * @param proj projection to be checked and moved
+     * @return the new value of the projection
+     * @see isProjectionOnPlane(), Width(), Height()
+     * 
+     * The projection proj is defined as in the output of
+     * `PointWidthDepthProjection()`.
+     * The method caps width and depth of the projection so that it stays on
+     * the plane. A new capped value is returned.
+     * Since the reference point of the frame is defined as the center of the
+     * plane, this action is equivalent to force the width component in
+     * @f$ \left[ -\frac{w}{2}, \frac{w}{2} \right] @f$ range and the depth
+     * component into @f$ \left[ -\frac{d}{2}, \frac{d}{2} \right] @f$, with
+     * @f$ w @f$ and @f$ d @f$ the width and depth of the wire plane.
+     */
+    DecomposedVector_t::Projection_t moveWidthDepthProjectionOnPlane
+      (DecomposedVector_t::Projection_t const& proj) const;
+    
+    /**
+     * @brief Returns the point, moved so that its projection is on the plane.
+     * @param point point to be checked and moved
+     * @return the new value of the point
+     * @see isProjectionOnPlane(), moveWidthDepthProjectionOnPlane(),
+     *      Width(), Height()
+     * 
+     * If the projection of the point on the plane falls outside it, the
+     * returned point is translated so that its projection is now on the border
+     * of the plane. The translation happens along the directions of the plane
+     * frame, as described in moveWidthDepthProjectionOnPlane().
+     */
+    TVector3 movePointOnPlane(TVector3 const& point) const;
     
     /**
      * @brief Returns the 3D vector from composition of projection and distance.
@@ -794,8 +834,13 @@ namespace geo {
     using LocalTransformation_t = geo::LocalTransformation<TGeoHMatrix>;
     
     struct RectSpecs {
-      double width;
-      double depth;
+      double halfWidth;
+      double halfDepth;
+      
+      double HalfWidth() const { return halfWidth; }
+      double HalfDepth() const { return halfDepth; }
+      double Width() const { return 2.0 * HalfWidth(); }
+      double Depth() const { return 2.0 * HalfDepth(); }
     }; // RectSpecs
     
     LocalTransformation_t fTrans;       ///< Plane to world transform.

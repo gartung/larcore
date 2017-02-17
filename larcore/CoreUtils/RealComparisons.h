@@ -135,56 +135,120 @@ namespace lar {
     //--------------------------------------------------------------------------
     /// Class comparing 2D vectors
     template <typename RealType>
-    struct Vector3DComparison {
+    struct Vector2DComparison {
       
       using Comp_t = RealComparisons<RealType>;
       
+      /// Copy the specified comparison.
+      constexpr Vector2DComparison(Comp_t const& comparer)
+        : comparer(comparer) {}
       
-      Comp_t const comp; ///< Comparison object.
+      /// Steal the specified comparison.
+      Vector2DComparison(Comp_t&& comparer): comparer(std::move(comparer)) {}
       
+      /// Use the specified threshold.
+      constexpr Vector2DComparison(RealType threshold): comparer(threshold) {}
       
-      /// Copy the specified comparison
-      Vector3DComparison(Comp_t const& comp): comp(comp) {}
+      /// Returns the basic value comparer.
+      constexpr Comp_t comp() const { return comparer; }
       
-      /// Steal the specified comparison
-      Vector3DComparison(Comp_t&& comp): comp(std::move(comp)) {}
-      
-      /// Use the specified threshold
-      Vector3DComparison(RealType threshold): comp(threshold) {}
-      
-      
-      /// Returns whether the specified vector is null (within tolerance)
+      /// Returns whether the specified vector is null (within tolerance).
       template <typename Vect>
       constexpr bool zero(Vect const& v) const
-        { return comp.zero(v.X()) && comp.zero(v.Y()) && comp.zero(v.Z()); }
+        { return comp().zero(v.X()) && comp().zero(v.Y()); }
       
-      /// Returns whether the specified vector is not null (within tolerance)
+      /// Returns whether the specified vector is not null (within tolerance).
       template <typename Vect>
       constexpr bool nonZero(Vect const& v) const { return !zero(v); }
       
-      /// Returns whether the specified vectors match (within tolerance)
+      /// Returns whether the specified vectors match (within tolerance).
       template <typename VectA, typename VectB>
       constexpr bool equal(VectA const& a, VectB const& b) const
-        {
-          return comp.equal(a.X(), b.X()) && comp.equal(a.Y(), b.Y())
-            && comp.equal(a.Z(), b.Z());
-        }
+        { return comp().equal(a.X(), b.X()) && comp().equal(a.Y(), b.Y()); }
       
-      /// Returns whether the specified vectors do not match (within tolerance)
+      /// Returns whether the specified vectors do not match (within tolerance).
       template <typename VectA, typename VectB>
       constexpr bool nonEqual(VectA const& a, VectB const& b) const
         { return !equal(a, b); }
       
+        private:
+      Comp_t const comparer; ///< Comparison object.
+      
+    }; // struct Vector2DComparison
+    
+    
+    //--------------------------------------------------------------------------
+    /// Creates a `Vector2DComparison` from a `RealComparisons` object.
+    template <typename RealType>
+    auto makeVector2DComparison(RealType threshold)
+      { return Vector2DComparison<RealType>(threshold); }
+    
+    /// Creates a `Vector2DComparison` from a `RealComparisons` object.
+    template <typename RealType>
+    auto makeVector2DComparison
+      (lar::util::RealComparisons<RealType> const& comp)
+      { return Vector2DComparison<RealType>(comp); }
+    
+    
+    //--------------------------------------------------------------------------
+    /// Class comparing 2D vectors.
+    template <typename RealType>
+    struct Vector3DComparison {
+      
+      /// Type of base value comparer.
+      using Comp_t = RealComparisons<RealType>;
+      
+      /// Type of 2D vector comparer.
+      using Comp2D_t = Vector2DComparison<typename Comp_t::Value_t>;
+      
+      /// Copy the specified comparison.
+      constexpr Vector3DComparison(Comp_t const& comparer)
+        : comparer(comparer) {}
+      
+      /// Steal the specified comparison.
+      Vector3DComparison(Comp_t&& comparer): comparer(std::move(comparer)) {}
+      
+      /// Use the specified threshold.
+      constexpr Vector3DComparison(RealType threshold): comparer(threshold) {}
+      
+      /// Returns the base value comparer.
+      constexpr Comp_t comp() const { return comp2D().comp(); }
+      
+      /// Returns the 2D vector comparer.
+      constexpr Comp2D_t comp2D() const { return comparer; }
+      
+      /// Returns whether the specified vector is null (within tolerance).
+      template <typename Vect>
+      constexpr bool zero(Vect const& v) const
+        { return comp2D().zero(v) && comp().zero(v.Z()); }
+      
+      /// Returns whether the specified vector is not null (within tolerance).
+      template <typename Vect>
+      constexpr bool nonZero(Vect const& v) const { return !zero(v); }
+      
+      /// Returns whether the specified vectors match (within tolerance).
+      template <typename VectA, typename VectB>
+      constexpr bool equal(VectA const& a, VectB const& b) const
+        { return comp2D().equal(a, b) && comp().equal(a.Z(), b.Z()); }
+      
+      /// Returns whether the specified vectors do not match (within tolerance).
+      template <typename VectA, typename VectB>
+      constexpr bool nonEqual(VectA const& a, VectB const& b) const
+        { return !equal(a, b); }
+      
+        private:
+      Comp2D_t comparer;
       
     }; // struct Vector3DComparison
     
     
     //--------------------------------------------------------------------------
-    /// Utility class to create Vector3DComparison from a RealComparisons object
+    /// Creates a `Vector3DComparison` from a `RealComparisons` object.
     template <typename RealType>
     auto makeVector3DComparison(RealType threshold)
       { return Vector3DComparison<RealType>(threshold); }
     
+    /// Creates a `Vector3DComparison` from a `RealComparisons` object.
     template <typename RealType>
     auto makeVector3DComparison
       (lar::util::RealComparisons<RealType> const& comp)

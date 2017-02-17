@@ -239,12 +239,6 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
-      if (shouldRunTests("PlaneProjections")) {
-        LOG_INFO("GeometryTest") << "test PlaneGeo::PointProjection...";
-        testPlaneProjection();
-        LOG_INFO("GeometryTest") << "complete.";
-      }
-
       if (shouldRunTests("WireCoordFromPlane")) {
         LOG_INFO("GeometryTest") << "test PlaneGeo::WireCoordinate...";
         testWireCoordFromPlane();
@@ -260,6 +254,12 @@ namespace geo{
       if (shouldRunTests("PlanePointDecomposition")) {
         LOG_INFO("GeometryTest") << "test plane point decomposition...";
         testPlanePointDecomposition();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
+      if (shouldRunTests("PlaneProjections")) {
+        LOG_INFO("GeometryTest") << "test PlaneGeo::PointProjection...";
+        testPlaneProjection();
         LOG_INFO("GeometryTest") << "complete.";
       }
 
@@ -1228,6 +1228,17 @@ namespace geo{
             
           } // for drifts
           
+          //
+          // containment
+          //
+          if (!plane.isWidthDepthProjectionOnPlane(expectedPoint)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] isWidthDepthProjectionOnPlane():"
+              << "Point " << expectedPoint
+              << " is not believed to be on the plane, but it should.";
+          }
+          
         } // for different wire direction steps
         
       } // for wires in plane
@@ -1497,7 +1508,362 @@ namespace geo{
         << "Accumulated " << nErrors << " errors (see messages above)\n";
     }
   } // GeometryTestAlg::testPlaneProjectionReference()
-
+  
+  
+  //......................................................................
+  void GeometryTestAlg::testPlanePointDecompositionFrame() const {
+    
+    //
+    // For each plane:
+    // 
+    // 1) create a plane point with arbitrary distance from the plane,
+    //    width and depth coordinates all across the plane
+    // 
+    // 2) compose into a 3D vector
+    // 
+    // 3) decompose back the 3D vector, and verify that the result matches the
+    //    starting decomposition
+    // 
+    // 4) also verify singly PointProjection() and DistanceFromPlane()
+    // 
+    // 5) verify DriftPoint()
+    // 
+    //
+    
+    lar::util::RealComparisons<double> coordIs(1e-5);
+    auto vectorIs = lar::util::makeVector3DComparison(coordIs);
+    
+    // steps on each side of the center, within the plane:
+    constexpr int steps = 5;
+    static_assert(steps > 0, "Steps must be a positive number.");
+    // how many width units we go far from the center (1 means stay inside)
+    constexpr int nOutsides = 1;
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+    
+      decltype(auto) const planeNorm = plane.GetNormalDirection();
+      decltype(auto) const widthDir = plane.WidthDir();
+      decltype(auto) const depthDir = plane.DepthDir();
+      decltype(auto) const refPoint = plane.GetCenter();
+      
+      double const halfWidth = plane.Width() / 2;
+      double const halfDepth = plane.Depth() / 2;
+      double const dW_2 = halfWidth / (steps * 2); // half width step
+      double const dD_2 = halfDepth / (steps * 2); // half depth step
+      
+      for (int iW = -nOutsides * steps; iW <= +nOutsides * steps; ++iW) {
+        
+        double const expected_w = dW_2 * (iW * 2 + 1); // width coordinate
+        bool const inWidth = std::abs(expected_w) <= halfWidth;
+        
+        for (int iD = -nOutsides * steps; iD <= +nOutsides * steps; ++iD) {
+          
+          double const expected_d = dD_2 * (iD * 2 + 1); // depth coordinate
+          bool const inDepth = std::abs(expected_d) <= halfDepth;
+          
+          constexpr double distance = 0.0; // we might test this too...
+          
+          //
+          // prepare expectation
+          //
+          auto const expectedPoint = refPoint
+            + expected_w * widthDir
+            + expected_d * depthDir
+            + distance * planeNorm;
+          
+          geo::PlaneGeo::DecomposedVector_t::Projection_t const expectedProj
+            (expected_w, expected_d);
+          
+          //
+          // composition
+          //
+          auto point = plane.ComposePointWidthDepth(distance, expectedProj);
+          
+          if (vectorIs.nonEqual(point, expectedPoint)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecompositionFrame] ComposePointWidthDepth(): "
+              << "Point with projection " << expectedProj
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") and distance from plane " << distance
+              << " was reported as " << point
+              << " while it is expected to be at " << expectedPoint;
+          } // if wrong point
+          
+          //
+          // decomposition
+          //
+          auto const decomp = plane.DecomposePointWidthDepth(point);
+          if (coordIs.nonEqual(decomp.distance, distance)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePointWidthDepth(): "
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have distance from plane " << decomp.distance
+              << " cm, while " << distance << " is expected";
+          } // if wrong distance
+          if (coordIs.nonEqual(decomp.projection.X(), expected_w)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePointWidthDepth(): "
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have width direction coordinate "
+                << decomp.projection.X()
+              << " cm, while " << expected_w << " is expected";
+          } // if wrong coordinate along the wire
+          if (coordIs.nonEqual(decomp.projection.Y(), expected_d)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DecomposePointWidthDepth(): "
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have depth direction coordinate "
+                << decomp.projection.Y()
+              << " cm, while " << expected_d << " is expected";
+          } // if wrong wire coordinate
+          
+          //
+          // projection
+          //
+          auto const proj = plane.PointWidthDepthProjection(point);
+          if (coordIs.nonEqual(proj.X(), expected_w)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] PointProjection(): "
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have width direction coordinate " << proj.X()
+              << " cm, while " << expected_w << " is expected";
+          } // if wrong wire coordinate
+          if (coordIs.nonEqual(proj.Y(), expected_d)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] PointProjectionWidthDepth(): "
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have wire coordinate " << proj.Y()
+              << " cm, while " << expected_d << " is expected";
+          } // if wrong wire coordinate
+          
+          //
+          // distance
+          //
+          auto const dist = plane.DistanceFromPlane(point);
+          if (coordIs.nonEqual(dist, distance)) {
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecomposition] DistanceFromPlane():"
+              << "Point " << point
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is reported to have distance from plane " << dist
+              << " cm, while " << distance << " is expected";
+          } // if wrong distance
+          
+          //
+          // drift
+          //
+          std::array<double, 3> drifts { -distance, distance, 2.*distance };
+          for (double drift: drifts) {
+            
+            // DriftPoint() moves the point in the drift direction,
+            // which is opposite to the plane normal:
+            auto const expectedDistance = distance - drift;
+            
+            //
+            // drift it by a known value
+            //
+            auto point = expectedPoint;
+            plane.DriftPoint(point, drift);
+            
+            //
+            // check the new distance
+            //
+            auto dist = plane.DistanceFromPlane(point);
+            if (coordIs.nonEqual(dist, expectedDistance)) {
+              ++nErrors;
+              mf::LogProblem("GeometryTestAlg")
+                << "[testPlanePointDecomposition] DriftPoint():"
+                << "Point " << expectedPoint
+                << " (distant " << distance << " cm from the plane)"
+                << " (width: " << expected_w << ", depth: " << expected_d
+                << ") drifted by " << drift << " became " << point
+                << " which has distance from plane " << dist
+                << " cm, while " << expectedDistance << " was expected";
+            } // if wrong distance
+            
+          } // for drifts
+          
+          //
+          // containment
+          //
+          const bool expected_onPlane = inWidth && inDepth;
+          const bool onPlane = plane.isWidthDepthProjectionOnPlane(expectedPoint);
+          if (expected_onPlane != onPlane) {
+            // always
+            ++nErrors;
+            mf::LogProblem("GeometryTestAlg")
+              << "[testPlanePointDecompositionFrame] isWidthDepthProjectionOnPlane():"
+              << "Point " << expectedPoint
+              << " (width: " << expected_w << ", depth: " << expected_d
+              << ") is" << (onPlane? "": " not")
+                << " believed to be on plane " << plane.ID()
+              << ", but it should" << (expected_onPlane? "": " not be") << ".";
+          }
+          
+        } // for different wire direction steps
+        
+      } // for wires in plane
+      
+    } // for planes
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testPlanePointDecomposition() accumulated " << nErrors
+        << " errors (see messages above)\n";
+    }
+    
+  } // GeometryTestAlg::testPlanePointDecompositionFrame()
+  
+  
+  //......................................................................
+  void GeometryTestAlg::testPlaneProjectionOnFrame() const {
+    
+    //
+    // Tests:
+    // 
+    // 1. containment (isWidthDepthProjectionOnPlane())
+    // 
+    // 
+    // 2. capping by closest point
+    //
+    
+    lar::util::RealComparisons<double> coordIs(1e-5);
+    auto vectorIs = lar::util::makeVector3DComparison(coordIs);
+    auto const& vector2Dis = vectorIs.comp2D();
+    
+    // steps on each side of the center, within the plane:
+    constexpr int steps = 5;
+    static_assert(steps > 0, "Steps must be a positive number.");
+    // how many width units we go far from the center (1 means stay inside)
+    constexpr int nOutsides = 2;
+    
+    unsigned int nErrors = 0;
+    for (geo::PlaneGeo const& plane: geom->IteratePlanes()) {
+    
+      decltype(auto) const refPoint = plane.GetCenter();
+      
+      double const halfWidth = plane.Width() / 2;
+      double const halfDepth = plane.Depth() / 2;
+      double const dW_2 = halfWidth / (steps * 2); // half width step
+      double const dD_2 = halfDepth / (steps * 2); // half depth step
+      
+      for (int iW = -nOutsides * steps; iW <= +nOutsides * steps; ++iW) {
+        
+        double const expected_w = dW_2 * (iW * 2 + 1); // width coordinate
+        bool const inWidth = std::abs(expected_w) <= halfWidth;
+        
+        for (int iD = -nOutsides * steps; iD <= +nOutsides * steps; ++iD) {
+          
+          double const expected_d = dD_2 * (iD * 2 + 1); // depth coordinate
+          bool const inDepth = std::abs(expected_d) <= halfDepth;
+          
+          for (double distance: { -30., 0.0, +30.0 }) {
+            
+            //
+            // prepare expectation
+            //
+            // definition of the test point
+            geo::PlaneGeo::DecomposedVector_t::Projection_t const expected_proj
+              (expected_w, expected_d);
+            
+            auto const expected_point
+              = plane.ComposePointWidthDepth(distance, expected_proj);
+            
+            //
+            // 1. Containment test
+            //
+            const bool expected_onPlane = inWidth && inDepth;
+            const bool onPlane
+              = plane.isWidthDepthProjectionOnPlane(expected_point);
+            if (expected_onPlane != onPlane) {
+              ++nErrors;
+              mf::LogProblem("GeometryTestAlg")
+                << "[testPlaneProjectionOnFrame]"
+                  " isWidthDepthProjectionOnPlane():"
+                << "Point " << expected_point
+                << " (width: " << expected_w << ", depth: " << expected_d
+                << ") is" << (onPlane? "": " not")
+                  << " believed to be on plane " << plane.ID()
+                << ", but it should" << (expected_onPlane? "": " not be")
+                << ".";
+            }
+            
+            //
+            // 2. capping by closest point
+            //
+            // 2.1. capping projection
+            //
+            geo::PlaneGeo::DecomposedVector_t::Projection_t
+              expected_movedProjection(
+                (inWidth?
+                  expected_proj.X(): (expected_w < 0)? -halfWidth: +halfWidth),
+                (inDepth?
+                  expected_proj.Y(): (expected_d < 0)? -halfDepth: +halfDepth)
+              );
+            auto movedProjection
+              = plane.moveWidthDepthProjectionOnPlane(expected_proj);
+            if (vector2Dis.nonEqual(movedProjection, expected_movedProjection))
+            {
+              ++nErrors;
+              mf::LogProblem("GeometryTestAlg")
+                << "[testPlaneProjectionOnFrame] moveProjectionOnPlane():"
+                << "Projection of ooint " << expected_point
+                << " (width: " << expected_w << ", depth: " << expected_d
+                << ") (" << (onPlane? "on": "off")
+                  << "-plane " << plane.ID() << ") was moved to "
+                << movedProjection << " while it should have moved to "
+                << expected_movedProjection
+                << ".";
+            }
+            
+            //
+            // 2.2. capping point
+            //
+            auto expected_movedPoint = plane.ComposePointWidthDepth
+              (distance, expected_movedProjection);
+            
+            auto movedPoint = plane.movePointOnPlane(expected_point);
+            if (vectorIs.nonEqual(movedPoint, expected_movedPoint)) {
+              ++nErrors;
+              mf::LogProblem("GeometryTestAlg")
+                << "[testPlaneProjectionOnFrame] moveProjectionOnPlane():"
+                << "Point " << expected_point
+                << " (width: " << expected_w << ", depth: " << expected_d
+                << ") (" << (onPlane? "on": "off")
+                  << "-plane " << plane.ID() << ") was moved to "
+                << movedPoint << " while it should have moved to "
+                << expected_movedPoint
+                << ".";
+            }
+            
+          } // for distance
+          
+        } // for depth step
+        
+      } // for width step
+    
+    } // for planes
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeoTestPlaneProjection")
+        << "Accumulated " << nErrors << " errors (see messages above)\n";
+    }
+    
+  } // testPlaneProjectionOnFrame()
+  
   //......................................................................
   void GeometryTestAlg::testPlaneProjection() const {
     
@@ -1507,8 +1873,20 @@ namespace geo{
     
     testPlaneProjectionReference();
     
+    //
+    // Check the projections and point composition in the plane frame reference
+    //
+    testPlanePointDecompositionFrame();
+    
+    //
+    // Check containment
+    //
+    testPlaneProjectionOnFrame();
+    
+    
   } // GeometryTestAlg::testPlaneProjection()
-
+  
+  
   //......................................................................
   void GeometryTestAlg::testStandardWirePos() 
   {

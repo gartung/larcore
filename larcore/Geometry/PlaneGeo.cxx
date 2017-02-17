@@ -37,6 +37,32 @@ std::ostream& operator<< (std::ostream& out, TVector3 const& v) {
   return out;
 }
 
+namespace {
+  
+  /// Returns the offset to apply to value to move it inside [ -limit, +limit ].
+  template <typename T>
+  T symmetricCapDelta(T value, T limit) {
+    
+    return (value < -limit)
+      ? -limit - value
+      : (value > +limit)
+        ? +limit - value
+        : 0.0
+      ;
+    
+  } // symmetricCapDelta()
+  
+  
+  /// Returns a value shifted to fall into [ -limit; +limit ] interval.
+  template <typename T>
+  T symmetricCap(T value, T limit) {
+    
+    return value + symmetricCapDelta(value, limit);
+    
+  } // symmetricCap()
+  
+  
+} // local namespace
 
 namespace geo{
 
@@ -164,6 +190,52 @@ namespace geo{
     
     return { A.data(), B.data() };
   } // PlaneGeo::Coverage()
+  
+  
+  //......................................................................
+  PlaneGeo::DecomposedVector_t::Projection_t PlaneGeo::deltaWidthDepthFromPlane
+    (DecomposedVector_t::Projection_t const& proj) const
+  {
+    
+    return {
+      symmetricCapDelta(proj.X(), fFrameSize.HalfWidth()),
+      symmetricCapDelta(proj.Y(), fFrameSize.HalfDepth())
+    };
+    
+  } // PlaneGeo::isProjectionOnPlane()
+  
+  
+  //......................................................................
+  bool PlaneGeo::isWidthDepthProjectionOnPlane(TVector3 const& point) const {
+    
+    auto const deltaProj
+      = deltaWidthDepthFromPlane(PointWidthDepthProjection(point));
+    
+    return (deltaProj.X() == 0.) && (deltaProj.Y() == 0.);
+    
+  } // PlaneGeo::isWidthDepthProjectionOnPlane()
+  
+  
+  //......................................................................
+  PlaneGeo::DecomposedVector_t::Projection_t
+  PlaneGeo::moveWidthDepthProjectionOnPlane
+    (DecomposedVector_t::Projection_t const& proj) const
+  {
+    
+    return proj + deltaWidthDepthFromPlane(proj);
+    
+  } // PlaneGeo::moveWidthDepthProjectionOnPlane()
+  
+  
+  //......................................................................
+  TVector3 PlaneGeo::movePointOnPlane(TVector3 const& point) const {
+    
+    auto const deltaProj
+      = deltaWidthDepthFromPlane(PointWidthDepthProjection(point));
+    
+    return point + deltaProj.X() * WidthDir() + deltaProj.Y() * DepthDir();
+    
+  } // PlaneGeo::movePointOnPlane()
   
   
   //......................................................................
@@ -327,8 +399,8 @@ namespace geo{
     fDecompFrame.SetOrigin(GetCenter());
     fDecompFrame.SetMainDir(roundedVector(sides[iWidth].Unit(), 1e-4));
     fDecompFrame.SetSecondaryDir(roundedVector(sides[iDepth].Unit(), 1e-4));
-    fFrameSize.width    = sides[iWidth].Mag() * 2.0;
-    fFrameSize.depth    = sides[iDepth].Mag() * 2.0;
+    fFrameSize.halfWidth = sides[iWidth].Mag();
+    fFrameSize.halfDepth = sides[iDepth].Mag();
     
   } // PlaneGeo::DetectGeometryDirections()
 
