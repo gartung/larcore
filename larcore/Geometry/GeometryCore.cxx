@@ -1317,14 +1317,15 @@ namespace geo {
     auto w2startProj = plane1.PointWidthDepthProjection(w2.start());
     auto w2endProj   = plane1.PointWidthDepthProjection(w2.end());
     
-    double x, y;
+    double x, y; // "width" and "depth"
     bool within = IntersectSegments(
       w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
       w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
       x, y
       );
     
-    intersection = plane1.ComposePoint(0., { x, y });
+    intersection
+      = plane1.ComposePoint(0., geo::PlaneGeo::WireCoordProjection_t(x, y));
     
     // return whether the intersection is within the length of both wires
     return within;

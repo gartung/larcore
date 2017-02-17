@@ -18,6 +18,12 @@
 #include "larcore/Geometry/Decomposer.h"
 #include "larcore/Geometry/WireGeo.h"
 
+// ROOT libraries
+#include "Math/GenVector/Cartesian2D.h"
+#include "Math/GenVector/PositionVector2D.h"
+#include "Math/GenVector/DisplacementVector2D.h"
+
+
 // C/C++ standard libraries
 #include <cmath> // std::atan2()
 #include <vector>
@@ -58,12 +64,35 @@ namespace geo {
     
     using GeoNodePath_t = std::vector<TGeoNode const*>;
     
-    /// Type used for plane decompositions
-    using Decomposer_t
-      = geo::Decomposer<geo::vect::Vector_t, geo::vect::Point_t, TVector2>;
+    /// Tag for wire coordinate reference vectors.
+    struct WireCoordinateReferenceTag {};
+    
+    /// Tag for plane frame reference vectors.
+    struct WidthDepthReferenceTag {};
+    
+    /// Type for projections in the wire coordinate reference.
+    using WireCoordProjection_t = ROOT::Math::DisplacementVector2D
+      <ROOT::Math::Cartesian2D<double>, WireCoordinateReferenceTag>;
+    
+    /// Type for projections in the plane frame reference.
+    using WidthDepthProjection_t = ROOT::Math::DisplacementVector2D
+      <ROOT::Math::Cartesian2D<double>, WidthDepthReferenceTag>;
+    
+    /// Type used for plane decompositions on wire coordinate frame.
+    using WireDecomposer_t = geo::Decomposer
+      <geo::vect::Vector_t, geo::vect::Point_t, WireCoordProjection_t>;
+    
+    /// Type used for plane decompositions on plane frame (width/depth).
+    using WidthDepthDecomposer_t = geo::Decomposer
+      <geo::vect::Vector_t, geo::vect::Point_t, WidthDepthProjection_t>;
     
     /// Type describing a 3D point or vector decomposed on a plane
-    using DecomposedVector_t = Decomposer_t::DecomposedVector_t;
+    /// with wire coordinates.
+    using WireDecomposedVector_t = WireDecomposer_t::DecomposedVector_t;
+    
+    /// Type describing a 3D point or vector decomposed on a plane
+    /// with plane frame coordinates (width and depth).
+    using WDDecomposedVector_t = WidthDepthDecomposer_t::DecomposedVector_t;
       
     
     /// Construct a representation of a single plane of the detector
@@ -468,7 +497,7 @@ namespace geo {
      * The projection on the plane is obtained following the same convention
      * as PointProjection().
      */
-    DecomposedVector_t DecomposePoint(TVector3 const& point) const
+    WireDecomposedVector_t DecomposePoint(TVector3 const& point) const
       { return fDecompWire.DecomposePoint(point); }
     
     /**
@@ -496,8 +525,7 @@ namespace geo {
      * 
      * The reference point is also returned by ProjectionReferencePoint().
      */
-    DecomposedVector_t::Projection_t PointProjection
-      (TVector3 const& point) const
+    WireCoordProjection_t PointProjection(TVector3 const& point) const
       { return fDecompWire.ProjectPointOnPlane(point); }
     
     /**
@@ -512,8 +540,7 @@ namespace geo {
      * `WireGeo::Direction()`). The component @f$ w @f$ is defined on the wire
      * coordinate direction (see `GetIncreasingWireDirection()`). 
      */
-    DecomposedVector_t::Projection_t VectorProjection
-      (TVector3 const& v) const
+    WireCoordProjection_t VectorProjection(TVector3 const& v) const
       { return fDecompWire.ProjectVectorOnPlane(v); }
     
     /**
@@ -526,7 +553,7 @@ namespace geo {
      * See `ComposePoint(double, DecomposedVector_t::Projection_t const&)` for
      * details.
      */
-    TVector3 ComposePoint(DecomposedVector_t const& decomp) const
+    TVector3 ComposePoint(WireDecomposedVector_t const& decomp) const
       { return fDecompWire.ComposePoint(decomp); }
     
     /**
@@ -548,7 +575,7 @@ namespace geo {
      * 
      */
     TVector3 ComposePoint
-      (double distance, DecomposedVector_t::Projection_t const& proj) const
+      (double distance, WireCoordProjection_t const& proj) const
       { return fDecompWire.ComposePoint(distance, proj); }
     
     
@@ -578,7 +605,7 @@ namespace geo {
      * The projection on the plane is obtained following the same convention
      * as PointWidthDepthProjection().
      */
-    DecomposedVector_t DecomposePointWidthDepth(TVector3 const& point) const
+    WDDecomposedVector_t DecomposePointWidthDepth(TVector3 const& point) const
       { return fDecompFrame.DecomposePoint(point); }
     
     /**
@@ -592,7 +619,7 @@ namespace geo {
      * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
      * respectively. The origin point is the center of the plane.
      */
-    DecomposedVector_t::Projection_t PointWidthDepthProjection
+    WidthDepthProjection_t PointWidthDepthProjection
       (TVector3 const& point) const
       { return fDecompFrame.ProjectPointOnPlane(point); }
     
@@ -607,7 +634,7 @@ namespace geo {
      * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
      * respectively.
      */
-    DecomposedVector_t::Projection_t VectorWidthDepthProjection
+    WidthDepthProjection_t VectorWidthDepthProjection
       (TVector3 const& v) const
       { return fDecompFrame.ProjectVectorOnPlane(v); }
     
@@ -622,7 +649,7 @@ namespace geo {
      * projection falls within the wire plane area, as defined by the dimensions
      * from the geometry description.
      */
-    bool isWidthDepthProjectionOnPlane(TVector3 const& point) const;
+    bool isProjectionOnPlane(TVector3 const& point) const;
     
     /**
      * @brief Returns a projection vector that, added to the argument, gives a
@@ -633,8 +660,8 @@ namespace geo {
      * If the projection is already on the plane, the returned displacement is
      * null.
      */
-    DecomposedVector_t::Projection_t deltaWidthDepthFromPlane
-      (DecomposedVector_t::Projection_t const& proj) const;
+    WidthDepthProjection_t DeltaFromPlane
+      (WidthDepthProjection_t const& proj) const;
     
     /**
      * @brief Returns the projection, moved onto the plane if necessary.
@@ -652,22 +679,21 @@ namespace geo {
      * component into @f$ \left[ -\frac{d}{2}, \frac{d}{2} \right] @f$, with
      * @f$ w @f$ and @f$ d @f$ the width and depth of the wire plane.
      */
-    DecomposedVector_t::Projection_t moveWidthDepthProjectionOnPlane
-      (DecomposedVector_t::Projection_t const& proj) const;
+    WidthDepthProjection_t MoveProjectionToPlane
+      (WidthDepthProjection_t const& proj) const;
     
     /**
-     * @brief Returns the point, moved so that its projection is on the plane.
+     * @brief Returns the point, moved so that its projection is over the plane.
      * @param point point to be checked and moved
      * @return the new value of the point
-     * @see isProjectionOnPlane(), moveWidthDepthProjectionOnPlane(),
-     *      Width(), Height()
+     * @see isProjectionOnPlane(), MoveProjectionToPlane(), Width(), Height()
      * 
      * If the projection of the point on the plane falls outside it, the
      * returned point is translated so that its projection is now on the border
      * of the plane. The translation happens along the directions of the plane
-     * frame, as described in moveWidthDepthProjectionOnPlane().
+     * frame, as described in MoveProjectionToPlane().
      */
-    TVector3 movePointOnPlane(TVector3 const& point) const;
+    TVector3 MovePointOverPlane(TVector3 const& point) const;
     
     /**
      * @brief Returns the 3D vector from composition of projection and distance.
@@ -680,7 +706,7 @@ namespace geo {
      * `ComposePointWidthDepth(double, DecomposedVector_t::Projection_t const&)`
      * for details.
      */
-    TVector3 ComposePointWidthDepth(DecomposedVector_t const& decomp) const
+    TVector3 ComposePoint(WDDecomposedVector_t const& decomp) const
       { return fDecompFrame.ComposePoint(decomp); }
     
     /**
@@ -701,8 +727,8 @@ namespace geo {
      * DecomposePointWidthDepth().
      * 
      */
-    TVector3 ComposePointWidthDepth
-      (double distance, DecomposedVector_t::Projection_t const& proj) const
+    TVector3 ComposePoint
+      (double distance, WidthDepthProjection_t const& proj) const
       { return fDecompFrame.ComposePoint(distance, proj); }
     
     
@@ -857,11 +883,11 @@ namespace geo {
     /// Decomposition on wire coordinates; the main direction is along the wire,
     /// the secondary one is the one measured by the wire, the normal matches
     /// the plane's normal.
-    Decomposer_t          fDecompWire;
+    WireDecomposer_t      fDecompWire;
     /// Decomposition on frame coordinates; the main direction is a "width",
     /// the secondary one is just orthogonal to it ("depth").
     /// Normal can differ in sign from the plane one.
-    Decomposer_t          fDecompFrame;
+    WidthDepthDecomposer_t fDecompFrame;
     RectSpecs             fFrameSize;   ///< Size of the frame of the plane.
 
     geo::PlaneID          fID;          ///< ID of this plane.

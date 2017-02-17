@@ -193,8 +193,8 @@ namespace geo{
   
   
   //......................................................................
-  PlaneGeo::DecomposedVector_t::Projection_t PlaneGeo::deltaWidthDepthFromPlane
-    (DecomposedVector_t::Projection_t const& proj) const
+  PlaneGeo::WidthDepthProjection_t PlaneGeo::DeltaFromPlane
+    (WidthDepthProjection_t const& proj) const
   {
     
     return {
@@ -202,40 +202,39 @@ namespace geo{
       symmetricCapDelta(proj.Y(), fFrameSize.HalfDepth())
     };
     
+  } // PlaneGeo::DeltaFromPlane()
+  
+  
+  //......................................................................
+  bool PlaneGeo::isProjectionOnPlane(TVector3 const& point) const {
+    
+    auto const deltaProj
+      = DeltaFromPlane(PointWidthDepthProjection(point));
+    
+    return (deltaProj.X() == 0.) && (deltaProj.Y() == 0.);
+    
   } // PlaneGeo::isProjectionOnPlane()
   
   
   //......................................................................
-  bool PlaneGeo::isWidthDepthProjectionOnPlane(TVector3 const& point) const {
-    
-    auto const deltaProj
-      = deltaWidthDepthFromPlane(PointWidthDepthProjection(point));
-    
-    return (deltaProj.X() == 0.) && (deltaProj.Y() == 0.);
-    
-  } // PlaneGeo::isWidthDepthProjectionOnPlane()
-  
-  
-  //......................................................................
-  PlaneGeo::DecomposedVector_t::Projection_t
-  PlaneGeo::moveWidthDepthProjectionOnPlane
-    (DecomposedVector_t::Projection_t const& proj) const
+  PlaneGeo::WidthDepthProjection_t PlaneGeo::MoveProjectionToPlane
+    (WidthDepthProjection_t const& proj) const
   {
     
-    return proj + deltaWidthDepthFromPlane(proj);
+    return proj + DeltaFromPlane(proj);
     
-  } // PlaneGeo::moveWidthDepthProjectionOnPlane()
+  } // PlaneGeo::MoveProjectionToPlane()
   
   
   //......................................................................
-  TVector3 PlaneGeo::movePointOnPlane(TVector3 const& point) const {
+  TVector3 PlaneGeo::MovePointOverPlane(TVector3 const& point) const {
     
     auto const deltaProj
-      = deltaWidthDepthFromPlane(PointWidthDepthProjection(point));
+      = DeltaFromPlane(PointWidthDepthProjection(point));
     
     return point + deltaProj.X() * WidthDir() + deltaProj.Y() * DepthDir();
     
-  } // PlaneGeo::movePointOnPlane()
+  } // PlaneGeo::MovePointOverPlane()
   
   
   //......................................................................

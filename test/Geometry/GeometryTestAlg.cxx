@@ -1110,7 +1110,7 @@ namespace geo{
           auto const expectedWireDirCoord = wireDirOffset
             + wire.Direction().Dot(wire.GetCenter() - refPoint);
           
-          geo::PlaneGeo::DecomposedVector_t::Projection_t const expectedProj
+          geo::PlaneGeo::WireCoordProjection_t const expectedProj
             (expectedWireDirCoord, expectedWireCoord);
           
           //
@@ -1231,10 +1231,10 @@ namespace geo{
           //
           // containment
           //
-          if (!plane.isWidthDepthProjectionOnPlane(expectedPoint)) {
+          if (!plane.isProjectionOnPlane(expectedPoint)) {
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecomposition] isWidthDepthProjectionOnPlane():"
+              << "[testPlanePointDecomposition] isProjectionOnPlane():"
               << "Point " << expectedPoint
               << " is not believed to be on the plane, but it should.";
           }
@@ -1572,18 +1572,18 @@ namespace geo{
             + expected_d * depthDir
             + distance * planeNorm;
           
-          geo::PlaneGeo::DecomposedVector_t::Projection_t const expectedProj
+          geo::PlaneGeo::WidthDepthProjection_t const expectedProj
             (expected_w, expected_d);
           
           //
           // composition
           //
-          auto point = plane.ComposePointWidthDepth(distance, expectedProj);
+          auto point = plane.ComposePoint(distance, expectedProj);
           
           if (vectorIs.nonEqual(point, expectedPoint)) {
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecompositionFrame] ComposePointWidthDepth(): "
+              << "[testPlanePointDecompositionFrame] ComposePoint(): "
               << "Point with projection " << expectedProj
               << " (width: " << expected_w << ", depth: " << expected_d
               << ") and distance from plane " << distance
@@ -1700,12 +1700,12 @@ namespace geo{
           // containment
           //
           const bool expected_onPlane = inWidth && inDepth;
-          const bool onPlane = plane.isWidthDepthProjectionOnPlane(expectedPoint);
+          const bool onPlane = plane.isProjectionOnPlane(expectedPoint);
           if (expected_onPlane != onPlane) {
             // always
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecompositionFrame] isWidthDepthProjectionOnPlane():"
+              << "[testPlanePointDecompositionFrame] isProjectionOnPlane():"
               << "Point " << expectedPoint
               << " (width: " << expected_w << ", depth: " << expected_d
               << ") is" << (onPlane? "": " not")
@@ -1734,7 +1734,7 @@ namespace geo{
     //
     // Tests:
     // 
-    // 1. containment (isWidthDepthProjectionOnPlane())
+    // 1. containment (isProjectionOnPlane())
     // 
     // 
     // 2. capping by closest point
@@ -1776,23 +1776,22 @@ namespace geo{
             // prepare expectation
             //
             // definition of the test point
-            geo::PlaneGeo::DecomposedVector_t::Projection_t const expected_proj
+            geo::PlaneGeo::WidthDepthProjection_t const expected_proj
               (expected_w, expected_d);
             
             auto const expected_point
-              = plane.ComposePointWidthDepth(distance, expected_proj);
+              = plane.ComposePoint(distance, expected_proj);
             
             //
             // 1. Containment test
             //
             const bool expected_onPlane = inWidth && inDepth;
             const bool onPlane
-              = plane.isWidthDepthProjectionOnPlane(expected_point);
+              = plane.isProjectionOnPlane(expected_point);
             if (expected_onPlane != onPlane) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlaneProjectionOnFrame]"
-                  " isWidthDepthProjectionOnPlane():"
+                << "[testPlaneProjectionOnFrame] isProjectionOnPlane():"
                 << "Point " << expected_point
                 << " (width: " << expected_w << ", depth: " << expected_d
                 << ") is" << (onPlane? "": " not")
@@ -1806,15 +1805,13 @@ namespace geo{
             //
             // 2.1. capping projection
             //
-            geo::PlaneGeo::DecomposedVector_t::Projection_t
-              expected_movedProjection(
+            geo::PlaneGeo::WidthDepthProjection_t expected_movedProjection(
                 (inWidth?
-                  expected_proj.X(): (expected_w < 0)? -halfWidth: +halfWidth),
+                  expected_w: (expected_w < 0)? -halfWidth: +halfWidth),
                 (inDepth?
-                  expected_proj.Y(): (expected_d < 0)? -halfDepth: +halfDepth)
+                  expected_d: (expected_d < 0)? -halfDepth: +halfDepth)
               );
-            auto movedProjection
-              = plane.moveWidthDepthProjectionOnPlane(expected_proj);
+            auto movedProjection = plane.MoveProjectionToPlane(expected_proj);
             if (vector2Dis.nonEqual(movedProjection, expected_movedProjection))
             {
               ++nErrors;
@@ -1832,14 +1829,14 @@ namespace geo{
             //
             // 2.2. capping point
             //
-            auto expected_movedPoint = plane.ComposePointWidthDepth
-              (distance, expected_movedProjection);
+            auto expected_movedPoint
+              = plane.ComposePoint(distance, expected_movedProjection);
             
-            auto movedPoint = plane.movePointOnPlane(expected_point);
+            auto movedPoint = plane.MovePointOverPlane(expected_point);
             if (vectorIs.nonEqual(movedPoint, expected_movedPoint)) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlaneProjectionOnFrame] moveProjectionOnPlane():"
+                << "[testPlaneProjectionOnFrame] movePointOnPlane():"
                 << "Point " << expected_point
                 << " (width: " << expected_w << ", depth: " << expected_d
                 << ") (" << (onPlane? "on": "off")
@@ -2399,7 +2396,7 @@ namespace geo{
           std::sqrt(sqr(d1) + sqr(d2) - 2. * d1 * d2 * std::cos(dTheta))
           / std::abs(std::sin(dTheta));
         // the actual distance we have found:
-        double const d = plane1.VectorProjection(xingPoint - point).Mod();
+        double const d = plane1.VectorProjection(xingPoint - point).R();
         LOG_DEBUG("GeometryTest")
           << " - wires " << w1 << " and " << w2 << " intersect at " << xingPoint
           << ", " << d << " cm far from starting point (expected: "
