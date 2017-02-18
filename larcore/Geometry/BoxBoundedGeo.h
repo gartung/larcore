@@ -174,7 +174,7 @@ namespace geo {
     bool ContainsPosition
       (TVector3 const& worldLoc, double const& wiggle = 1 ) const
       {
-	return ContainsX(worldLoc[0], wiggle)
+        return ContainsX(worldLoc[0], wiggle)
           && ContainsYZ(worldLoc[1], worldLoc[2], wiggle);
       } // ContainsPosition()
     ///@}
@@ -316,17 +316,38 @@ namespace geo {
       { c_min = lower; c_max = upper; }
     
     /**
+     * @brief Extends the current box to also include the specified point.
+     * @param x x coordinate of the point to include
+     * @param y y coordinate of the point to include
+     * @param z z coordinate of the point to include
+     */
+    void ExtendToInclude(Coord_t x, Coord_t y, Coord_t z)
+      {
+        set_min(c_min[0], x); set_min(c_min[1], y); set_min(c_min[2], z);
+        set_max(c_max[0], x); set_max(c_max[1], y); set_max(c_max[2], z);
+      } // ExtendToInclude()
+    
+    /**
+     * @brief Extends the current box to also include the specified point.
+     * @param point coordinates of the point to include
+     */
+    void ExtendToInclude(Coords_t point)
+      { ExtendToInclude(point[0], point[1], point[2]); }
+    
+    /**
      * @brief Extends the current box to also include the specified one
      * @param box the box to include
+     * 
+     * It is assumed that the box has its boundaries properly sorted.
      */
     void ExtendToInclude(BoxBoundedGeo const& box)
       {
         set_min(c_min[0], box.MinX());
         set_min(c_min[1], box.MinY());
         set_min(c_min[2], box.MinZ());
-        set_max(c_min[0], box.MaxX());
-        set_max(c_min[1], box.MaxY());
-        set_max(c_min[2], box.MaxZ());
+        set_max(c_max[0], box.MaxX());
+        set_max(c_max[1], box.MaxY());
+        set_max(c_max[2], box.MaxZ());
       } // ExtendToInclude()
     
     /// @}
