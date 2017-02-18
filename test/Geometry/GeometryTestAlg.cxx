@@ -380,19 +380,6 @@ namespace geo{
       << "\n  wires in a plane:  " << geom->MaxWires()
       << "\nTotal number of TPCs " << geom->TotalNTPC()
       ;
-
-    //LOG_DEBUG("GeometryTest") << "print channel information ...";
-    //printChannelSummary();
-    //LOG_DEBUG("GeometryTest") << "done printing.";
-    //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC boundaries in world coordinates ...";
-    //printVolBounds();
-    //mf::LogVerbatim("GeometryTest") << "done printing.";
-    //mf::LogVerbatim("GeometryTest") << "print Cryo/TPC dimensions ...";
-    //printDetDim();
-    //mf::LogVerbatim("GeometryTest") << "done printing.";
-    //mf::LogVerbatim("GeometryTest") << "print wire center positions in world coordinates ...";
-    //printWirePos();
-    //mf::LogVerbatim("GeometryTest") << "done printing.";
     
   } // GeometryTestAlg::printDetectorIntro()
   
@@ -1188,10 +1175,10 @@ namespace geo{
           if (coordIs.nonEqual(dist, distance)) {
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecomposition] DistanceFromPlane():"
+              << "[testPlanePointDecomposition] DistanceFromPlane(): "
               << "Point " << point << " (on wire " << std::string(wireID) << ")"
-              << " is reported to have distance from plane " << dist
-              << " cm, while " << distance << " is expected";
+              << " is reported to have distance " << dist << " cm from plane "
+              << plane.ID() << ", while " << distance << " is expected";
           } // if wrong distance
           
           //
@@ -1217,7 +1204,7 @@ namespace geo{
             if (coordIs.nonEqual(dist, expectedDistance)) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlanePointDecomposition] DriftPoint():"
+                << "[testPlanePointDecomposition] DriftPoint(): "
                 << "Point " << expectedPoint
                 << " (distant " << distance << " cm from the plane)"
                 << " (on wire " << std::string(wireID) << ")"
@@ -1234,9 +1221,9 @@ namespace geo{
           if (!plane.isProjectionOnPlane(expectedPoint)) {
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecomposition] isProjectionOnPlane():"
-              << "Point " << expectedPoint
-              << " is not believed to be on the plane, but it should.";
+              << "[testPlanePointDecomposition] isProjectionOnPlane(): "
+              << "Point " << expectedPoint << " (center of " << wireID
+              << ") is not believed to be on the plane, but it should.";
           }
           
         } // for different wire direction steps
@@ -1562,7 +1549,7 @@ namespace geo{
           double const expected_d = dD_2 * (iD * 2 + 1); // depth coordinate
           bool const inDepth = std::abs(expected_d) <= halfDepth;
           
-          constexpr double distance = 0.0; // we might test this too...
+          constexpr double distance = 5.0; // we might test this too...
           
           //
           // prepare expectation
@@ -1655,7 +1642,7 @@ namespace geo{
           if (coordIs.nonEqual(dist, distance)) {
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecomposition] DistanceFromPlane():"
+              << "[testPlanePointDecomposition] DistanceFromPlane(): "
               << "Point " << point
               << " (width: " << expected_w << ", depth: " << expected_d
               << ") is reported to have distance from plane " << dist
@@ -1685,7 +1672,7 @@ namespace geo{
             if (coordIs.nonEqual(dist, expectedDistance)) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlanePointDecomposition] DriftPoint():"
+                << "[testPlanePointDecomposition] DriftPoint(): "
                 << "Point " << expectedPoint
                 << " (distant " << distance << " cm from the plane)"
                 << " (width: " << expected_w << ", depth: " << expected_d
@@ -1705,7 +1692,7 @@ namespace geo{
             // always
             ++nErrors;
             mf::LogProblem("GeometryTestAlg")
-              << "[testPlanePointDecompositionFrame] isProjectionOnPlane():"
+              << "[testPlanePointDecompositionFrame] isProjectionOnPlane(): "
               << "Point " << expectedPoint
               << " (width: " << expected_w << ", depth: " << expected_d
               << ") is" << (onPlane? "": " not")
@@ -1791,7 +1778,7 @@ namespace geo{
             if (expected_onPlane != onPlane) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlaneProjectionOnFrame] isProjectionOnPlane():"
+                << "[testPlaneProjectionOnFrame] isProjectionOnPlane(): "
                 << "Point " << expected_point
                 << " (width: " << expected_w << ", depth: " << expected_d
                 << ") is" << (onPlane? "": " not")
@@ -1836,7 +1823,7 @@ namespace geo{
             if (vectorIs.nonEqual(movedPoint, expected_movedPoint)) {
               ++nErrors;
               mf::LogProblem("GeometryTestAlg")
-                << "[testPlaneProjectionOnFrame] movePointOnPlane():"
+                << "[testPlaneProjectionOnFrame] movePointOnPlane(): "
                 << "Point " << expected_point
                 << " (width: " << expected_w << ", depth: " << expected_d
                 << ") (" << (onPlane? "on": "off")

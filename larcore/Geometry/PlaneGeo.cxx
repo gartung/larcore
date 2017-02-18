@@ -79,7 +79,7 @@ namespace geo{
     , fCosPhiZ(0.)
     , fDecompWire()
     , fDecompFrame()
-
+    , fCenter()
   {
     assert(depth < path.size());
     
@@ -112,6 +112,42 @@ namespace geo{
 
   }
 
+  //......................................................................
+  geo::BoxBoundedGeo PlaneGeo::BoundingBox() const {
+    
+    //
+    // The algorithm is not very refined...
+    //
+    
+    TGeoBBox const* pShape = dynamic_cast<TGeoBBox const*>(fVolume->GetShape());
+    if (!pShape) {
+      throw cet::exception("PlaneGeo")
+        << "BoundingBox(): volume " << fVolume->IsA()->GetName()
+        << "['" << fVolume->GetName() << "'] has a shape which is a "
+        << pShape->IsA()->GetName()
+        << ", not a TGeoBBox!";
+    }
+    
+    geo::BoxBoundedGeo box;
+    unsigned int points = 0;
+    for (double dx: { -(pShape->GetDX()), +(pShape->GetDX()) }) {
+      for (double dy: { -(pShape->GetDY()), +(pShape->GetDY()) }) {
+        for (double dz: { -(pShape->GetDZ()), +(pShape->GetDZ()) }) {
+          
+          auto const p = LocalToWorld({ dx, dy, dz });
+          
+          if (points++ == 0)
+            box.SetBoundaries(p.X(), p.X(), p.Y(), p.Y(), p.Z(), p.Z());
+          else
+            box.ExtendToInclude(p.X(), p.Y(), p.Z());
+          
+        } // for z
+      } // for y
+    } // for x
+    return box;
+    
+  } // PlaneGeo::BoundingBox()
+  
   //......................................................................
   
   geo::WireGeo const& PlaneGeo::Wire(unsigned int iwire) const {
@@ -171,12 +207,12 @@ namespace geo{
   
   
   //......................................................................
-  TVector3 PlaneGeo::GetCenter() const {
+  TVector3 PlaneGeo::GetBoxCenter() const {
     
     // convert the origin (default constructed TVector)
     return LocalToWorld({});
     
-  } // PlaneGeo::GetCenter()
+  } // PlaneGeo::GetBoxCenter()
   
   
   //......................................................................
@@ -297,6 +333,7 @@ namespace geo{
     
     UpdateDecompWireOrigin();
     UpdateWireDir();
+    UpdateWirePlaneCenter();
     UpdateOrientation();
     UpdateWirePitch();
     UpdatePhiZ();
@@ -335,6 +372,11 @@ namespace geo{
     // If z is the direction of the normal to the plane... oh well.
     // Let's say privilege to the one which comes from local z, then y.
     // That means: undefined.
+    // 
+    // Requirements:
+    //  - ROOT geometry information (shapes and transformations)
+    //  - the shape must be a box (an error is PRINTED if not)
+    //  - center of the wire plane (not just the center of the plane box)
     //
     
     //
@@ -395,7 +437,6 @@ namespace geo{
     size_t const iWidth = kept[iiWidth];
     size_t const iDepth = kept[1 - iiWidth]; // the other
     
-    fDecompFrame.SetOrigin(GetCenter());
     fDecompFrame.SetMainDir(roundedVector(sides[iWidth].Unit(), 1e-4));
     fDecompFrame.SetSecondaryDir(roundedVector(sides[iDepth].Unit(), 1e-4));
     fFrameSize.halfWidth = sides[iWidth].Mag();
@@ -496,7 +537,7 @@ namespace geo{
     
     // now evaluate where we are pointing
     TVector3 TPCcenter(TPCbox.Center().data());
-    TVector3 towardCenter = TPCcenter - GetCenter();
+    TVector3 towardCenter = TPCcenter - GetBoxCenter();
     
     // if they are pointing in opposite directions, flip the normal
     if (fNormal.Dot(towardCenter) < 0) fNormal = -fNormal;
@@ -604,6 +645,33 @@ namespace geo{
     fDecompWire.SetOrigin(FirstWire().GetCenter());
     
   } // PlaneGeo::UpdateDecompWireOrigin()
+  
+  
+  //......................................................................
+  void PlaneGeo::UpdateWirePlaneCenter() {
+    
+    //
+    // The center of the wire plane is defined as the center of the plane box,
+    // translated to the plane the wires lie on.
+    // This assumes that the thickness direction of the box is aligned with
+    // the drift direction, so that the translated point is still in the middle
+    // of width and depth dimensions.
+    // It is possible to remove that assumption by translating the center of the
+    // box along the thickness direction enough to bring it to the wire plane.
+    // The math is just a bit less straightforward, so we don't bother yet.
+    //
+    // Requirements:
+    //  * the wire decomposition frame must be set up (at least its origin and
+    //    normal direction)
+    //
+    
+    fCenter = GetBoxCenter();
+    
+    DriftPoint(fCenter, DistanceFromPlane(fCenter));
+    
+    fDecompFrame.SetOrigin(fCenter); // equivalent to GetCenter() now
+    
+  } // PlaneGeo::UpdateWirePlaneCenter()
   
   
   //......................................................................

@@ -211,7 +211,7 @@ namespace geo{
     }
     
     auto const TPCcenter = GetCenter();
-    auto const PlaneCenter = Plane(0).GetCenter(); // any will do
+    auto const PlaneCenter = Plane(0).GetBoxCenter(); // any will do
     
     auto const driftVector = PlaneCenter - TPCcenter; // approximation!
     
@@ -475,7 +475,7 @@ namespace geo{
         fDriftDirection = kUnknownDrift;
         
         // we estimate the drift direction roughly from the geometry
-        fDriftDir = Plane(0).GetCenter() - GetCenter();
+        fDriftDir = Plane(0).GetBoxCenter() - GetCenter();
         
         mf::LogError("TPCGeo")
           << "Unable to detect drift direction (result: " << driftDirCode

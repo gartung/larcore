@@ -40,6 +40,13 @@ namespace geo {
   /**
    * @brief Geometry information for a single wire plane.
    * 
+   * The plane is represented in the geometry by a solid which contains wires.
+   * Currently, only box solids are well supported.
+   * The box which is representation of the plane has some thickness, and it
+   * should not be assumed that the wires are in the median section of it,
+   * that is, the center of the box may not lie on the plane defined by the
+   * wires.
+   * 
    * The plane defines two local reference frames.
    * The first, depending on wire directions and therefore called "wire base",
    * is defined by the normal to the plane (pointing toward the center of the
@@ -127,28 +134,49 @@ namespace geo {
     
     
     /// @{
+    /// @name Plane size and coordinates
+    
     /**
-     * @brief Return the direction of plane width and depth.
+     * @brief Return the direction of plane width.
      * 
-     * The precise definition of the two is arbitrary, but they are defined
+     * The precise definition of the sides is arbitrary, but they are defined
      * to lie on the wire plane and so that WidthDir(), DepthDir() and
      * GetNormalDirection() make a orthonormal base.
      * That base (width, depth, normal) is guaranteed to be positive defined.
      */
     TVector3 const& WidthDir() const { return fDecompFrame.MainDir(); }
-    TVector3 const& DepthDir() const { return fDecompFrame.SecondaryDir(); }
-    /// @}
     
-    /// @{
     /**
-     * @brief Return the dimensions of plane (width and depth).
-     * @see WidthDir(), DepthDir()
+     * @brief Return the direction of plane depth.
      * 
-     * The precise definition of the two is arbitrary (see `WidthDir()` and
-     * `DepthDir()`).
+     * The precise definition of the sides is arbitrary, but they are defined
+     * to lie on the wire plane and so that WidthDir(), DepthDir() and
+     * GetNormalDirection() make a orthonormal base.
+     * That base (width, depth, normal) is guaranteed to be positive defined.
+     */
+    TVector3 const& DepthDir() const { return fDecompFrame.SecondaryDir(); }
+    
+    /**
+     * @brief Return the width of the plane.
+     * @see Depth(), WidthDir(), DepthDir()
+     * 
+     * The precise definition is arbitrary (see `WidthDir()`).
      */
     double Width() const { return fFrameSize.Width(); }
+    
+    /**
+     * @brief Return the depth of the plane.
+     * @see Width(), WidthDir(), DepthDir()
+     * 
+     * The precise definition is arbitrary (see `DepthDir()`).
+     */
     double Depth() const { return fFrameSize.Depth(); }
+
+    
+    /// Returns the world coordinates of the box containing the plane.
+    /// @see GetBoxCenter()
+    geo::BoxBoundedGeo BoundingBox() const;
+    
     /// @}
     
     
@@ -315,8 +343,33 @@ namespace geo {
       { return fDecompWire.SecondaryDir(); }
     
     
-    /// Returns the centre of the plane in world coordinates [cm]
-    TVector3 GetCenter() const;
+    /**
+     * @brief Returns the centre of the wire plane in world coordinates [cm]
+     * @see GetBoxCenter()
+     * 
+     * The center of the plane is defined so that it has width and depth
+     * coordinates in the middle of the plane box (that is, the geometrical
+     * representation of the plane in the geometry description), and the other
+     * coordinate set at drift distance 0.
+     * 
+     * Note that this does not necessarily match the center of the box, if the
+     * geometry does not place the wires, which define the drift distance, in
+     * the plane in the middle of the box.
+     */
+    TVector3 GetCenter() const
+      { return fCenter; }
+    
+    /**
+     * @brief Returns the centre of the box representing the plane.
+     * @return the centre of the box, in world coordinates [cm]
+     * @see GetCenter()
+     * 
+     * This is the centre of the box representing the plane in the geometry
+     * description, in world coordinates.
+     * This is rarely of any use, as most of the times `GetCenter()` delivers
+     * the proper information, e.g. for simulation and reconstruction.
+     */
+    TVector3 GetBoxCenter() const;
     
     /**
      * @brief Returns the direction of the wires.
@@ -352,14 +405,19 @@ namespace geo {
     
     
     /**
-     * @brief Returns the distance of the specified point from the plane.
+     * @brief Returns the distance of the specified point from the wire plane.
      * @param point a point in world coordinates [cm]
-     * @return the signed distance from the plane
+     * @return the signed distance from the wire plane
      * 
      * The distance is defined positive if the point lies in the side the normal
      * vector (GetNormalDirection()) points to.
      * 
-     * It should match the drift distance from this plane.
+     * The distance is defined from the geometric plane where the wires lie, and
+     * it may not match the distance from the center of the geometry box
+     * representing the plane.
+     * It should always match the drift distance from this wire plane, and the
+     * result of `DriftPoint(point, DistanceFromPlane(point))` will bring the
+     * point to the plane.
      */
     double DistanceFromPlane(TVector3 const& point) const
       { return fDecompWire.PointNormalComponent(point); }
@@ -405,6 +463,7 @@ namespace geo {
      * * 3: also information about normal and increasing coordinate direction
      * * 4: also information about wire direction, width and depth
      * * 5: also coverage
+     * * 6: also bounding box
      * 
      */
     template <typename Stream>
@@ -843,6 +902,9 @@ namespace geo {
     /// Updates the stored wire pitch.
     void UpdateWirePitch();
     
+    /// Updates the stored wire plane center.
+    void UpdateWirePlaneCenter();
+    
     /// Updates the stored @f$ \phi_{z} @f$.
     void UpdatePhiZ();
     
@@ -889,6 +951,8 @@ namespace geo {
     /// Normal can differ in sign from the plane one.
     WidthDepthDecomposer_t fDecompFrame;
     RectSpecs             fFrameSize;   ///< Size of the frame of the plane.
+    /// Center of the plane, lying on the wire plane.
+    TVector3              fCenter;
 
     geo::PlaneID          fID;          ///< ID of this plane.
 
@@ -992,6 +1056,18 @@ void geo::PlaneGeo::printPlaneInfo(
       << " (cm)";
   }
   out << " around " << plane_area.Center();
+  if (--verbosity <= 0) return; // 5
+  
+  //----------------------------------------------------------------------------
+  // print also the containing box
+  auto const box = BoundingBox();
+  out << "\n" << indent
+    << "bounding box: ( "
+      << box.MinX() << ", " << box.MinY() << ", " << box.MinZ()
+    << " ) -- ( "
+      << box.MaxX() << ", " << box.MaxY() << ", " << box.MaxZ()
+    << " )";
+  
   
   //----------------------------------------------------------------------------
 } // geo::PlaneGeo::printPlaneInfo()
