@@ -199,7 +199,7 @@ namespace geo {
 //------------------------------------------------------------------------------
 // template implementation
 
-#include "LocalTransformation.txx"
+#include "LocalTransformation.tcc"
 
 //------------------------------------------------------------------------------
 

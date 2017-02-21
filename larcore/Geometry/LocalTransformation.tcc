@@ -1,5 +1,5 @@
 /**
- * @file   LocalTransformation.txx
+ * @file   LocalTransformation.tcc
  * @brief  Class containing local-to-world transformations
  *         (template implementation)
  * @author Gianluca Petrillo (petrillo@fnal.gov)
