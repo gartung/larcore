@@ -175,13 +175,6 @@ namespace geo{
 
     double origin[3] = {0.};
  
-    // Set view for planes in this TPC, assuming that plane sorting
-    // increases in drift direction, to the convention that planes
-    // 0,1,2 have views kU,kV,kZ respectively. kZ is collection.
-    fPlanes[0]->SetView(geo::kU);
-    fPlanes[1]->SetView(geo::kV);
-    if (fPlanes.size() == 3) fPlanes[2]->SetView(geo::kZ);
-
     // set the plane pitch for this TPC
     double xyz[3]  = {0.};
     fPlanes[0]->LocalToWorld(origin,xyz);
@@ -191,12 +184,6 @@ namespace geo{
     for(unsigned int i = 0; i < fPlaneLocation.size(); ++i) fPlaneLocation[i].resize(3);
     fPlane0Pitch.clear();
     fPlane0Pitch.resize(this->Nplanes(), 0.);
-    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
-    // leaving it a reference would cause C++ to treat it as such,
-    // that can't be because InvalidID is a static member constant without an address
-    // (it is not defined in any translation unit, just declared in header)
-    fViewToPlaneNumber.resize
-      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
     for(size_t p = 0; p < this->Nplanes(); ++p){
       fPlanes[p]->LocalToWorld(origin,xyz1);
       if(p > 0) fPlane0Pitch[p] = fPlane0Pitch[p-1] + std::abs(xyz1[0]-xyz[0]);
@@ -205,9 +192,27 @@ namespace geo{
       fPlaneLocation[p][0] = xyz1[0];
       fPlaneLocation[p][1] = xyz1[1];
       fPlaneLocation[p][2] = xyz1[2];
-
-      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
     }
+
+    // Set view for planes in this TPC, assuming that plane sorting
+    // increases in drift direction, to the convention that planes
+    // 0,1,2 have views kU,kV,kZ respectively. kZ is collection.
+    
+    //MODIFICATION (Wes, 22 Feb 2017)
+    //IF wire coordinate angle is positive --> U
+    //IF wire coordinate angle is negative --> V
+    //IF wire coordinate angle is 0 --> Z
+    //IF wire coordinate angle is PI/2 --> Y
+    //AND, do this in the PlaneGeo constructor
+
+    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
+    // leaving it a reference would cause C++ to treat it as such,
+    // that can't be because InvalidID is a static member constant without an address
+    // (it is not defined in any translation unit, just declared in header)
+    fViewToPlaneNumber.resize
+      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
+    for(size_t p = 0; p < this->Nplanes(); ++p)
+      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
 
     for(size_t p = 0; p < fPlanes.size(); ++p) fPlanes[p]->SortWires(sorter);
 

@@ -246,6 +246,9 @@ namespace geo {
     /// Updates the stored phi_z
     void UpdatePhiZ();
     
+    /// Updates the stored view
+    void UpdateView();
+
     /// Performs all the updates needed after mapping changes
     void UpdateFromMapping();
     
