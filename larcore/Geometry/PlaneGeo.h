@@ -467,7 +467,7 @@ namespace geo {
      * 
      */
     template <typename Stream>
-    void printPlaneInfo
+    void PrintPlaneInfo
       (Stream&& out, std::string indent = "", unsigned int verbosity = 1) const;
     
     /// @}
@@ -964,7 +964,7 @@ namespace geo {
 //--- template implementation
 //---
 template <typename Stream>
-void geo::PlaneGeo::printPlaneInfo(
+void geo::PlaneGeo::PrintPlaneInfo(
   Stream&& out,
   std::string indent /* = "" */,
   unsigned int verbosity /* = 1 */
@@ -1070,7 +1070,7 @@ void geo::PlaneGeo::printPlaneInfo(
   
   
   //----------------------------------------------------------------------------
-} // geo::PlaneGeo::printPlaneInfo()
+} // geo::PlaneGeo::PrintPlaneInfo()
 
 
 #endif

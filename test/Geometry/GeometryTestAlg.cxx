@@ -509,7 +509,7 @@ namespace geo{
       const geo::PlaneGeo& plane = tpc.Plane(p);
       const unsigned int nWires = plane.Nwires();
       
-      plane.printPlaneInfo(
+      plane.PrintPlaneInfo(
         mf::LogVerbatim("GeometryTest") << indent << "  ", indent + "      ",
         8 /* large verbosity */
         );
@@ -769,7 +769,7 @@ namespace geo{
         
         // first line indented with two tabs, the others with two more spaces;
         // very verbose (8)
-        plane.printPlaneInfo
+        plane.PrintPlaneInfo
           (mf::LogVerbatim("GeometryTest") << "\t\t", "\t\t  ", 8);
         
         mf::LogVerbatim("GeometryTest") 
