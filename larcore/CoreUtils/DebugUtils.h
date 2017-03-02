@@ -232,53 +232,65 @@ namespace lar {
         return out;
       }
     
+    /// Backtrace printing options
+    struct BacktracePrintOptions {
+      
+      unsigned int maxLines = 5; ///< Total number of lines to print.
+      unsigned int skipLines = 1; ///< Number of lines to skip.
+      bool countOthers = true; ///< Whether to print number of omitted lines.
+      std::string indent; ///< Indentation string for all lines.
+      std::string firstIndent; ///< Special indentation for the first line.
+      
+      /// Options for each single backtrace call information line.
+      CallInfoPrinter::opt callInfoOptions = CallInfoPrinter::defaultOptions();
+      
+      /// Sets all indentation to the same specified `uniformIndent` string.
+      void setUniformIndent(std::string uniformIndent)
+        { indent = firstIndent = uniformIndent; }
+      
+    }; // struct BacktracePrintOptions
+    
+    
     /**
      * @brief Prints the full backtrace into a stream.
      * @tparam Stream type of output stream
      * @param out the output stream to insert output into
-     * @param maxLines print at most this many lines in the output (default: 5)
-     * @param indent prepend a string in front of any new line (default: "  ")
-     * @param options use these output options (default ones if null pointer)
-     *
-     * The output options are described in `CallInfoPrinter::opt` structure.
+     * @param options printing options (see BacktracePrintOptions)
      *
      */
     template <typename Stream>
-    void printBacktrace(
-      Stream&& out,
-      unsigned int maxLines = 5, std::string indent = "  ",
-      CallInfoPrinter::opt const* options = nullptr
-      )
-    {
-      constexpr unsigned int nSkip = 1;
-      std::vector<void*> buffer(nSkip + std::max(maxLines, 200U), nullptr);
+    void printBacktrace(Stream&& out, BacktracePrintOptions options) {
+      unsigned int nSkip = std::max(options.skipLines, 0U);
+      std::vector<void*> buffer
+        (nSkip + std::max(options.maxLines, 200U), nullptr);
       
-      unsigned int nItems
+      unsigned int const nItems
         = (unsigned int) backtrace(buffer.data(), buffer.size());
       
       // convert the calls in the buffer into a vector of strings
       char** symbols = backtrace_symbols(buffer.data(), buffer.size());
       if (!symbols) {
-        out << indent << "<failed to get the call stack>" << std::endl;
+        out << options.firstIndent << "<failed to get the call stack>\n"
+          << std::flush;
+        return;
       }
       std::vector<CallInfo_t> callStack;
       for (size_t i = 0; i < buffer.size(); ++i)
-      callStack.push_back((const char*) symbols[i]);
+        callStack.push_back((const char*) symbols[i]);
       std::free(symbols);
       
-      size_t lastItem = nSkip + maxLines;
+      size_t lastItem = nSkip + options.maxLines;
       if (lastItem > nItems) lastItem = nItems;
       if (lastItem >= buffer.size()) --lastItem;
       
-      CallInfoPrinter print;
-      if (options) print.setOptions(*options);
+      CallInfoPrinter print(options.callInfoOptions);
       for (size_t i = nSkip; i < lastItem; ++i) {
-        out << indent;
+        out << (i == 0? options.firstIndent: options.indent);
         print(std::forward<Stream>(out), callStack[i]);
         out << "\n";
       }
-      if (lastItem < nItems) {
-        out << indent << " ... and other " << (nItems - lastItem);
+      if ((lastItem < nItems) && options.countOthers) {
+        out << options.indent << " ... and other " << (nItems - lastItem);
         if (nItems == buffer.size()) out << " (or more)";
         out << " levels\n";
       }
@@ -286,6 +298,42 @@ namespace lar {
       
     } // printBacktrace()
   
+    /**
+     * @brief Prints the full backtrace into a stream with default options.
+     * @tparam Stream type of output stream
+     * @param out the output stream to insert output into
+     */
+    template <typename Stream>
+    void printBacktrace(Stream&& out)
+      { printBacktrace(std::forward<Stream>(out), BacktracePrintOptions()); }
+    
+    /**
+     * @brief Prints the full backtrace into a stream.
+     * @tparam Stream type of output stream
+     * @param out the output stream to insert output into
+     * @param maxLines print at most this many lines in the output (default: 5)
+     * @param indent prepend a string in front of any new line (default: "  ")
+     * @param callInfoOptions use these output options (default ones if null)
+     *
+     * The call information output options are described in
+     * `CallInfoPrinter::opt` structure.
+     *
+     */
+    template <typename Stream>
+    void printBacktrace(
+      Stream&& out,
+      unsigned int maxLines, std::string indent = "  ",
+      CallInfoPrinter::opt const* callInfoOptions = nullptr
+      )
+    {
+      BacktracePrintOptions options;
+      options.maxLines = maxLines;
+      options.indent = options.firstIndent = indent;
+      if (callInfoOptions) options.callInfoOptions = *callInfoOptions;
+      printBacktrace(std::forward<Stream>(out), options);
+    }
+    
+    
   } // namespace debug
 } // namespace lar
 
