@@ -1,7 +1,8 @@
 art_make(
   LIB_LIBRARIES
-    art_Utilities canvas_Utilities
-    ${CETLIB}
+    art_Utilities
+    canvas
+    cetlib cetlib_except
   )
 
 
