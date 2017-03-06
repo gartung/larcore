@@ -22,10 +22,10 @@ gdmldir product_dir
 # we list geant4 explicitly because we are going to set GDML_SCHEMA_DIR 
 # Defining GDML_SCHEMA_DIR here is a temporary hack
 product         version
-art		v2_05_00
+art		v2_06_01
 larcoreobj	v1_06_02
 
-cetbuildtools	v5_06_06	-	only_for_build
+cetbuildtools	v5_06_07	-	only_for_build
 end_product_list
 
   
