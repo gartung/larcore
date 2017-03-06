@@ -14,7 +14,7 @@
 #define LARCORE_COREUTILS_DEBUGUTILS_H 1
 
 // framework and support libraries
-#include "cetlib/demangle.h"
+#include "cetlib_except/demangle.h"
 
 // C/C++ standard libraries
 #include <cstddef> // std::ptrdiff_t
