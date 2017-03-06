@@ -1516,8 +1516,13 @@ namespace geo {
   {
     geo::WireIDIntersection widIntersect;
     bool const found = WireIDsIntersect(wid1, wid2, widIntersect);
-    y = widIntersect.y;
-    z = widIntersect.z;
+    if (found) {
+      y = widIntersect.y;
+      z = widIntersect.z;
+    }
+    else {
+      y = z = std::numeric_limits<double>::signaling_NaN();
+    }
     return found;
   }
   

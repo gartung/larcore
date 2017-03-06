@@ -2851,8 +2851,9 @@ namespace geo {
      * @param z (output) z coordinate of the intersection point
      * @return whether an intersection was found
      *
-     * No check is performed, not any information provided, about the validity
-     * of the result.
+     * If the intersection is not valid, both coordinates are filled with a
+     * signalling NaN, in the hope that if you use them your job will
+     * spectacularly explode.
      * 
      * @todo return a WireIDIntersection instead
      */
