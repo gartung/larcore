@@ -1,7 +1,7 @@
 #include "geometry_argoneut.fcl"
 #include "geometry_bo.fcl"
 #include "geometry_csu40L.fcl"
-#include "geometry_icarus.fcl"
+#include "geometry_icarus_old.fcl"
 #include "geometry_jp250L.fcl"
 
 
