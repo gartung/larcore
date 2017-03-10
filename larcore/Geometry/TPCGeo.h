@@ -15,8 +15,7 @@
 
 
 #include "larcore/Geometry/WireGeo.h"
-// TODO include PlaneGeo.h directly when issue #14365 is resolved
-// #include "larcore/Geometry/Geo.h"
+#include "larcore/Geometry/PlaneGeo.h"
 
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -27,7 +26,6 @@
 class TGeoNode;
 
 namespace geo {
-  class PlaneGeo;
 
   //......................................................................
   /// Geometry information for a single tpc
@@ -35,6 +33,13 @@ namespace geo {
   public:
     
     using GeoNodePath_t = geo::WireGeo::GeoNodePath_t;
+    
+    /// Type of 2D vector projection on a plane.
+    using Projection_t = geo::PlaneGeo::WidthDepthProjection_t;
+    
+    /// Data structure with plane and drift projections of a 3D vector.
+    using DecomposedVector_t = geo::PlaneGeo::WDDecomposedVector_t;
+
     
     static TVector3 const DirX; ///< unit vector toward positive x
     static TVector3 const DirY; ///< unit vector toward positive y
@@ -209,8 +214,6 @@ namespace geo {
     
     /// @}
     
-#if 0
-    // TODO this can be enabled once issue #14365 is resolved
     
     /// @{
     /// @name Projection on a wire plane
@@ -227,8 +230,12 @@ namespace geo {
     /// different).
     /// 
     
-    /// Returns the plane used for reference by projection methods
+    /// Returns the plane used for reference by projection methods.
     geo::PlaneGeo const& ReferencePlane() const { return FirstPlane(); }
+    
+    /// Returns the ID of the plane used for reference by projection methods.
+    geo::PlaneID const& ReferencePlaneID() const
+      { return ReferencePlane().ID(); }
     
     /**
      * @brief Return the direction of reference plane width.
@@ -254,7 +261,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the distance of the specified point from reference plane
+     * @brief Returns the distance of the specified point from reference plane.
      * @param point a point in world coordinates [cm]
      * @return the signed distance from the plane
      * 
@@ -268,7 +275,20 @@ namespace geo {
     
     
     /**
-     * @brief Decomposes a 3D point in two components
+     * @brief Shifts the position of an electron drifted by a distance.
+     * @param position _(modified)_ the position of the electron
+     * @param drift drift distance to shift the electron by [cm]
+     * @see geo::Plane::DriftPoint(), ReferencePlane()
+     * 
+     * This operation is delegated to the reference plane
+     * (see `geo::Plane::DriftPoint()`).
+     */
+    void DriftPoint(TVector3& position, double distance) const
+      { ReferencePlane().DriftPoint(position, distance); }
+    
+    
+    /**
+     * @brief Decomposes a 3D point in two components.
      * @param point the point to be decomposed
      * @return the two components of point, on the plane and orthogonal to it
      * 
@@ -278,15 +298,16 @@ namespace geo {
      *    real number
      * 2. a component lying on the reference plane, expressed as a 2D vector
      * 
-     * The distance is from the reference plane (DistanceFromReferencePlane()).
+     * The distance is from the reference plane
+     * (`DistanceFromReferencePlane()`).
      * The projection on the plane is obtained following the same convention
-     * as PointProjection().
+     * as `PointProjection()`.
      */
-    geo::PlaneGeo::DecomposedPoint_t DecomposePoint(TVector3 const& point) const
+    DecomposedVector_t DecomposePoint (TVector3 const& point) const
       { return ReferencePlane().DecomposePointWidthDepth(point); }
     
     /**
-     * @brief Returns the reference point used by PointProjection()
+     * @brief Returns the reference point used by `PointProjection()`.
      * 
      * The returned point is such that its decomposition results in a null
      * projection and a 0 distance from the plane.
@@ -295,73 +316,73 @@ namespace geo {
       { return ReferencePlane().GetCenter(); }
     
     /**
-     * @brief Returns the projection of the specified point on the plane
+     * @brief Returns the projection of the specified point on the plane.
      * @param point the 3D point to be projected, in world coordinates
      * @return a 2D vector representing the projection of point on the plane
      * 
      * The returned vector is a 2D vector expressing the projection of the point
      * (from world coordinates) on the reference plane.
      * The vector is expressed as @f$ ( w, d ) @f$, components following the
-     * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
-     * respectively. The origin point is returned by ProjectionReferencePoint().
+     * width direction (`RefWidthDir()`) and the depth direction
+     * (`RefDepthDir()`) respectively. The origin point is returned by
+     * `ProjectionReferencePoint()`.
+     * All coordinates are in centimeters.
      */
-    geo::PlaneGeo::DecomposedPoint_t::Projection_t PointProjection
-      (TVector3 const& point) const
+    Projection_t PointProjection(TVector3 const& point) const
       { return ReferencePlane().PointWidthDepthProjection(point); }
     
     /**
-     * @brief Returns the projection of the specified vector on the plane
-     * @param v the 3D vector to be projected, in world units
+     * @brief Returns the projection of the specified vector on the plane.
+     * @param v the 3D vector to be projected, in world units [cm]
      * @return a 2D vector representing the projection of v on the plane
      * 
      * The returned vector is a 2D vector expressing the projection of the
      * vector (from world units) on the reference plane.
      * The vector is expressed as @f$ ( w, d ) @f$, components following the
-     * width direction (`WidthDir()`) and the depth direction (`DepthDir()`)
-     * respectively.
+     * width direction (`RefWidthDir()`) and the depth direction
+     * (`RefDepthDir()`) respectively.
+     * All coordinates are in centimeters.
      */
-    geo::PlaneGeo::DecomposedPoint_t::Projection_t VectorProjection
-      (TVector3 const& point) const
+    Projection_t VectorProjection(TVector3 const& point) const
       { return ReferencePlane().VectorWidthDepthProjection(point); }
     
     /**
-     * @brief Returns the 3D vector from composition of projection and distance
+     * @brief Returns the 3D vector from composition of projection and distance.
      * @param decomp decomposed point
      * @return the 3D vector from composition of projection and distance
-     * @see DecomposePoint(),
-     *      ComposePoint(double, DecomposedPoint_t::Projection_t const&)
+     * @see DecomposePoint(), ComposePoint(double, Projection_t const&)
      * 
-     * See `ComposePoint(double, DecomposedPoint_t::Projection_t const&)`
-     * for details.
+     * This is the "inverse" operation respect to `DecomposePoint()`.
+     * The argument stores the two components, orthogonal and parallel to the
+     * plane, and compose them into a 3D point which departs from the reference
+     * point (`ProjectionReferencePoint()`) by those components.
+     * See `ComposePoint(double, Projection_t const&)` for more details.
      */
-    TVector3 ComposePoint(DecomposedPoint_t const& decomp) const
-      { return ReferencePlane().ComposePointWidthDepth(decomp); }
+    TVector3 ComposePoint(DecomposedVector_t const& decomp) const
+      { return ReferencePlane().ComposePoint(decomp); }
     
     /**
-     * @brief Returns the 3D point from composition of projection and distance
+     * @brief Returns the 3D point from composition of projection and distance.
      * @param distance distance of the target point from the reference plane
      * @param proj projection of the target point on the reference plane
-     * @return the 3D vector from composition of projection and distance
+     * @return the 3D point from composition of projection and distance
      * @see DecomposePoint()
      * 
-     * The returned vector is the sum of two 3D vectors:
+     * The returned point is the reference point, translated by two 3D vectors:
      * 
      * 1. a vector parallel to the plane normal, with norm the input distance
-     * 2. a vector lying on the plane, whose projection via
-     *    `PointProjection()` gives the input projection
+     * 2. a vector lying on the plane, whose projection via `PointProjection()`
+     *    gives the input projection
      * 
-     * Given the arbitrary definition of the projection reference, it is assumed
-     * that the same convention is used as in PointProjection() and
-     * DecomposePoint().
+     * The choice of the projection reference point embodies the same convention
+     * used in `PointProjection()` and `DecomposePoint()`.
      * 
      */
-    TVector3 ComposePoint
-      (double distance, DecomposedPoint_t::Projection_t const& proj) const
-      { return ReferencePlane().ComposePointWidthDepth(distance, proj); }
+    TVector3 ComposePoint(double distance, Projection_t const& proj) const
+      { return ReferencePlane().ComposePoint(distance, proj); }
     
     /// @}
     
-#endif // 0
     
     /// @{
     /// @name Coordinate transformation
