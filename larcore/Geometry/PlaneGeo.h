@@ -935,7 +935,6 @@ namespace geo {
     TGeoVolume const*     fVolume;      ///< Plane volume description.
     View_t                fView;        ///< Does this plane measure U, V, or W?
     Orient_t              fOrientation; ///< Is the plane vertical or horizontal?
-    SigType_t             fSignalType;  ///< Is the plane induction or collection?
     std::vector<WireGeo*> fWire;        ///< List of wires in this plane.
     double                fWirePitch;   ///< Pitch of wires in this plane.
     double                fSinPhiZ;     ///< Sine of @f$ \phi_{z} @f$.

@@ -73,7 +73,6 @@ namespace geo{
     , fVolume(path[depth]->GetVolume())
     , fView(geo::kUnknown)
     , fOrientation(geo::kVertical)
-    , fSignalType(geo::kMysteryType)
     , fWirePitch(0.)
     , fSinPhiZ(0.)
     , fCosPhiZ(0.)
