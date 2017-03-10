@@ -1861,11 +1861,22 @@ namespace geo {
     //@}
     
     /**
-     * @brief Returns the ID of the TPC at specified location
-     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @brief Returns the ID of the TPC at specified location.
+     * @param worldLoc 3D coordinates of the point (world reference frame) [cm]
      * @return the TPC ID, or an invalid one if no TPC is there
      */
     geo::TPCID FindTPCAtPosition(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Returns the ID of the TPC at specified location.
+     * @param worldLoc 3D point (world reference frame, centimeters)
+     * @return the TPC ID, or an invalid one if no TPC is there
+     */
+    geo::TPCID FindTPCAtPosition(TVector3 const& point) const
+      {
+        double const worldLoc[3] = { point.X(), point.Y(), point.Z() };
+        return FindTPCAtPosition(worldLoc);
+      }
     
     
     //@{
