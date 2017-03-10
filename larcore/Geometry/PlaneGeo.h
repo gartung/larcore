@@ -61,6 +61,7 @@ namespace geo {
    * orthogonal axes, "width" and "depth", aligned with the sides of the plane.
    * If the plane has not the shape of a box, this reference frame is not
    * available. This coordinate system is also positive defined.
+   * These components are all measured in centimeters.
    * 
    */
   // Note: SignalType() and SetSignalType() have been removed.
@@ -71,21 +72,21 @@ namespace geo {
     
     using GeoNodePath_t = std::vector<TGeoNode const*>;
     
-    /// Tag for wire coordinate reference vectors.
+    /// Tag for wire base vectors.
     struct WireCoordinateReferenceTag {};
     
-    /// Tag for plane frame reference vectors.
+    /// Tag for plane frame base vectors.
     struct WidthDepthReferenceTag {};
     
-    /// Type for projections in the wire coordinate reference.
+    /// Type for projections in the wire base representation.
     using WireCoordProjection_t = ROOT::Math::DisplacementVector2D
       <ROOT::Math::Cartesian2D<double>, WireCoordinateReferenceTag>;
     
-    /// Type for projections in the plane frame reference.
+    /// Type for projections in the plane frame base representation.
     using WidthDepthProjection_t = ROOT::Math::DisplacementVector2D
       <ROOT::Math::Cartesian2D<double>, WidthDepthReferenceTag>;
     
-    /// Type used for plane decompositions on wire coordinate frame.
+    /// Type used for plane decompositions on wire base.
     using WireDecomposer_t = geo::Decomposer
       <geo::vect::Vector_t, geo::vect::Point_t, WireCoordProjection_t>;
     
@@ -93,12 +94,11 @@ namespace geo {
     using WidthDepthDecomposer_t = geo::Decomposer
       <geo::vect::Vector_t, geo::vect::Point_t, WidthDepthProjection_t>;
     
-    /// Type describing a 3D point or vector decomposed on a plane
-    /// with wire coordinates.
+    /// Type describing a 3D point or vector decomposed on a plane on wire base.
     using WireDecomposedVector_t = WireDecomposer_t::DecomposedVector_t;
     
     /// Type describing a 3D point or vector decomposed on a plane
-    /// with plane frame coordinates (width and depth).
+    /// with plane frame base (width and depth).
     using WDDecomposedVector_t = WidthDepthDecomposer_t::DecomposedVector_t;
       
     
@@ -113,7 +113,7 @@ namespace geo {
     /// Which coordinate does this plane measure
     View_t View()                                             const { return fView;          }
     
-    /// What is the orienation of the plane
+    /// What is the orientation of the plane
     Orient_t Orientation()                                    const { return fOrientation;   }
 
     /// Angle of the wires from positive z axis; @f$ \theta_{z} \in [ 0, \pi ]@f$.
@@ -381,7 +381,7 @@ namespace geo {
     
     
     /**
-     * @brief Returns the ID of wire closest to the specificed position.
+     * @brief Returns the ID of wire closest to the specified position.
      * @param pos world coordinates of the point [cm]
      * @return the ID of the wire closest to the projection of pos on the plane
      * @throw InvalidWireError (category: `"Geometry"`) if out of range
@@ -474,7 +474,7 @@ namespace geo {
     
     
     /// @{
-    /// @name Projections on wire length/wire coordinate plane
+    /// @name Projections on wire length/wire coordinate direction base
     /// 
     /// These methods deal with projection of points and vectors on the plane,
     /// using a geometric reference base which is dependent on the wire
@@ -482,10 +482,11 @@ namespace geo {
     /// 
     
     /**
-     * @brief Returns the coordinate of the point on the plane respect to a wire.
+     * @brief Returns the coordinate of point on the plane respect to a wire.
      * @param point world coordinate of the point to get the coordinate of [cm]
      * @param refWire reference wire
      * @return the coordinate of the point [cm]
+     * @see WireCoordinate()
      * 
      * The method returns the coordinate of the point in the direction measured
      * by the wires on this plane starting from the specified reference wire,
@@ -526,7 +527,7 @@ namespace geo {
     
     /**
      * @brief Returns the coordinate of the point on the plane, in wire units.
-     * @param point wire coordinate of the point to get the coordinate of
+     * @param point world coordinate of the point to get the coordinate of
      * @return the coordinate of the point, in wire pitch units
      * @see CoordinateFrom(TVector3 const&, geo::Wire const&)
      * 
@@ -606,11 +607,9 @@ namespace geo {
      * @brief Returns the 3D vector from composition of projection and distance.
      * @param decomp decomposed point
      * @return the 3D vector from composition of projection and distance
-     * @see DecomposePoint(),
-     *      ComposePoint(double, DecomposedVector_t::Projection_t const&)
+     * @see DecomposePoint(), ComposePoint(double, WireCoordProjection_t const&)
      * 
-     * See `ComposePoint(double, DecomposedVector_t::Projection_t const&)` for
-     * details.
+     * See `ComposePoint(double, WireCoordProjection_t const&)` for details.
      */
     TVector3 ComposePoint(WireDecomposedVector_t const& decomp) const
       { return fDecompWire.ComposePoint(decomp); }
@@ -622,16 +621,21 @@ namespace geo {
      * @return the 3D vector from composition of projection and distance
      * @see DecomposePoint()
      * 
-     * The returned vector is the sum of two 3D vectors:
+     * The returned point is the reference point of the frame system (that is,
+     * the plane center), translated by two 3D vectors:
      * 
      * 1. a vector parallel to the plane normal, with norm the input distance
-     * 2. a vector lying on the plane, whose projection via PointProjection()
+     * 2. a vector lying on the plane, whose projection via `PointProjection()`
      *    gives the input projection
      * 
-     * Given the arbitrary definition of the projection reference, it is assumed
-     * that the same convention is used as in PointProjection() and
-     * DecomposePoint().
+     * The choice of the projection reference point embodies the same convention
+     * used in `PointProjection()` and `DecomposePoint()`.
+     * In fact, the strict definition of the result of this method is a 3D point
+     * whose decomposition on the plane frame base matches the method arguments.
      * 
+     * Note that currently no equivalent facility is available to compose
+     * vectors instead of points, that is, entities ignoring the reference
+     * point.
      */
     TVector3 ComposePoint
       (double distance, WireCoordProjection_t const& proj) const
