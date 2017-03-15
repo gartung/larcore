@@ -45,14 +45,16 @@
 
 
 // LArSoft libraries
-#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
+#include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/ChannelMapAlg.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
+#include "larcore/CoreUtils/RealComparisons.h"
+#include "larcoreobj/SimpleTypesAndConstants/readout_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // Framework and infrastructure libraries
 #include "fhiclcpp/ParameterSet.h"
@@ -1023,6 +1025,7 @@ namespace geo {
   }; // GeometryData_t
   
   
+  
   /** **************************************************************************
    * @brief Description of geometry of one entire detector
    * 
@@ -1070,10 +1073,37 @@ namespace geo {
   class GeometryCore {
   public:
     
+    /// Type used for expressing coordinates
+    using Coord_t = double;
+    
+    /// Type used to represent a point in global coordinates
+  //  using Point3D_t = std::array<Coord_t, 3>; // one day it will be standard...
+    using Point3D_t = TVector3; // terrible choice... we know
+    
+    
+    /// Simple class with two points (a pair with aliases)
+    struct Segment_t: public std::pair<Point3D_t, Point3D_t> {
+      
+      // use the base class constructors
+      using std::pair<Point3D_t, Point3D_t>::pair;
+      
+      Point3D_t const& start() const { return this->first; }
+      Point3D_t& start() { return this->first; }
+      
+      Point3D_t const& end() const { return this->second; }
+      Point3D_t& end() { return this->second; }
+      
+    }; // struct Segment_t
+    
+    
     /// Type of list of cryostats
     using CryostatList_t = GeometryData_t::CryostatList_t;
     /// Type of list of auxiliary detectors
     using AuxDetList_t = GeometryData_t::AuxDetList_t;
+    
+    
+    /// Value of tolerance for equality comparisons
+    static lar::util::RealComparisons<Coord_t> coordIs;
     
     
     // import iterators
@@ -1503,7 +1533,6 @@ namespace geo {
      * of ID.
      *
      * @todo Make the cryostat number mandatory (as CryostatID)
-     * @todo what happens if it does not exist?
      */
     CryostatGeo const& Cryostat(geo::CryostatID const& cryoid) const;
     CryostatGeo const& Cryostat(unsigned int const cstat = 0) const
@@ -1538,24 +1567,43 @@ namespace geo {
      */
     unsigned int FindCryostatAtPosition(double const worldLoc[3]) const;
     
-    //@{
     /**
      * @brief Returns the cryostat at specified location
      * @param worldLoc 3D coordinates of the point (world reference frame)
-     * @param cstat (output) number of cryostat
+     * @return a constant reference to the CryostatGeo object of the cryostat
+     * @throws cet::exception ("Geometry" category) if no cryostat matches
+     * 
+     * The tolerance used here is the one returned by DefaultWiggle().
+     */
+    CryostatGeo const& PositionToCryostat(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Returns the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
      * @param cid (output) cryostat ID
      * @return a constant reference to the CryostatGeo object of the cryostat
      * @throws cet::exception ("Geometry" category) if no cryostat matches
      * 
      * The tolerance used here is the one returned by DefaultWiggle().
      * 
-     * @todo replace the output parameters with a cryostat ID
      */
     CryostatGeo const& PositionToCryostat
       (double const worldLoc[3], geo::CryostatID& cid) const;
+    
+    /**
+     * @brief Returns the cryostat at specified location
+     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @param cstat (output) number of cryostat
+     * @return a constant reference to the CryostatGeo object of the cryostat
+     * @throws cet::exception ("Geometry" category) if no cryostat matches
+     * 
+     * The tolerance used here is the one returned by DefaultWiggle().
+     * 
+     * @deprecated Use PositionToCryostat(double const[3], geo::CryostatID&)
+     *             instead.
+     */
     CryostatGeo const& PositionToCryostat
       (double const worldLoc[3], unsigned int &cstat) const;
-    //@}
     
     //
     // iterators
@@ -1649,11 +1697,13 @@ namespace geo {
       { return CryostatLength(geo::CryostatID(cstat)); }
     //@}
     
-    //@{
+
     /**
      * @brief Returns the boundaries of the specified cryostat
      * @param boundaries (output) pointer to an area of 6 doubles for boundaries
-     * @param cstat number of cryostat
+     * @param cid cryostat ID
+     * @throws cet::exception ("GeometryCore" category) if cryostat not present
+     * @see CryostatGeo::Boundaries()
      * 
      * The boundaries array is filled with:
      * [0] lower x coordinate  [1] upper x coordinate
@@ -1661,15 +1711,29 @@ namespace geo {
      * [4] lower z coordinate  [5] upper z coordinate
      * 
      * @todo What happen on invalid cryostat?
-     * @todo Use a CryostatID instead
-     * @todo Check the implementation in TPC and use that one instead
      */
     void CryostatBoundaries
       (double* boundaries, geo::CryostatID const& cid) const;
+    
+    /**
+     * @brief Returns the boundaries of the specified cryostat
+     * @param boundaries (output) pointer to an area of 6 doubles for boundaries
+     * @param cstat number of cryostat
+     * @throws cet::exception ("GeometryCore" category) if cryostat not present
+     * @see CryostatGeo::Boundaries()
+     * 
+     * The boundaries array is filled with:
+     * [0] lower x coordinate  [1] upper x coordinate
+     * [2] lower y coordinate  [3] upper y coordinate
+     * [4] lower z coordinate  [5] upper z coordinate
+     * 
+     * @deprecated Use CryostatBoundaries(double*, geo::CryostatID const&)
+     * or (recommended) CryostatGeo::Boundaries() instead
+     */
     void CryostatBoundaries
       (double* boundaries, unsigned int cstat = 0) const
       { CryostatBoundaries(boundaries, geo::CryostatID(cstat)); }
-    //@}
+    
     
     //
     // object description
@@ -1797,11 +1861,22 @@ namespace geo {
     //@}
     
     /**
-     * @brief Returns the ID of the TPC at specified location
-     * @param worldLoc 3D coordinates of the point (world reference frame)
+     * @brief Returns the ID of the TPC at specified location.
+     * @param worldLoc 3D coordinates of the point (world reference frame) [cm]
      * @return the TPC ID, or an invalid one if no TPC is there
      */
     geo::TPCID FindTPCAtPosition(double const worldLoc[3]) const;
+    
+    /**
+     * @brief Returns the ID of the TPC at specified location.
+     * @param worldLoc 3D point (world reference frame, centimeters)
+     * @return the TPC ID, or an invalid one if no TPC is there
+     */
+    geo::TPCID FindTPCAtPosition(TVector3 const& point) const
+      {
+        double const worldLoc[3] = { point.X(), point.Y(), point.Z() };
+        return FindTPCAtPosition(worldLoc);
+      }
     
     
     //@{
@@ -2068,11 +2143,10 @@ namespace geo {
      * @brief Returns a list of possible PlaneIDs in the detector
      * @return a constant reference to the set of plane IDs
      * 
-     * @todo verify the implementation
-     * @todo verify the use
-     * @deprecated This function smells a lot... do we really need a list of 720
+     * @deprecated use IteratePlaneIDs() instead
      * plane IDs of DUNE FD? probably better to use iterators instead
      */
+    [[deprecated("Iterate through geo::GeometryCore::IteratePlaneIDs() instead")]]
     std::set<PlaneID> const& PlaneIDs() const;
     
     
@@ -2526,31 +2600,49 @@ namespace geo {
     // simple geometry queries
     //
     
-    //@{
     /**
      * @brief Fills two arrays with the coordinates of the wire end points
      * @param wireid ID of the wire
+     * @param xyzStart (output) an array with the start coordinate
+     * @param xyzEnd (output) an array with the end coordinate
+     * @throws cet::exception wire not present
+     * 
+     * The starting point is the wire end with lower z coordinate.
+     */
+    void WireEndPoints
+      (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const;
+    
+    /**
+     * @brief Fills two arrays with the coordinates of the wire end points
      * @param cstat cryostat number
      * @param tpc tpc number within the cryostat
      * @param plane plane number within the TPC
      * @param wire wire number within the plane
      * @param xyzStart (output) an array with the start coordinate
      * @param xyzEnd (output) an array with the end coordinate
+     * @throws cet::exception wire not present
      * 
      * The starting point is the wire end with lower z coordinate.
      * 
-     * @todo use a wire ID instead
-     * @todo use an array instead?
-     * @todo what happens if it does not exist?
+     * @deprecated use the wire ID interface instead (but note that it does not
+     *             sort the ends)
      */
-    void WireEndPoints
-      (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const;
     void WireEndPoints(
       unsigned int cstat, unsigned int tpc, unsigned int plane, unsigned int wire,
       double *xyzStart, double *xyzEnd
       ) const
       { WireEndPoints(geo::WireID(cstat, tpc, plane, wire), xyzStart, xyzEnd); }
-    //@}
+    
+    /**
+     * @brief Returns a segment whose ends are the wire end points
+     * @param wireid ID of the wire
+     * @return a segment whose ends are the wire end points
+     * @throws cet::exception wire not present
+     * 
+     * The start and end are assigned as returned from the geo::WireGeo object.
+     * The rules for this assignment are documented in that class.
+     */
+    Segment_t WireEndPoints(geo::WireID const& wireID) const;
     
     //
     // closest wire
@@ -2636,15 +2728,11 @@ namespace geo {
     //@}
     
     
-    //@{
     /**
      * @brief Returns the index of the nearest wire to the specified position
      * @param YPos y coordinate on the wire plane
      * @param ZPos z coordinate on the wire plane
      * @param planeid ID of the plane
-     * @param PlaneNo number of plane
-     * @param TPCNo number of TPC
-     * @param cstat number of cryostat
      * @return an index interpolation between the two nearest wires
      * @see ChannelMapAlg::WireCoordinate()
      *
@@ -2653,16 +2741,42 @@ namespace geo {
      * values corresponding to the actual wires.
      * 
      * @todo Unify (y, z) coordinate
-     * @todo use plane ID instead
      */
     double WireCoordinate
       (double YPos, double ZPos, geo::PlaneID const& planeid) const;
+    
+    /**
+     * @brief Returns the index of the nearest wire to the specified position
+     * @param YPos y coordinate on the wire plane
+     * @param ZPos z coordinate on the wire plane
+     * @param PlaneNo number of plane
+     * @param TPCNo number of TPC
+     * @param cstat number of cryostat
+     * @return an index interpolation between the two nearest wires
+     * @see ChannelMapAlg::WireCoordinate()
+     *
+     * @deprecated Use the version with plane ID instead
+     */
     double WireCoordinate(double YPos, double ZPos,
                           unsigned int PlaneNo,
                           unsigned int TPCNo,
                           unsigned int cstat) const
       { return WireCoordinate(YPos, ZPos, geo::PlaneID(cstat, TPCNo, PlaneNo)); }
-    //@}
+    
+    /**
+     * @brief Returns the index of the nearest wire to the specified position
+     * @param pos world coordinates of the position (it will be projected)
+     * @param ZPos z coordinate on the wire plane
+     * @param planeid ID of the plane
+     * @return an index interpolation between the two nearest wires
+     * @see ChannelMapAlg::WireCoordinate()
+     *
+     * Respect to NearestWireID(), this method returns a real number,
+     * representing a continuous coordinate in the wire axis, with the round
+     * values corresponding to the actual wires.
+     */
+    double WireCoordinate
+      (TVector3 const& pos, geo::PlaneID const& planeid) const;
     
     //
     // wire intersections
@@ -2671,6 +2785,54 @@ namespace geo {
     // The following functions are utilized to determine if two wires
     // in the TPC intersect or not, and if they do then
     // determine the coordinates of the intersection.
+    
+    /**
+     * @brief Computes the intersection between two segments on a plane
+     * @param A_start_x x coordinate of the start of the first segment
+     * @param A_start_y y coordinate of the start of the first segment
+     * @param A_end_x x coordinate of the end of the first segment
+     * @param A_end_y y coordinate of the end of the first segment
+     * @param B_start_x x coordinate of the start of the second segment
+     * @param B_start_y y coordinate of the start of the second segment
+     * @param B_end_x x coordinate of the end of the second segment
+     * @param B_end_y y coordinate of the end of the second segment
+     * @param x _(output)_ variable to store the x coordinate of intersection
+     * @param y _(output)_ variable to store the y coordinate of intersection
+     * @return whether intersection exists and is on both segments
+     * 
+     * The order of the ends is not relevant.
+     * The return value is `false` if the two segments are parallel, or if their
+     * intersection point is not on _both_ the segments.
+     * If the segments are parallel, x and y variables are not changed.
+     * Otherwise, they hold the intersection coordinate, even if the
+     * intersection point is beyond one or both the segments.
+     */
+    bool IntersectSegments(
+      double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+      double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+      double& x, double& y
+      ) const;
+    
+    /**
+     * @brief Computes the intersection between two wires
+     * @param wid1 ID of the first wire
+     * @param wid2 ID of the other wire
+     * @param intersection (output) the intersection point (global coordinates)
+     * @return whether an intersection was found inside the TPC
+     * 
+     * The "intersection" refers to the projection of the wires into the same
+     * wire plane. The coordinate along the drift direction is arbitrarily set
+     * to the one of the first wire.
+     * Wires are assumed to have at most one intersection.
+     * If wires are parallel or belong to different TPCs or to the same plane
+     * (i.e. they are parallel), widIntersect is undefined and false is
+     * returned.
+     * If the intersection is outside the TPC, `false` is returned (but the
+     * point contains that intersection).
+     */
+    bool WireIDsIntersect
+      (WireID const& wid1, WireID const& wid2, Point3D_t& intersection)
+      const;
     
     /**
      * @brief Computes the intersection between two wires
@@ -2692,67 +2854,27 @@ namespace geo {
       (WireID const& wid1, WireID const& wid2, WireIDIntersection& widIntersect)
       const;
     
-    //@{
     /**
      * @brief Returns the intersection point of two wires
      * @param wid1 ID of the first wire
      * @param wid2 ID of the other wire
-     * @param wire1 wire index of the first wire
-     * @param wire2 wire index of the other wire
-     * @param plane1 plane index of the first wire
-     * @param plane2 plane index of the other wire
-     * @param tpc tpc number within the cryostat where the planes belong
-     * @param cstat cryostat number
-     * @param start_w1 coordinates of the start of the first wire
-     * @param end_w1 coordinates of the end of the first wire
-     * @param start_w2 coordinates of the start of the other wire
-     * @param end_w2 coordinates of the end of the other wire
      * @param y (output) y coordinate of the intersection point
      * @param z (output) z coordinate of the intersection point
+     * @return whether an intersection was found
      *
-     * No check is performed, not any information provided, about the validity
-     * of the result.
+     * If the intersection is not valid, both coordinates are filled with a
+     * signalling NaN, in the hope that if you use them your job will
+     * spectacularly explode.
      * 
-     * @todo move to protected (or just junk it)
-     * @todo make wire borders constant
      * @todo return a WireIDIntersection instead
-     * @todo what if the intersection is outside the TPC?
-     *
-     * @deprecated For internal use only
      */
-    void IntersectionPoint(geo::WireID const& wid1,
+    bool IntersectionPoint(geo::WireID const& wid1,
                            geo::WireID const& wid2,
-                           double start_w1[3],
-                           double end_w1[3],
-                           double start_w2[3],
-                           double end_w2[3],
                            double &y,
-                           double &z);
-    void IntersectionPoint(unsigned int wire1,
-                           unsigned int wire2,
-                           unsigned int plane1,
-                           unsigned int plane2,
-                           unsigned int cstat,
-                           unsigned int tpc,
-                           double start_w1[3],
-                           double end_w1[3],
-                           double start_w2[3],
-                           double end_w2[3],
-                           double &y,
-                           double &z)
-      {
-        return IntersectionPoint(
-          geo::WireID(cstat, tpc, plane1, wire1),
-          geo::WireID(cstat, tpc, plane2, wire2),
-          start_w1, end_w1, start_w2, end_w2, y, z
-          );
-      }
-    //@}
-    //@{
+                           double &z) const;
+    
     /**
      * @brief Returns the intersection point of two wires
-     * @param wid1 ID of the first wire
-     * @param wid2 ID of the other wire
      * @param wire1 wire index of the first wire
      * @param wire2 wire index of the other wire
      * @param plane1 plane index of the first wire
@@ -2761,27 +2883,22 @@ namespace geo {
      * @param tpc tpc number within the cryostat where the planes belong
      * @param y (output) y coordinate of the intersection point
      * @param z (output) z coordinate of the intersection point
+     * @return whether an intersection was found
      *
      * No check is performed, not any information provided, about the validity
      * of the result.
      * 
-     * @todo use WireIDs instead? or else, use TPCID
-     * @todo move to protected (or just junk it)
+     * @deprecated Use the version with WireIDs instead
      * @todo return a WireIDIntersection instead
-     * @todo what if the intersection is outside the TPC?
      */
-    void IntersectionPoint(geo::WireID const& wid1,
-                           geo::WireID const& wid2,
-                           double &y,
-                           double &z);
-    void IntersectionPoint(unsigned int wire1,
+    bool IntersectionPoint(unsigned int wire1,
                            unsigned int wire2,
                            unsigned int plane1,
                            unsigned int plane2,
                            unsigned int cstat,
                            unsigned int tpc,
                            double &y,
-                           double &z)
+                           double &z) const
       {
         return IntersectionPoint(
           geo::WireID(cstat, tpc, plane1, wire1),
@@ -2789,7 +2906,6 @@ namespace geo {
           y, z
           );
       }
-    //@}
     
     
     /**
@@ -3731,18 +3847,18 @@ namespace geo {
     
     void MakeAuxDet(std::vector<const TGeoNode*>& path, int depth);
     
-    /**
-     * @brief Rewrites the IDs of all geometry objects
-     * 
-     * Each cryostat is given an ID matching its position in the cryostat array.
-     * Cryostat objects (geo::CryostatGeo) are then asked to reset the IDs in
-     * cascade.
-     */
-    void ResetIDs();
+    /// Wire ID check for WireIDsIntersect methods
+    bool WireIDIntersectionCheck
+      (const geo::WireID& wid1, const geo::WireID& wid2) const;
+    
+    /// Runs the sorting of geometry with the sorter provided by channel mapping
+    void SortGeometry(geo::GeoObjectSorter const& sorter);
+    
+    /// Performs all the updates needed after sorting
+    void UpdateAfterSorting();
     
     /// Deletes the detector geometry structures
     void ClearGeometry();
-    
     
     /// Throws an exception ("GeometryCore" category) unless pid1 and pid2
     /// are on different planes of the same TPC (ID validity is not checked)
@@ -3758,7 +3874,9 @@ namespace geo {
     double         fMinWireZDist;   ///< Minimum distance in Z from a point in which
                                     ///< to look for the closest wire
     double         fPositionWiggle; ///< accounting for rounding errors when testing positions
-    std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;  ///< Object containing the channel to wire mapping
+    std::shared_ptr<const geo::ChannelMapAlg> fChannelMapAlg;
+                                    ///< Object containing the channel to wire mapping
+    
   }; // class GeometryCore
   
   

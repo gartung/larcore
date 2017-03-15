@@ -10,7 +10,6 @@
 
 // C/C++ libraries
 #include <cmath>
-#include <iostream>
 #include <algorithm> // std::copy()
 
 // ROOT
@@ -39,7 +38,8 @@ namespace geo{
   /// \param depth : Size of "path" list
 
   //-----------------------------------------
-  WireGeo::WireGeo(std::vector<const TGeoNode*>& path, int depth) 
+  WireGeo::WireGeo(GeoNodePath_t const& path, size_t depth) 
+    : flipped(false)
   {
     fWireNode = path[depth];
     fHalfL    = ((TGeoTube*)fWireNode->GetVolume()->GetShape())->GetDZ();
@@ -55,15 +55,15 @@ namespace geo{
     // build a matrix to take us from the local to the world coordinates
     // in one step
     TGeoHMatrix mat(*path[0]->GetMatrix());
-    for(int i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
-
+    for(size_t i = 1; i <= depth; ++i) mat.Multiply(path[i]->GetMatrix());
+    
     const Double_t* translation = mat.GetTranslation();
     // there are not many ways to set a HepGeom::Transform3D...
     fGeoMatrix = HepGeom::Transform3D(
       CLHEP::HepRotation(CLHEP::HepRep3x3(mat.GetRotationMatrix())),
       CLHEP::Hep3Vector(translation[0], translation[1], translation[2])
       );
-
+    
     // determine the orientation of the wire
     double local[3] = { 0., 0., 0. };
     LocalToWorld(local, fCenter);
@@ -71,7 +71,7 @@ namespace geo{
     double xyzEnd[3];
     local[2] = fHalfL;
     LocalToWorld(local, xyzEnd);
-
+    
     fThetaZ = std::acos((xyzEnd[2] - fCenter[2])/fHalfL);
     
     // check to see if it runs "forward" or "backwards" in z
@@ -144,17 +144,16 @@ namespace geo{
   /// (cm). Default is center of wire
   void WireGeo::GetCenter(double* xyz, double localz) const
   {
-    if (localz == 0.) { // if no dislocation is requested, we alrady have it
+    if (localz == 0.) { // if no dislocation is requested, we already have it
       std::copy(fCenter, fCenter + 3, xyz);
       return;
     }
     
-    double locz = localz;
+    double locz = relLength(localz);
     if (std::abs(locz) > fHalfL) {
-      mf::LogWarning("WireGeo") << "asked for z position along wire that"
-        " extends beyond the wire, returning position"
-        " at end point";
-      locz = (locz < 0)? -fHalfL: fHalfL;
+      mf::LogWarning("WireGeo") << "asked for position along wire that"
+        " extends beyond the wire, returning position at end point";
+      locz = relLength((locz < 0)? -fHalfL: fHalfL);
     }
     const double local[3] = { 0., 0., locz };
     LocalToWorld(local, xyz);
@@ -162,6 +161,8 @@ namespace geo{
 
   //......................................................................
   TVector3 geo::WireGeo::Direction() const {
+    // to make it faster, we could compare GetStart() with GetCenter()
+    
     // determine the orientation of the wire
     double xyzEnd[3], xyzStart[3];
     GetStart(xyzStart);
@@ -197,5 +198,53 @@ namespace geo{
     return fThetaZ;
   }
 
+  //......................................................................
+  double WireGeo::DistanceFrom(geo::WireGeo const& wire) const {
+    //
+    // The algorithm assumes that picking any point on the wire will do,
+    // that is, that the wires are parallel.
+    //
+    
+    if (!isParallelTo(wire)) return 0;
+    
+    // a vector connecting to the other wire
+    auto toWire = wire.GetCenter() - GetCenter();
+    
+    // the distance is that vector, times the sine of the angle with the wire
+    // direction; we get that in a generic way with a cross product.
+    // We don't even care about the sign here
+    // (if we did, we would do a dot-product with the normal to the plane,
+    // and we should get a positive distance if the other wire has larger wire
+    // coordinate than this one).
+    return toWire.Cross(Direction()).Mag();
+    
+  } // WireGeo::DistanceFrom()
+    
+    
+  //......................................................................
+  void WireGeo::UpdateAfterSorting(geo::WireID const&, bool flip) {
+    
+    // flip, if asked
+    if (flip) Flip();
+    
+  } // WireGeo::UpdateAfterSorting()
+  
+  //......................................................................
+  void WireGeo::Flip() {
+    // we don't need to do much to flip so far:
+    // - ThetaZ() is defined in [0, pi], invariant to flipping
+    // - we don't change the transformation matrices, that we want to be
+    //   untouched and coherent with the original geometry source
+    // - center is invariant for flipping
+    // - start and end are computed on the fly (taking flipping into account)
+    // - ... and we chose to leave half length unsigned and independent
+    
+    // change the flipping bit
+    flipped = !flipped;
+    
+  } // WireGeo::Flip()
+
+  //......................................................................
+  
 }
 ////////////////////////////////////////////////////////////////////////
