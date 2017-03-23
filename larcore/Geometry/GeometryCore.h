@@ -71,6 +71,7 @@
 #include <memory> // std::shared_ptr<>
 #include <iterator> // std::forward_iterator_tag
 #include <type_traits> // std::is_base_of<>
+#include <cmath> // std::isfinite()
 
 
 // ROOT class prototypes
@@ -2787,6 +2788,32 @@ namespace geo {
     // determine the coordinates of the intersection.
     
     /**
+     * @brief Computes the intersection between two lines on a plane
+     * @param A_start_x x coordinate of one point of the first segment
+     * @param A_start_y y coordinate of one point of the first segment
+     * @param A_end_x x coordinate of another point of the first segment
+     * @param A_end_y y coordinate of another point of the first segment
+     * @param B_start_x x coordinate of one point of the second segment
+     * @param B_start_y y coordinate of one point of the second segment
+     * @param B_end_x x coordinate of another point of the second segment
+     * @param B_end_y y coordinate of another point of the second segment
+     * @param x _(output)_ variable to store the x coordinate of intersection
+     * @param y _(output)_ variable to store the y coordinate of intersection
+     * @return whether intersection exists
+     * 
+     * The order of the ends is not relevant.
+     * The return value is `false` if the two segments are parallel.
+     * In that case, `x` and `y` variables are not changed.
+     * Otherwise, they hold the intersection coordinate, even if the
+     * intersection point is beyond one or both the segments.
+     */
+    bool IntersectLines(
+      double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+      double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+      double& x, double& y
+      ) const;
+    
+    /**
      * @brief Computes the intersection between two segments on a plane
      * @param A_start_x x coordinate of the start of the first segment
      * @param A_start_y y coordinate of the start of the first segment
@@ -2814,41 +2841,50 @@ namespace geo {
       ) const;
     
     /**
-     * @brief Computes the intersection between two wires
+     * @brief Computes the intersection between two wires.
      * @param wid1 ID of the first wire
      * @param wid2 ID of the other wire
      * @param intersection (output) the intersection point (global coordinates)
-     * @return whether an intersection was found inside the TPC
+     * @return whether an intersection was found inside the TPC the wires belong
      * 
      * The "intersection" refers to the projection of the wires into the same
      * wire plane. The coordinate along the drift direction is arbitrarily set
      * to the one of the first wire.
      * Wires are assumed to have at most one intersection.
-     * If wires are parallel or belong to different TPCs or to the same plane
-     * (i.e. they are parallel), widIntersect is undefined and false is
-     * returned.
-     * If the intersection is outside the TPC, `false` is returned (but the
-     * point contains that intersection).
+     * If wires are parallel, `intersection` will have all components set to
+     * infinity (`std::numeric_limit<>::infinity()`) and `false` is returned.
+     * If the intersection is outside the TPC, `false` is also returned, but the
+     * `intersection` point will contain that intersection.
+     * 
+     * To test that the result is not infinity (nor NaN), use
+     * `geo::GeometryCore::isfinite(intersection)` etc.
+     * 
      */
     bool WireIDsIntersect
       (WireID const& wid1, WireID const& wid2, Point3D_t& intersection)
       const;
     
     /**
-     * @brief Computes the intersection between two wires
+     * @brief Computes the intersection between two wires.
      * @param wid1 ID of the first wire
      * @param wid2 ID of the other wire
      * @param widIntersect (output) the coordinate of the intersection point
-     * @return whether an intersection was found
+     * @return whether an intersection was found within the TPC
      * 
      * The "intersection" refers to the projection of the wires into the same
-     * x = 0 plane.
+     * @f$ x = 0 @f$ plane.
      * Wires are assumed to have at most one intersection.
-     * If wires are parallel or belong to different TPCs or to the same plane
-     * (i.e. they are parallel), widIntersect is undefined and false is
-     * returned.
+     * If wires are parallel, `widIntersect` will have the two components set to
+     * infinity (`std::numeric_limit<>::infinity()`) and the TPC number set to
+     * invalid (`geo::TPCID::InvalidID`). Also, `false` is returned.
+     * If the intersection is outside the TPC, `false` is also returned, but the
+     * `widIntersect` will contain the coordinates of that intersection. The TPC
+     * number is still set to invalid, although the intersection _might_ belong
+     * to a valid TPC somewhere else.
      * 
-     * @todo What if the wires intersect outside their TPC?
+     * 
+     * @deprecated This method uses arbitrary assumptions and should not be
+     *             used. Use the interface returning a full vector instead.
      */
     bool WireIDsIntersect
       (WireID const& wid1, WireID const& wid2, WireIDIntersection& widIntersect)
@@ -2860,13 +2896,16 @@ namespace geo {
      * @param wid2 ID of the other wire
      * @param y (output) y coordinate of the intersection point
      * @param z (output) z coordinate of the intersection point
-     * @return whether an intersection was found
+     * @return whether an intersection was found within the TPC
+     * @see WireIDsIntersect()
      *
-     * If the intersection is not valid, both coordinates are filled with a
-     * signalling NaN, in the hope that if you use them your job will
-     * spectacularly explode.
+     * The behaviour of this method reflects the one of `WireIDsIntersect()`,
+     * which supersedes this one.
      * 
-     * @todo return a WireIDIntersection instead
+     * To test if the result is infinity, use e.g. `std::isfinite(y)`.
+     * 
+     * @deprecated This method uses arbitrary assumptions and should not be
+     *             used. Use `WireIDsIntersect()` returning a vector, instead.
      */
     bool IntersectionPoint(geo::WireID const& wid1,
                            geo::WireID const& wid2,
@@ -2888,8 +2927,8 @@ namespace geo {
      * No check is performed, not any information provided, about the validity
      * of the result.
      * 
-     * @deprecated Use the version with WireIDs instead
-     * @todo return a WireIDIntersection instead
+     * @deprecated This method uses arbitrary assumptions and should not be
+     *             used. Use `WireIDsIntersect()` returning a vector, instead.
      */
     bool IntersectionPoint(unsigned int wire1,
                            unsigned int wire2,
@@ -3765,6 +3804,10 @@ namespace geo {
     bool ValueInRange(double value, double min, double max) const;
     
     
+    /// Returns whether the argument vector has all components finite.
+    template <typename Point3D>
+    static bool isfinite(Point3D const& point);
+    
     
     /// @name Geometry initialization
     /// @{
@@ -3850,6 +3893,13 @@ namespace geo {
     /// Wire ID check for WireIDsIntersect methods
     bool WireIDIntersectionCheck
       (const geo::WireID& wid1, const geo::WireID& wid2) const;
+    
+    /// Returns whether x and y are within both specified ranges (A and B).
+    static bool PointWithinSegments(
+      double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+      double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+      double x, double y
+      );
     
     /// Runs the sorting of geometry with the sorter provided by channel mapping
     void SortGeometry(geo::GeoObjectSorter const& sorter);
@@ -3943,7 +3993,14 @@ namespace geo {
 //******************************************************************************
 //***  template implementation
 //***
+template <typename Point3D>
+bool geo::GeometryCore::isfinite(Point3D const& point) {
+  return std::isfinite(point.X()) && std::isfinite(point.Y())
+    && std::isfinite(point.Z());
+} // geo::GeometryCore::isfinite()
 
+
+//******************************************************************************
 //
 // geo::details::cryostat_id_iterator_base<>
 //
