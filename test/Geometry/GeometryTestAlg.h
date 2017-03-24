@@ -15,6 +15,9 @@
 #include "larcore/TestUtils/NameSelector.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+// ROOT
+#include "TVector3.h"
+
 // C/C++ standard libraries
 #include <string>
 #include <set>
@@ -67,13 +70,21 @@ namespace geo {
    *   explicitly marked as excluded by default in the list below:
    *   + `CheckOverlaps` (not in default) perform overlap checks
    *   + `ThoroughCheck` (not in default) makes ROOT perform full geometry check
+   *   + `DetectorIntro`: prints some information about the detector
    *   + `FindVolumes`: checks it can find the volumes corresponding to world
    *     and all cryostats
    *   + `Cryostat`:
+   *   + `WireOrientations`: checks that the definition of wire coordinates is
+   *     matching the prescription
+   *   + `WireCoordFromPlane`: checks `PlaneGeo::WireCoordinateFrom()`
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
    *   + `Projection`:
    *   + `WirePos`: currently disabled
+   *   + `PlanePointDecomposition`: methods for projections and decompositions
+   *     on the wire coordinate reference system
+   *   + `PlaneProjections`: methods for projections on the wire planes in the
+   *     reference system of the frame of the plane
    *   + `WireCoordAngle`: tests geo::PlaneGeo::PhiZ()
    *   + `NearestWire`: tests `WireCoordinate()` and `NearestWire()`
    *   + `WireIntersection`: tests `WireIDsIntersect()`
@@ -121,6 +132,7 @@ namespace geo {
     // using as pointer just not to have to write the declaration in the header
     testing::NameSelector fRunTests; ///< test filter
     
+    void printDetectorIntro() const;
     void printChannelSummary();
     void printVolBounds();
     void printDetDim();
@@ -129,10 +141,20 @@ namespace geo {
     void printAllGeometry() const;
     void testFindVolumes();
     void testCryostat();
-    void testTPC(unsigned int const& c);
+    void testTPC(geo::CryostatID const& cid);
+    void testPlaneDirections() const;
+    void testWireOrientations() const;
+    void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();
     void testProject();
+    void testPlaneProjectionReference() const;
+    void testPlanePointDecompositionFrame() const;
+    void testPlaneProjectionOnFrame() const;
+    void testPlaneProjection() const;
+    void testWireCoordFromPlane() const;
+    void testParallelWires() const;
+    void testPlanePointDecomposition() const;
     void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
@@ -153,7 +175,7 @@ namespace geo {
     
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
-      (const TPCID& tpcid, double x, double y, double z) const;
+      (geo::TPCGeo const& TPC, TVector3 const& point) const;
     
     /// Returns dT/dW expected from the specified segment A-to-B
     std::vector<std::pair<geo::PlaneID, double>> ExpectedPlane_dTdW(

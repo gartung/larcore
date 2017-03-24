@@ -25,7 +25,7 @@ namespace geo{
 
     ChannelMapStandardAlg(fhicl::ParameterSet const& p);
     
-    virtual void                Initialize( GeometryData_t& geodata ) override;
+    virtual void                Initialize( GeometryData_t const& geodata ) override;
     virtual void                Uninitialize() override;
     virtual std::vector<WireID> ChannelToWire(raw::ChannelID_t channel) const override;
     virtual unsigned int        Nchannels() const override;
@@ -227,6 +227,10 @@ namespace geo{
     
     /// @} readout plane mapping
   
+    /// Return the sorter
+    virtual geo::GeoObjectSorter const& Sorter() const override
+      { return fSorter; }
+    
   private:
     
     unsigned int                                         fNcryostat;      ///< number of cryostats in the detector

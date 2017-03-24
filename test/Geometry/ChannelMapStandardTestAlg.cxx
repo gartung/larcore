@@ -207,7 +207,7 @@ void geo::ChannelMapStandardTestAlg::ROPMappingTest() const {
   BOOST_CHECK(!geom->WirePlaneToROP({}).isValid);
   BOOST_CHECK(geom->ROPtoWirePlanes({}).empty());
   BOOST_CHECK(geom->ROPtoTPCs({}).empty());
-  BOOST_CHECK_THROW(geom->ChannelToROP(raw::InvalidChannelID), cet::exception);
+  BOOST_CHECK(!geom->ChannelToROP(raw::InvalidChannelID).isValid);
   BOOST_CHECK(!raw::isValidChannelID(geom->FirstChannelInROP({})));
   
   //
