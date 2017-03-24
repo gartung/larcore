@@ -1215,7 +1215,7 @@ namespace geo {
 
   
   //......................................................................
-  bool GeometryCore::IntersectSegments(
+  bool GeometryCore::IntersectLines(
     double A_start_x, double A_start_y, double A_end_x, double A_end_y,
     double B_start_x, double B_start_y, double B_end_x, double B_end_y,
     double& x, double& y
@@ -1229,10 +1229,7 @@ namespace geo {
     double const denom = (A_start_x - A_end_x)*(B_start_y - B_end_y)
       - (A_start_y - A_end_y)*(B_start_x - B_end_x);
     
-    if (coordIs.zero(denom)) {
-      mf::LogWarning("IntersectSegments") << "The segments are parallel!";
-      return false;
-    }
+    if (coordIs.zero(denom)) return false;
     
     double const A = (A_start_x * A_end_y - A_start_y * A_end_x) / denom;
     double const B = (B_start_x * B_end_y - B_start_y * B_end_x) / denom;
@@ -1240,15 +1237,10 @@ namespace geo {
     x = (B_start_x - B_end_x) * A - (A_start_x - A_end_x) * B;
     y = (B_start_y - B_end_y) * A - (A_start_y - A_end_y) * B;
     
-    return coordIs.withinSorted(x, A_start_x, A_end_x)
-      && coordIs.withinSorted(y, A_start_y, A_end_y)
-      && coordIs.withinSorted(x, B_start_x, B_end_x)
-      && coordIs.withinSorted(y, B_start_y, B_end_y)
-      ;
+    return true;
     
-  } // GeometryCore::IntersectSegments()
+  } // GeometryCore::IntersectLines()
   
-/*  FIXME
   //......................................................................
   bool GeometryCore::IntersectSegments(
     double A_start_x, double A_start_y, double A_end_x, double A_end_y,
@@ -1256,22 +1248,61 @@ namespace geo {
     double& x, double& y
   ) const {
     
+    bool bCross = IntersectLines(
+      A_start_x, A_start_y, A_end_x, A_end_y,
+      B_start_x, B_start_y, B_end_x, B_end_y,
+      x, y
+      );
+    
+    if (bCross) {
+      mf::LogWarning("IntersectSegments") << "The segments are parallel!";
+      return false;
+    }
+    
+    return PointWithinSegments(
+      A_start_x, A_start_y, A_end_x, A_end_y,
+      B_start_x, B_start_y, B_end_x, B_end_y,
+      x, y
+      );
+    
   } // GeometryCore::IntersectSegments()
-    */
+  
   //......................................................................
   bool GeometryCore::WireIDsIntersect(
     const geo::WireID& wid1, const geo::WireID& wid2,
     geo::WireIDIntersection & widIntersect
   ) const {
     
-    if (!WireIDIntersectionCheck(wid1, wid2)) return false;
+    static_assert(
+      std::numeric_limits<decltype(widIntersect.y)>::has_infinity,
+      "the vector coordinate type can't represent infinity!"
+      );
+    constexpr auto infinity
+      = std::numeric_limits<decltype(widIntersect.y)>::infinity();
+    
+    if (!WireIDIntersectionCheck(wid1, wid2)) {
+      widIntersect.y = widIntersect.z = infinity;
+      widIntersect.TPC = geo::TPCID::InvalidID;
+      return false;
+    }
     
     // get the endpoints to see if wires intersect
     Segment_t const w1 = WireEndPoints(wid1);
     Segment_t const w2 = WireEndPoints(wid2);
     
-    // TODO extract the coordinates in the right way
-    bool within = IntersectSegments(
+    // TODO extract the coordinates in the right way;
+    // is it any worth, since then the result is in (y, z), whatever it means?
+    bool const cross = IntersectLines(
+      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
+      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      widIntersect.y, widIntersect.z
+      );
+    if (!cross) {
+      widIntersect.y = widIntersect.z = infinity;
+      widIntersect.TPC = geo::TPCID::InvalidID;
+      return false;
+    }
+    bool const within = PointWithinSegments(
       w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
       w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
       widIntersect.y, widIntersect.z
@@ -1300,9 +1331,17 @@ namespace geo {
     // The coordinate of the intersection that is from the component orthogonal
     // to the plane is arbitrarily set to 0.
     //
+    static_assert(
+      std::numeric_limits<decltype(intersection.X())>::has_infinity,
+      "the vector coordinate type can't represent infinity!"
+      );
+    constexpr auto infinity
+      = std::numeric_limits<decltype(intersection.X())>::infinity();
     
-    
-    if (!WireIDIntersectionCheck(wid1, wid2)) return false;
+    if (!WireIDIntersectionCheck(wid1, wid2)) {
+      intersection = { infinity, infinity, infinity };
+      return false;
+    }
     
     // get the endpoints to see if wires intersect
     Segment_t const w1 = WireEndPoints(wid1);
@@ -1318,7 +1357,18 @@ namespace geo {
     auto w2endProj   = plane1.PointWidthDepthProjection(w2.end());
     
     double x, y; // "width" and "depth"
-    bool within = IntersectSegments(
+    bool const cross = IntersectLines(
+      w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
+      w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
+      x, y
+      );
+    
+    if (!cross) {
+      intersection = { infinity, infinity, infinity };
+      return false;
+    }
+    
+    bool const within = PointWithinSegments(
       w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
       w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
       x, y
@@ -1516,13 +1566,8 @@ namespace geo {
   {
     geo::WireIDIntersection widIntersect;
     bool const found = WireIDsIntersect(wid1, wid2, widIntersect);
-    if (found) {
-      y = widIntersect.y;
-      z = widIntersect.z;
-    }
-    else {
-      y = z = std::numeric_limits<double>::signaling_NaN();
-    }
+    y = widIntersect.y;
+    z = widIntersect.z;
     return found;
   }
   
@@ -1763,6 +1808,20 @@ namespace geo {
     return true;
   } // GeometryCore::WireIDIntersectionCheck()
   
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::PointWithinSegments(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double x, double y
+  ) {
+    return coordIs.withinSorted(x, A_start_x, A_end_x)
+      && coordIs.withinSorted(y, A_start_y, A_end_y)
+      && coordIs.withinSorted(x, B_start_x, B_end_x)
+      && coordIs.withinSorted(y, B_start_y, B_end_y)
+      ;
+    
+  } // GeometryCore::PointWithinSegments()
   
   //--------------------------------------------------------------------
   constexpr details::geometry_iterator_types::BeginPos_t
