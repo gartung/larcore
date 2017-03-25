@@ -614,38 +614,6 @@ namespace geo{
   
   
   //......................................................................
-<<<<<<< HEAD
-  void PlaneGeo::UpdatePhiZ() {
-    TVector3 wire_coord_dir = GetIncreasingWireDirection();
-    fCosPhiZ = wire_coord_dir.Z();
-    fSinPhiZ = wire_coord_dir.Y();
-  } // PlaneGeo::UpdatePhiZ()
-
-  void PlaneGeo::UpdateView() {
-
-    auto cos_thetaz = std::cos(ThetaZ());
-    
-    if( std::abs(cos_thetaz - 1.0) < std::numeric_limits<double>::epsilon() ||
-	std::abs(cos_thetaz + 1.0) < std::numeric_limits<double>::epsilon()) 
-      SetView(geo::View_t::kY);
-    else if( std::abs(cos_thetaz - 0.0) < std::numeric_limits<double>::epsilon())
-      SetView(geo::View_t::kZ);
-    else if( cos_thetaz < 0.0 )
-      SetView(geo::View_t::kV);
-    else if( cos_thetaz > 0.0 )
-      SetView(geo::View_t::kU);
-    else
-      SetView(geo::View_t::kUnknown);      
-
-  }
-  
-  //......................................................................
-  void PlaneGeo::UpdateFromMapping() {
-    UpdateWirePitch();
-    UpdatePhiZ();
-    UpdateView();
-  } // PlaneGeo::UpdateWirePitch()
-=======
   void PlaneGeo::UpdateWirePitchSlow() {
     
     // 
@@ -676,8 +644,6 @@ namespace geo{
     fDecompWire.SetOrigin(FirstWire().GetCenter());
     
   } // PlaneGeo::UpdateDecompWireOrigin()
-  
->>>>>>> master
   
   //......................................................................
   void PlaneGeo::UpdateWirePlaneCenter() {

@@ -912,13 +912,6 @@ namespace geo {
     /// Updates the stored @f$ \phi_{z} @f$.
     void UpdatePhiZ();
     
-<<<<<<< HEAD
-    /// Updates the stored view
-    void UpdateView();
-
-    /// Performs all the updates needed after mapping changes
-    void UpdateFromMapping();
-=======
     /// Updates the stored wire pitch with a slower, more robust algorithm.
     void UpdateWirePitchSlow();
     
@@ -927,8 +920,6 @@ namespace geo {
     
     /// Whether the specified wire should have start and end swapped.
     bool shouldFlipWire(geo::WireGeo const& wire) const;
-
->>>>>>> master
     
   private:
     using LocalTransformation_t = geo::LocalTransformation<TGeoHMatrix>;
