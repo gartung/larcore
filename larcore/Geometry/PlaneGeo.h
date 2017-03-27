@@ -911,6 +911,9 @@ namespace geo {
     
     /// Updates the stored @f$ \phi_{z} @f$.
     void UpdatePhiZ();
+      
+    /// Updates the stored view
+    void UpdateView();
     
     /// Updates the stored wire pitch with a slower, more robust algorithm.
     void UpdateWirePitchSlow();
