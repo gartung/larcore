@@ -10,11 +10,12 @@ art_make_library( LIBRARY_NAME GeometryTestLib
                     ChannelMapStandardTestAlg.cxx
                   LIBRARIES larcore_Geometry
                         larcore_TestUtils
-                        art_Utilities canvas_Utilities
+                        art_Utilities
+			canvas
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
-                        ${CETLIB}
+                        cetlib cetlib_except
                         ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
           )
 
@@ -27,7 +28,7 @@ simple_plugin ( GeometryIteratorLoopTest "module"
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
-                    ${CETLIB}
+                    cetlib cetlib_except
              )
 
 simple_plugin ( GeometryTest "module"
@@ -37,7 +38,7 @@ simple_plugin ( GeometryTest "module"
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
-                    ${CETLIB}
+                    cetlib cetlib_except
                     ${ROOT_BASIC_LIB_LIST}
               )
 
@@ -52,7 +53,7 @@ cet_test(geometry_iterator_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
@@ -67,7 +68,7 @@ cet_test(geometry_geoid_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
@@ -83,7 +84,7 @@ cet_test(geometry_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
 )
 
 # unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
@@ -96,7 +97,7 @@ cet_test(geometry_iterator_loop_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
 )
 
 
@@ -108,7 +109,7 @@ cet_test(geometry_standardchannelmapping_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS ./test_geometry.fcl
@@ -123,7 +124,7 @@ cet_test(geometry_thirdplaneslope_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
