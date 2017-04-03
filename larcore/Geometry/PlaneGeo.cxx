@@ -12,6 +12,7 @@
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
 #include "larcore/CoreUtils/RealComparisons.h"
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi()
 
 // Framework includes
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -346,6 +347,8 @@ namespace geo{
       case geo::kU:       return "U";
       case geo::kV:       return "V";
       case geo::kZ:       return "Z";
+      case geo::kY:       return "Y";
+      case geo::kX:       return "X";
       case geo::k3D:      return "3D";
       case geo::kUnknown: return "?";
       default:            return "<UNSUPPORTED>";
@@ -527,22 +530,94 @@ namespace geo{
     
   void PlaneGeo::UpdateView()
   {
-      auto cos_thetaz = std::cos(ThetaZ());
+    /*
+     * This algorithm assigns views according to the angle the wire axis cuts
+     * with y axis ("thetaY"), but from the point of view of the center of the
+     * TPC.
+     * A special case is when the drift axis is on y axis.
+     * 
+     * In the normal case, the discrimination happens on the the arctangent of
+     * the point { (y,w), (y x n,w) }, where w is the wire direction, y is the
+     * coordinate axis and n the normal to the wire plane. This definition gives
+     * the same value regardless of the direction of w on its axis.
+     * 
+     * If thetaY is 0, wires are parallel to the y axis:
+     * the view is assigned as kX or kZ depending on whether the plane normal is
+     * closer to the z axis or the x axis, respectively (the normal describes
+     * a direction _not_ measured by the wires).
+     * 
+     * If thetaY is a right angle, the wires are orthogonal to y axis and view
+     * kY view is assigned.
+     * If thetaY is smaller than 0, the view is called "U".
+     * If thetaY is larger than 0, the view is called "V".
+     * 
+     * The special case where the drift axis is on y axis is treated separately.
+     * In that case, the role of y axis is replaced by the z axis and the
+     * discriminating figure is equivalent to the usual ThetaZ().
+     * 
+     * If thetaZ is 0, the wires are measuring x and kX view is chosen.
+     * If thetaZ is a right angle, the wires are measuring z and kZ view is
+     * chosen.
+     * If thetaZ is smaller than 0, the view is called "U".
+     * If thetaZ is larger than 0, the view is called "V".
+     * 
+     */
+    
+    // normal direction has been rounded, so exact comparison can work
+    if (std::abs(GetNormalDirection().Y()) != 1.0) {
+      //
+      // normal case: drift direction is not along y (vertical)
+      //
       
-      if( std::abs(cos_thetaz - 1.0) < std::numeric_limits<double>::epsilon() ||
-          std::abs(cos_thetaz + 1.0) < std::numeric_limits<double>::epsilon())
-          SetView(geo::View_t::kY);
-      else if( std::abs(cos_thetaz - 0.0) < std::numeric_limits<double>::epsilon())
-          SetView(geo::View_t::kZ);
-      else if( cos_thetaz < 0.0 )
-          SetView(geo::View_t::kV);
-      else if( cos_thetaz > 0.0 )
-          SetView(geo::View_t::kU);
-      else
-          SetView(geo::View_t::kUnknown);
+      // yw is pretty much GetWireDirection().Y()...
+      double const yw = geo::vect::Dot(GetWireDirection(), geo::vect::Yaxis());
+      double const ynw = geo::vect::MixedProduct
+        (geo::vect::Yaxis(), GetNormalDirection(), GetWireDirection());
       
-      return;
-  }
+      if (std::abs(yw) < 1.0e-4) { // orthogonal to y
+        double const closeToX
+          = std::abs(geo::vect::Dot(GetNormalDirection(), geo::vect::Xaxis()));
+        double const closeToZ
+          = std::abs(geo::vect::Dot(GetNormalDirection(), geo::vect::Zaxis()));
+        SetView((closeToZ > closeToX)? geo::kX: geo::kZ);
+      }
+      else if (std::abs(ynw) < 1.0e-4) { // parallel to y
+        SetView(geo::kZ);
+      }
+      else if ((ynw * yw) < 0) SetView(geo::kU); // different sign => thetaY > 0
+      else if ((ynw * yw) > 0) SetView(geo::kV); // same sign => thetaY < 0
+      else assert(false); // logic error?!
+      
+    }
+    else { // if drift is vertical
+      //
+      // special case: drift direction is along y (vertical)
+      //
+      
+      // zw is pretty much GetWireDirection().Z()...
+      double const zw = geo::vect::Dot(GetWireDirection(), geo::vect::Zaxis());
+      // while GetNormalDirection() axis is on y, its direction is not fixed:
+      double const znw = geo::vect::MixedProduct
+        (geo::vect::Zaxis(), GetNormalDirection(), GetWireDirection());
+      
+      // thetaZ is std::atan(znw/zw)
+      
+      if (std::abs(zw) < 1.0e-4) { // orthogonal to z, orthogonal to y...
+        // this is equivalent to thetaZ = +/- pi/2
+        SetView(geo::kZ);
+      }
+      else if (std::abs(znw) < 1.0e-4) { // parallel to z, orthogonal to y...
+        // this is equivalent to thetaZ = 0
+        SetView(geo::kX);
+      }
+      else if ((znw * zw) < 0) SetView(geo::kU); // different sign => thetaZ > 0
+      else if ((znw * zw) > 0) SetView(geo::kV); // same sign => thetaZ < 0
+      else assert(false); // logic error?!
+      
+    } // if drift direction... else
+    
+  } // UpdateView()
+  
   
   //......................................................................
   void PlaneGeo::UpdatePlaneNormal(geo::BoxBoundedGeo const& TPCbox) {
