@@ -34,6 +34,9 @@
 #include <ostream>
 
 
+const double pi = M_PI;
+
+
 // needed for using Boost unit test macros on 3D points and vectors
 template <typename Vector3D>
 std::ostream& Vector3DToStream(std::ostream& out, Vector3D const& v)
@@ -236,7 +239,11 @@ void StandardDecomposerTest() {
   //  Decomposes a 3D point in two components
   //    
   //    DecomposedVector_t DecomposePoint(Point_t const& point) const
-  //
+  //    
+  //  Returns the angle of the projection from main direction.
+  //    
+  //    double Angle(Vector_t const& v) const
+  //    
   
   BOOST_CHECK_CLOSE(decomp.PointMainComponent     (point), 4.0, 1e-2);
   BOOST_CHECK_CLOSE(decomp.PointSecondaryComponent(point), 5.0, 1e-2);
@@ -254,6 +261,12 @@ void StandardDecomposerTest() {
     BOOST_CHECK_CLOSE(decomposed.projection.X(), 4.0, 1e-2);
     BOOST_CHECK_CLOSE(decomposed.projection.Y(), 5.0, 1e-2);
   }
+  
+  BOOST_CHECK_CLOSE(decomp.Angle(Yaxis), 0.0, 1e-3);
+  BOOST_CHECK_CLOSE(decomp.Angle(Zaxis), pi/2, 1e-3);
+  BOOST_CHECK_CLOSE(decomp.Angle(-Yaxis), -pi, 1e-3);
+  BOOST_CHECK_CLOSE(decomp.Angle(-Zaxis), -pi/2, 1e-3);
+  BOOST_CHECK_CLOSE(decomp.Angle(Yaxis + Zaxis), pi/4, 1e-3);
   
   
   //

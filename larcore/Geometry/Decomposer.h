@@ -108,6 +108,20 @@ namespace geo {
     
     //--------------------------------------------------------------------------
     
+    /// Returns a x axis vector of the specified type.
+    template <typename Vector = Vector_t>
+    Vector Xaxis() { return { 1.0, 0.0, 0.0 }; }
+    
+    /// Returns a y axis vector of the specified type.
+    template <typename Vector = Vector_t>
+    Vector Yaxis() { return { 0.0, 1.0, 0.0 }; }
+    
+    /// Returns a z axis vector of the specified type.
+    template <typename Vector = Vector_t>
+    Vector Zaxis() { return { 0.0, 0.0, 1.0 }; }
+    
+    //--------------------------------------------------------------------------
+    
   } // namespace vect
   
   
@@ -400,6 +414,24 @@ namespace geo {
     Projection_t VectorProjection(Vector_t const& v) const
       { return { VectorMainComponent(v), VectorSecondaryComponent(v) }; }
     
+    /**
+     * @brief Returns the angle of the projection from main direction.
+     * @param v vector to get the angle of
+     * @return the angle of the projection from main direction, in radians
+     * 
+     * The projection on the plane is taken, and its angle from the main
+     * direction is returned. That angle is defined in the range
+     * @f$ \left[ -\pi, \pi \right] @f$, so that it is 0 for a projection
+     * matching the main direction and @f$ \pi/2 @f$ for one matching the
+     * secondary direction.
+     */
+    double Angle(Vector_t const& v) const
+      {
+        double const a
+          = std::atan2(VectorSecondaryComponent(v), VectorMainComponent(v));
+        return (a >= M_PI)? -M_PI: a;
+      }
+    
     /// @}
     
     
@@ -631,6 +663,20 @@ namespace geo {
      */
     DecomposedVector_t DecomposeVector(Vector_t const& v) const
       { return { VectorNormalComponent(v), ProjectVectorOnPlane(v) }; }
+    
+    /**
+     * @brief Returns the angle of the projection from main direction.
+     * @param v vector to get the angle of
+     * @return the angle of the projection from main direction, in radians
+     * 
+     * The projection on the plane is taken, and its angle from the main
+     * direction is returned. That angle is defined in the range
+     * @f$ \left[ -\pi, \pi \right] @f$, so that it is 0 for a projection
+     * matching the main direction and @f$ \pi/2 @f$ for one matching the
+     * secondary direction.
+     */
+    double Angle(Vector_t const& v) const
+      { return Plane().Angle(v); }
     
     /// @}
     

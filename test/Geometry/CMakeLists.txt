@@ -167,6 +167,8 @@ cet_test(SimpleGeo_test
   USE_BOOST_UNIT
 )
 
+cet_test(ViewData_test USE_BOOST_UNIT)
+
 
 # set FHICL_FILE_PATH and FW_SEARCH_PATH for the case where building without mrb
 # this is not generic, we take advantage of knowing the subdirectories for the fcl and gdml files
