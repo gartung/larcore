@@ -142,6 +142,7 @@ namespace geo {
     void testFindVolumes();
     void testCryostat();
     void testTPC(geo::CryostatID const& cid);
+    void testTPCviews(geo::TPCGeo const& TPC) const;
     void testPlaneDirections() const;
     void testWireOrientations() const;
     void testChannelToROP() const;

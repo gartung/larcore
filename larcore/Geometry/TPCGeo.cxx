@@ -260,17 +260,6 @@ namespace geo{
       fPlaneLocation[p][2] = xyz1[2];
     }
 
-    // Set view for planes in this TPC, assuming that plane sorting
-    // increases in drift direction, to the convention that planes
-    // 0,1,2 have views kU,kV,kZ respectively. kZ is collection.
-    
-    //MODIFICATION (Wes, 22 Feb 2017)
-    //IF wire coordinate angle is positive --> U
-    //IF wire coordinate angle is negative --> V
-    //IF wire coordinate angle is 0 --> Z
-    //IF wire coordinate angle is PI/2 --> Y
-    //AND, do this in the PlaneGeo constructor
-
     // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
     // leaving it a reference would cause C++ to treat it as such,
     // that can't be because InvalidID is a static member constant without an address
@@ -301,6 +290,8 @@ namespace geo{
         .equal(-(fPlanes[plane]->GetNormalDirection()), DriftDir()));
       
     } // for
+    
+    UpdatePlaneViewCache();
     
   } // TPCGeo::UpdateAfterSorting()
   
@@ -530,5 +521,23 @@ namespace geo{
     
   } // CryostatGeo::InitTPCBoundaries()
 
+  //......................................................................
+  
+  void TPCGeo::UpdatePlaneViewCache() {
+    
+    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
+    // leaving it a reference would cause C++ to treat it as such,
+    // that can't be because InvalidID is a static member constant without an address
+    // (it is not defined in any translation unit, just declared in header)
+    fViewToPlaneNumber.clear();
+    fViewToPlaneNumber.resize
+      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
+    for(size_t p = 0; p < Nplanes(); ++p)
+      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
+    
+  } // TPCGeo::UpdatePlaneViewCache()
+  
+
+  //......................................................................
 }
 ////////////////////////////////////////////////////////////////////////

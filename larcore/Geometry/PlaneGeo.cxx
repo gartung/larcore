@@ -351,7 +351,8 @@ namespace geo{
       case geo::kX:       return "X";
       case geo::k3D:      return "3D";
       case geo::kUnknown: return "?";
-      default:            return "<UNSUPPORTED>";
+      default:
+        return "<UNSUPPORTED (" + std::to_string((int) view) + ")>";
     } // switch
   } // PlaneGeo::ViewName()
   

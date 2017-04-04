@@ -802,7 +802,9 @@ namespace geo{
       if(tpcNo != t)
         throw cet::exception("BadTPCLookupFromPosition") << "TPC look up returned tpc = "
                                                          << tpcNo << " should be " << t << "\n";
-
+      
+      testTPCviews(tpc);
+      
       LOG_DEBUG("GeometryTest") << "done.";
     } // for TPC
     
@@ -810,6 +812,45 @@ namespace geo{
   }
 
 
+  //......................................................................
+  void GeometryTestAlg::testTPCviews(geo::TPCGeo const& TPC) const {
+    
+    //
+    // checks the consistency between TPC and plane idea of views
+    //
+    
+    unsigned int nErrors = 0;
+    
+    unsigned int const nPlanes = TPC.Nplanes();
+    std::vector<geo::View_t> views;
+    for (unsigned int iPlane = 0; iPlane < nPlanes; ++iPlane) {
+      
+      geo::PlaneGeo const& plane = TPC.Plane(iPlane);
+      
+      geo::View_t const viewFromPlane = plane.View();
+      geo::PlaneGeo const& planeFromView = TPC.Plane(viewFromPlane);
+      
+      if (&planeFromView != &plane) {
+        mf::LogProblem("GeometryTestAlg") << __func__ << ": in " << TPC.ID()
+          << " view " << geo::PlaneGeo::ViewName(viewFromPlane)
+          << " is on plane " << plane.ID()
+          << ", but TPC thinks plane with that view is on plane "
+          << planeFromView.ID() << " (which has view "
+          << geo::PlaneGeo::ViewName(planeFromView.View()) <<")";
+        ++nErrors;
+      }
+      
+    } // for
+    
+    if (nErrors > 0) {
+      throw cet::exception("GeometryTestAlg")
+        << "testTPCviews(): accumulated " << nErrors << " errors for TPC "
+        << std::string(TPC.ID()) << "\n";
+    }
+    
+  } // GeometryTestAlg::testTPCviews()
+  
+  
   //......................................................................
   void GeometryTestAlg::testPlaneDirections() const {
     /*

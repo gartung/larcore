@@ -515,6 +515,9 @@ namespace geo {
     /// (last respect to the sorting order)
     double ComputeDriftDistance() const;
     
+    /// Refills the plane vs. view cache of the TPC.
+    void UpdatePlaneViewCache();
+    
     /// Recomputes the TPC boundary
     void InitTPCBoundaries();
   
