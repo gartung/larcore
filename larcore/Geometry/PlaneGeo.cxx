@@ -571,18 +571,19 @@ namespace geo{
       //
       
       // yw is pretty much GetWireDirection().Y()...
+      // thetaY is related to atan2(ynw, yw)
       double const yw = geo::vect::Dot(GetWireDirection(), geo::vect::Yaxis());
       double const ynw = geo::vect::MixedProduct
         (geo::vect::Yaxis(), GetNormalDirection(), GetWireDirection());
       
-      if (std::abs(yw) < 1.0e-4) { // orthogonal to y
+      if (std::abs(yw) < 1.0e-4) { // wires orthogonal to y axis
         double const closeToX
           = std::abs(geo::vect::Dot(GetNormalDirection(), geo::vect::Xaxis()));
         double const closeToZ
           = std::abs(geo::vect::Dot(GetNormalDirection(), geo::vect::Zaxis()));
-        SetView((closeToZ > closeToX)? geo::kX: geo::kZ);
+        SetView((closeToZ > closeToX)? geo::kX: geo::kY);
       }
-      else if (std::abs(ynw) < 1.0e-4) { // parallel to y
+      else if (std::abs(ynw) < 1.0e-4) { // wires parallel to y axis
         SetView(geo::kZ);
       }
       else if ((ynw * yw) < 0) SetView(geo::kU); // different sign => thetaY > 0
