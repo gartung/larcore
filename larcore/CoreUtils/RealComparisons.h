@@ -11,6 +11,10 @@
 #ifndef LARCORE_COREUTILS_REALCOMPARISONS_H
 #define LARCORE_COREUTILS_REALCOMPARISONS_H
 
+// C/C++ standard libraries
+#include <cmath> // std::abs()
+#include <utility> // std::move()
+
 
 namespace lar {
   namespace util {
