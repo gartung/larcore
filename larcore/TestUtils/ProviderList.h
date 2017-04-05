@@ -295,8 +295,11 @@ namespace testing {
             
             // erase this and all the aliases pointing to it
             auto const* target_ptr = target_it->second.get();
-            for (auto it = data.begin(); it != data.end(); ++it) 
-               if (it->second.get() == target_ptr) data.erase(it);
+            auto it = data.begin();
+            while (it != data.end()) {
+               if (it->second.get() == target_ptr) it = data.erase(it);
+               else ++it;
+            } // while
             return true;
          } // erase()
       
