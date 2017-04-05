@@ -17,6 +17,7 @@
 // C/C++ standard libraries
 #include <string>
 #include <ostream>
+#include <cmath>
 
 
 BOOST_AUTO_TEST_CASE(test_RealComparisons) {
