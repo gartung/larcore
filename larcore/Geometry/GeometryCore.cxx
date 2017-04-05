@@ -38,6 +38,7 @@
 #include <utility> // std::swap()
 #include <limits> // std::numeric_limits<>
 #include <memory> // std::default_deleter<>
+#include <numeric> // std::accumulate
 
 
 namespace geo {
