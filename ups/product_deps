@@ -29,7 +29,7 @@ cetbuildtools	v5_06_07	-	only_for_build
 end_product_list
 
   
-# e10  - with gcc 4.9.3 and -std=c++14
+# e14  - with gcc 6.3.0 and -std=c++14
 qualifier	art		larcoreobj	notes
 e14:debug	e14:nu:debug	e14:debug
 e14:opt		e14:nu:opt	e14:opt
@@ -43,8 +43,6 @@ end_qualifier_list
 # to find gdml files:
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
-    # this is temporary until art and boost define ROOT_INCLUDE_PATH
-    #pathPrepend(ROOT_INCLUDE_PATH, ${ART_INC}:${FHICLCPP_INC}:${CETLIB_INC}:${BOOST_INC})
 table_fragment_end
 
 # Preserve tabs and formatting in emacs and vi / vim:
