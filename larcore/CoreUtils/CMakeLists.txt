@@ -1,6 +1,6 @@
 art_make(
   LIB_LIBRARIES
-    ${CETLIB}
+    cetlib cetlib_except
   )
 
 
