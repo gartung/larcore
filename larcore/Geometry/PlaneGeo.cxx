@@ -67,7 +67,31 @@ namespace {
 namespace geo{
 
 
+  //----------------------------------------------------------------------------
+  //---  geo::PlaneGeo::Rect::Range
+  //---  
+  double PlaneGeo::Rect::Range::delta(double v) const {
+    
+    if (v < lower) return lower - v; // always positive
+    if (v > upper) return upper - v; // always negative
+    return 0.0;                      // always zero
+    
+  } // PlaneGeo::Rect::Range::delta()
+  
+  
   //......................................................................
+  void PlaneGeo::Rect::Range::extendToInclude(double v) {
+    
+    if (lower > upper) lower = upper = v;
+    else if (lower > v) lower = v;
+    else if (upper < v) upper = v;
+    
+  } // PlaneGeo::Rect::Range::extendToInclude()
+  
+  
+  //----------------------------------------------------------------------------
+  //---  geo::PlaneGeo
+  //---
   PlaneGeo::PlaneGeo(GeoNodePath_t& path, size_t depth)
     : fTrans(path, depth)
     , fVolume(path[depth]->GetVolume())
@@ -241,6 +265,17 @@ namespace geo{
   
   
   //......................................................................
+  PlaneGeo::WidthDepthProjection_t PlaneGeo::DeltaFromActivePlane
+    (WidthDepthProjection_t const& proj) const
+  {
+    
+    return
+      { fActiveArea.width.delta(proj.X()), fActiveArea.depth.delta(proj.Y()) };
+    
+  } // PlaneGeo::DeltaFromActivePlane()
+  
+  
+  //......................................................................
   bool PlaneGeo::isProjectionOnPlane(TVector3 const& point) const {
     
     auto const deltaProj
@@ -335,6 +370,7 @@ namespace geo{
     UpdateWirePlaneCenter();
     UpdateOrientation();
     UpdateWirePitch();
+    UpdateActiveArea();
     UpdatePhiZ();
     
   } // PlaneGeo::UpdateAfterSorting()
@@ -644,6 +680,50 @@ namespace geo{
     fDecompWire.SetOrigin(FirstWire().GetCenter());
     
   } // PlaneGeo::UpdateDecompWireOrigin()
+  
+  
+  //......................................................................
+  void PlaneGeo::UpdateActiveArea() {
+    
+    //
+    // The active area is defined in the width/depth space which include all
+    // wires, and is defined as the smallest rectangle which contains all wire
+    // ends.
+    // 
+    // This algorithm requires the frame reference and the wire pitch to be
+    // already defined.
+    // 
+    // Also, as special case, if the wires are aligned to one direction
+    // (WidthDir() or DepthDir()), half a pitch is added on that direction.
+    //
+    
+    fActiveArea = {};
+    
+    // include all the coordinates of all wires
+    for (geo::WireGeo const* wire: fWire) {
+      auto const wireStart = PointWidthDepthProjection(wire->GetStart());
+      auto const wireEnd = PointWidthDepthProjection(wire->GetEnd());
+      fActiveArea.width.extendToInclude(wireStart.X());
+      fActiveArea.width.extendToInclude(wireEnd.X());
+      fActiveArea.depth.extendToInclude(wireStart.Y());
+      fActiveArea.depth.extendToInclude(wireEnd.Y());
+    } // for all wires
+    
+    // if wires are orthogonal to width direction
+    if (std::abs(geo::vect::Dot(GetWireDirection(), WidthDir())) < 1e-5) {
+      double const halfPitch = WirePitch() / 2.0;
+      fActiveArea.width.lower -= halfPitch;
+      fActiveArea.width.upper += halfPitch;
+    } // if orthogonal to width
+    
+    // if wires are orthogonal to depth direction
+    if (std::abs(geo::vect::Dot(GetWireDirection(), DepthDir())) < 1e-5) {
+      double const halfPitch = WirePitch() / 2.0;
+      fActiveArea.depth.lower -= halfPitch;
+      fActiveArea.depth.upper += halfPitch;
+    } // if orthogonal to depth
+    
+  } // PlaneGeo::UpdateActiveArea()
   
   
   //......................................................................

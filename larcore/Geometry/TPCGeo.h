@@ -517,6 +517,11 @@ namespace geo {
     
     /// Recomputes the TPC boundary
     void InitTPCBoundaries();
+    
+    /// Sort the PlaneGeo objects by drift distance.
+    std::vector<geo::PlaneGeo*> SortPlanes
+      (std::vector<geo::PlaneGeo*> const&) const;
+
   
   };
 }
