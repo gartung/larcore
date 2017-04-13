@@ -35,6 +35,10 @@ class TVector3;
 
 namespace geo {
 
+  namespace details {
+    class ActiveAreaCalculator;
+  } // namespace details
+  
   //......................................................................
   
   /**
@@ -83,7 +87,12 @@ namespace geo {
       <ROOT::Math::Cartesian2D<double>, WireCoordinateReferenceTag>;
     
     /// Type for projections in the plane frame base representation.
+    /// @fixme the following should be a PositionVector2D
     using WidthDepthProjection_t = ROOT::Math::DisplacementVector2D
+      <ROOT::Math::Cartesian2D<double>, WidthDepthReferenceTag>;
+    
+    /// Type for vector projections in the plane frame base representation.
+    using WidthDepthDisplacement_t = ROOT::Math::DisplacementVector2D
       <ROOT::Math::Cartesian2D<double>, WidthDepthReferenceTag>;
     
     /// Type used for plane decompositions on wire base.
@@ -470,6 +479,9 @@ namespace geo {
     void PrintPlaneInfo
       (Stream&& out, std::string indent = "", unsigned int verbosity = 1) const;
     
+    /// Maximum value for print verbosity.
+    static constexpr unsigned int MaxVerbosity = 6;
+    
     /// @}
     
     
@@ -718,26 +730,69 @@ namespace geo {
      * @brief Returns a projection vector that, added to the argument, gives a
      *        projection inside (or at the border of) the plane.
      * @param proj starting projection
+     * @param wMargin the point is brought this amount _inside_ the target area
+     * @param dMargin the point is brought this amount _inside_ the target area
      * @return a projection displacement
      * @see `DeltaFromActivePlane()`
      * 
-     * If the projection is already on the plane, the returned displacement is
-     * null.
+     * The returned projection vector is guaranteed, when added to `proj`, to
+     * yield a projection on or within the border of the plane (the "target
+     * area"), as defined by the GDML geometry.
+     * 
+     * The target plane area is reduced on each side by the specified margins.
+     * If for example `wMargin` is `1.0`, the area lower border on the width
+     * direction will be increased by 1 cm, and the upper border will be
+     * decreased by 1 cm effectively making the area 2 cm narrowed on the width
+     * direction.
+     * The same independently applies to the depth direction with `dMargin`.
+     * The main purpose of the margins is to accommodate for rounding errors.
+     * A version of this method with default margins of 0 is also available.
+     * 
+     * If the projection is already on the target area, the returned
+     * displacement is null.
      */
     WidthDepthProjection_t DeltaFromPlane
-      (WidthDepthProjection_t const& proj) const;
+      (WidthDepthProjection_t const& proj, double wMargin, double dMargin)
+       const;
+    
+    /**
+     * @brief Returns a projection vector that, added to the argument, gives a
+     *        projection inside (or at the border of) the area of plane.
+     * @param proj starting projection
+     * @param margin the point is brought this amount _inside_ the plane area
+     *        _(default: 0)_
+     * @return a projection displacement
+     * @see `DeltaFromPlane(WidthDepthProjection_t const&, double, double)`
+     * 
+     * This is the implementation with default values for margins of
+     * `DeltaFromPlane()`.
+     * The depth and width margins are the same, and 0 by default.
+     */
+    WidthDepthProjection_t DeltaFromPlane
+      (WidthDepthProjection_t const& proj, double margin = 0.0) const
+      { return DeltaFromPlane(proj, margin, margin); }
     
     /**
      * @brief Returns a projection vector that, added to the argument, gives a
      *        projection inside (or at the border of) the active area of plane.
      * @param proj starting projection
+     * @param wMargin the point is brought this amount _inside_ the active area
+     * @param dMargin the point is brought this amount _inside_ the active area
      * @return a projection displacement
      * @see `DeltaFromPlane()`
      * 
      * The "active" area of the plane is the rectangular area which includes all
      * the wires. The area is obtained as the smallest rectangle including
-     * the projection of both ends of all wires in the plane.
+     * the projection of both ends of all wires in the plane, less half a pitch.
+     * This defines a "fiducial" area away from the borders of the plane.
      * The projection is in the frame reference (`PointWidthDepthProjection()`).
+     * The area is reduced on each side by the specified margins. If for example
+     * `wMargin` is `1.0`, the active area lower border on the width direction
+     * will be increased by 1 cm, and the upper border will be decreased by 1 cm
+     * effectively making the active area 2 cm narrowed on the width direction.
+     * The same independently applies to the depth direction with `dMargin`.
+     * The main purpose of the margins is to accommodate for rounding errors.
+     * A version of this method with default margins of 0 is also available.
      * 
      * If the projection is already on the active area of the plane, the
      * returned displacement is null.
@@ -745,7 +800,25 @@ namespace geo {
      * plane area (in fact, on its border).
      */
     WidthDepthProjection_t DeltaFromActivePlane
-      (WidthDepthProjection_t const& proj) const;
+      (WidthDepthProjection_t const& proj, double wMargin, double dMargin)
+      const;
+    
+    /**
+     * @brief Returns a projection vector that, added to the argument, gives a
+     *        projection inside (or at the border of) the active area of plane.
+     * @param proj starting projection
+     * @param margin the point is brought this amount _inside_ the active area
+     *        _(default: 0)_
+     * @return a projection displacement
+     * @see `DeltaFromActivePlane(WidthDepthProjection_t const&, double, double)`
+     * 
+     * This is the implementation with default values for margins of
+     * `DeltaFromActivePlane()`.
+     * The depth and width margins are the same, and 0 by default.
+     */
+    WidthDepthProjection_t DeltaFromActivePlane
+      (WidthDepthProjection_t const& proj, double margin = 0.0) const
+      { return DeltaFromActivePlane(proj, margin, margin); }
     
     /**
      * @brief Returns the projection, moved onto the plane if necessary.
@@ -966,8 +1039,12 @@ namespace geo {
         /// Returns whether the range is empty.
         bool isNull() const { return lower >= upper; }
         
-        /// Returns a value that, added to v, makes it fall within the range.
-        double delta(double v) const;
+        /// Returns the distance between upper and lower bounds.
+        double length() const { return std::max(upper - lower, 0.0); }
+        
+        /// Returns a value that, added to v, makes it fall within a margin in
+        /// the range.
+        double delta(double v, double margin = 0.0) const;
         
         /// Extends the range to include the specified point.
         void extendToInclude(double);
@@ -1025,9 +1102,12 @@ namespace geo {
     TVector3              fCenter;
 
     geo::PlaneID          fID;          ///< ID of this plane.
-
-  };
-}
+    
+    friend details::ActiveAreaCalculator;
+    
+  }; // class PlaneGeo
+  
+} // namespace geo
 
 
 //------------------------------------------------------------------------------
@@ -1121,6 +1201,7 @@ void geo::PlaneGeo::PrintPlaneInfo(
       << box.MaxX() << ", " << box.MaxY() << ", " << box.MaxZ()
     << " )";
   
+//  if (verbosity-- <= 0) return; // 6
   
   //----------------------------------------------------------------------------
 } // geo::PlaneGeo::PrintPlaneInfo()
