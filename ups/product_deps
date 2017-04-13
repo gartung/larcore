@@ -1,6 +1,6 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v06_07_01
+parent	larcore	v06_07_02
 defaultqual	e10
 
 # These optional lines define the installed directories where
@@ -40,8 +40,6 @@ end_qualifier_list
 # to find gdml files:
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
-    # this is temporary until art and boost define ROOT_INCLUDE_PATH
-    #pathPrepend(ROOT_INCLUDE_PATH, ${ART_INC}:${FHICLCPP_INC}:${CETLIB_INC}:${BOOST_INC})
 table_fragment_end
 
 # Preserve tabs and formatting in emacs and vi / vim:
