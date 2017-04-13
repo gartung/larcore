@@ -1,7 +1,7 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
 parent	larcore	v06_07_02
-defaultqual	e10
+defaultqual	e14
 
 # These optional lines define the installed directories where
 # headers, libraries, and executables will be found
@@ -29,8 +29,11 @@ cetbuildtools	v5_06_07	-	only_for_build
 end_product_list
 
   
-# e10  - with gcc 4.9.3 and -std=c++14
+# e14  - with gcc 6.3.0 and -std=c++14
 qualifier	art		larcoreobj	notes
+e14:debug	e14:nu:debug	e14:debug
+e14:opt		e14:nu:opt	e14:opt
+e14:prof	e14:nu:prof	e14:prof
 e10:debug	e10:nu:debug	e10:debug
 e10:opt		e10:nu:opt	e10:opt
 e10:prof	e10:nu:prof	e10:prof
