@@ -20,6 +20,7 @@
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/geo.h"
 #include "larcore/CoreUtils/RealComparisons.h"
+#include "larcore/CoreUtils/DumpUtils.h" // lar::dump::vector3D()
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
@@ -156,7 +157,11 @@ namespace geo{
     unsigned int nErrors = 0; // currently unused
     
     // change the printed version number when changing the "GeometryTest" output
-    mf::LogVerbatim("GeometryTest") << "GeometryTest version 1.0";
+    // 
+    // Version 1.1:
+    //   more TPC information when printing all geometry
+    // 
+    mf::LogVerbatim("GeometryTest") << "GeometryTest version 1.1";
     
     mf::LogInfo("GeometryTestInfo")
       << "Running on detector: '" << geom->DetectorName() << "'";
@@ -500,10 +505,11 @@ namespace geo{
     const double Origin[3] = { 0., 0., 0. };
     double TPCpos[3];
     tpc.LocalToWorld(Origin, TPCpos);
-    mf::LogVerbatim("GeometryTest") << indent << "TPC " << tpc.ID() << " at ("
-      << TPCpos[0] << ", " << TPCpos[1] << ", " << TPCpos[2]
-      << ") cm has " << nPlanes << " wire planes (max wires: " << tpc.MaxWires()
-      << "):";
+    
+    tpc.PrintTPCInfo(
+      mf::LogVerbatim("GeometryTest") << indent,
+      indent, geo::TPCGeo::MaxVerbosity
+      );
     
     for(unsigned int p = 0; p < nPlanes; ++p) {
       const geo::PlaneGeo& plane = tpc.Plane(p);
@@ -518,19 +524,15 @@ namespace geo{
         const geo::WireGeo& wire = plane.Wire(w);
         double xyz[3] = { 0. };
         wire.LocalToWorld(xyz, xyz); // LocalToWorld() supports in place transf.
-        double WireS[3],  WireM[3], WireE[3]; // start, middle point and end
         
         // the wire should be aligned on z axis, half on each side of 0,
         // in its local frame
-        wire.GetStart(WireS);
-        wire.GetCenter(WireM);
-        wire.GetEnd(WireE);
         mf::LogVerbatim("GeometryTest") << indent
           << "    wire #" << w
-          << " at (" << xyz[0] << ", " << xyz[1] << ", " << xyz[2] << ")"
-          << "\n" << indent << "       start at (" << WireS[0] << ", " << WireS[1] << ", " << WireS[2] << ")"
-          << "\n" << indent << "      middle at (" << WireM[0] << ", " << WireM[1] << ", " << WireM[2] << ")"
-          << "\n" << indent << "         end at (" << WireE[0] << ", " << WireE[1] << ", " << WireE[2] << ")"
+          << " at " << lar::dump::array<3>(xyz)
+          << "\n" << indent << "       start at " << lar::dump::vector3D(wire.GetStart())
+          << "\n" << indent << "      middle at " << lar::dump::vector3D(wire.GetCenter())
+          << "\n" << indent << "         end at " << lar::dump::vector3D(wire.GetEnd())
           ;
       } // for wire
     } // for plane
@@ -547,8 +549,8 @@ namespace geo{
       const unsigned int nTPCs = cryostat.NTPC();
       double CryoPos[3];
       cryostat.LocalToWorld(Origin, CryoPos);
-      mf::LogVerbatim("GeometryTest") << "  cryostat #" << c << " at ("
-                                      << CryoPos[0] << ", " << CryoPos[1] << ", " << CryoPos[2] << ") cm has "
+      mf::LogVerbatim("GeometryTest") << "  cryostat #" << c << " at "
+                                      << lar::dump::array<3>(CryoPos) << " cm has "
                                       << nTPCs << " TPC(s):";
       for(unsigned int t = 0;  t < nTPCs; ++t) {
         const geo::TPCGeo& tpc = cryostat.TPC(t);

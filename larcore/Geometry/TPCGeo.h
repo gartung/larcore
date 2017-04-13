@@ -22,6 +22,7 @@
 #include "larcore/Geometry/BoxBoundedGeo.h"
 #include "larcore/Geometry/GeoObjectSorter.h"
 #include "larcore/Geometry/LocalTransformation.h"
+#include "larcore/CoreUtils/DumpUtils.h" // lar::dump::vector3D()
 
 class TGeoNode;
 
@@ -54,11 +55,15 @@ namespace geo {
     /// @{
     /// @name TPC properties
     
-    /// Width is associated with x coordinate [cm]
+    /// Half width (associated with x coordinate) of active TPC volume [cm]
     double            ActiveHalfWidth()                         const { return fActiveHalfWidth;        }
-    /// Height is associated with y coordinate [cm]
+    /// Width (associated with x coordinate) of active TPC volume [cm]
+    double            ActiveWidth()                             const { return 2.0 * ActiveHalfWidth(); }
+    /// Half height (associated with y coordinate) of active TPC volume [cm]
     double            ActiveHalfHeight()                        const { return fActiveHalfHeight;       }
-    /// Length is associated with z coordinate [cm]
+    /// Height (associated with y coordinate) of active TPC volume [cm]
+    double            ActiveHeight()                            const { return 2.0 * ActiveHalfHeight(); }
+    /// Length (associated with z coordinate) of active TPC volume [cm]
     double            ActiveLength()                            const { return fActiveLength;           }
     /// Width is associated with x coordinate [cm]
     double            HalfWidth()                               const { return fHalfWidth;              }
@@ -199,6 +204,12 @@ namespace geo {
     /// Returns the center of the active volume face opposite to the wire planes
     /// [cm]
     TVector3 GetCathodeCenter() const;
+    
+    
+    /// Returns the bounding box of this TPC.
+    geo::BoxBoundedGeo const& BoundingBox() const
+      { return *this; }
+    
     
     /// Returns the coordinates of the center of the specified plane [cm]
     const double*     PlaneLocation(unsigned int p)             const; 
@@ -451,6 +462,36 @@ namespace geo {
     
     
     /**
+     * @brief Prints information about this TPC.
+     * @tparam Stream type of output stream to use
+     * @param out stream to send the information to
+     * @param indent prepend each line with this string
+     * @param verbosity amount of information printed
+     * 
+     * Note that the first line out the output is _not_ indented.
+     * 
+     * Verbosity levels
+     * -----------------
+     * 
+     * * 0: only TPC ID
+     * * 1 _(default)_: also center and size
+     * * 2: also drift direction, cathode position and number of planes
+     * * 3: also maximum number of wires per plane
+     * * 4: also information on main direction
+     * * 5: also information on bounding box
+     * 
+     * The constant `MaxVerbosity` is set to the highest supported verbosity
+     * level.
+     */
+    template <typename Stream>
+    void PrintTPCInfo
+      (Stream&& out, std::string indent = "", unsigned int verbosity = 1) const;
+    
+    /// Maximum verbosity supported by `PrintTPCInfo()`.
+    static constexpr unsigned int MaxVerbosity = 5;
+    
+    
+    /**
      * @brief Returns whether the specified coordinate is in a range
      * @param c the coordinate
      * @param min lower boundary of the range
@@ -525,6 +566,74 @@ namespace geo {
   
   };
 }
+
+
+//------------------------------------------------------------------------------
+//--- template implementation
+//---
+template <typename Stream>
+void geo::TPCGeo::PrintTPCInfo(
+  Stream&& out,
+  std::string indent /* = "" */,
+  unsigned int verbosity /* = 1 */
+) const {
+  
+  //----------------------------------------------------------------------------
+  out << "TPC " << std::string(ID());
+  
+  if (verbosity-- <= 0) return; // 0
+  
+  //----------------------------------------------------------------------------
+  decltype(auto) center = GetCenter();
+  
+  out
+    << " (" << Width() << " x " << Height() << " x " << Length() << ") cm^3 at "
+      << lar::dump::vector3D(center);
+  
+  if (verbosity-- <= 0) return; // 1
+  
+  //----------------------------------------------------------------------------
+  
+  out << "\n" << indent
+    << "drift direction " << lar::dump::vector3D(DriftDir())
+      << " from cathode around " << lar::dump::vector3D(GetCathodeCenter())
+      << " through " << DriftDistance() << " cm toward "
+      << Nplanes() << " wire planes"
+    ;
+  
+  if (verbosity-- <= 0) return; // 2
+  
+  //----------------------------------------------------------------------------
+  out << "\n" << indent
+    << "maximum wires on any plane: " << MaxWires();
+    
+  if (verbosity-- <= 0) return; // 3
+  
+  //----------------------------------------------------------------------------
+  out << "\n" << indent
+    << "active volume ("
+      << ActiveWidth() << " x " << ActiveHeight() << " x " << ActiveLength()
+      << ") cm^3, main directions: width " << lar::dump::vector3D(WidthDir())
+      << " height " << lar::dump::vector3D(HeightDir())
+      << " length " << lar::dump::vector3D(LengthDir())
+    ;
+    
+  if (verbosity-- <= 0) return; // 4
+  
+  //----------------------------------------------------------------------------
+  // print also the containing box
+  decltype(auto) const box = BoundingBox();
+  out << "\n" << indent
+    << "bounding box: ( "
+      << box.MinX() << ", " << box.MinY() << ", " << box.MinZ()
+    << " ) -- ( "
+      << box.MaxX() << ", " << box.MaxY() << ", " << box.MaxZ()
+    << " )";
+  
+//  if (verbosity-- <= 0) return; // 5
+  
+  //----------------------------------------------------------------------------
+} // geo::TPCGeo::PrintTPCInfo()
 
 #endif
 ////////////////////////////////////////////////////////////////////////
