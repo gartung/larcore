@@ -984,7 +984,7 @@ namespace geo{
             
             if (std::abs(distance - expected) > 1e-4) {
               mf::LogProblem("GeometryTestAlg") << "Point " << point
-                << " ) (offset: " << iOfs << "x" << step << ", at " << iQuota
+                << "  (offset: " << iOfs << "x" << step << ", at " << iQuota
                 << "x" << jump << " from plane) is reported to be " << distance
                 << " cm far from wire " << plane.ID() << " W: " << wireNo
                 << " (" << expected << " expected)";

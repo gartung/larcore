@@ -128,7 +128,6 @@ namespace geo {
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
     
-  //  std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
     // using as pointer just not to have to write the declaration in the header
     testing::NameSelector fRunTests; ///< test filter
     
