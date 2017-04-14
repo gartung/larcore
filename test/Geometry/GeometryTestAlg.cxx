@@ -326,6 +326,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("FindAuxDet")) {
+        LOG_INFO("GeometryTest") << "testFindAuxDet...";
+        testFindAuxDet();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("PrintWires")) {
         LOG_INFO("GeometryTest") << "printAllGeometry...";
         printAllGeometry();
@@ -3113,6 +3119,113 @@ namespace geo{
     if (std::abs(xyzo[2]-zlo)>1.E-6) abort();
   }
 
+  
+  //......................................................................
+  bool GeometryTestAlg::CheckAuxDetAtPosition
+    (double const pos[3], unsigned int expected) const
+  {
+    unsigned int foundDet = std::numeric_limits<unsigned int>::max();
+    try {
+      foundDet = geom->FindAuxDetAtPosition(pos);
+    }
+    catch (cet::exception const& e) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Caught an exception while looking for aux det around "
+        << lar::dump::array<3U>(pos) << " (within aux det #" << expected
+        << "); message:\n" << e.what();
+      return false;
+    }
+    if (foundDet != expected) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Auxiliary detector at position " << lar::dump::array<3U>(pos)
+        << ", expected within aux det #" << expected << ", was returned to be "
+        << foundDet << " instead";
+      return false;
+    }
+    return true;
+  } // GeometryTestAlg::CheckAuxDetAtPosition()
+  
+  //......................................................................
+  bool GeometryTestAlg::CheckAuxDetSensitiveAtPosition
+    (double const pos[3], unsigned int expectedDet, unsigned int expectedSens)
+    const
+  {
+    size_t foundDet = std::numeric_limits<unsigned int>::max();
+    size_t foundSensDet = std::numeric_limits<unsigned int>::max();
+    try {
+      geom->FindAuxDetSensitiveAtPosition(pos, foundDet, foundSensDet);
+    }
+    catch (cet::exception const& e) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Caught an exception while looking for aux det sensitive around "
+        << lar::dump::array<3U>(pos) << " (within aux det #" << expectedDet
+        << " sensitive volume #" << expectedSens << "); message:\n" << e.what();
+      return false;
+    }
+    if ((foundDet != expectedDet) || (foundSensDet != expectedSens)) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Auxiliary detector at position " << lar::dump::array<3U>(pos)
+        << ", expected within aux det #" << expectedDet
+        << ", sensitive volume #" << expectedSens
+        << ", was returned to be in aux det #"
+        << foundDet << " sensitive volume #" << foundSensDet << " instead";
+      return false;
+    }
+    return true;
+  } // GeometryTestAlg::CheckAuxDetAtPosition()
+  
+  //......................................................................
+  void GeometryTestAlg::testFindAuxDet() const {
+    
+    /*
+     * 
+     * Picks the center of each sensitive detector and verifies that the
+     * correct sensitive detector and auxiliary detector are found.
+     * 
+     */
+    
+    unsigned int nErrors = 0;
+    
+    unsigned int const nAuxDets = geom->NAuxDets();
+    
+    for (unsigned int iDet = 0; iDet < nAuxDets; ++iDet) {
+      
+      geo::AuxDetGeo const& auxDet = geom->AuxDet(iDet);
+      unsigned int const nSensitive = auxDet.NSensitiveVolume();
+      
+      if (nSensitive == 0) {
+        std::array<double, 3U> center;
+        auxDet.GetCenter(center.data());
+        
+        if (!CheckAuxDetAtPosition(center.data(), iDet)) ++nErrors;
+        
+      }
+      else { // if one or more sensitive detectors
+        
+        for (unsigned int iDetSens = 0; iDetSens < nSensitive; ++iDetSens) {
+          
+          geo::AuxDetSensitiveGeo const& auxDetSens
+            = auxDet.SensitiveVolume(iDetSens);
+          std::array<double, 3U> center;
+          auxDetSens.GetCenter(center.data());
+          
+          if (!CheckAuxDetAtPosition(center.data(), iDet)) ++nErrors;
+          if (!CheckAuxDetSensitiveAtPosition(center.data(), iDet, iDetSens))
+            ++nErrors;
+          
+        } // for sensitive detectors
+        
+      } // if ... else
+      
+    } // for all auxiliary detectors
+    
+    if (nErrors != 0) {
+      throw cet::exception("FindAuxDet")
+        << "Collected " << nErrors << " errors during testFindAuxDet() test!\n";
+    }
+    
+    
+  } // GeometryTestAlg::testFindAuxDet()
   
   //......................................................................
   

@@ -95,6 +95,7 @@ namespace geo {
    *   + `WirePitch`:
    *   + `PlanePitch`:
    *   + `Stepping`:
+   *   + `FindAuxDet`: test on location of nearest auxiliary detector
    *   + `PrintWires`: (not in default) prints *all* the wires in the geometry
    *   + `default`: represents the default set (optionally prepended by '@')
    *   + `!` (special): means to forget the tests configured so far; used as the
@@ -166,6 +167,7 @@ namespace geo {
     void testThirdPlane() const;
     void testThirdPlane_dTdW() const;
     void testStepping();
+    void testFindAuxDet() const;
 
     bool shouldRunTests(std::string test_name) const;
     
@@ -209,6 +211,15 @@ namespace geo {
           (std::forward<Stream>(out), auxDetSens, indent, indent);
       }
     
+    /// Returns whether the auxiliary detector at `pos` is the `expected` one.
+    bool CheckAuxDetAtPosition
+      (double const pos[3], unsigned int expected) const;
+    
+    /// Returns whether the auxiliary sensitive detector at `pos` is expected.
+    bool CheckAuxDetSensitiveAtPosition
+      (double const pos[3], unsigned int expectedDet, unsigned int expectedSens)
+      const;
+      
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
       (geo::TPCGeo const& TPC, TVector3 const& point) const;
