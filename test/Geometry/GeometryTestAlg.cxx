@@ -20,6 +20,7 @@
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/geo.h"
 #include "larcore/CoreUtils/RealComparisons.h"
+#include "larcore/CoreUtils/DumpUtils.h" // lar::dump namespace
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
@@ -379,6 +380,7 @@ namespace geo{
       << "\n  planes in a TPC:   " << geom->MaxPlanes()
       << "\n  wires in a plane:  " << geom->MaxWires()
       << "\nTotal number of TPCs " << geom->TotalNTPC()
+      << "\nAuxiliary detectors  " << geom->NAuxDets()
       ;
     
   } // GeometryTestAlg::printDetectorIntro()
@@ -555,10 +557,56 @@ namespace geo{
         printWiresInTPC(tpc, "    ");
       } // for TPC
     } // for cryostat
+    printAuxiliaryDetectors();
     mf::LogVerbatim("GeometryTest") << "End of detector "
                                     << geom->DetectorName() << " geometry.";
   } // GeometryTestAlg::printAllGeometry()
-
+  
+  
+  //......................................................................
+  void GeometryTestAlg::printAuxiliaryDetectors() const {
+    
+    mf::LogVerbatim log("GeometryTest");
+    
+    unsigned int const nAuxDets = geom->NAuxDets();
+    log << "There are " << nAuxDets << " auxiliary detectors:";
+    for (unsigned int iDet = 0; iDet < nAuxDets; ++iDet) {
+      log << "\n[#" << iDet << "] ";
+      printAuxDetGeo(log, geom->AuxDet(iDet), "    ", "  ");
+    } // for
+    
+  } // GeometryTestAlg::printAuxiliaryDetectors()
+  
+  
+  //......................................................................
+  template <typename Stream>
+  void GeometryTestAlg::printAuxDetGeo(
+    Stream&& out, geo::AuxDetGeo const& auxDet,
+    std::string indent, std::string firstIndent
+    ) const
+  {
+    
+    lar::util::RealComparisons<double> coordIs(1e-4);
+    
+    std::array<double, 3U> center, normal;
+    auxDet.GetCenter(center.data());
+    auxDet.GetNormalVector(normal.data());
+    
+    out << firstIndent << "\"" << auxDet.Name()
+      << "\" centered at " << lar::dump::array<3U>(center)
+      << " cm, size ( " << (2.0 * auxDet.HalfWidth1());
+    if (coordIs.nonEqual(auxDet.HalfWidth1(), auxDet.HalfWidth2()))
+      out << "/" << (2.0 * auxDet.HalfWidth2());
+    out << " x " << (2.0 * auxDet.HalfHeight())
+      << " x " << auxDet.Length() << " ) cm"
+      << ", normal facing " << lar::dump::array<3U>(normal);
+    if (auxDet.NSensitiveVolume() != 1) { // print also 0
+      out << "\n" << indent
+        << " with " << auxDet.NSensitiveVolume() << " sensitive detectors, ";
+    }
+    
+  } // GeometryTestAlg::printAuxDetGeo()
+  
   //......................................................................
   void GeometryTestAlg::testCryostat()
   {

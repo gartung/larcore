@@ -37,6 +37,7 @@ namespace geo {
   class GeometryCore;
   class TPCGeo;
   class PlaneGeo;
+  class AuxDetGeo;
   
   namespace details {
     class TestTrackerClassBase;
@@ -171,6 +172,23 @@ namespace geo {
     unsigned int testFindWorldVolumes();
     unsigned int testFindCryostatVolumes();
     unsigned int testFindTPCvolumePaths();
+    
+    /// Method to print the auxiliary detectors on screen.
+    void printAuxiliaryDetectors() const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo(
+      Stream&& out, geo::AuxDetGeo const& auxDet,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo
+      (Stream&& out, geo::AuxDetGeo const& auxDet, std::string indent = "")
+      const
+      { printAuxDetGeo(std::forward<Stream>(out), auxDet, indent, indent); }
     
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
