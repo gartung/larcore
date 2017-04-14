@@ -18,6 +18,7 @@
 #include "larcore/Geometry/WireGeo.h"
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
+#include "larcore/Geometry/AuxDetSensitiveGeo.h"
 #include "larcore/Geometry/geo.h"
 #include "larcore/CoreUtils/RealComparisons.h"
 #include "larcore/CoreUtils/DumpUtils.h" // lar::dump namespace
@@ -572,7 +573,7 @@ namespace geo{
     log << "There are " << nAuxDets << " auxiliary detectors:";
     for (unsigned int iDet = 0; iDet < nAuxDets; ++iDet) {
       log << "\n[#" << iDet << "] ";
-      printAuxDetGeo(log, geom->AuxDet(iDet), "    ", "  ");
+      printAuxDetGeo(log, geom->AuxDet(iDet), "  ", "");
     } // for
     
   } // GeometryTestAlg::printAuxiliaryDetectors()
@@ -600,12 +601,53 @@ namespace geo{
     out << " x " << (2.0 * auxDet.HalfHeight())
       << " x " << auxDet.Length() << " ) cm"
       << ", normal facing " << lar::dump::array<3U>(normal);
-    if (auxDet.NSensitiveVolume() != 1) { // print also 0
-      out << "\n" << indent
-        << " with " << auxDet.NSensitiveVolume() << " sensitive detectors, ";
-    }
+    unsigned int nSensitive = auxDet.NSensitiveVolume();
+    switch (nSensitive) {
+      case 0: break;
+      case 1:
+        out << "\n" << indent << "with sensitive volume ";
+        printAuxDetSensitiveGeo(
+          std::forward<Stream>(out),
+          auxDet.SensitiveVolume(0U), indent + "  ", ""
+          );
+        break;
+      default:
+        out << "\n" << indent
+          << "with " << auxDet.NSensitiveVolume() << " sensitive detectors:";
+        for (unsigned int iSens = 0; iSens < nSensitive; ++iSens) {
+          out << "\n" << indent << "  [#" << iSens << "] ";
+          printAuxDetSensitiveGeo(std::forward<Stream>(out),
+            auxDet.SensitiveVolume(iSens), indent + "  ", "");
+        } // for
+        break;
+    } // if sensitive detectors
     
   } // GeometryTestAlg::printAuxDetGeo()
+  
+  
+  //......................................................................
+  template <typename Stream>
+  void GeometryTestAlg::printAuxDetSensitiveGeo(
+    Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+    std::string indent, std::string firstIndent
+    ) const
+  {
+    
+    lar::util::RealComparisons<double> coordIs(1e-4);
+    
+    std::array<double, 3U> center, normal;
+    auxDetSens.GetCenter(center.data());
+    auxDetSens.GetNormalVector(normal.data());
+    
+    out << firstIndent << "centered at " << lar::dump::array<3U>(center)
+      << " cm, size ( " << (2.0 * auxDetSens.HalfWidth1());
+    if (coordIs.nonEqual(auxDetSens.HalfWidth1(), auxDetSens.HalfWidth2()))
+      out << "/" << (2.0 * auxDetSens.HalfWidth2());
+    out << " x " << (2.0 * auxDetSens.HalfHeight())
+      << " x " << auxDetSens.Length() << " ) cm"
+      << ", normal facing " << lar::dump::array<3U>(normal);
+    
+  } // GeometryTestAlg::printAuxDetSensitiveGeo()
   
   //......................................................................
   void GeometryTestAlg::testCryostat()

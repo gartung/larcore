@@ -38,6 +38,7 @@ namespace geo {
   class TPCGeo;
   class PlaneGeo;
   class AuxDetGeo;
+  class AuxDetSensitiveGeo;
   
   namespace details {
     class TestTrackerClassBase;
@@ -189,6 +190,24 @@ namespace geo {
       (Stream&& out, geo::AuxDetGeo const& auxDet, std::string indent = "")
       const
       { printAuxDetGeo(std::forward<Stream>(out), auxDet, indent, indent); }
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent = ""
+      ) const
+      {
+        printAuxDetSensitiveGeo
+          (std::forward<Stream>(out), auxDetSens, indent, indent);
+      }
     
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
