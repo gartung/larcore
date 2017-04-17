@@ -37,6 +37,8 @@ namespace geo {
   class GeometryCore;
   class TPCGeo;
   class PlaneGeo;
+  class AuxDetGeo;
+  class AuxDetSensitiveGeo;
   
   namespace details {
     class TestTrackerClassBase;
@@ -93,6 +95,7 @@ namespace geo {
    *   + `WirePitch`:
    *   + `PlanePitch`:
    *   + `Stepping`:
+   *   + `FindAuxDet`: test on location of nearest auxiliary detector
    *   + `PrintWires`: (not in default) prints *all* the wires in the geometry
    *   + `default`: represents the default set (optionally prepended by '@')
    *   + `!` (special): means to forget the tests configured so far; used as the
@@ -128,7 +131,6 @@ namespace geo {
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
     
-  //  std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
     // using as pointer just not to have to write the declaration in the header
     testing::NameSelector fRunTests; ///< test filter
     
@@ -165,6 +167,7 @@ namespace geo {
     void testThirdPlane() const;
     void testThirdPlane_dTdW() const;
     void testStepping();
+    void testFindAuxDet() const;
 
     bool shouldRunTests(std::string test_name) const;
     
@@ -173,6 +176,50 @@ namespace geo {
     unsigned int testFindCryostatVolumes();
     unsigned int testFindTPCvolumePaths();
     
+    /// Method to print the auxiliary detectors on screen.
+    void printAuxiliaryDetectors() const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo(
+      Stream&& out, geo::AuxDetGeo const& auxDet,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo
+      (Stream&& out, geo::AuxDetGeo const& auxDet, std::string indent = "")
+      const
+      { printAuxDetGeo(std::forward<Stream>(out), auxDet, indent, indent); }
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent = ""
+      ) const
+      {
+        printAuxDetSensitiveGeo
+          (std::forward<Stream>(out), auxDetSens, indent, indent);
+      }
+    
+    /// Returns whether the auxiliary detector at `pos` is the `expected` one.
+    bool CheckAuxDetAtPosition
+      (double const pos[3], unsigned int expected) const;
+    
+    /// Returns whether the auxiliary sensitive detector at `pos` is expected.
+    bool CheckAuxDetSensitiveAtPosition
+      (double const pos[3], unsigned int expectedDet, unsigned int expectedSens)
+      const;
+      
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
       (geo::TPCGeo const& TPC, TVector3 const& point) const;
