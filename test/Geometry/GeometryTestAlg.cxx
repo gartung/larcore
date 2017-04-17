@@ -18,8 +18,10 @@
 #include "larcore/Geometry/WireGeo.h"
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
+#include "larcore/Geometry/AuxDetSensitiveGeo.h"
 #include "larcore/Geometry/geo.h"
 #include "larcore/CoreUtils/RealComparisons.h"
+#include "larcore/CoreUtils/DumpUtils.h" // lar::dump namespace
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
@@ -324,6 +326,12 @@ namespace geo{
         LOG_INFO("GeometryTest") << "complete.";
       }
 
+      if (shouldRunTests("FindAuxDet")) {
+        LOG_INFO("GeometryTest") << "testFindAuxDet...";
+        testFindAuxDet();
+        LOG_INFO("GeometryTest") << "complete.";
+      }
+
       if (shouldRunTests("PrintWires")) {
         LOG_INFO("GeometryTest") << "printAllGeometry...";
         printAllGeometry();
@@ -379,6 +387,7 @@ namespace geo{
       << "\n  planes in a TPC:   " << geom->MaxPlanes()
       << "\n  wires in a plane:  " << geom->MaxWires()
       << "\nTotal number of TPCs " << geom->TotalNTPC()
+      << "\nAuxiliary detectors  " << geom->NAuxDets()
       ;
     
   } // GeometryTestAlg::printDetectorIntro()
@@ -555,10 +564,97 @@ namespace geo{
         printWiresInTPC(tpc, "    ");
       } // for TPC
     } // for cryostat
+    printAuxiliaryDetectors();
     mf::LogVerbatim("GeometryTest") << "End of detector "
                                     << geom->DetectorName() << " geometry.";
   } // GeometryTestAlg::printAllGeometry()
-
+  
+  
+  //......................................................................
+  void GeometryTestAlg::printAuxiliaryDetectors() const {
+    
+    mf::LogVerbatim log("GeometryTest");
+    
+    unsigned int const nAuxDets = geom->NAuxDets();
+    log << "There are " << nAuxDets << " auxiliary detectors:";
+    for (unsigned int iDet = 0; iDet < nAuxDets; ++iDet) {
+      log << "\n[#" << iDet << "] ";
+      printAuxDetGeo(log, geom->AuxDet(iDet), "  ", "");
+    } // for
+    
+  } // GeometryTestAlg::printAuxiliaryDetectors()
+  
+  
+  //......................................................................
+  template <typename Stream>
+  void GeometryTestAlg::printAuxDetGeo(
+    Stream&& out, geo::AuxDetGeo const& auxDet,
+    std::string indent, std::string firstIndent
+    ) const
+  {
+    
+    lar::util::RealComparisons<double> coordIs(1e-4);
+    
+    std::array<double, 3U> center, normal;
+    auxDet.GetCenter(center.data());
+    auxDet.GetNormalVector(normal.data());
+    
+    out << firstIndent << "\"" << auxDet.Name()
+      << "\" centered at " << lar::dump::array<3U>(center)
+      << " cm, size ( " << (2.0 * auxDet.HalfWidth1());
+    if (coordIs.nonEqual(auxDet.HalfWidth1(), auxDet.HalfWidth2()))
+      out << "/" << (2.0 * auxDet.HalfWidth2());
+    out << " x " << (2.0 * auxDet.HalfHeight())
+      << " x " << auxDet.Length() << " ) cm"
+      << ", normal facing " << lar::dump::array<3U>(normal);
+    unsigned int nSensitive = auxDet.NSensitiveVolume();
+    switch (nSensitive) {
+      case 0: break;
+      case 1:
+        out << "\n" << indent << "with sensitive volume ";
+        printAuxDetSensitiveGeo(
+          std::forward<Stream>(out),
+          auxDet.SensitiveVolume(0U), indent + "  ", ""
+          );
+        break;
+      default:
+        out << "\n" << indent
+          << "with " << auxDet.NSensitiveVolume() << " sensitive detectors:";
+        for (unsigned int iSens = 0; iSens < nSensitive; ++iSens) {
+          out << "\n" << indent << "  [#" << iSens << "] ";
+          printAuxDetSensitiveGeo(std::forward<Stream>(out),
+            auxDet.SensitiveVolume(iSens), indent + "  ", "");
+        } // for
+        break;
+    } // if sensitive detectors
+    
+  } // GeometryTestAlg::printAuxDetGeo()
+  
+  
+  //......................................................................
+  template <typename Stream>
+  void GeometryTestAlg::printAuxDetSensitiveGeo(
+    Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+    std::string indent, std::string firstIndent
+    ) const
+  {
+    
+    lar::util::RealComparisons<double> coordIs(1e-4);
+    
+    std::array<double, 3U> center, normal;
+    auxDetSens.GetCenter(center.data());
+    auxDetSens.GetNormalVector(normal.data());
+    
+    out << firstIndent << "centered at " << lar::dump::array<3U>(center)
+      << " cm, size ( " << (2.0 * auxDetSens.HalfWidth1());
+    if (coordIs.nonEqual(auxDetSens.HalfWidth1(), auxDetSens.HalfWidth2()))
+      out << "/" << (2.0 * auxDetSens.HalfWidth2());
+    out << " x " << (2.0 * auxDetSens.HalfHeight())
+      << " x " << auxDetSens.Length() << " ) cm"
+      << ", normal facing " << lar::dump::array<3U>(normal);
+    
+  } // GeometryTestAlg::printAuxDetSensitiveGeo()
+  
   //......................................................................
   void GeometryTestAlg::testCryostat()
   {
@@ -984,7 +1080,7 @@ namespace geo{
             
             if (std::abs(distance - expected) > 1e-4) {
               mf::LogProblem("GeometryTestAlg") << "Point " << point
-                << " ) (offset: " << iOfs << "x" << step << ", at " << iQuota
+                << "  (offset: " << iOfs << "x" << step << ", at " << iQuota
                 << "x" << jump << " from plane) is reported to be " << distance
                 << " cm far from wire " << plane.ID() << " W: " << wireNo
                 << " (" << expected << " expected)";
@@ -3023,6 +3119,113 @@ namespace geo{
     if (std::abs(xyzo[2]-zlo)>1.E-6) abort();
   }
 
+  
+  //......................................................................
+  bool GeometryTestAlg::CheckAuxDetAtPosition
+    (double const pos[3], unsigned int expected) const
+  {
+    unsigned int foundDet = std::numeric_limits<unsigned int>::max();
+    try {
+      foundDet = geom->FindAuxDetAtPosition(pos);
+    }
+    catch (cet::exception const& e) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Caught an exception while looking for aux det around "
+        << lar::dump::array<3U>(pos) << " (within aux det #" << expected
+        << "); message:\n" << e.what();
+      return false;
+    }
+    if (foundDet != expected) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Auxiliary detector at position " << lar::dump::array<3U>(pos)
+        << ", expected within aux det #" << expected << ", was returned to be "
+        << foundDet << " instead";
+      return false;
+    }
+    return true;
+  } // GeometryTestAlg::CheckAuxDetAtPosition()
+  
+  //......................................................................
+  bool GeometryTestAlg::CheckAuxDetSensitiveAtPosition
+    (double const pos[3], unsigned int expectedDet, unsigned int expectedSens)
+    const
+  {
+    size_t foundDet = std::numeric_limits<unsigned int>::max();
+    size_t foundSensDet = std::numeric_limits<unsigned int>::max();
+    try {
+      geom->FindAuxDetSensitiveAtPosition(pos, foundDet, foundSensDet);
+    }
+    catch (cet::exception const& e) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Caught an exception while looking for aux det sensitive around "
+        << lar::dump::array<3U>(pos) << " (within aux det #" << expectedDet
+        << " sensitive volume #" << expectedSens << "); message:\n" << e.what();
+      return false;
+    }
+    if ((foundDet != expectedDet) || (foundSensDet != expectedSens)) {
+      mf::LogProblem("GeometryTestAlg")
+        << "Auxiliary detector at position " << lar::dump::array<3U>(pos)
+        << ", expected within aux det #" << expectedDet
+        << ", sensitive volume #" << expectedSens
+        << ", was returned to be in aux det #"
+        << foundDet << " sensitive volume #" << foundSensDet << " instead";
+      return false;
+    }
+    return true;
+  } // GeometryTestAlg::CheckAuxDetAtPosition()
+  
+  //......................................................................
+  void GeometryTestAlg::testFindAuxDet() const {
+    
+    /*
+     * 
+     * Picks the center of each sensitive detector and verifies that the
+     * correct sensitive detector and auxiliary detector are found.
+     * 
+     */
+    
+    unsigned int nErrors = 0;
+    
+    unsigned int const nAuxDets = geom->NAuxDets();
+    
+    for (unsigned int iDet = 0; iDet < nAuxDets; ++iDet) {
+      
+      geo::AuxDetGeo const& auxDet = geom->AuxDet(iDet);
+      unsigned int const nSensitive = auxDet.NSensitiveVolume();
+      
+      if (nSensitive == 0) {
+        std::array<double, 3U> center;
+        auxDet.GetCenter(center.data());
+        
+        if (!CheckAuxDetAtPosition(center.data(), iDet)) ++nErrors;
+        
+      }
+      else { // if one or more sensitive detectors
+        
+        for (unsigned int iDetSens = 0; iDetSens < nSensitive; ++iDetSens) {
+          
+          geo::AuxDetSensitiveGeo const& auxDetSens
+            = auxDet.SensitiveVolume(iDetSens);
+          std::array<double, 3U> center;
+          auxDetSens.GetCenter(center.data());
+          
+          if (!CheckAuxDetAtPosition(center.data(), iDet)) ++nErrors;
+          if (!CheckAuxDetSensitiveAtPosition(center.data(), iDet, iDetSens))
+            ++nErrors;
+          
+        } // for sensitive detectors
+        
+      } // if ... else
+      
+    } // for all auxiliary detectors
+    
+    if (nErrors != 0) {
+      throw cet::exception("FindAuxDet")
+        << "Collected " << nErrors << " errors during testFindAuxDet() test!\n";
+    }
+    
+    
+  } // GeometryTestAlg::testFindAuxDet()
   
   //......................................................................
   
