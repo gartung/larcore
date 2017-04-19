@@ -237,19 +237,7 @@ namespace geo{
   // sort the PlaneGeo objects and the WireGeo objects inside 
   void TPCGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
   {
-    auto selfSorted = SortPlanes(fPlanes);
-    
-    sorter.SortPlanes(fPlanes, fDriftDirection);
-    
-    if (selfSorted != fPlanes) {
-      std::cerr <<   "Expected:   ";
-      for (geo::PlaneGeo const* plane: fPlanes)
-        std::cerr << " " << ((void*) plane);
-      std::cerr << "\nSelf-sorted:";
-      for (geo::PlaneGeo const* plane: selfSorted)
-        std::cerr << " " << ((void*) plane);
-      throw std::logic_error("Self-sorting failure");
-    }
+    fPlanes = SortPlanes(fPlanes);
     
     double origin[3] = {0.};
  
