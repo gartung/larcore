@@ -1,7 +1,6 @@
 /// \file    geo.h
 /// \brief   Collect all the geometry header files together
 /// \author  brebel@fnal.gov
-/// \version $Id: geo.h,v 1.3 2009/04/03 18:13:09 brebel Exp $
 #ifndef GEO_GEO_H
 #define GEO_GEO_H
 

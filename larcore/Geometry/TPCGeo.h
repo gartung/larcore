@@ -2,7 +2,6 @@
 /// \file  TPCGeo.h
 /// \brief Encapsulate the construction of a single detector plane
 ///
-/// \version $Id: TPCGeo.h,v 1.7 2009/12/01 21:07:51 brebel Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 #ifndef GEO_TPCGEO_H

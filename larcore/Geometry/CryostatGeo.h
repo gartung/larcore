@@ -2,7 +2,6 @@
 /// \file  CryostatGeo.h
 /// \brief Encapsulate the construction of a single cyostat
 ///
-/// \version $Id: CryostatGeo.h,v 1.7 2009/12/01 21:07:51 brebel Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 #ifndef GEO_CRYOSTATGEO_H

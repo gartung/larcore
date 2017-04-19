@@ -2,7 +2,6 @@
 /// \file  ChannelMapStandardAlg.h
 /// \brief Interface to algorithm class for a specific detector channel mapping
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 #ifndef LARCORE_GEOMETRY_CHANNELSTANDARDMAPALG_H

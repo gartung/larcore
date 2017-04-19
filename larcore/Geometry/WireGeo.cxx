@@ -2,7 +2,6 @@
 /// \file  WireGeo.cxx
 /// \brief Encapsulate the geometry of a wire
 ///
-/// \version $Id: WireGeo.cxx,v 1.8 2010/03/05 05:30:56 bpage Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 

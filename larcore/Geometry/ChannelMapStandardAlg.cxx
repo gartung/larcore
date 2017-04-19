@@ -2,7 +2,6 @@
 /// \file  ChannelMapStandardAlg.cxx
 /// \brief Interface to algorithm class for the standar, simplest detector channel mapping
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 

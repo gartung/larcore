@@ -2,7 +2,6 @@
 /// \file  WireGeo.h
 /// \brief Encapsulate the geometry of a wire
 ///
-/// \version $Id: WireGeo.h,v 1.7 2009/11/04 21:31:41 brebel Exp $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 

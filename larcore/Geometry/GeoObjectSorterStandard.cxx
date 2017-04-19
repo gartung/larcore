@@ -2,7 +2,6 @@
 /// \file  GeoObjectSorterStandard.cxx
 /// \brief Interface to algorithm class for sorting standard geo::XXXGeo objects
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
