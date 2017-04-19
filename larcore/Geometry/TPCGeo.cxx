@@ -237,8 +237,20 @@ namespace geo{
   // sort the PlaneGeo objects and the WireGeo objects inside 
   void TPCGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
   {
+    auto selfSorted = SortPlanes(fPlanes);
+    
     sorter.SortPlanes(fPlanes, fDriftDirection);
-
+    
+    if (selfSorted != fPlanes) {
+      std::cerr <<   "Expected:   ";
+      for (geo::PlaneGeo const* plane: fPlanes)
+        std::cerr << " " << ((void*) plane);
+      std::cerr << "\nSelf-sorted:";
+      for (geo::PlaneGeo const* plane: selfSorted)
+        std::cerr << " " << ((void*) plane);
+      throw std::logic_error("Self-sorting failure");
+    }
+    
     double origin[3] = {0.};
  
     // set the plane pitch for this TPC
@@ -539,5 +551,60 @@ namespace geo{
   
 
   //......................................................................
+  std::vector<geo::PlaneGeo*> TPCGeo::SortPlanes
+    (std::vector<geo::PlaneGeo*> const& planes) const
+  {
+    //
+    // Sort planes by increasing drift distance.
+    // 
+    // This function should work in bootstrap mode, relying on least things as
+    // possible. Therefore we compute here a proxy of the drift axis.
+    //
+    
+    //
+    // determine the drift axis (or close to): from TPC center to plane center
+    // 
+    
+    // Instead of using the plane center, which might be not available yet,
+    // we use the plane box center, which only needs the geometry description
+    // to be available.
+    // We use the first plane -- it does not make any difference.
+    decltype(auto) TPCcenter = GetCenter();
+    auto driftAxis
+      = geo::vect::Normalize(planes[0]->GetBoxCenter() - TPCcenter);
+    
+    //
+    // associate each plane with its distance from the center of TPC
+    //
+    decltype(auto) center = GetCenter();
+    // pair: <plane pointer,drift distance>
+    std::vector<std::pair<geo::PlaneGeo*, double>> planesWithDistance;
+    planesWithDistance.reserve(planes.size());
+    for (geo::PlaneGeo* plane: planes) {
+      double const driftDistance
+        = geo::vect::Dot(plane->GetBoxCenter() - TPCcenter, driftAxis);
+      planesWithDistance.emplace_back(plane, driftDistance);
+    } // for
+    
+    //
+    // sort by distance
+    //
+    std::sort(planesWithDistance.begin(), planesWithDistance.end(), 
+      [](auto const& a, auto const& b){ return a.second < b.second; }
+      );
+    
+    //
+    // extract the result
+    //
+    std::vector<geo::PlaneGeo*> sortedPlanes;
+    sortedPlanes.reserve(planesWithDistance.size());
+    for (auto const& pair: planesWithDistance)
+      sortedPlanes.push_back(pair.first);
+    
+    return sortedPlanes;
+  } // TPCGeo::SortPlanes()
+  
+  //......................................................................
+  
 }
 ////////////////////////////////////////////////////////////////////////

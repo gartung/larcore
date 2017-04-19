@@ -29,6 +29,8 @@
 
 // C/C++ standard library
 #include <array>
+#include <functional> // std::less<>, std::greater<>
+#include <type_traits> // std::is_same<>, std::decay_t<>
 #include <cassert>
 
 
@@ -62,13 +64,399 @@ namespace {
     
   } // symmetricCap()
   
-  
 } // local namespace
 
+
+
 namespace geo{
+  
+  namespace details {
 
+    //......................................................................
+    /**
+     * @brief Class computing the active area of the plane.
+     * 
+     * The active area is defined in the width/depth space which include
+     * approximatively all wires.
+     * 
+     * This algorithm requires the frame reference and the wire pitch to be
+     * already defined.
+     * 
+     * That area is tuned so that all its points are closer than half a wire
+     * pitch from a wire.
+     * 
+     */
+    struct ActiveAreaCalculator {
+      
+      ActiveAreaCalculator
+        (geo::PlaneGeo const& plane, double wMargin, double dMargin)
+        : plane(plane)
+        , wMargin(wMargin)
+        , dMargin(dMargin)
+        {}
+      
+      ActiveAreaCalculator(geo::PlaneGeo const& plane, double margin = 0.0)
+        : ActiveAreaCalculator(plane, margin, margin)
+        {}
+      
+      operator geo::PlaneGeo::Rect()
+        { return recomputeArea(); }
+      
+        private:
+      using Projection_t = ROOT::Math::PositionVector2D
+        <ROOT::Math::Cartesian2D<double>, geo::PlaneGeo::WidthDepthReferenceTag>;
+      using Vector_t = geo::PlaneGeo::WidthDepthDisplacement_t;
+      
+      static_assert(
+        !std::is_same<Projection_t, geo::PlaneGeo::WidthDepthProjection_t>::value,
+        "Necessary maintenance: remove the now optional conversions"
+        );
+      
+      static constexpr std::size_t kFirstWireStart = 0;
+      static constexpr std::size_t kFirstWireEnd   = 1;
+      static constexpr std::size_t kLastWireStart  = 2;
+      static constexpr std::size_t kLastWireEnd    = 3;
+      
+      PlaneGeo const& plane; ///< Plane to work on.
+      double const wMargin = 0.0; ///< Margin subtracted from each side of width.
+      double const dMargin = 0.0; ///< Margin subtracted from each side of depth.
+      geo::PlaneGeo::Rect activeArea; ///< Result.
+      
+      /// Cache: wire end projections.
+      Projection_t wireEnds[4];
+      
+      void initializeWireEnds()
+        {
+          //
+          // Collect the projections of the relevant points.
+          //
+          // Sorted so that start points have width not larger than end points.
+          //
+          // PointWidthDepthProjection() erroneously returns a vector rather
+          // than a point, so a conversion is required
+          auto makeProjection
+            = [](auto v){ return Projection_t(v.X(), v.Y()); };
+          
+          wireEnds[kFirstWireStart] = makeProjection
+            (plane.PointWidthDepthProjection(plane.FirstWire().GetStart()));
+          wireEnds[kFirstWireEnd] = makeProjection
+            (plane.PointWidthDepthProjection(plane.FirstWire().GetEnd()));
+          if (wireEnds[kFirstWireStart].X() > wireEnds[kFirstWireEnd].X())
+            std::swap(wireEnds[kFirstWireStart], wireEnds[kFirstWireEnd]);
+          wireEnds[kLastWireStart] = makeProjection
+            (plane.PointWidthDepthProjection(plane.LastWire().GetStart()));
+          wireEnds[kLastWireEnd] = makeProjection
+            (plane.PointWidthDepthProjection(plane.LastWire().GetEnd()));
+          if (wireEnds[kLastWireStart].X() > wireEnds[kLastWireEnd].X())
+            std::swap(wireEnds[kLastWireStart], wireEnds[kLastWireEnd]);
+        } // initializeWireEnds()
+      
+      void includeAllWireEnds()
+        {
+          //
+          // Find the basic area containing all the coordinates.
+          //
+          
+          // include all the coordinates of the first and last wire
+          for (auto const& aWireEnd: wireEnds) {
+            activeArea.width.extendToInclude(aWireEnd.X());
+            activeArea.depth.extendToInclude(aWireEnd.Y());
+          }
+          
+        } // includeAllWireEnds()
+      
+      void adjustCorners()
+        {
+          //
+          // Modify the corners so that none is father than half a pitch from all
+          // wires.
+          //
+          // directions in wire/depth plane
+          Vector_t const widthDir = { 1.0, 0.0 };
+          Vector_t const depthDir = { 0.0, 1.0 };
+          Vector_t wireCoordDir = plane.VectorWidthDepthProjection
+            (plane.GetIncreasingWireDirection());
+          double const hp = plane.WirePitch() / 2.0; // half pitch
+          
+          //
+          // The plan: identify if wires are across or corner, and then:
+          // - across:
+          //   - identify which sides
+          //   - set the farther end of the wire from the side to be p/2 from
+          //     its corner
+          // - corner:
+          //   - identify which corners
+          //   - move the corners to p/2 from the wires
+          //
+          
+          //
+          // are the wires crossing side to side, as opposed to cutting corners?
+          //
+          
+          // these are the angles of the original wire coordinate direction
+          double const cosAngleWidth = geo::vect::Dot(wireCoordDir, widthDir);
+          double const cosAngleDepth = geo::vect::Dot(wireCoordDir, depthDir);
+          // if the wire coordinate direction is on first or third quadrant:
+          bool const bPositiveAngle
+            = none_or_both((wireCoordDir.X() >= 0), (wireCoordDir.Y() >= 0));
+          
+          // now we readjust the wire coordinate direction to always point
+          // toward positive width; this breaks the relation between
+          // wireCoordDir and which is the first/last wire
+          if (cosAngleWidth < 0) wireCoordDir = -wireCoordDir;
+          
+          // let's study the first wire (ends are sorted by width)
+          assert(wireEnds[kFirstWireEnd].X() >= wireEnds[kFirstWireStart].X());
+          bool const bAlongWidth // horizontal
+            =  equal(wireEnds[kFirstWireEnd].X(), activeArea.width.upper)
+            && equal(wireEnds[kFirstWireStart].X(), activeArea.width.lower);
+          bool const bAlongDepth = !bAlongWidth && // vertical
+               equal(std::max(wireEnds[kFirstWireStart].Y(), wireEnds[kFirstWireEnd].Y()), activeArea.depth.upper)
+            && equal(std::min(wireEnds[kFirstWireStart].Y(), wireEnds[kFirstWireEnd].Y()), activeArea.depth.lower);
+          assert(!(bAlongWidth && bAlongDepth));
+          
+          if (bAlongWidth) { // horizontal
+            
+            // +---------+  
+            // |   ___,--|  upper width bound
+            // |--'      |  
+            
+            // find which is the wire with higher width:
+            // the last wire is highest if the wire coordinate direction (which
+            // is defined by what is first and what is last) is parallel to the
+            // width direction
+            std::size_t const iUpperWire
+              = (cosAngleDepth > 0)? kLastWireStart: kFirstWireStart;
+            // largest distance from upper depth bound of the two ends of wire
+            double const maxUpperDistance = activeArea.depth.upper
+              - std::min
+                (wireEnds[iUpperWire].Y(), wireEnds[iUpperWire ^ 0x1].Y())
+              ;
+            // set the upper side so that the maximum distance is p/2
+            // (it may be actually less if the wire is not perfectly horizontal)
+            activeArea.depth.upper += (hp - maxUpperDistance);
+            
+            // |--.___   |  
+            // |      `--|  deal with the lower bound now
+            // +---------+  
+            
+            std::size_t const iLowerWire
+              = (cosAngleDepth > 0)? kFirstWireStart: kLastWireStart;
+            // largest distance from lower depth bound of the two ends of wire
+            double const maxLowerDistance
+              = std::max
+                (wireEnds[iLowerWire].Y(), wireEnds[iLowerWire ^ 0x1].Y())
+              - activeArea.depth.lower
+              ;
+            // set the upper side so that the minimum distance is p/2
+            activeArea.depth.lower -= (hp - maxLowerDistance);
+            
+          } // horizontal wires
+          else if (bAlongDepth) { // vertical
+            // --,---+  
+            //   |   |  
+            //    \  |
+            //    |  |  upper depth bound
+            //     \ |  
+            //     | |  
+            // ------+  
+            
+            // find which is the wire with higher depth:
+            // the last wire is highest if the wire coordinate direction (which
+            // is defined by what is first and what is last) is parallel to the
+            // depth direction
+            std::size_t const iUpperWire
+              = (cosAngleWidth > 0)? kLastWireStart: kFirstWireStart;
+            // largest distance from upper depth bound of the two ends of wire
+            double const maxUpperDistance = activeArea.width.upper
+              - std::min
+                (wireEnds[iUpperWire].X(), wireEnds[iUpperWire ^ 0x1].X())
+              ;
+            // set the upper side so that the minimum distance is p/2
+            activeArea.width.upper += (hp - maxUpperDistance);
+            
+            // +-,----  
+            // | |      
+            // |  \     .
+            // |  |     deal with the lower bound now
+            // |   \    .
+            // |   |    
+            // +------  
+            std::size_t const iLowerWire
+              = (cosAngleWidth > 0)? kFirstWireStart: kLastWireStart;
+            // largest distance from lower width bound of the two ends of wire
+            double const maxLowerDistance
+              = std::max
+                (wireEnds[iLowerWire].X(), wireEnds[iLowerWire ^ 0x1].X())
+              - activeArea.width.lower
+              ;
+            // set the upper side so that the minimum distance is p/2
+            activeArea.width.lower -= (hp - maxLowerDistance);
+            
+          } // vertical wires
+          else if (bPositiveAngle) { // wires are not going across: corners!
+            // corners at (lower width, lower depth), (upper width, upper depth)
+            
+            // -._------+  
+            //    `-._  |  upper width corner (upper depth)
+            //        `-|  
+            
+            // start of the wire on the upper corner
+            // (width coordinate is lower for start than for end)
+            std::size_t const iUpperWire
+              = (cosAngleWidth > 0)? kLastWireStart: kFirstWireStart;
+            
+            double const upperDistance = geo::vect::Dot(
+              Vector_t(activeArea.width.upper - wireEnds[iUpperWire].X(), 0.0),
+              wireCoordDir
+              );
+            // make the upper distance become p/2
+            auto const upperDelta = (hp - upperDistance) * wireCoordDir;
+            activeArea.width.upper += upperDelta.X();
+            activeArea.depth.upper += upperDelta.Y();
+            
+            // |-._        
+            // |   `-._    lower width corner (lower depth)
+            // +-------`-  
+            
+            // end of the wire on the lower corner
+            // (width coordinate is lower than the end)
+            std::size_t const iLowerWire
+              = (cosAngleWidth > 0)? kFirstWireEnd: kLastWireEnd;
+            
+            double const lowerDistance = geo::vect::Dot(
+              Vector_t(wireEnds[iLowerWire].X() - activeArea.width.lower, 0.0),
+              wireCoordDir
+              );
+            // make the lower distance become p/2 (note direction of wire coord)
+            auto const lowerDelta = (hp - lowerDistance) * wireCoordDir;
+            activeArea.width.lower -= lowerDelta.X();
+            activeArea.depth.lower -= lowerDelta.Y();
+            
+          }
+          else { // !bPositiveAngle
+            // corners at (lower width, upper depth), (upper width, lower depth)
+            
+            //       _,-|  
+            //   _,-'   |  upper width corner (lower depth)
+            // -'-------+  
+            
+            // start of the wire on the upper corner
+            // (width coordinate is lower than the end)
+            std::size_t const iUpperWire
+              = (cosAngleWidth > 0)? kLastWireStart: kFirstWireStart;
+            
+            double const upperDistance = geo::vect::Dot(
+              Vector_t(activeArea.width.upper - wireEnds[iUpperWire].X(), 0.0),
+              wireCoordDir
+              );
+            // make the upper distance become p/2
+            auto const upperDelta = (hp - upperDistance) * wireCoordDir;
+            activeArea.width.upper += upperDelta.X();
+            activeArea.depth.lower += upperDelta.Y();
+            
+            // +------_,-  
+            // |  _,-'     lower width corner (upper depth)
+            // |-'         
+            
+            // end of the wire on the lower corner
+            // (width coordinate is lower than the end)
+            std::size_t const iLowerWire
+              = (cosAngleWidth > 0)? kFirstWireEnd: kLastWireEnd;
+            
+            double const lowerDistance = geo::vect::Dot(
+              Vector_t(wireEnds[iLowerWire].X() - activeArea.width.lower, 0.0),
+              wireCoordDir
+              );
+            // make the lower distance become p/2 (note direction of wire coord)
+            auto const lowerDelta = (hp - lowerDistance) * wireCoordDir;
+            activeArea.width.lower -= lowerDelta.X();
+            activeArea.depth.upper -= lowerDelta.Y();
+            
+          } // if ...
+          
+        } // adjustCorners()
+      
+      
+      void applyMargin()
+        {
+          if (wMargin != 0.0) {
+            activeArea.width.lower += wMargin;
+            activeArea.width.upper -= wMargin;
+          }
+          if (dMargin != 0.0) {
+            activeArea.depth.lower += dMargin;
+            activeArea.depth.upper -= dMargin;
+          }
+        } // applyMargin()
+      
+      
+      geo::PlaneGeo::Rect recomputeArea()
+        {
+          activeArea = {};
+          
+          //
+          // 0. collect the projections of the relevant point
+          //
+          initializeWireEnds(); 
+          
+          //
+          // 1. find the basic area containing all the coordinates
+          //
+          includeAllWireEnds();
+          
+          //
+          // 2. adjust area so that no corner is father than half a wire pitch
+          //
+          adjustCorners();
+          
+          //
+          // 3. apply an absolute margin
+          //
+          applyMargin();
+          
+          return activeArea;
+        } // computeArea()
+      
+      /// Returns true if a and b are both true or both false (exclusive nor).
+      static bool none_or_both(bool a, bool b) { return a == b; }
+      
+      /// Returns whether the two numbers are the same, lest a tolerance.
+      template <typename T>
+      static bool equal(T a, T b, T tol = T(1e-5))
+        { return std::abs(a - b) <= tol; }
+      
+    }; // struct ActiveAreaCalculator
+    
+    //......................................................................
+    
+  } // namespace details
 
+  //----------------------------------------------------------------------------
+  //---  geo::PlaneGeo::Rect::Range
+  //---  
+  double PlaneGeo::Rect::Range::delta(double v, double margin /* = 0 */) const {
+    
+    if (v < (lower + margin)) return lower + margin - v; // always positive
+    if (v > (upper - margin)) return upper - margin - v; // always negative
+    return 0.0;                                          // always zero
+    
+  } // PlaneGeo::Rect::Range::delta()
+  
+  
   //......................................................................
+  void PlaneGeo::Rect::Range::extendToInclude(double v) {
+    
+    if (lower > upper) lower = upper = v;
+    else if (lower > v) lower = v;
+    else if (upper < v) upper = v;
+    
+  } // PlaneGeo::Rect::Range::extendToInclude()
+  
+  
+  //----------------------------------------------------------------------------
+  //---  geo::PlaneGeo
+  //---
   PlaneGeo::PlaneGeo(GeoNodePath_t& path, size_t depth)
     : fTrans(path, depth)
     , fVolume(path[depth]->GetVolume())
@@ -230,15 +618,28 @@ namespace geo{
   
   //......................................................................
   PlaneGeo::WidthDepthProjection_t PlaneGeo::DeltaFromPlane
-    (WidthDepthProjection_t const& proj) const
+    (WidthDepthProjection_t const& proj, double wMargin, double dMargin) const
   {
     
     return {
-      symmetricCapDelta(proj.X(), fFrameSize.HalfWidth()),
-      symmetricCapDelta(proj.Y(), fFrameSize.HalfDepth())
+      symmetricCapDelta(proj.X(), fFrameSize.HalfWidth() - wMargin),
+      symmetricCapDelta(proj.Y(), fFrameSize.HalfDepth() - dMargin)
     };
     
   } // PlaneGeo::DeltaFromPlane()
+  
+  
+  //......................................................................
+  PlaneGeo::WidthDepthProjection_t PlaneGeo::DeltaFromActivePlane
+    (WidthDepthProjection_t const& proj, double wMargin, double dMargin) const
+  {
+    
+    return {
+      fActiveArea.width.delta(proj.X(), wMargin),
+      fActiveArea.depth.delta(proj.Y(), dMargin)
+      };
+    
+  } // PlaneGeo::DeltaFromActivePlane()
   
   
   //......................................................................
@@ -256,14 +657,36 @@ namespace geo{
   PlaneGeo::WidthDepthProjection_t PlaneGeo::MoveProjectionToPlane
     (WidthDepthProjection_t const& proj) const
   {
-    
-    return proj + DeltaFromPlane(proj);
+    //
+    // We have a more complicate implementation to avoid rounding errors.
+    // In this way, the result is really guaranteed to be exactly on the border.
+    //
+    auto const delta = DeltaFromPlane(proj);
+    return {
+      (delta.X() == 0.0)
+        ? proj.X()
+        : ((delta.X() > 0)
+          ? -fFrameSize.HalfWidth() // delta positive -> proj on negative side
+          : fFrameSize.HalfWidth()
+        ),
+      (delta.Y() == 0.0)
+        ? proj.Y()
+        : ((delta.Y() > 0)
+          ? -fFrameSize.HalfDepth() // delta positive -> proj on negative side
+          : fFrameSize.HalfDepth()
+        )
+      };
     
   } // PlaneGeo::MoveProjectionToPlane()
   
   
   //......................................................................
   TVector3 PlaneGeo::MovePointOverPlane(TVector3 const& point) const {
+    
+    //
+    // This implementation is subject to rounding errors, since the result of
+    // the addition might jitter above or below the border.
+    //
     
     auto const deltaProj
       = DeltaFromPlane(PointWidthDepthProjection(point));
@@ -336,6 +759,7 @@ namespace geo{
     UpdateWirePlaneCenter();
     UpdateOrientation();
     UpdateWirePitch();
+    UpdateActiveArea();
     UpdatePhiZ();
     UpdateView();
     
@@ -743,6 +1167,22 @@ namespace geo{
   } // PlaneGeo::UpdateDecompWireOrigin()
   
   //......................................................................
+  void PlaneGeo::UpdateActiveArea() {
+    
+    //
+    // The active area is defined in the width/depth space which include
+    // approximatively all wires.
+    // 
+    // See `ActiveAreaCalculator` for details of the algorithm.
+    //
+    
+    // we scratch 1 um from each side to avoid rounding errors later
+    fActiveArea = details::ActiveAreaCalculator(*this, 0.0001);
+    
+  } // PlaneGeo::UpdateActiveArea()
+  
+  
+  //......................................................................
   void PlaneGeo::UpdateWirePlaneCenter() {
     
     //
@@ -794,5 +1234,6 @@ namespace geo{
   
   //......................................................................
   
-}
+  
+} // namespace geo
 ////////////////////////////////////////////////////////////////////////
