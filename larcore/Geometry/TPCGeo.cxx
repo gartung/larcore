@@ -236,17 +236,10 @@ namespace geo{
   // sort the PlaneGeo objects and the WireGeo objects inside 
   void TPCGeo::SortSubVolumes(geo::GeoObjectSorter const& sorter)
   {
-    sorter.SortPlanes(fPlanes, fDriftDirection);
-
+    fPlanes = SortPlanes(fPlanes);
+    
     double origin[3] = {0.};
  
-    // Set view for planes in this TPC, assuming that plane sorting
-    // increases in drift direction, to the convention that planes
-    // 0,1,2 have views kU,kV,kZ respectively. kZ is collection.
-    fPlanes[0]->SetView(geo::kU);
-    fPlanes[1]->SetView(geo::kV);
-    if (fPlanes.size() == 3) fPlanes[2]->SetView(geo::kZ);
-
     // set the plane pitch for this TPC
     double xyz[3]  = {0.};
     fPlanes[0]->LocalToWorld(origin,xyz);
@@ -256,12 +249,6 @@ namespace geo{
     for(unsigned int i = 0; i < fPlaneLocation.size(); ++i) fPlaneLocation[i].resize(3);
     fPlane0Pitch.clear();
     fPlane0Pitch.resize(this->Nplanes(), 0.);
-    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
-    // leaving it a reference would cause C++ to treat it as such,
-    // that can't be because InvalidID is a static member constant without an address
-    // (it is not defined in any translation unit, just declared in header)
-    fViewToPlaneNumber.resize
-      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
     for(size_t p = 0; p < this->Nplanes(); ++p){
       fPlanes[p]->LocalToWorld(origin,xyz1);
       if(p > 0) fPlane0Pitch[p] = fPlane0Pitch[p-1] + std::abs(xyz1[0]-xyz[0]);
@@ -270,9 +257,16 @@ namespace geo{
       fPlaneLocation[p][0] = xyz1[0];
       fPlaneLocation[p][1] = xyz1[1];
       fPlaneLocation[p][2] = xyz1[2];
-
-      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
     }
+
+    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
+    // leaving it a reference would cause C++ to treat it as such,
+    // that can't be because InvalidID is a static member constant without an address
+    // (it is not defined in any translation unit, just declared in header)
+    fViewToPlaneNumber.resize
+      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
+    for(size_t p = 0; p < this->Nplanes(); ++p)
+      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
 
     for(size_t p = 0; p < fPlanes.size(); ++p) fPlanes[p]->SortWires(sorter);
     
@@ -295,6 +289,8 @@ namespace geo{
         .equal(-(fPlanes[plane]->GetNormalDirection()), DriftDir()));
       
     } // for
+    
+    UpdatePlaneViewCache();
     
   } // TPCGeo::UpdateAfterSorting()
   
@@ -524,5 +520,78 @@ namespace geo{
     
   } // CryostatGeo::InitTPCBoundaries()
 
+  //......................................................................
+  
+  void TPCGeo::UpdatePlaneViewCache() {
+    
+    // the PlaneID_t cast convert InvalidID into a rvalue (non-reference);
+    // leaving it a reference would cause C++ to treat it as such,
+    // that can't be because InvalidID is a static member constant without an address
+    // (it is not defined in any translation unit, just declared in header)
+    fViewToPlaneNumber.clear();
+    fViewToPlaneNumber.resize
+      (1U + (size_t) geo::kUnknown, (geo::PlaneID::PlaneID_t) geo::PlaneID::InvalidID);
+    for(size_t p = 0; p < Nplanes(); ++p)
+      fViewToPlaneNumber[(size_t) fPlanes[p]->View()] = p;
+    
+  } // TPCGeo::UpdatePlaneViewCache()
+  
+
+  //......................................................................
+  std::vector<geo::PlaneGeo*> TPCGeo::SortPlanes
+    (std::vector<geo::PlaneGeo*> const& planes) const
+  {
+    //
+    // Sort planes by increasing drift distance.
+    // 
+    // This function should work in bootstrap mode, relying on least things as
+    // possible. Therefore we compute here a proxy of the drift axis.
+    //
+    
+    //
+    // determine the drift axis (or close to): from TPC center to plane center
+    // 
+    
+    // Instead of using the plane center, which might be not available yet,
+    // we use the plane box center, which only needs the geometry description
+    // to be available.
+    // We use the first plane -- it does not make any difference.
+    decltype(auto) TPCcenter = GetCenter();
+    auto driftAxis
+      = geo::vect::Normalize(planes[0]->GetBoxCenter() - TPCcenter);
+    
+    //
+    // associate each plane with its distance from the center of TPC
+    //
+    decltype(auto) center = GetCenter();
+    // pair: <plane pointer,drift distance>
+    std::vector<std::pair<geo::PlaneGeo*, double>> planesWithDistance;
+    planesWithDistance.reserve(planes.size());
+    for (geo::PlaneGeo* plane: planes) {
+      double const driftDistance
+        = geo::vect::Dot(plane->GetBoxCenter() - TPCcenter, driftAxis);
+      planesWithDistance.emplace_back(plane, driftDistance);
+    } // for
+    
+    //
+    // sort by distance
+    //
+    std::sort(planesWithDistance.begin(), planesWithDistance.end(), 
+      [](auto const& a, auto const& b){ return a.second < b.second; }
+      );
+    
+    //
+    // extract the result
+    //
+    std::vector<geo::PlaneGeo*> sortedPlanes;
+    sortedPlanes.reserve(planesWithDistance.size());
+    for (auto const& pair: planesWithDistance)
+      sortedPlanes.push_back(pair.first);
+    
+    return sortedPlanes;
+  } // TPCGeo::SortPlanes()
+  
+  //......................................................................
+  
 }
 ////////////////////////////////////////////////////////////////////////
