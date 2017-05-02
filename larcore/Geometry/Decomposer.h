@@ -277,11 +277,10 @@ namespace geo {
   template <typename Vector, typename Point, typename ProjVector>
   class PlaneDecomposer {
     
+      public:
+    
     using AffinePlaneBase_t = AffinePlaneBase<Vector, Point>;
     
-    AffinePlaneBase_t fPlaneBase; ///< Reference base
-    
-      public:
     /// Type of decomposed vector
     using DecomposedVector_t = DecomposedVector<ProjVector>;
     
@@ -471,6 +470,8 @@ namespace geo {
     
     /// @}
     
+      private:
+    AffinePlaneBase_t fPlaneBase; ///< Reference base.
     
   }; // class PlaneDecomposer<>
   
