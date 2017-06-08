@@ -7,10 +7,10 @@ fcldir product_dir job
 gdmldir product_dir
 #
 product         version
-art		v2_06_03
+art		v2_07_03
 larcoreobj	v1_13_01
 
-cetbuildtools	v5_06_07	-	only_for_build
+cetbuildtools	v5_09_01	-	only_for_build
 end_product_list
 
   
