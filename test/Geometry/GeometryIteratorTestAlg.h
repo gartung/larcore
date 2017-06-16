@@ -34,21 +34,23 @@ namespace geo {
     /// Executes the test
     virtual unsigned int Run() const;
    
-    //@{
-    /// All the ID iterator tests
+    /// @{
+    /// @name ID iterator tests
     void CryostatIDIteratorsTest() const;
     void TPCIDIteratorsTest() const;
     void PlaneIDIteratorsTest() const;
     void WireIDIteratorsTest() const;
-    //@}
+    void TPCsetIDIteratorsTest() const;
+    void ROPIDIteratorsTest() const;
+    /// @}
     
-    //@{
-    /// All the ID iterator tests
+    /// @{
+    /// @name Element iterator tests
     void CryostatIteratorsTest() const;
     void TPCIteratorsTest() const;
     void PlaneIteratorsTest() const;
     void WireIteratorsTest() const;
-    //@}
+    /// @}
     
       protected:
     GeometryCore const* geom = nullptr; ///< pointer to the geometry description

@@ -32,12 +32,17 @@ namespace geo {
       << "We have " << nCryo << " cryostats";
     
     unsigned int nErrors = 0;
-    unsigned int nCryostats = 0, nTPCs = 0, nPlanes = 0, nWires = 0;
+    unsigned int nCryostats = 0, nTPCs = 0, nPlanes = 0, nWires = 0,
+      cumTPCsets = 0, cumROPs = 0;
     geo::GeometryCore::cryostat_id_iterator iCryostatID
       = geom->begin_cryostat_id();
     geo::GeometryCore::TPC_id_iterator iTPCID = geom->begin_TPC_id();
     geo::GeometryCore::plane_id_iterator iPlaneID = geom->begin_plane_id();
     geo::GeometryCore::wire_id_iterator iWireID = geom->begin_wire_id();
+    
+    auto iTPCsetID = geom->begin_TPCset_id();
+    auto iROPID = geom->begin_ROP_id();
+    // no channel iterator implemented
     
     geo::GeometryCore::cryostat_iterator iCryostat = geom->begin_cryostat();
     geo::GeometryCore::TPC_iterator iTPC = geom->begin_TPC();
@@ -45,11 +50,13 @@ namespace geo {
     geo::GeometryCore::wire_iterator iWire = geom->begin_wire();
     
     for(unsigned int c = 0; c < nCryo; ++c) {
+      const geo::CryostatID expCID(c);
       const CryostatGeo& cryo(geom->Cryostat(c));
       const unsigned int nTPC = cryo.NTPC();
+      const unsigned int nTPCsets = geom->NTPCsets(expCID);
     
       LOG_TRACE("GeometryIteratorLoopTest") << "  C=" << c
-        << " (" << nTPC << " TPCs)";
+        << " (" << nTPC << " TPCs, " << nTPCsets << " TPC sets)";
       
       if (!iCryostatID) {
         LOG_ERROR("GeometryIteratorLoopTest")
@@ -228,6 +235,80 @@ namespace geo {
         ++iTPC;
         ++nTPCs;
       } // end loop over tpcs
+      
+      
+      for(unsigned int s = 0; s < nTPCsets; ++s) {
+        readout::TPCsetID const expSID(expCID, s);
+        const unsigned int NROPs = geom->NROPs(expSID);
+        
+        LOG_TRACE("GeometryIteratorLoopTest")
+          << "    " << expSID << " (" << NROPs << " planes)";
+        if (!iTPCsetID) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "TPCset ID iterator thinks it's all over at " << expSID;
+          ++nErrors;
+        }
+        else if (iTPCsetID->Cryostat != c) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "TPC set ID iterator thinks it's at C=" << iTPCsetID->Cryostat
+            << " instead of " << c;
+          ++nErrors;
+        }
+        else if (iTPCsetID->TPCset != s) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "TPC set ID iterator thinks it's at S=" << iTPCsetID->TPCset
+            << " instead of " << s;
+          ++nErrors;
+        }
+        
+        for(unsigned int r = 0; r < NROPs; ++r) {
+          readout::ROPID const expRID(expSID, r);
+          const unsigned int NChannels = geom->Nchannels(expRID);
+          
+          LOG_TRACE("GeometryIteratorLoopTest")
+            << "    " << expRID << " (" << NChannels << " channels)";
+          if (!iROPID) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "readout plane ID iterator thinks it's all over at " << expRID;
+            ++nErrors;
+          }
+          else if (iROPID->Cryostat != c) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "readout plane ID iterator thinks it's at C="
+              << iROPID->Cryostat << " instead of " << c;
+            ++nErrors;
+          }
+          else if (iROPID->TPCset != s) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "readout plane ID iterator thinks it's at S=" << iROPID->TPCset
+              << " instead of " << s;
+            ++nErrors;
+          }
+          else if (iROPID->ROP != r) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "readout plane ID iterator thinks it's at R=" << iROPID->ROP
+              << " instead of " << r;
+            ++nErrors;
+          }
+          
+          /*
+          for(unsigned int ch = 0; ch < NChannels; ++ch) {
+            
+            LOG_TRACE("GeometryIteratorLoopTest") << "    channel=" << ch;
+          
+            ++iChannelID;
+            ++nChannels;
+          } // end loop over channels
+          */
+          
+          ++iROPID;
+          ++cumROPs;
+        } // end loop over readout planes
+        ++iTPCsetID;
+        ++cumTPCsets;
+      } // end loop over TPC sets
+      
+      
       ++iCryostatID;
       ++iCryostat;
       ++nCryostats;
@@ -463,6 +544,69 @@ namespace geo {
       LOG_ERROR("GeometryIteratorLoopTest")
         << "Looped only " << nLoopedWires
         << " wires, while we expected " << nWires << " iterations!";
+      ++nErrors;
+    } // if
+    
+    
+    if (iTPCsetID) {
+      LOG_ERROR("GeometryIteratorLoopTest")
+        << "TPC set iterator thinks it's still at " << *iTPCsetID
+        << ", but we are already finished";
+      ++nErrors;
+    }
+    
+    // test if we can loop all TPC sets with the iterators (via iterator box)
+    LOG_DEBUG("GeometryIteratorsDump")
+      << "Looping though " << cumTPCsets << " TPC sets";
+    unsigned int nLoopedTPCsetIDs = 0;
+    for (readout::TPCsetID const& sID: geom->IterateTPCsetIDs()) {
+      LOG_TRACE("GeometryIteratorsDump") << sID;
+      if (nLoopedTPCsetIDs >= cumTPCsets) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "After all " << nLoopedTPCsetIDs
+          << " TPC set IDs, iterator has not reached the end ("
+          << *(geom->end_TPCset_id()) << ") but it's still at " << sID;
+        ++nErrors;
+        break;
+      }
+      ++nLoopedTPCsetIDs;
+    }
+    if (nLoopedTPCsetIDs < cumTPCsets) {
+      LOG_ERROR("GeometryIteratorLoopTest")
+        << "Looped only " << nLoopedTPCsetIDs
+        << " TPC set IDs, while we expected " << cumTPCsets << " iterations!";
+      ++nErrors;
+    } // if
+    
+    
+    if (iROPID) {
+      LOG_ERROR("GeometryIteratorLoopTest")
+        << "readout plane iterator thinks it's still at " << *iROPID
+        << ", but we are already finished";
+      ++nErrors;
+    }
+    
+    // test if we can loop all planes with the iterators (via iterator box)
+    LOG_DEBUG("GeometryIteratorsDump")
+      << "Looping though " << cumROPs << " readout planes";
+    unsigned int nLoopedROPIDs = 0;
+    for (readout::ROPID const& rID: geom->IterateROPIDs()) {
+      LOG_TRACE("GeometryIteratorsDump") << rID;
+      if (nLoopedROPIDs >= cumROPs) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "After all " << nLoopedROPIDs
+          << " readout planes, ID iterator has not reached the end ("
+          << *(geom->end_ROP_id()) << ") but it's still at " << rID;
+        ++nErrors;
+        break;
+      }
+      ++nLoopedROPIDs;
+    }
+    if (nLoopedROPIDs < cumROPs) {
+      LOG_ERROR("GeometryIteratorLoopTest")
+        << "Looped only " << nLoopedROPIDs
+        << " readout plane IDs, while we expected " << cumROPs
+        << " iterations!";
       ++nErrors;
     } // if
     
