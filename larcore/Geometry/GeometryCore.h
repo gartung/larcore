@@ -1303,17 +1303,13 @@ namespace geo {
   using ROP_id_iterator = details::ROP_id_iterator_base<readout::ROPID>;
   
   
-  template <
-    typename Iter,
-    Iter (GeometryCore::*BeginFunc)() const,
-    Iter (GeometryCore::*EndFunc)() const
-    >
-  class IteratorBox {
+  template <typename Iter>
+  class IteratorBoxBase {
       public:
     using iterator = Iter;
     
-    IteratorBox(GeometryCore const* geom):
-      b((geom->*BeginFunc)()), e((geom->*EndFunc)()) {}
+    /// Constructor: initializes the begin and end iterators.
+    IteratorBoxBase(iterator const& b, iterator const& e): b(b), e(e) {}
     
     iterator begin() const { return b; }
     iterator end() const { return e; }
@@ -1322,8 +1318,40 @@ namespace geo {
     iterator cend() const { return e; }
     
       protected:
-    iterator b, e;
+    iterator b, e; ///< Begin and end iterators.
+    
+  }; // IteratorBoxBase<>
+  
+  
+  template <
+    typename Iter,
+    Iter (GeometryCore::*BeginFunc)() const,
+    Iter (GeometryCore::*EndFunc)() const
+    >
+  class IteratorBox: public IteratorBoxBase<Iter> {
+      public:
+    
+    IteratorBox(GeometryCore const* geom)
+      : IteratorBoxBase<Iter>((geom->*BeginFunc)(), (geom->*EndFunc)())
+      {}
+    
   }; // IteratorBox<>
+  
+  
+  template <
+    typename Iter,
+    typename GeoID,
+    Iter (GeometryCore::*BeginFunc)(GeoID const&) const,
+    Iter (GeometryCore::*EndFunc)(GeoID const&) const
+    >
+  class LocalIteratorBox: public IteratorBoxBase<Iter> {
+      public:
+    
+    LocalIteratorBox(GeometryCore const* geom, GeoID const& ID)
+      : IteratorBoxBase<Iter>((geom->*BeginFunc)(ID), (geom->*EndFunc)(ID))
+      {}
+    
+  }; // LocalIteratorBox<>
   
   
   /// Namespace for geometry iterators.
@@ -2236,22 +2264,41 @@ namespace geo {
     /// iterators
     ///
     
-    /// Initializes the specified ID with the ID of the first TPC
+    /// Initializes the specified ID with the ID of the first TPC.
     void GetBeginID(geo::TPCID& id) const
       { GetBeginID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
     
-    /// Initializes the specified ID with the invalid ID after the last TPC
+    /// Initializes the specified ID with the invalid ID after the last TPC.
     void GetEndID(geo::TPCID& id) const
       { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
     
+    /// Returns the ID of the first TPC in the specified cryostat.
+    geo::TPCID GetBeginTPCID(geo::CryostatID const& id) const
+      { return { id, 0 }; }
     
-    /// Returns an iterator pointing to the first TPC ID in the detector
+    /// Returns the (possibly invalid) ID after the last TPC of the specified
+    /// cryostat.
+    geo::TPCID GetEndTPCID(geo::CryostatID const& id) const
+      { return { id.Cryostat + 1, 0 }; }
+    
+    
+    /// Returns an iterator pointing to the first TPC ID in the detector.
     TPC_id_iterator begin_TPC_id() const
       { return TPC_id_iterator(this, TPC_id_iterator::begin_pos); }
     
-    /// Returns an iterator pointing after the last TPC ID in the detector
+    /// Returns an iterator pointing after the last TPC ID in the detector.
     TPC_id_iterator end_TPC_id() const
       { return TPC_id_iterator(this, TPC_id_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first TPC ID in the specified
+    /// cryostat.
+    TPC_id_iterator begin_TPC_id(geo::CryostatID const& cid) const
+      { return TPC_id_iterator(this, GetBeginTPCID(cid)); }
+    
+    /// Returns an iterator pointing after the last TPC ID in the specified
+    /// cryostat.
+    TPC_id_iterator end_TPC_id(geo::CryostatID const& cid) const
+      { return TPC_id_iterator(this, GetEndTPCID(cid)); }
     
     /// Returns an iterator pointing to the first TPC in the detector
     TPC_iterator begin_TPC() const
@@ -2261,19 +2308,27 @@ namespace geo {
     TPC_iterator end_TPC() const
       { return TPC_iterator(this, TPC_iterator::end_pos); }
     
+    /// Returns an iterator pointing to the first TPC in the detector
+    TPC_iterator begin_TPC(geo::CryostatID const& cid) const
+      { return TPC_iterator(this, GetBeginTPCID(cid)); }
+    
+    /// Returns an iterator pointing after the last TPC in the detector
+    TPC_iterator end_TPC(geo::CryostatID const& cid) const
+      { return TPC_iterator(this, GetEndTPCID(cid)); }
+    
     /**
      * @brief Enables ranged-for loops on all TPC IDs of the detector
      * @returns an object suitable for ranged-for loops on all TPC IDs
      * 
      * Example of usage:
-     *     
-     *     for (geo::TPCID const& tID: geom->IterateTPCIDs()) {
-     *       geo::TPCGeo const& TPC = geom->TPC(tID);
-     *       
-     *       // useful code here
-     *       
-     *     } // for all TPC
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::TPCID const& tID: geom->IterateTPCIDs()) {
+     *   geo::TPCGeo const& TPC = geom->TPC(tID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all TPC
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
     IteratorBox<
       TPC_id_iterator,
@@ -2282,21 +2337,70 @@ namespace geo {
     IterateTPCIDs() const { return { this }; }
     
     /**
-     * @brief Enables ranged-for loops on all TPCs of the detector
-     * @returns an object suitable for ranged-for loops on all TPCs
+     * @brief Enables ranged-for loops on all TPC IDs of the specified cryostat.
+     * @param cid the ID of the cryostat to look the TPC IDs of
+     * @returns an object suitable for ranged-for loops on TPC IDs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
      * 
      * Example of usage:
-     *     
-     *     for (geo::TPCGeo const& TPC: geom->IterateTPCs()) {
-     *       
-     *       // useful code here
-     *       
-     *     } // for all TPC
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::TPCID const& tID: geom->IterateTPCIDs(cid)) {
+     *   geo::TPCGeo const& TPC = geom->TPC(tID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all TPC in cryostat #1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      TPC_id_iterator, geo::CryostatID,
+      &GeometryCore::begin_TPC_id, &GeometryCore::end_TPC_id
+      >
+    IterateTPCIDs(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all TPCs of the detector.
+     * @returns an object suitable for ranged-for loops on all TPCs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::TPCGeo const& TPC: geom->IterateTPCs()) {
+     *   
+     *   // useful code here
+     *   
+     * } // for TPCs
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
     IteratorBox
       <TPC_iterator, &GeometryCore::begin_TPC, &GeometryCore::end_TPC>
     IterateTPCs() const { return { this }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all TPCs of the specified cryostat.
+     * @param cid the ID of the cryostat to look the TPCs of
+     * @returns an object suitable for ranged-for loops on TPCs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::TPCGeo const& TPC: geom->IterateTPCs(cid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for TPCs in cryostat 1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      TPC_iterator, geo::CryostatID,
+      &GeometryCore::begin_TPC, &GeometryCore::end_TPC
+      >
+    IterateTPCs(geo::CryostatID const& cid) const { return { this, cid }; }
     
     
     //

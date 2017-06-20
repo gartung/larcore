@@ -54,7 +54,7 @@ namespace geo {
       const CryostatGeo& cryo(geom->Cryostat(c));
       const unsigned int nTPC = cryo.NTPC();
       const unsigned int nTPCsets = geom->NTPCsets(expCID);
-    
+      
       LOG_TRACE("GeometryIteratorLoopTest") << "  C=" << c
         << " (" << nTPC << " TPCs, " << nTPCsets << " TPC sets)";
       
@@ -86,6 +86,8 @@ namespace geo {
         ++nErrors;
       }
       
+      geo::TPC_id_iterator iTPCIDinCryo = geom->begin_TPC_id(expCID);
+      geo::TPC_iterator iTPCinCryo = geom->begin_TPC(expCID);
       
       for(unsigned int t = 0; t < nTPC; ++t){
         const TPCGeo& TPC(cryo.TPC(t));
@@ -122,6 +124,19 @@ namespace geo {
             << "TPC iterator retrieves TPCGeo[" << ((void*) iTPC.get())
             << "] (" << iTPC.ID() << ") instead of [" << ((void*) &TPC)
             << "] (C=" << c << " T=" << t << ")";
+          ++nErrors;
+        }
+        
+        if (*iTPCIDinCryo != *iTPCID) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "TPC ID local iterator in " << expCID
+            << " points to " << *iTPCIDinCryo << " instead of " << *iTPCID;
+          ++nErrors;
+        }
+        if (iTPCinCryo->ID() != *iTPCID) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "TPC local iterator in " << expCID
+            << " points to " << iTPCinCryo->ID() << " instead of " << *iTPCID;
           ++nErrors;
         }
         
@@ -231,10 +246,26 @@ namespace geo {
           ++iPlane;
           ++nPlanes;
         } // end loop over planes
+        
         ++iTPCID;
         ++iTPC;
+        ++iTPCIDinCryo;
+        ++iTPCinCryo;
         ++nTPCs;
       } // end loop over tpcs
+      
+      if (iTPCIDinCryo != geom->end_TPC_id(expCID)) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "TPC ID local iterator in " << expCID
+          << " should be at end, and instead points to " << *iTPCIDinCryo;
+        ++nErrors;
+      }
+      if (iTPCinCryo != geom->end_TPC(expCID)) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "TPC local iterator in " << expCID
+          << " should be at end, and instead points to " << iTPCinCryo->ID();
+        ++nErrors;
+      }
       
       
       for(unsigned int s = 0; s < nTPCsets; ++s) {
@@ -308,6 +339,50 @@ namespace geo {
         ++cumTPCsets;
       } // end loop over TPC sets
       
+      //
+      // test if we can loop all TPCs in this cryostat via iterator box
+      //
+      unsigned int nTPCsInCryo = cryo.NTPC();
+      LOG_DEBUG("GeometryIteratorsDump")
+        << "Looping though " << nTPCsInCryo << " TPCs in " << cryo.ID();
+      unsigned int nLoopedTPCIDs = 0;
+      for (geo::TPCID const& tID: geom->IterateTPCIDs(cryo.ID())) {
+        LOG_TRACE("GeometryIteratorsDump") << tID;
+        if (nLoopedTPCIDs >= nTPCs) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "After all " << nLoopedTPCIDs
+            << " TPC IDs, iterator has not reached the end ("
+            << *(geom->end_TPC_id(cryo.ID())) << ") but it's still at " << tID;
+          ++nErrors;
+          break;
+        }
+        ++nLoopedTPCIDs;
+      }
+      if (nLoopedTPCIDs < nTPCsInCryo) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "Looped only " << nLoopedTPCIDs
+          << " TPC IDs in " << cryo.ID() << ", while we expected "
+          << nTPCsInCryo << " iterations!";
+        ++nErrors;
+      } // if
+      unsigned int nLoopedTPCs = 0;
+      for (geo::TPCGeo const& TPC: geom->IterateTPCs(cryo.ID())) {
+        if (nLoopedTPCs >= nTPCsInCryo) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "After all " << nLoopedTPCs
+            << " TPCs in " << cryo.ID() << ", iterator has not reached the end";
+          ++nErrors;
+          break;
+        }
+        ++nLoopedTPCs;
+      }
+      if (nLoopedTPCs < nTPCsInCryo) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "Looped only " << nLoopedTPCs
+          << " TPCs in " << cryo.ID() << ", while we expected "
+          << nTPCs << " iterations!";
+        ++nErrors;
+      } // if
       
       ++iCryostatID;
       ++iCryostat;
