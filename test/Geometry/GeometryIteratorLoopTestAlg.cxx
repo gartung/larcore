@@ -27,6 +27,69 @@ namespace geo {
 
   //......................................................................
   unsigned int GeometryIteratorLoopTestAlg::Run() {
+    
+    /*
+     * This monstrous test looks through the elements of the geometry.
+     * It is structured as follows:
+     * 
+     * - loop on cryostats by index
+     *   * check global cryostat iterators (ID and element)
+     *   - loop on TPCs by index
+     *     * check global TPC iterators (ID and element)
+     *     * check local TPC iterators (cryostat)
+     *     - loop on planes by index
+     *       * check global plane iterators (ID and element)
+     *       * check local plane iterators (cryostat)
+     *       - loop on wires by index
+     *         * check global wire iterators (ID and element)
+     *         * check local wire iterators (cryostat)
+     *         * increase wire iterators (including cryostat locals)
+     *       * increase plane iterators (including cryostat locals)
+     *     * increase TPC iterators (including cryostat locals)
+     *   * check cryostat-local iterators (TPC, plane, wire IDs and elements)
+     *   - loop on TPC sets by index
+     *     * check global TPC set iterators (ID)
+     *     - loop on readout planes by index
+     *       * check global readout plane iterators (ID)
+     *       - loop on channels by channel ID (currently disabled)
+     *       * increase readout plane iterators
+     *     * increase TPC set iterators
+     * - loops by range-for
+     *   * by cryostat ID
+     *   * by cryostat
+     *   * by TPC ID
+     *   * by TPC
+     *   * by plane ID
+     *   * by plane
+     *   * by wire ID
+     *   * by wire
+     *   * by TPC set ID
+     *   * by TPC set
+     *   * by readout plane ID
+     *   * by readout plane
+     * 
+     * In words: the test is structured in two almost-independent parts.
+     * In the first, nested loops are driven by element indices.
+     * In the second, range-for loops are implemented. The number of loops in
+     * here is compared to the number of iterations recorded in the first
+     * section (hence the dependence of the second part from the first one).
+     * For the elements with both ID and geometry class (cryostat, TPC, plane
+     * and wire) both types of iterators, on ID and on element, are checked,
+     * while the ones lacking an element class (TPC set, readout plane) only
+     * the ID iterators are tested. The same holds for range-for loops too.
+     * 
+     * In each index loop, a loop of the contained element is nested. Also,
+     * the iterators concerning the indexed element are checked. Finally,
+     * range-for loops are rolled for iterators local to the element.
+     * For example, each iteration of the TPC loop includes a wire plane loop,
+     * a check on TPC iterators (both global and local to the cryostat), and
+     * a range-for loop on planes and wires on the TPC.
+     * 
+     * Cryostat loop contains tests for both TPCs and TPC sets.
+     * 
+     */
+    
+    
     const unsigned int nCryo = geom->Ncryostats(); 
     LOG_VERBATIM("GeometryIteratorLoopTest")
       << "We have " << nCryo << " cryostats";
