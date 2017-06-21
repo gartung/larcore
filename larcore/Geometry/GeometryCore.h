@@ -1845,6 +1845,46 @@ namespace geo {
     /// @}
     
     
+    /**
+     * @brief Returns the ID of the first element of the detector.
+     * @tparam GeoID type of the ID to be returned
+     * @return ID of the first subelement in the detector
+     */
+    template <typename GeoID>
+    GeoID GetBeginID() const { GeoID id; GetBeginID(id); return id; }
+    
+    /**
+     * @brief Returns the (possibly invalid) ID after the last subelement of
+     *        the detector.
+     * @tparam GeoID type of the ID to be returned
+     * @return ID after the last subelement in the specified geometry element
+     */
+    template <typename GeoID>
+    GeoID GetEndID() const  { GeoID id; GetEndID(id); return id; }
+    
+    
+    /**
+     * @brief Returns the ID of the first subelement of the specified element.
+     * @tparam GeoID type of the ID to be returned
+     * @tparam ContextID type of the ID of the containing element
+     * @param id ID of the containing element
+     * @return ID of the first subelement in the specified geometry element
+     */
+    template <typename GeoID, typename ContextID>
+    GeoID GetBeginID(ContextID const& id) const;
+    
+    /**
+     * @brief Returns the (possibly invalid) ID after the last subelement of
+     *        the specified element.
+     * @tparam GeoID type of the ID to be returned
+     * @tparam ContextID type of the ID of the containing element
+     * @param id ID of the containing element
+     * @return ID (possibly invalid) after the last subelement in the
+     *         specified geometry element
+     */
+    template <typename GeoID, typename ContextID>
+    GeoID GetEndID(ContextID const& id) const;
+    
     
     /// @name Cryostat access and information
     /// @{
@@ -4519,6 +4559,30 @@ bool geo::GeometryCore::isfinite(Point3D const& point) {
     && std::isfinite(point.Z());
 } // geo::GeometryCore::isfinite()
 
+// template member function specializations
+namespace geo {
+
+  template <>
+  inline geo::TPCID GeometryCore::GetBeginID<geo::TPCID, geo::CryostatID>
+    (geo::CryostatID const& id) const
+    { return GetBeginTPCID(id); }
+
+  template <>
+  inline geo::TPCID GeometryCore::GetEndID<geo::TPCID, geo::CryostatID>
+    (geo::CryostatID const& id) const
+    { return GetEndTPCID(id); }
+
+  template <>
+  inline geo::PlaneID GeometryCore::GetBeginID<geo::PlaneID, geo::CryostatID>
+    (geo::CryostatID const& id) const
+    { return GetBeginPlaneID(id); }
+
+  template <>
+  inline geo::PlaneID GeometryCore::GetEndID<geo::PlaneID, geo::CryostatID>
+    (geo::CryostatID const& id) const
+    { return GetEndPlaneID(id); }
+
+} // namespace geo
 
 //******************************************************************************
 //
