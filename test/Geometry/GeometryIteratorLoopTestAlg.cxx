@@ -235,8 +235,11 @@ namespace geo {
         
         geo::plane_id_iterator iPlaneIDinTPC = geom->begin_plane_id(expTID);
         geo::plane_iterator iPlaneInTPC = geom->begin_plane(expTID);
+        geo::wire_id_iterator iWireIDinTPC = geom->begin_wire_id(expTID);
+        geo::wire_iterator iWireInTPC = geom->begin_wire(expTID);
         
         unsigned int nPlanesInTPC = 0;
+        unsigned int nWiresInTPC = 0;
         
         for(unsigned int p = 0; p < NPlanes; ++p) {
           const PlaneGeo& Plane(TPC.Plane(p));
@@ -316,6 +319,10 @@ namespace geo {
             ++nErrors;
           }
           
+          geo::wire_id_iterator iWireIDinPlane = geom->begin_wire_id(expPID);
+          geo::wire_iterator iWireInPlane = geom->begin_wire(expPID);
+          
+          unsigned int nWiresInPlane = 0; // will become same as NWires
           
           for(unsigned int w = 0; w < NWires; ++w) {
             const WireGeo& Wire(Plane.Wire(w));
@@ -386,20 +393,110 @@ namespace geo {
                 << iWireInCryo.ID() << " instead of " << expWID;
               ++nErrors;
             }
+            if (*iWireIDinTPC != expWID) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "Wire ID local iterator in " << expTID << " points to "
+                << *iWireIDinTPC << " instead of " << expWID;
+              ++nErrors;
+            }
+            if (iWireInTPC.ID() != expWID) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "Wire local iterator in " << expTID << " points to "
+                << iWireInTPC.ID() << " instead of " << expWID;
+              ++nErrors;
+            }
+            if (*iWireIDinPlane != expWID) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "Wire ID local iterator in " << expPID << " points to "
+                << *iWireIDinPlane << " instead of " << expWID;
+              ++nErrors;
+            }
+            if (iWireInPlane.ID() != expWID) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "Wire local iterator in " << expPID << " points to "
+                << iWireInPlane.ID() << " instead of " << expWID;
+              ++nErrors;
+            }
           
             ++iWireID;
-            ++iWire;
             ++iWireIDinCryo;
+            ++iWireIDinTPC;
+            ++iWireIDinPlane;
+            ++iWire;
             ++iWireInCryo;
+            ++iWireInTPC;
+            ++iWireInPlane;
             ++nWires;
             ++nWiresInCryo;
+            ++nWiresInTPC;
+            ++nWiresInPlane;
             geom->IncrementID(runningWID);
           } // end loop over wires
+          
+          if (iWireIDinPlane != geom->end_wire_id(expPID)) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Wire ID local iterator in " << expPID
+              << " should be at end and instead points to " << *iWireIDinPlane;
+            ++nErrors;
+          }
+          if (iWireInPlane != geom->end_wire(expPID)) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Wire local iterator in " << expPID
+              << " should be at end, and instead points to "
+              << iWireInPlane.ID();
+            ++nErrors;
+          }
+          
+          //
+          // test if we can loop all wires in this plane via iterator box
+          //
+          LOG_DEBUG("GeometryIteratorsDump")
+            << "Looping though " << nWiresInPlane << " wires in " << expPID;
+          unsigned int nLoopedWireIDs = 0;
+          for (geo::WireID const& wID: geom->IterateWireIDs(expPID)) {
+            LOG_TRACE("GeometryIteratorsDump") << wID;
+            if (nLoopedWireIDs >= nWiresInPlane) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "After all " << nLoopedWireIDs << " wire IDs in " << expPID
+                << ", iterator has not reached the end ("
+                << *(geom->end_wire_id(expPID)) << ") but it's still at "
+                << wID;
+              ++nErrors;
+              break;
+            }
+            ++nLoopedWireIDs;
+          }
+          if (nLoopedWireIDs < nWiresInPlane) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Looped only " << nLoopedWireIDs
+              << " wire IDs in " << expPID << ", while we expected "
+              << nWiresInPlane << " iterations!";
+            ++nErrors;
+          } // if
+          unsigned int nLoopedWires = 0;
+          for (geo::WireGeo const& wire: geom->IterateWires(expPID)) {
+            if (nLoopedWires >= nWiresInPlane) {
+              LOG_ERROR("GeometryIteratorLoopTest")
+                << "After all " << nLoopedWires << " wires in "
+                << expPID << ", iterator has not reached the end";
+              ++nErrors;
+              break;
+            }
+            ++nLoopedWires;
+          }
+          if (nLoopedWires < nWiresInPlane) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Looped only " << nLoopedWires << " wires in " << expPID
+              << ", while we expected " << nWiresInPlane << " iterations!";
+            ++nErrors;
+          } // if
+          
+          
           ++iPlaneID;
-          ++iPlane;
           ++iPlaneIDinCryo;
-          ++iPlaneInCryo;
           ++iPlaneIDinTPC;
+          ++iPlane;
+          ++iPlaneInCryo;
           ++iPlaneInTPC;
           ++nPlanes;
           ++nPlanesInCryo;
@@ -410,14 +507,26 @@ namespace geo {
         if (iPlaneIDinTPC != geom->end_plane_id(expTID)) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "Plane ID local iterator in " << expTID
-            << " should be at end (" << (*(geom->end_plane_id(expTID)))
-            << "), and instead points to " << *iPlaneIDinTPC;
+            << " should be at end and instead points to " << *iPlaneIDinTPC;
           ++nErrors;
         }
         if (iPlaneInTPC != geom->end_plane(expTID)) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "Plane local iterator in " << expTID
-            << " should be at end, and instead points to " << iPlaneInTPC->ID();
+            << " should be at end, and instead points to " << iPlaneInTPC.ID();
+          ++nErrors;
+        }
+        
+        if (iWireIDinTPC != geom->end_wire_id(expTID)) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Wire ID local iterator in " << expTID
+            << " should be at end and instead points to " << *iWireIDinTPC;
+          ++nErrors;
+        }
+        if (iWireInTPC != geom->end_wire(expTID)) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Wire local iterator in " << expTID
+            << " should be at end, and instead points to " << iWireInTPC.ID();
           ++nErrors;
         }
         
@@ -461,6 +570,49 @@ namespace geo {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "Looped only " << nLoopedPlanes << " planes in " << expTID
             << ", while we expected " << nPlanesInTPC << " iterations!";
+          ++nErrors;
+        } // if
+        
+        //
+        // test if we can loop all wires in this TPC via iterator box
+        //
+        LOG_DEBUG("GeometryIteratorsDump")
+          << "Looping though " << nWiresInTPC << " wires in " << expTID;
+        unsigned int nLoopedWireIDs = 0;
+        for (geo::WireID const& wID: geom->IterateWireIDs(expTID)) {
+          LOG_TRACE("GeometryIteratorsDump") << wID;
+          if (nLoopedWireIDs >= nWiresInTPC) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "After all " << nLoopedWireIDs << " wire IDs in " << expTID
+              << ", iterator has not reached the end ("
+              << *(geom->end_wire_id(expTID)) << ") but it's still at " << wID;
+            ++nErrors;
+            break;
+          }
+          ++nLoopedWireIDs;
+        }
+        if (nLoopedWireIDs < nWiresInTPC) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Looped only " << nLoopedWireIDs
+            << " wire IDs in " << expTID << ", while we expected "
+            << nWiresInTPC << " iterations!";
+          ++nErrors;
+        } // if
+        unsigned int nLoopedWires = 0;
+        for (geo::WireGeo const& wire: geom->IterateWires(expTID)) {
+          if (nLoopedWires >= nWiresInTPC) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "After all " << nLoopedWires << " wires in "
+              << expTID << ", iterator has not reached the end";
+            ++nErrors;
+            break;
+          }
+          ++nLoopedWires;
+        }
+        if (nLoopedWires < nWiresInTPC) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Looped only " << nLoopedWires << " wires in " << expTID
+            << ", while we expected " << nWiresInTPC << " iterations!";
           ++nErrors;
         } // if
         

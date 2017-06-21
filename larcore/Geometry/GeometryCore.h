@@ -3116,6 +3116,24 @@ namespace geo {
     geo::WireID GetEndWireID(geo::CryostatID const& id) const
       { return { GetEndPlaneID(id), 0 }; }
     
+    /// Returns the ID of the first wire of the specified TPC.
+    geo::WireID GetBeginWireID(geo::TPCID const& id) const
+      { return { geo::PlaneID(id, 0), 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last wire of the specified
+    /// TPC.
+    geo::WireID GetEndWireID(geo::TPCID const& id) const
+      { return { geo::PlaneID(GetNextID(id), 0), 0 }; }
+    
+    /// Returns the ID of the first wire of the specified wire plane.
+    geo::WireID GetBeginWireID(geo::PlaneID const& id) const
+      { return { id, 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last wire of the specified
+    /// wire plane.
+    geo::WireID GetEndWireID(geo::PlaneID const& id) const
+      { return { GetNextID(id), 0 }; }
+    
     /// Returns an iterator pointing to the first wire ID in the detector.
     wire_id_iterator begin_wire_id() const
       { return wire_id_iterator(this, wire_id_iterator::begin_pos); }
@@ -3133,6 +3151,22 @@ namespace geo {
     wire_id_iterator end_wire_id(geo::CryostatID const& id) const
       { return wire_id_iterator(this, GetEndWireID(id)); }
     
+    /// Returns an iterator pointing to the first wire ID in specified TPC.
+    wire_id_iterator begin_wire_id(geo::TPCID const& id) const
+      { return wire_id_iterator(this, GetBeginWireID(id)); }
+    
+    /// Returns an iterator pointing after the last wire ID in specified TPC.
+    wire_id_iterator end_wire_id(geo::TPCID const& id) const
+      { return wire_id_iterator(this, GetEndWireID(id)); }
+    
+    /// Returns an iterator pointing to the first wire ID in specified plane.
+    wire_id_iterator begin_wire_id(geo::PlaneID const& id) const
+      { return wire_id_iterator(this, GetBeginWireID(id)); }
+    
+    /// Returns an iterator pointing after the last wire ID in specified plane.
+    wire_id_iterator end_wire_id(geo::PlaneID const& id) const
+      { return wire_id_iterator(this, GetEndWireID(id)); }
+    
     /// Returns an iterator pointing to the first wire in the detector
     wire_iterator begin_wire() const
       { return wire_iterator(this, wire_iterator::begin_pos); }
@@ -3147,6 +3181,22 @@ namespace geo {
     
     /// Returns an iterator pointing after the last wire in specified cryostat.
     wire_iterator end_wire(geo::CryostatID const& id) const
+      { return wire_iterator(end_wire_id(id)); }
+    
+    /// Returns an iterator pointing to the first wire in specified TPC.
+    wire_iterator begin_wire(geo::TPCID const& id) const
+      { return wire_iterator(begin_wire_id(id)); }
+    
+    /// Returns an iterator pointing after the last wire in specified TPC.
+    wire_iterator end_wire(geo::TPCID const& id) const
+      { return wire_iterator(end_wire_id(id)); }
+    
+    /// Returns an iterator pointing to the first wire in specified plane.
+    wire_iterator begin_wire(geo::PlaneID const& id) const
+      { return wire_iterator(begin_wire_id(id)); }
+    
+    /// Returns an iterator pointing after the last wire in specified plane.
+    wire_iterator end_wire(geo::PlaneID const& id) const
       { return wire_iterator(end_wire_id(id)); }
     
     /**
@@ -3196,6 +3246,56 @@ namespace geo {
     IterateWireIDs(geo::CryostatID const& cid) const { return { this, cid }; }
     
     /**
+     * @brief Enables ranged-for loops on all wire IDs of specified TPC.
+     * @param tid the ID of the TPC to loop the wires of
+     * @returns an object suitable for ranged-for loops on TPC wire IDs
+     * 
+     * If the TPC ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::TPCID tid{0, 1}; // C:0 T:1 (hope it exists!)
+     * for (geo::WireID const& wID: geom->IterateWireIDs(tid)) {
+     *   geo::WireGeo const& Wire = geom->Wire(wID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires in C:0 T:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_id_iterator,
+      geo::TPCID,
+      &GeometryCore::begin_wire_id, &GeometryCore::end_wire_id
+      >
+    IterateWireIDs(geo::TPCID const& tid) const { return { this, tid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all wire IDs of specified wire plane.
+     * @param pid the ID of the wire plane to loop the wires of
+     * @returns an object suitable for ranged-for loops on plane wire IDs
+     * 
+     * If the wire plane ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::PlaneID pid{0, 0, 1}; // C:0 T:0 P:1
+     * for (geo::WireID const& wID: geom->IterateWireIDs(pid)) {
+     *   geo::WireGeo const& Wire = geom->Wire(wID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires in C:0 T:0 P:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_id_iterator,
+      geo::PlaneID,
+      &GeometryCore::begin_wire_id, &GeometryCore::end_wire_id
+      >
+    IterateWireIDs(geo::PlaneID const& pid) const { return { this, pid }; }
+    
+    /**
      * @brief Enables ranged-for loops on all wires of the detector.
      * @returns an object suitable for ranged-for loops on all wires
      * 
@@ -3237,6 +3337,54 @@ namespace geo {
       &GeometryCore::begin_wire, &GeometryCore::end_wire
       >
     IterateWires(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all wires of specified TPC.
+     * @param tid the ID of the TPC to loop the wires of
+     * @returns an object suitable for ranged-for loops on TPC wires
+     * 
+     * If the TPC ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::TPCID tid{0, 1}; // C:0 T:1 (hope it exists!)
+     * for (geo::WireID const& Wire: geom->IterateWires(tid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires in C:0 T:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_iterator,
+      geo::TPCID,
+      &GeometryCore::begin_wire, &GeometryCore::end_wire
+      >
+    IterateWires(geo::TPCID const& tid) const { return { this, tid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all wires of specified wire plane.
+     * @param pid the ID of the wire plane to loop the wires of
+     * @returns an object suitable for ranged-for loops on plane wires
+     * 
+     * If the wire plane ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::PlaneID pid{0, 1}; // C:0 T:0 P:1
+     * for (geo::WireID const& Wire: geom->IterateWires(pid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires in C:0 T:0 T:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_iterator,
+      geo::PlaneID,
+      &GeometryCore::begin_wire, &GeometryCore::end_wire
+      >
+    IterateWires(geo::PlaneID const& tid) const { return { this, tid }; }
     
     //
     // single object features
