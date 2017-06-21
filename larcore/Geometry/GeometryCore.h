@@ -680,35 +680,33 @@ namespace geo {
     template <typename GEOIDITER>
     class geometry_element_iterator;
 
-    //@{
-    /// Comparison operator: geometry ID and element point to the same ID
+    /// Comparison operator: geometry ID and element point to the same ID.
     template <typename GEOIDITER>
     bool operator== (
       geometry_element_iterator<GEOIDITER> const& iter,
       GEOIDITER const& id_iter
       );
+    /// Comparison operator: geometry ID and element point to the same ID.
     template <typename GEOIDITER>
     inline bool operator== (
       GEOIDITER const& id_iter,
       geometry_element_iterator<GEOIDITER> const& iter
       )
       { return iter == id_iter; }
-    //@}
     
-    //@{
-    /// Comparison operator: geometry ID and element point to different IDs
+    /// Comparison operator: geometry ID and element point to different IDs.
     template <typename GEOIDITER>
     bool operator!= (
       geometry_element_iterator<GEOIDITER> const& iter,
       GEOIDITER const& id_iter
       );
+    /// Comparison operator: geometry ID and element point to different IDs.
     template <typename GEOIDITER>
     inline bool operator!= (
       GEOIDITER const& id_iter,
       geometry_element_iterator<GEOIDITER> const& iter
       )
       { return iter != id_iter; }
-    //@}
     
     /**
      * @brief Forward iterator browsing all geometry elements in the detector
@@ -741,22 +739,22 @@ namespace geo {
       
       using iterator = geometry_element_iterator<id_iterator_t>; ///< this type
       
-      //@{
-      /// types mirrored from the ID iterator
+      /// @{
+      /// @name Types mirrored from the ID iterator
       using LocalID_t = typename id_iterator_t::LocalID_t;
       using GeoID_t = typename id_iterator_t::GeoID_t;
       using UndefinedPos_t = typename id_iterator_t::UndefinedPos_t;
       using BeginPos_t = typename id_iterator_t::BeginPos_t;
       using EndPos_t = typename id_iterator_t::EndPos_t;
       using ElementPtr_t = typename id_iterator_t::ElementPtr_t;
-      //@}
+      /// @}
       
-      //@{
-      /// Expose inherited constants
+      /// @{
+      /// @name Constants inherited from the ID iterator
       using geometry_iterator_types::undefined_pos;
       using geometry_iterator_types::begin_pos;
       using geometry_iterator_types::end_pos;
-      //@}
+      /// @}
       
       /// Geometry class pointed by the iterator
       using Element_t = typename std::remove_pointer<ElementPtr_t>::type;
@@ -768,11 +766,11 @@ namespace geo {
       geometry_element_iterator(geo::GeometryCore const* geom):
         id_iter(geom) {}
       
-      //@{
-      /// Constructor: points to the same element as the specified ID iterator
+      /// Constructor: points to the same element as the specified ID iterator.
       geometry_element_iterator(id_iterator_t const& iter): id_iter(iter) {}
+      
+      /// Constructor: points to the same element as the specified ID iterator.
       geometry_element_iterator(id_iterator_t&& iter): id_iter(iter) {}
-      //@}
       
       /// Constructor: points to the specified geometry element
       geometry_element_iterator
@@ -1471,10 +1469,10 @@ namespace geo {
     
     // import iterators
     /**
-     * @brief Forward-iterator browsing all cryostat IDs in the detector
+     * @brief Forward-iterator browsing all cryostat IDs in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::cryostat_id_iterator
      *   iCryostat = geom->begin_cryostat_id(), cend = geom->end_cryostat_id();
      * while (iCryostat != cend) {
@@ -1483,19 +1481,19 @@ namespace geo {
      *   ++iCryostat;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateCryostatIDs() in a range-for loop.
+     * `GeometryCore::IterateCryostatIDs()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_cryostat_id() on every check.
+     * `GeometryCore::end_cryostat_id()` on every check.
      */
     using cryostat_id_iterator = geo::cryostat_id_iterator;
     
     /**
-     * @brief Forward-iterator browsing all cryostats in the detector
+     * @brief Forward-iterator browsing all cryostats in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::cryostat_iterator
      *   iCryostat = geom->begin_cryostat(), cend = geom->end_cryostat();
      * while (iCryostat != cend) {
@@ -1504,19 +1502,19 @@ namespace geo {
      *   ++iCryostat;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateCryostats() in a range-for loop.
+     * `GeometryCore::IterateCryostats()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_cryostat() on every check.
+     * `GeometryCore::end_cryostat()` on every check.
      */
     using cryostat_iterator = geo::cryostat_iterator;
     
     /**
-     * @brief Forward-iterator browsing all TPC IDs in the detector
+     * @brief Forward-iterator browsing all TPC IDs in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::TPC_id_iterator iTPC = geom->begin_TPC_id(),
      *   tend = geom->end_TPC_id();
      * while (iTPC != tend) {
@@ -1528,19 +1526,19 @@ namespace geo {
      *   ++iTPC;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateTPCIDs() in a range-for loop.
+     * `GeometryCore::IterateTPCIDs()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_TPC_id() on every check.
+     * `GeometryCore::end_TPC_id()` on every check.
      */
     using TPC_id_iterator = geo::TPC_id_iterator;
     
     /**
-     * @brief Forward-iterator browsing all TPCs in the detector
+     * @brief Forward-iterator browsing all TPCs in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::TPC_iterator iTPC = geom->begin_TPC(),
      *   tend = geom->end_TPC();
      * while (iTPC != tend) {
@@ -1550,19 +1548,19 @@ namespace geo {
      *   ++iTPC;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateTPCs() in a range-for loop.
+     * `GeometryCore::IterateTPCs()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_TPC() on every check.
+     * `GeometryCore::end_TPC()` on every check.
      */
     using TPC_iterator = geo::TPC_iterator;
     
     /**
-     * @brief Forward-iterator browsing all plane IDs in the detector
+     * @brief Forward-iterator browsing all plane IDs in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::plane_id_iterator iPlane = geom->begin_plane_id(),
      *   pend = geom->end_plane_id();
      * while (iPlane != pend) {
@@ -1574,19 +1572,19 @@ namespace geo {
      *   ++iPlane;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IteratePlaneIDs() in a range-for loop.
+     * `GeometryCore::IteratePlaneIDs()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_plane_id() on every check.
+     * `GeometryCore::end_plane_id()` on every check.
      */
     using plane_id_iterator = geo::plane_id_iterator;
     
     /**
-     * @brief Forward-iterator browsing all planes in the detector
+     * @brief Forward-iterator browsing all planes in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::plane_iterator iPlane = geom->begin_plane(),
      *   pend = geom->end_plane();
      * while (iPlane != pend) {
@@ -1596,19 +1594,19 @@ namespace geo {
      *   ++iPlane;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IteratePlanes() in a range-for loop.
+     * `GeometryCore::IteratePlanes()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_plane() on every check.
+     * `GeometryCore::end_plane()` on every check.
      */
     using plane_iterator = geo::plane_iterator;
     
     /**
-     * @brief Forward-iterator browsing all wire IDs in the detector
+     * @brief Forward-iterator browsing all wire IDs in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::wire_id_iterator iWire = geom->begin_wire_id(),
      *   wend = geom->end_wire_id();
      * while (iWire != wend) {
@@ -1620,19 +1618,19 @@ namespace geo {
      *   ++iWire;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateWireIDs() in a range-for loop.
+     * `GeometryCore::IterateWireIDs()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_wire_id() on every check.
+     * `GeometryCore::end_wire_id()` on every check.
      */
     using wire_id_iterator = geo::wire_id_iterator;
     
     /**
-     * @brief Forward-iterator browsing all wires in the detector
+     * @brief Forward-iterator browsing all wires in the detector.
      * 
      * Usage example with a while loop:
-     * @code
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
      * geo::GeometryCore::wire_iterator iWire = geom->begin_wire(),
      *   wend = geom->end_wire();
      * while (iWire != wend) {
@@ -1642,11 +1640,11 @@ namespace geo {
      *   ++iWire;
      *   // ...
      * } // while
-     * @endcode
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * The recommended way to iterate is actually to use
-     * GeometryCore::IterateWires() in a range-for loop.
+     * `GeometryCore::IterateWires()` in a range-for loop.
      * It is recommended to save the end iterator rather than calling
-     * GeometryCore::end_wire() on every check.
+     * `GeometryCore::end_wire()` on every check.
      */
     using wire_iterator = geo::wire_iterator;
     
