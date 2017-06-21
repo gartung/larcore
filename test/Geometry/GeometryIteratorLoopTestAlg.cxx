@@ -56,7 +56,11 @@ namespace geo {
      *       * check global readout plane iterators (ID)
      *       - loop on channels by channel ID (currently disabled)
      *       * increase readout plane iterators
+     *     * check local readout plane iterators (TPC set)
+     *     * loops by range-for with local iterators (TPC set)
      *     * increase TPC set iterators
+     *   * check local TPC set and readout plane iterators (cryostat)
+     *   * loops by range-for with local iterators (TPC set and readout plane)
      * - loops by range-for
      *   * by cryostat ID
      *   * by cryostat
@@ -1038,7 +1042,7 @@ namespace geo {
     
     if (runningCID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "cryostat ID still valid (" << runningCID
+        << "Cryostat ID still valid (" << runningCID
         << ") after incrementing from the last one.";
       ++nErrors;
     }
@@ -1052,7 +1056,7 @@ namespace geo {
     try {
       geo::CryostatGeo const& Cryo = *iCryostat;
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "cryostat iterator thinks it's still at " << iCryostat.ID()
+        << "Cryostat iterator thinks it's still at " << iCryostat.ID()
         << ", but we are already finished";
       ++nErrors;
     }
@@ -1176,14 +1180,14 @@ namespace geo {
     
     if (iPlaneID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "plane iterator thinks it's still at " << *iPlaneID
+        << "Plane iterator thinks it's still at " << *iPlaneID
         << ", but we are already finished";
       ++nErrors;
     }
     try {
       geo::PlaneGeo const& Plane = *iPlane;
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "plane iterator thinks it's still at " << iPlane.ID()
+        << "Plane iterator thinks it's still at " << iPlane.ID()
         << ", but we are already finished";
       ++nErrors;
     }
@@ -1241,14 +1245,14 @@ namespace geo {
     
     if (iWireID) {
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "wire iterator thinks it's still at " << *iWireID
+        << "Wire iterator thinks it's still at " << *iWireID
         << ", but we are already finished";
       ++nErrors;
     }
     try {
       geo::WireGeo const& Wire = *iWire;
       LOG_ERROR("GeometryIteratorLoopTest")
-        << "wire iterator thinks it's still at " << iWire.ID()
+        << "Wire iterator thinks it's still at " << iWire.ID()
         << ", but we are already finished";
       ++nErrors;
     }
