@@ -2376,7 +2376,7 @@ namespace geo {
     
     /**
      * @brief Enables ranged-for loops on all TPC IDs of the specified cryostat.
-     * @param cid the ID of the cryostat to look the TPC IDs of
+     * @param cid the ID of the cryostat to loop the TPC IDs of
      * @returns an object suitable for ranged-for loops on TPC IDs
      * 
      * If the cryostat ID is invalid, the effect is undefined.
@@ -2419,7 +2419,7 @@ namespace geo {
     
     /**
      * @brief Enables ranged-for loops on all TPCs of the specified cryostat.
-     * @param cid the ID of the cryostat to look the TPCs of
+     * @param cid the ID of the cryostat to loop the TPCs of
      * @returns an object suitable for ranged-for loops on TPCs
      * 
      * If the cryostat ID is invalid, the effect is undefined.
@@ -2771,7 +2771,7 @@ namespace geo {
     /**
      * @brief Enables ranged-for loops on all plane IDs of the specified
      *        cryostat.
-     * @param cid the ID of the cryostat to look the plane IDs of
+     * @param cid the ID of the cryostat to loop the plane IDs of
      * @returns an object suitable for ranged-for loops on plane IDs
      * 
      * If the cryostat ID is invalid, the effect is undefined.
@@ -2814,7 +2814,7 @@ namespace geo {
     
     /**
      * @brief Enables ranged-for loops on all TPCs of the specified cryostat.
-     * @param cid the ID of the cryostat to look the TPCs of
+     * @param cid the ID of the cryostat to loop the TPCs of
      * @returns an object suitable for ranged-for loops on TPCs
      * 
      * If the cryostat ID is invalid, the effect is undefined.
@@ -2999,21 +2999,39 @@ namespace geo {
     // iterators
     //
     
-    /// Initializes the specified ID with the ID of the first wire
+    /// Initializes the specified ID with the ID of the first wire.
     void GetBeginID(geo::WireID& id) const
       { GetBeginID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
     
-    /// Initializes the specified ID with the invalid ID after the last wire
+    /// Initializes the specified ID with the invalid ID after the last wire.
     void GetEndID(geo::WireID& id) const
       { GetEndID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
     
-    /// Returns an iterator pointing to the first wire ID in the detector
+    /// Returns the ID of the first wire in the specified cryostat.
+    geo::WireID GetBeginWireID(geo::CryostatID const& id) const
+      { return { GetBeginPlaneID(id), 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last wire in the specified
+    /// cryostat.
+    geo::WireID GetEndWireID(geo::CryostatID const& id) const
+      { return { GetEndPlaneID(id), 0 }; }
+    
+    /// Returns an iterator pointing to the first wire ID in the detector.
     wire_id_iterator begin_wire_id() const
       { return wire_id_iterator(this, wire_id_iterator::begin_pos); }
     
-    /// Returns an iterator pointing after the last wire ID in the detector
+    /// Returns an iterator pointing after the last wire ID in the detector.
     wire_id_iterator end_wire_id() const
       { return wire_id_iterator(this, wire_id_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first wire ID in specified cryostat.
+    wire_id_iterator begin_wire_id(geo::CryostatID const& id) const
+      { return wire_id_iterator(this, GetBeginWireID(id)); }
+    
+    /// Returns an iterator pointing after the last wire ID in specified
+    /// cryostat.
+    wire_id_iterator end_wire_id(geo::CryostatID const& id) const
+      { return wire_id_iterator(this, GetEndWireID(id)); }
     
     /// Returns an iterator pointing to the first wire in the detector
     wire_iterator begin_wire() const
@@ -3023,18 +3041,27 @@ namespace geo {
     wire_iterator end_wire() const
       { return wire_iterator(this, wire_iterator::end_pos); }
     
+    /// Returns an iterator pointing to the first wire in specified cryostat.
+    wire_iterator begin_wire(geo::CryostatID const& id) const
+      { return wire_iterator(begin_wire_id(id)); }
+    
+    /// Returns an iterator pointing after the last wire in specified cryostat.
+    wire_iterator end_wire(geo::CryostatID const& id) const
+      { return wire_iterator(end_wire_id(id)); }
+    
     /**
-     * @brief Enables ranged-for loops on all wire IDs of the detector
+     * @brief Enables ranged-for loops on all wire IDs of the detector.
      * @returns an object suitable for ranged-for loops on all wire IDs
      * 
      * Example of usage:
-     *     
-     *     for (geo::WireID const& wID: geom->IterateWireIDs()) {
-     *       geo::WireGeo const& Wire = geom->Wire(wID);
-     *       
-     *       // useful code here
-     *       
-     *     } // for all wires
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::WireID const& wID: geom->IterateWireIDs()) {
+     *   geo::WireGeo const& Wire = geom->Wire(wID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      *     
      */
     IteratorBox<
@@ -3044,23 +3071,72 @@ namespace geo {
     IterateWireIDs() const { return { this }; }
     
     /**
-     * @brief Enables ranged-for loops on all wires of the detector
+     * @brief Enables ranged-for loops on all wire IDs of specified cryostat.
+     * @param cid the ID of the cryostat to loop the wires of
+     * @returns an object suitable for ranged-for loops on cryostat wire IDs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::WireID const& wID: geom->IterateWireIDs(cid)) {
+     *   geo::WireGeo const& Wire = geom->Wire(wID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_id_iterator,
+      geo::CryostatID,
+      &GeometryCore::begin_wire_id, &GeometryCore::end_wire_id
+      >
+    IterateWireIDs(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all wires of the detector.
      * @returns an object suitable for ranged-for loops on all wires
      * 
      * Example of usage:
-     *     
-     *     for (geo::WireGeo const& Wire: geom->IterateWires()) {
-     *       
-     *       // useful code here
-     *       
-     *     } // for all wires
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::WireGeo const& Wire: geom->IterateWires()) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
     IteratorBox<
       wire_iterator,
       &GeometryCore::begin_wire, &GeometryCore::end_wire
       >
     IterateWires() const { return { this }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all wires of specified cryostat.
+     * @param cid the ID of the cryostat to loop the wires of
+     * @returns an object suitable for ranged-for loops on cryostat wires
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::WireID const& Wire: geom->IterateWires(cid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all wires
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      wire_iterator,
+      geo::CryostatID,
+      &GeometryCore::begin_wire, &GeometryCore::end_wire
+      >
+    IterateWires(geo::CryostatID const& cid) const { return { this, cid }; }
     
     //
     // single object features
