@@ -88,16 +88,21 @@ namespace geo {
       
       geo::TPC_id_iterator iTPCIDinCryo = geom->begin_TPC_id(expCID);
       geo::TPC_iterator iTPCinCryo = geom->begin_TPC(expCID);
+      geo::plane_id_iterator iPlaneIDinCryo = geom->begin_plane_id(expCID);
+      geo::plane_iterator iPlaneInCryo = geom->begin_plane(expCID);
+      
+      unsigned int nPlanesInCryo = 0;
       
       for(unsigned int t = 0; t < nTPC; ++t){
         const TPCGeo& TPC(cryo.TPC(t));
+        const geo::TPCID expTID(expCID, t);
         const unsigned int NPlanes = TPC.Nplanes();
         
-        LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
+        LOG_TRACE("GeometryIteratorLoopTest") << "    " << expTID
           << " (" << NPlanes << " planes)";
         if (!iTPCID) {
           LOG_ERROR("GeometryIteratorLoopTest")
-            << "TPC ID iterator thinks it's all over at C=" << c << " T=" << t;
+            << "TPC ID iterator thinks it's all over at " << expTID;
           ++nErrors;
         }
         else if (iTPCID->Cryostat != c) {
@@ -123,33 +128,33 @@ namespace geo {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "TPC iterator retrieves TPCGeo[" << ((void*) iTPC.get())
             << "] (" << iTPC.ID() << ") instead of [" << ((void*) &TPC)
-            << "] (C=" << c << " T=" << t << ")";
+            << "] (" << expTID << ")";
           ++nErrors;
         }
         
-        if (*iTPCIDinCryo != *iTPCID) {
+        if (*iTPCIDinCryo != expTID) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "TPC ID local iterator in " << expCID
-            << " points to " << *iTPCIDinCryo << " instead of " << *iTPCID;
+            << " points to " << *iTPCIDinCryo << " instead of " << expTID;
           ++nErrors;
         }
-        if (iTPCinCryo->ID() != *iTPCID) {
+        if (iTPCinCryo->ID() != expTID) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "TPC local iterator in " << expCID
-            << " points to " << iTPCinCryo->ID() << " instead of " << *iTPCID;
+            << " points to " << iTPCinCryo->ID() << " instead of " << expTID;
           ++nErrors;
         }
         
         for(unsigned int p = 0; p < NPlanes; ++p) {
           const PlaneGeo& Plane(TPC.Plane(p));
+          geo::PlaneID const expPID(expTID, p);
           const unsigned int NWires = Plane.Nwires();
           
-          LOG_TRACE("GeometryIteratorLoopTest") << "    C=" << c << " T=" << t
-            << " P=" << p << " (" << NWires << " wires)";
+          LOG_TRACE("GeometryIteratorLoopTest") << "    " << expTID
+            << " (" << NWires << " wires)";
           if (!iPlaneID) {
             LOG_ERROR("GeometryIteratorLoopTest")
-              << "plane ID iterator thinks it's all over at C="
-              << c << " T=" << t << " P=" << p;
+              << "plane ID iterator thinks it's all over at " << expPID;
             ++nErrors;
           }
           else if (iPlaneID->Cryostat != c) {
@@ -181,8 +186,20 @@ namespace geo {
           if (&*iPlane != &Plane) {
             LOG_ERROR("GeometryIteratorLoopTest")
               << "plane iterator retrieves PlaneGeo[" << ((void*) iPlane.get())
-              << "] instead of [" << ((void*) &Plane) << "] (C="
-              << c << " T=" << t << " P=" << p << ")";
+              << "] instead of [" << ((void*) &Plane) << "] (" << expPID << ")";
+            ++nErrors;
+          }
+          
+          if (*iPlaneIDinCryo != expPID) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Plane ID local iterator in " << expCID << " points to "
+              << *iPlaneIDinCryo << " instead of " << expPID;
+            ++nErrors;
+          }
+          if (iPlaneInCryo->ID() != expPID) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Plane local iterator in " << expCID << " points to "
+              << iPlaneInCryo->ID() << " instead of " << expPID;
             ++nErrors;
           }
           
@@ -244,7 +261,10 @@ namespace geo {
           } // end loop over wires
           ++iPlaneID;
           ++iPlane;
+          ++iPlaneIDinCryo;
+          ++iPlaneInCryo;
           ++nPlanes;
+          ++nPlanesInCryo;
         } // end loop over planes
         
         ++iTPCID;
@@ -264,6 +284,19 @@ namespace geo {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "TPC local iterator in " << expCID
           << " should be at end, and instead points to " << iTPCinCryo->ID();
+        ++nErrors;
+      }
+      
+      if (iPlaneIDinCryo != geom->end_plane_id(expCID)) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "Plane ID local iterator in " << expCID
+          << " should be at end, and instead points to " << *iPlaneIDinCryo;
+        ++nErrors;
+      }
+      if (iPlaneInCryo != geom->end_plane(expCID)) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "plane local iterator in " << expCID
+          << " should be at end, and instead points to " << iPlaneInCryo->ID();
         ++nErrors;
       }
       
@@ -344,15 +377,15 @@ namespace geo {
       //
       unsigned int nTPCsInCryo = cryo.NTPC();
       LOG_DEBUG("GeometryIteratorsDump")
-        << "Looping though " << nTPCsInCryo << " TPCs in " << cryo.ID();
+        << "Looping though " << nTPCsInCryo << " TPCs in " << expCID;
       unsigned int nLoopedTPCIDs = 0;
-      for (geo::TPCID const& tID: geom->IterateTPCIDs(cryo.ID())) {
+      for (geo::TPCID const& tID: geom->IterateTPCIDs(expCID)) {
         LOG_TRACE("GeometryIteratorsDump") << tID;
-        if (nLoopedTPCIDs >= nTPCs) {
+        if (nLoopedTPCIDs >= nTPCsInCryo) {
           LOG_ERROR("GeometryIteratorLoopTest")
-            << "After all " << nLoopedTPCIDs
-            << " TPC IDs, iterator has not reached the end ("
-            << *(geom->end_TPC_id(cryo.ID())) << ") but it's still at " << tID;
+            << "After all " << nLoopedTPCIDs << " TPC IDs in " << expCID
+            << ", iterator has not reached the end ("
+            << *(geom->end_TPC_id(expCID)) << ") but it's still at " << tID;
           ++nErrors;
           break;
         }
@@ -361,16 +394,16 @@ namespace geo {
       if (nLoopedTPCIDs < nTPCsInCryo) {
         LOG_ERROR("GeometryIteratorLoopTest")
           << "Looped only " << nLoopedTPCIDs
-          << " TPC IDs in " << cryo.ID() << ", while we expected "
+          << " TPC IDs in " << expCID << ", while we expected "
           << nTPCsInCryo << " iterations!";
         ++nErrors;
       } // if
       unsigned int nLoopedTPCs = 0;
-      for (geo::TPCGeo const& TPC: geom->IterateTPCs(cryo.ID())) {
+      for (geo::TPCGeo const& TPC: geom->IterateTPCs(expCID)) {
         if (nLoopedTPCs >= nTPCsInCryo) {
           LOG_ERROR("GeometryIteratorLoopTest")
             << "After all " << nLoopedTPCs
-            << " TPCs in " << cryo.ID() << ", iterator has not reached the end";
+            << " TPCs in " << expCID << ", iterator has not reached the end";
           ++nErrors;
           break;
         }
@@ -378,9 +411,51 @@ namespace geo {
       }
       if (nLoopedTPCs < nTPCsInCryo) {
         LOG_ERROR("GeometryIteratorLoopTest")
-          << "Looped only " << nLoopedTPCs
-          << " TPCs in " << cryo.ID() << ", while we expected "
-          << nTPCs << " iterations!";
+          << "Looped only " << nLoopedTPCs << " TPCs in " << expCID
+          << ", while we expected " << nTPCsInCryo << " iterations!";
+        ++nErrors;
+      } // if
+      
+      //
+      // test if we can loop all planes in this cryostat via iterator box
+      //
+      LOG_DEBUG("GeometryIteratorsDump")
+        << "Looping though " << nPlanesInCryo << " planes in " << expCID;
+      unsigned int nLoopedPlaneIDs = 0;
+      for (geo::PlaneID const& pID: geom->IteratePlaneIDs(expCID)) {
+        LOG_TRACE("GeometryIteratorsDump") << pID;
+        if (nLoopedPlaneIDs >= nPlanesInCryo) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "After all " << nLoopedPlaneIDs << " plane IDs in " << expCID
+            << ", iterator has not reached the end ("
+            << *(geom->end_plane_id(expCID)) << ") but it's still at " << pID;
+          ++nErrors;
+          break;
+        }
+        ++nLoopedPlaneIDs;
+      }
+      if (nLoopedPlaneIDs < nPlanesInCryo) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "Looped only " << nLoopedPlaneIDs
+          << " plane IDs in " << expCID << ", while we expected "
+          << nPlanesInCryo << " iterations!";
+        ++nErrors;
+      } // if
+      unsigned int nLoopedPlanes = 0;
+      for (geo::PlaneGeo const& plane: geom->IteratePlanes(expCID)) {
+        if (nLoopedPlanes >= nPlanesInCryo) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "After all " << nLoopedPlanes
+            << " planes in " << expCID << ", iterator has not reached the end";
+          ++nErrors;
+          break;
+        }
+        ++nLoopedPlanes;
+      }
+      if (nLoopedPlanes < nPlanesInCryo) {
+        LOG_ERROR("GeometryIteratorLoopTest")
+          << "Looped only " << nLoopedPlanes << " planes in " << expCID
+          << ", while we expected " << nPlanesInCryo << " iterations!";
         ++nErrors;
       } // if
       

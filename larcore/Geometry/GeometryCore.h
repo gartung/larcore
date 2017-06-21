@@ -2657,13 +2657,22 @@ namespace geo {
     // iterators
     //
     
-    /// Initializes the specified ID with the ID of the first plane
+    /// Initializes the specified ID with the ID of the first plane.
     void GetBeginID(geo::PlaneID& id) const
       { GetBeginID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
     
-    /// Initializes the specified ID with the invalid ID after the last plane
+    /// Initializes the specified ID with the invalid ID after the last plane.
     void GetEndID(geo::PlaneID& id) const
       { GetEndID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
+    
+    /// Returns the ID of the first plane of the specified cryostat.
+    geo::PlaneID GetBeginPlaneID(geo::CryostatID const& id) const
+      { return { GetBeginTPCID(id), 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last plane of the specified
+    /// cryostat.
+    geo::PlaneID GetEndPlaneID(geo::CryostatID const& id) const
+      { return { GetEndTPCID(id), 0 }; }
     
     /// Returns an iterator pointing to the first plane ID in the detector
     plane_id_iterator begin_plane_id() const
@@ -2673,6 +2682,16 @@ namespace geo {
     plane_id_iterator end_plane_id() const
       { return plane_id_iterator(this, plane_id_iterator::end_pos); }
     
+    /// Returns an iterator pointing to the first plane ID in the specified
+    /// cryostat.
+    plane_id_iterator begin_plane_id(geo::CryostatID const& ID) const
+      { return plane_id_iterator(this, GetBeginPlaneID(ID)); }
+    
+    /// Returns an iterator pointing after the last plane ID in the specified
+    /// cryostat.
+    plane_id_iterator end_plane_id(geo::CryostatID const& ID) const
+      { return plane_id_iterator(this, GetEndPlaneID(ID)); }
+    
     /// Returns an iterator pointing to the first plane in the detector
     plane_iterator begin_plane() const
       { return plane_iterator(this, plane_iterator::begin_pos); }
@@ -2681,19 +2700,29 @@ namespace geo {
     plane_iterator end_plane() const
       { return plane_iterator(this, plane_iterator::end_pos); }
     
+    /// Returns an iterator pointing to the first plane in the specified
+    /// cryostat.
+    plane_iterator begin_plane(geo::CryostatID const& ID) const
+      { return plane_iterator(this, GetBeginPlaneID(ID)); }
+    
+    /// Returns an iterator pointing after the last plane in the specified
+    /// cryostat.
+    plane_iterator end_plane(geo::CryostatID const& ID) const
+      { return plane_iterator(this, GetEndPlaneID(ID)); }
+    
     /**
-     * @brief Enables ranged-for loops on all plane IDs of the detector
+     * @brief Enables ranged-for loops on all plane IDs of the detector.
      * @returns an object suitable for ranged-for loops on all plane IDs
      * 
      * Example of usage:
-     *     
-     *     for (geo::PlaneID const& pID: geom->IteratePlaneIDs()) {
-     *       geo::PlaneGeo const& Plane = geom->Plane(pID);
-     *       
-     *       // useful code here
-     *       
-     *     } // for all plane IDs
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::PlaneID const& pID: geom->IteratePlaneIDs()) {
+     *   geo::PlaneGeo const& Plane = geom->Plane(pID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all plane IDs
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
     IteratorBox<
       plane_id_iterator,
@@ -2702,23 +2731,72 @@ namespace geo {
     IteratePlaneIDs() const { return { this }; }
     
     /**
-     * @brief Enables ranged-for loops on all planes of the detector
+     * @brief Enables ranged-for loops on all plane IDs of the specified
+     *        cryostat.
+     * @param cid the ID of the cryostat to look the plane IDs of
+     * @returns an object suitable for ranged-for loops on plane IDs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::PlaneID const& pID: geom->IteratePlaneIDs(cid)) {
+     *   geo::PlaneGeo const& plane = geom->Plane(pID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all planes in cryostat #1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      plane_id_iterator, geo::CryostatID,
+      &GeometryCore::begin_plane_id, &GeometryCore::end_plane_id
+      >
+    IteratePlaneIDs(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all planes of the detector.
      * @returns an object suitable for ranged-for loops on all planes
      * 
      * Example of usage:
-     *     
-     *     for (geo::PlaneGeo const& Plane: geom->IteratePlanes()) {
-     *       
-     *       // useful code here
-     *       
-     *     } // for all planes
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * for (geo::PlaneGeo const& Plane: geom->IteratePlanes()) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all planes
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      */
     IteratorBox<
       plane_iterator,
       &GeometryCore::begin_plane, &GeometryCore::end_plane
       >
     IteratePlanes() const { return { this }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all TPCs of the specified cryostat.
+     * @param cid the ID of the cryostat to look the TPCs of
+     * @returns an object suitable for ranged-for loops on TPCs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (geo::PlaneGeo const& plane: geom->IteratePlanes(cid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for planes in cryostat 1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      plane_iterator, geo::CryostatID,
+      &GeometryCore::begin_plane, &GeometryCore::end_plane
+      >
+    IteratePlanes(geo::CryostatID const& cid) const { return { this, cid }; }
+    
     
     //
     // single object features
