@@ -1858,7 +1858,17 @@ namespace geo {
      * @return ID after the last subelement in the specified geometry element
      */
     template <typename GeoID>
-    GeoID GetEndID() const  { GeoID id; GetEndID(id); return id; }
+    GeoID GetEndID() const { GeoID id; GetEndID(id); return id; }
+    
+    /**
+     * @brief Returns the ID next to the specified one.
+     * @tparam GeoID type of the ID to be returned
+     * @param id the element ID to be incremented
+     * @return ID of the next subelement after `id`
+     */
+    template <typename GeoID>
+    GeoID GetNextID(GeoID const& id) const
+      { auto nextID(id); GetBeginID(nextID); return nextID; }
     
     
     /**
@@ -2017,6 +2027,10 @@ namespace geo {
     /// Initializes the specified ID with the invalid ID after the last cryostat
     void GetEndID(geo::CryostatID& id) const
       { id = geo::CryostatID(Ncryostats(), false); }
+    
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(geo::CryostatID& id) const; // inline implementation
     
     /// Returns an iterator pointing to the first cryostat ID
     cryostat_id_iterator begin_cryostat_id() const
@@ -2309,6 +2323,10 @@ namespace geo {
     /// Initializes the specified ID with the invalid ID after the last TPC.
     void GetEndID(geo::TPCID& id) const
       { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
+    
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(geo::TPCID& id) const; // inline implementation
     
     /// Returns the ID of the first TPC in the specified cryostat.
     geo::TPCID GetBeginTPCID(geo::CryostatID const& id) const
@@ -2703,6 +2721,10 @@ namespace geo {
     void GetEndID(geo::PlaneID& id) const
       { GetEndID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
     
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(geo::PlaneID& id) const; // inline implementation
+    
     /// Returns the ID of the first plane of the specified cryostat.
     geo::PlaneID GetBeginPlaneID(geo::CryostatID const& id) const
       { return { GetBeginTPCID(id), 0 }; }
@@ -3006,6 +3028,10 @@ namespace geo {
     /// Initializes the specified ID with the invalid ID after the last wire.
     void GetEndID(geo::WireID& id) const
       { GetEndID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
+    
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(geo::WireID& id) const; // inline implementation
     
     /// Returns the ID of the first wire in the specified cryostat.
     geo::WireID GetBeginWireID(geo::CryostatID const& id) const
@@ -4135,6 +4161,9 @@ namespace geo {
     void GetEndID(readout::TPCsetID& id) const
       { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPCset = 0; }
     
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(readout::TPCsetID& id) const; // inline implementation
     
     /// Returns an iterator pointing to the first TPC set ID in the detector
     TPCset_id_iterator begin_TPCset_id() const
@@ -4315,6 +4344,9 @@ namespace geo {
     void GetEndID(readout::ROPID& id) const
       { GetEndID(static_cast<readout::TPCsetID&>(id)); id.ROP = 0; }
     
+    /// Sets the ID to the ID after the specified one.
+    /// @return whether the ID is actually valid (validity flag is also set)
+    bool IncrementID(readout::ROPID& id) const; // inline implementation
     
     /// Returns an iterator pointing to the first ROP ID in the detector.
     ROP_id_iterator begin_ROP_id() const
@@ -4621,6 +4653,64 @@ namespace geo {
   }; // class ROOTGeoNodeForwardIterator
   
 } // namespace geo
+
+
+
+//******************************************************************************
+//*** inline implementation
+//***
+inline bool geo::GeometryCore::IncrementID(geo::CryostatID& id) const {
+  ++id.Cryostat;
+  if (id) id.isValid = HasCryostat(id); // if invalid already, it stays so
+  return bool(id);
+} // geo::GeometryCore::IncrementID(geo::CryostatID)
+
+inline bool geo::GeometryCore::IncrementID(geo::TPCID& id) const {
+  unsigned int const nTPCsInCryo = NTPC(id);
+  if (++id.TPC < nTPCsInCryo) return bool(id); // if was invalid, it stays so
+  // no more TPCs in this cryostat
+  id.TPC = 0;
+  return IncrementID(static_cast<geo::CryostatID&>(id)); // also sets validity
+} // geo::GeometryCore::IncrementID(geo::TPCID)
+
+inline bool geo::GeometryCore::IncrementID(geo::PlaneID& id) const {
+  // this implementation is non-optimal, in that the cryostat lookup is
+  // performed both here and, potentially, in IncrementID(TPCID)
+  unsigned int const nPlanesInTPC = Nplanes(id);
+  if (++id.Plane < nPlanesInTPC) return bool(id); // if was invalid, stays so
+  // no more planes in this TPCs
+  id.Plane = 0;
+  return IncrementID(static_cast<geo::TPCID&>(id)); // also sets validity
+} // geo::GeometryCore::IncrementID(geo::PlaneID)
+
+inline bool geo::GeometryCore::IncrementID(geo::WireID& id) const {
+  // this implementation is non-optimal, in that the TPC lookup is
+  // performed both here and, potentially, in IncrementID(PlaneID)
+  unsigned int const nWiresInPlane = Nwires(id);
+  if (++id.Wire < nWiresInPlane) return bool(id); // if was invalid, stays so
+  // no more wires in this plane
+  id.Wire = 0;
+  return IncrementID(static_cast<geo::PlaneID&>(id)); // also sets validity
+} // geo::GeometryCore::IncrementID(geo::WireID)
+
+inline bool geo::GeometryCore::IncrementID(readout::TPCsetID& id) const {
+  unsigned int const nTPCsetsInCryo = NTPCsets(id);
+  if (++id.TPCset < nTPCsetsInCryo)
+    return bool(id); // if was invalid, it stays so
+  // no more TPC sets in this cryostat
+  id.TPCset = 0;
+  return IncrementID(static_cast<geo::CryostatID&>(id)); // also sets validity
+} // geo::GeometryCore::IncrementID(readout::TPCsetID)
+
+inline bool geo::GeometryCore::IncrementID(readout::ROPID& id) const {
+  // this implementation is non-optimal, in that the cryostat lookup is
+  // performed both here and, potentially, in IncrementID(TPCsetID)
+  unsigned int const nROPinTPC = NROPs(id);
+  if (++id.ROP < nROPinTPC) return bool(id); // if was invalid, stays so
+  // no more readout planes in this TPC set
+  id.ROP = 0;
+  return IncrementID(static_cast<readout::TPCsetID&>(id)); // also sets validity
+} // geo::GeometryCore::IncrementID(readout::ROPID)
 
 
 
