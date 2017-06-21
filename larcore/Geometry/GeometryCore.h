@@ -1852,15 +1852,6 @@ namespace geo {
     GeoID GetBeginID() const { GeoID id; GetBeginID(id); return id; }
     
     /**
-     * @brief Returns the (possibly invalid) ID after the last subelement of
-     *        the detector.
-     * @tparam GeoID type of the ID to be returned
-     * @return ID after the last subelement in the specified geometry element
-     */
-    template <typename GeoID>
-    GeoID GetEndID() const { GeoID id; GetEndID(id); return id; }
-    
-    /**
      * @brief Returns the ID next to the specified one.
      * @tparam GeoID type of the ID to be returned
      * @param id the element ID to be incremented
@@ -1868,7 +1859,16 @@ namespace geo {
      */
     template <typename GeoID>
     GeoID GetNextID(GeoID const& id) const
-      { auto nextID(id); GetBeginID(nextID); return nextID; }
+      { auto nextID(id); IncrementID(nextID); return nextID; }
+    
+    /**
+     * @brief Returns the (possibly invalid) ID after the last subelement of
+     *        the detector.
+     * @tparam GeoID type of the ID to be returned
+     * @return ID after the last subelement in the specified geometry element
+     */
+    template <typename GeoID>
+    GeoID GetEndID() const { GeoID id; GetEndID(id); return id; }
     
     
     /**
@@ -2734,6 +2734,15 @@ namespace geo {
     geo::PlaneID GetEndPlaneID(geo::CryostatID const& id) const
       { return { GetEndTPCID(id), 0 }; }
     
+    /// Returns the ID of the first plane of the specified TPC.
+    geo::PlaneID GetBeginPlaneID(geo::TPCID const& id) const
+      { return { id, 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last plane of the specified
+    /// TPC.
+    geo::PlaneID GetEndPlaneID(geo::TPCID const& id) const
+      { return { GetNextID(id), 0 }; }
+    
     /// Returns an iterator pointing to the first plane ID in the detector
     plane_id_iterator begin_plane_id() const
       { return plane_id_iterator(this, plane_id_iterator::begin_pos); }
@@ -2752,6 +2761,16 @@ namespace geo {
     plane_id_iterator end_plane_id(geo::CryostatID const& ID) const
       { return plane_id_iterator(this, GetEndPlaneID(ID)); }
     
+    /// Returns an iterator pointing to the first plane ID in the specified
+    /// TPC.
+    plane_id_iterator begin_plane_id(geo::TPCID const& ID) const
+      { return plane_id_iterator(this, GetBeginPlaneID(ID)); }
+    
+    /// Returns an iterator pointing after the last plane ID in the specified
+    /// TPC.
+    plane_id_iterator end_plane_id(geo::TPCID const& ID) const
+      { return plane_id_iterator(this, GetEndPlaneID(ID)); }
+    
     /// Returns an iterator pointing to the first plane in the detector
     plane_iterator begin_plane() const
       { return plane_iterator(this, plane_iterator::begin_pos); }
@@ -2768,6 +2787,14 @@ namespace geo {
     /// Returns an iterator pointing after the last plane in the specified
     /// cryostat.
     plane_iterator end_plane(geo::CryostatID const& ID) const
+      { return plane_iterator(this, GetEndPlaneID(ID)); }
+    
+    /// Returns an iterator pointing to the first plane in the specified TPC.
+    plane_iterator begin_plane(geo::TPCID const& ID) const
+      { return plane_iterator(this, GetBeginPlaneID(ID)); }
+    
+    /// Returns an iterator pointing after the last plane in the specified TPC.
+    plane_iterator end_plane(geo::TPCID const& ID) const
       { return plane_iterator(this, GetEndPlaneID(ID)); }
     
     /**
@@ -2816,6 +2843,30 @@ namespace geo {
     IteratePlaneIDs(geo::CryostatID const& cid) const { return { this, cid }; }
     
     /**
+     * @brief Enables ranged-for loops on all plane IDs of the specified TPC.
+     * @param tid the ID of the TPC to loop the plane IDs of
+     * @returns an object suitable for ranged-for loops on plane IDs
+     * 
+     * If the TPC ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::TPCID tid{ 0, 1 }; // C:0 T:1 (hope it exists!)
+     * for (geo::PlaneID const& pID: geom->IteratePlaneIDs(tid)) {
+     *   geo::PlaneGeo const& plane = geom->Plane(pID);
+     *   
+     *   // useful code here
+     *   
+     * } // for all planes in C:0 T:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      plane_id_iterator, geo::TPCID,
+      &GeometryCore::begin_plane_id, &GeometryCore::end_plane_id
+      >
+    IteratePlaneIDs(geo::TPCID const& tid) const { return { this, tid }; }
+    
+    /**
      * @brief Enables ranged-for loops on all planes of the detector.
      * @returns an object suitable for ranged-for loops on all planes
      * 
@@ -2835,9 +2886,9 @@ namespace geo {
     IteratePlanes() const { return { this }; }
     
     /**
-     * @brief Enables ranged-for loops on all TPCs of the specified cryostat.
-     * @param cid the ID of the cryostat to loop the TPCs of
-     * @returns an object suitable for ranged-for loops on TPCs
+     * @brief Enables ranged-for loops on all planes of the specified cryostat.
+     * @param cid the ID of the cryostat to loop the planes of
+     * @returns an object suitable for ranged-for loops on planes
      * 
      * If the cryostat ID is invalid, the effect is undefined.
      * 
@@ -2856,6 +2907,29 @@ namespace geo {
       &GeometryCore::begin_plane, &GeometryCore::end_plane
       >
     IteratePlanes(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all planes of the specified TPC.
+     * @param tid the ID of the TPC to loop the planes of
+     * @returns an object suitable for ranged-for loops on planes
+     * 
+     * If the TPC ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::TPCID tid{ 0, 1 }; // C:0 T:1 (hope it exists!)
+     * for (geo::PlaneGeo const& plane: geom->IteratePlanes(tid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for planes in C:0 T:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      plane_iterator, geo::TPCID,
+      &GeometryCore::begin_plane, &GeometryCore::end_plane
+      >
+    IteratePlanes(geo::TPCID const& tid) const { return { this, tid }; }
     
     
     //

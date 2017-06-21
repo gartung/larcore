@@ -233,6 +233,11 @@ namespace geo {
           ++nErrors;
         }
         
+        geo::plane_id_iterator iPlaneIDinTPC = geom->begin_plane_id(expTID);
+        geo::plane_iterator iPlaneInTPC = geom->begin_plane(expTID);
+        
+        unsigned int nPlanesInTPC = 0;
+        
         for(unsigned int p = 0; p < NPlanes; ++p) {
           const PlaneGeo& Plane(TPC.Plane(p));
           geo::PlaneID const expPID(expTID, p);
@@ -294,7 +299,20 @@ namespace geo {
           if (iPlaneInCryo->ID() != expPID) {
             LOG_ERROR("GeometryIteratorLoopTest")
               << "Plane local iterator in " << expCID << " points to "
-              << iPlaneInCryo->ID() << " instead of " << expPID;
+              << iPlaneInCryo.ID() << " instead of " << expPID;
+            ++nErrors;
+          }
+          
+          if (*iPlaneIDinTPC != expPID) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Plane ID local iterator in " << expTID << " points to "
+              << *iPlaneIDinTPC << " instead of " << expPID;
+            ++nErrors;
+          }
+          if (iPlaneInTPC->ID() != expPID) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "Plane local iterator in " << expTID << " points to "
+              << iPlaneInTPC.ID() << " instead of " << expPID;
             ++nErrors;
           }
           
@@ -381,10 +399,71 @@ namespace geo {
           ++iPlane;
           ++iPlaneIDinCryo;
           ++iPlaneInCryo;
+          ++iPlaneIDinTPC;
+          ++iPlaneInTPC;
           ++nPlanes;
           ++nPlanesInCryo;
+          ++nPlanesInTPC;
           geom->IncrementID(runningPID);
         } // end loop over planes
+        
+        if (iPlaneIDinTPC != geom->end_plane_id(expTID)) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Plane ID local iterator in " << expTID
+            << " should be at end (" << (*(geom->end_plane_id(expTID)))
+            << "), and instead points to " << *iPlaneIDinTPC;
+          ++nErrors;
+        }
+        if (iPlaneInTPC != geom->end_plane(expTID)) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Plane local iterator in " << expTID
+            << " should be at end, and instead points to " << iPlaneInTPC->ID();
+          ++nErrors;
+        }
+        
+        //
+        // test if we can loop all planes in this TPC via iterator box
+        //
+        LOG_DEBUG("GeometryIteratorsDump")
+          << "Looping though " << nPlanesInTPC << " planes in " << expTID;
+        unsigned int nLoopedPlaneIDs = 0;
+        for (geo::PlaneID const& pID: geom->IteratePlaneIDs(expTID)) {
+          LOG_TRACE("GeometryIteratorsDump") << pID;
+          if (nLoopedPlaneIDs >= nPlanesInTPC) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "After all " << nLoopedPlaneIDs << " plane IDs in " << expTID
+              << ", iterator has not reached the end ("
+              << *(geom->end_plane_id(expTID)) << ") but it's still at " << pID;
+            ++nErrors;
+            break;
+          }
+          ++nLoopedPlaneIDs;
+        }
+        if (nLoopedPlaneIDs < nPlanesInTPC) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Looped only " << nLoopedPlaneIDs
+            << " plane IDs in " << expTID << ", while we expected "
+            << nPlanesInTPC << " iterations!";
+          ++nErrors;
+        } // if
+        unsigned int nLoopedPlanes = 0;
+        for (geo::PlaneGeo const& plane: geom->IteratePlanes(expTID)) {
+          if (nLoopedPlanes >= nPlanesInTPC) {
+            LOG_ERROR("GeometryIteratorLoopTest")
+              << "After all " << nLoopedPlanes << " planes in "
+              << expTID << ", iterator has not reached the end";
+            ++nErrors;
+            break;
+          }
+          ++nLoopedPlanes;
+        }
+        if (nLoopedPlanes < nPlanesInTPC) {
+          LOG_ERROR("GeometryIteratorLoopTest")
+            << "Looped only " << nLoopedPlanes << " planes in " << expTID
+            << ", while we expected " << nPlanesInTPC << " iterations!";
+          ++nErrors;
+        } // if
+        
         
         ++iTPCID;
         ++iTPC;
