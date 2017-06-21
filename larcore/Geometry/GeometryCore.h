@@ -4387,6 +4387,16 @@ namespace geo {
     /// @return whether the ID is actually valid (validity flag is also set)
     bool IncrementID(readout::TPCsetID& id) const; // inline implementation
     
+    /// Returns the ID of the first TPC set in the specified cryostat.
+    readout::TPCsetID GetBeginTPCsetID(geo::CryostatID const& id) const
+      { return { id, 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last TPC set of the
+    /// specified cryostat.
+    readout::TPCsetID GetEndTPCsetID(geo::CryostatID const& id) const
+      { return { id.Cryostat + 1, 0 }; }
+    
+    
     /// Returns an iterator pointing to the first TPC set ID in the detector
     TPCset_id_iterator begin_TPCset_id() const
       { return TPCset_id_iterator(this, TPCset_id_iterator::begin_pos); }
@@ -4394,6 +4404,16 @@ namespace geo {
     /// Returns an iterator pointing after the last TPC set ID in the detector
     TPCset_id_iterator end_TPCset_id() const
       { return TPCset_id_iterator(this, TPCset_id_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first TPC set ID in the specified
+    /// cryostat.
+    TPCset_id_iterator begin_TPCset_id(geo::CryostatID const& cid) const
+      { return TPCset_id_iterator(this, GetBeginTPCsetID(cid)); }
+    
+    /// Returns an iterator pointing after the last TPC set ID in the specified
+    /// cryostat.
+    TPCset_id_iterator end_TPCset_id(geo::CryostatID const& cid) const
+      { return TPCset_id_iterator(this, GetEndTPCsetID(cid)); }
     
     /**
      * @brief Enables ranged-for loops on all TPC set IDs of the detector
@@ -4414,6 +4434,30 @@ namespace geo {
       &GeometryCore::begin_TPCset_id, &GeometryCore::end_TPCset_id
       >
     IterateTPCsetIDs() const { return { this }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all TPC set IDs of the specified
+     *        cryostat.
+     * @param cid the ID of the cryostat to loop the TPC set IDs of
+     * @returns an object suitable for ranged-for loops on TPC set IDs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (readout::TPCsetID const& tID: geom->IterateTPCsetIDs(cid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all TPC sets in cryostat #1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      TPCset_id_iterator, geo::CryostatID,
+      &GeometryCore::begin_TPCset_id, &GeometryCore::end_TPCset_id
+      >
+    IterateTPCsetIDs(geo::CryostatID const& cid) const { return { this, cid }; }
     
     
 #if 0
@@ -4570,6 +4614,24 @@ namespace geo {
     /// @return whether the ID is actually valid (validity flag is also set)
     bool IncrementID(readout::ROPID& id) const; // inline implementation
     
+    /// Returns the ID of the first readout plane of the specified cryostat.
+    readout::ROPID GetBeginROPID(geo::CryostatID const& id) const
+      { return { GetBeginTPCsetID(id), 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last readout plane of the
+    /// specified cryostat.
+    readout::ROPID GetEndROPID(geo::CryostatID const& id) const
+      { return { GetEndTPCsetID(id), 0 }; }
+    
+    /// Returns the ID of the first readout plane of the specified TPC set.
+    readout::ROPID GetBeginROPID(readout::TPCsetID const& id) const
+      { return { id, 0 }; }
+    
+    /// Returns the (possibly invalid) ID after the last readout plane of the
+    /// specified TPC set.
+    readout::ROPID GetEndROPID(readout::TPCsetID const& id) const
+      { return { GetNextID(id), 0 }; }
+    
     /// Returns an iterator pointing to the first ROP ID in the detector.
     ROP_id_iterator begin_ROP_id() const
       { return ROP_id_iterator(this, ROP_id_iterator::begin_pos); }
@@ -4577,6 +4639,26 @@ namespace geo {
     /// Returns an iterator pointing after the last ROP ID in the detector.
     ROP_id_iterator end_ROP_id() const
       { return ROP_id_iterator(this, ROP_id_iterator::end_pos); }
+    
+    /// Returns an iterator pointing to the first readout plane ID in the
+    /// specified cryostat.
+    ROP_id_iterator begin_ROP_id(geo::CryostatID const& ID) const
+      { return ROP_id_iterator(this, GetBeginROPID(ID)); }
+    
+    /// Returns an iterator pointing after the last readout plane ID in the
+    /// specified cryostat.
+    ROP_id_iterator end_ROP_id(geo::CryostatID const& ID) const
+      { return ROP_id_iterator(this, GetEndROPID(ID)); }
+    
+    /// Returns an iterator pointing to the first readout plane ID in the
+    /// specified TPC set.
+    ROP_id_iterator begin_ROP_id(readout::TPCsetID const& ID) const
+      { return ROP_id_iterator(this, GetBeginROPID(ID)); }
+    
+    /// Returns an iterator pointing after the last readout plane ID in the
+    /// specified TPC set.
+    ROP_id_iterator end_ROP_id(readout::TPCsetID const& ID) const
+      { return ROP_id_iterator(this, GetEndROPID(ID)); }
     
     /**
      * @brief Enables ranged-for loops on all readout plane IDs of the detector.
@@ -4597,6 +4679,54 @@ namespace geo {
       &GeometryCore::begin_ROP_id, &GeometryCore::end_ROP_id
       >
     IterateROPIDs() const { return { this }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all readout plane IDs of the specified
+     *        cryostat.
+     * @param cid the ID of the cryostat to loop the readout plane IDs of
+     * @returns an object suitable for ranged-for loops on readout plane IDs
+     * 
+     * If the cryostat ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * geo::CryostatID cid{1}; // cryostat #1 (hope it exists!)
+     * for (readout::ROPID const& rID: geom->IterateROPIDs(cid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all readout planes in cryostat #1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      ROP_id_iterator, geo::CryostatID,
+      &GeometryCore::begin_ROP_id, &GeometryCore::end_ROP_id
+      >
+    IterateROPIDs(geo::CryostatID const& cid) const { return { this, cid }; }
+    
+    /**
+     * @brief Enables ranged-for loops on all readout plane IDs of the specified
+     *        TPC set.
+     * @param sid the ID of the TPC set to loop the readout plane IDs of
+     * @returns an object suitable for ranged-for loops on readout plane IDs
+     * 
+     * If the TPC set ID is invalid, the effect is undefined.
+     * 
+     * Example of usage:
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * readout::TPCsetID sid{ 0, 1 }; // C:0 S:1 (hope it exists!)
+     * for (readout::ROPID const& rID: geom->IterateROPIDs(sid)) {
+     *   
+     *   // useful code here
+     *   
+     * } // for all readout planes in C:0 S:1
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     */
+    LocalIteratorBox<
+      ROP_id_iterator, readout::TPCsetID,
+      &GeometryCore::begin_ROP_id, &GeometryCore::end_ROP_id
+      >
+    IterateROPIDs(readout::TPCsetID const& sid) const { return { this, sid }; }
     
     
     /**
