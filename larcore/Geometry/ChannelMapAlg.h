@@ -618,7 +618,7 @@ namespace geo{
    template <typename T>
    bool isValidElement(TPCInfoMap_t<T> const& map, geo::TPCID const& id) const
      {
-       return isValidElement(map, static_cast<geo::CryostatID const&>(id))
+       return isValidElement(map, id.asCryostatID())
          && (id.TPC < map[id.Cryostat].size());
      }
    //@}
@@ -645,15 +645,15 @@ namespace geo{
    template <typename T>
    bool isValidElement(PlaneInfoMap_t<T> const& map, geo::TPCID const& id) const
      {
-       return isValidElement(map, static_cast<geo::CryostatID const&>(id))
+       return isValidElement(map, id.asCryostatID())
          && (id.TPC < map[id.Cryostat].size());
      }
    template <typename T>
    bool isValidElement
      (PlaneInfoMap_t<T> const& map, geo::PlaneID const& id) const
      {
-       return isValidElement(map, static_cast<geo::TPCID const&>(id))
-         && (id.Plane < AccessSize(map, static_cast<geo::TPCID const&>(id)));
+       return isValidElement(map, id.asTPCID())
+         && (id.Plane < AccessSize(map, id.asTPCID()));
      }
    //@}
    

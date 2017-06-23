@@ -679,8 +679,7 @@ namespace geo {
   double GeometryCore::PlanePitch
     (geo::PlaneID const& pid1, geo::PlaneID const& pid2) const
   {
-    return PlanePitch
-      (static_cast<geo::TPCID const&>(pid1), pid1.Plane, pid2.Plane);
+    return PlanePitch(pid1.asTPCID(), pid1.Plane, pid2.Plane);
   }
   
   double GeometryCore::PlanePitch(unsigned int p1, 
@@ -1420,7 +1419,7 @@ namespace geo {
   void GeometryCore::CheckIndependentPlanesOnSameTPC
     (geo::PlaneID const& pid1, geo::PlaneID const& pid2, const char* caller)
   {
-    if(static_cast<geo::TPCID const&>(pid1) != static_cast<geo::TPCID const&>(pid2)) {
+    if(pid1.asTPCID() != pid2.asTPCID()) {
       throw cet::exception("GeometryCore")
         << caller << " needs two planes on the same TPC (got "
         << std::string(pid1) << " and " << std::string(pid2) << ")\n";
@@ -1784,7 +1783,7 @@ namespace geo {
   bool GeometryCore::WireIDIntersectionCheck
     (const geo::WireID& wid1, const geo::WireID& wid2) const
   {
-    if (static_cast<geo::TPCID const&>(wid1) != wid2) {
+    if (wid1.asTPCID() != wid2) {
       mf::LogError("WireIDIntersectionCheck")
         << "Comparing two wires on different TPCs: return failure.";
       return false;

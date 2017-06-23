@@ -262,7 +262,7 @@ void geo::ChannelMapStandardTestAlg::ROPMappingTest() const {
     // check that the TPC is one, and the right one
     std::vector<geo::TPCID> const TPCs = geom->ROPtoTPCs(ropID);
     BOOST_CHECK_EQUAL(TPCs.size(), 1U);
-    BOOST_CHECK_EQUAL(TPCs.front(), static_cast<geo::TPCID const&>(planeID));
+    BOOST_CHECK_EQUAL(TPCs.front(), planeID.asTPCID());
     
     // check that the first channel is valid
     raw::ChannelID_t const FirstChannelID = geom->FirstChannelInROP(ropID);
