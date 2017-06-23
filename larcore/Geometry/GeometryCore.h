@@ -2318,11 +2318,11 @@ namespace geo {
     
     /// Initializes the specified ID with the ID of the first TPC.
     void GetBeginID(geo::TPCID& id) const
-      { GetBeginID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
+      { GetBeginID(id.asCryostatID()); id.TPC = 0; }
     
     /// Initializes the specified ID with the invalid ID after the last TPC.
     void GetEndID(geo::TPCID& id) const
-      { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPC = 0; }
+      { GetEndID(id.asCryostatID()); id.TPC = 0; }
     
     /// Sets the ID to the ID after the specified one.
     /// @return whether the ID is actually valid (validity flag is also set)
@@ -2715,11 +2715,11 @@ namespace geo {
     
     /// Initializes the specified ID with the ID of the first plane.
     void GetBeginID(geo::PlaneID& id) const
-      { GetBeginID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
+      { GetBeginID(id.asTPCID()); id.Plane = 0; }
     
     /// Initializes the specified ID with the invalid ID after the last plane.
     void GetEndID(geo::PlaneID& id) const
-      { GetEndID(static_cast<geo::TPCID&>(id)); id.Plane = 0; }
+      { GetEndID(id.asTPCID()); id.Plane = 0; }
     
     /// Sets the ID to the ID after the specified one.
     /// @return whether the ID is actually valid (validity flag is also set)
@@ -3097,11 +3097,11 @@ namespace geo {
     
     /// Initializes the specified ID with the ID of the first wire.
     void GetBeginID(geo::WireID& id) const
-      { GetBeginID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
+      { GetBeginID(id.asPlaneID()); id.Wire = 0; }
     
     /// Initializes the specified ID with the invalid ID after the last wire.
     void GetEndID(geo::WireID& id) const
-      { GetEndID(static_cast<geo::PlaneID&>(id)); id.Wire = 0; }
+      { GetEndID(id.asPlaneID()); id.Wire = 0; }
     
     /// Sets the ID to the ID after the specified one.
     /// @return whether the ID is actually valid (validity flag is also set)
@@ -4377,11 +4377,11 @@ namespace geo {
     
     /// Initializes the specified ID with the ID of the first TPC set
     void GetBeginID(readout::TPCsetID& id) const
-      { GetBeginID(static_cast<geo::CryostatID&>(id)); id.TPCset = 0; }
+      { GetBeginID(id.asCryostatID()); id.TPCset = 0; }
     
     /// Initializes the specified ID with the invalid ID after the last TPC set
     void GetEndID(readout::TPCsetID& id) const
-      { GetEndID(static_cast<geo::CryostatID&>(id)); id.TPCset = 0; }
+      { GetEndID(id.asCryostatID()); id.TPCset = 0; }
     
     /// Sets the ID to the ID after the specified one.
     /// @return whether the ID is actually valid (validity flag is also set)
@@ -4556,7 +4556,7 @@ namespace geo {
      * If planeid is an invalid ID, an invalid ROP ID is returned.
      * If planeid is a valid ID (i.e. an ID whose isValid flag is set) that
      * points to a non-existent wire plane, the result is undefined.
-     * Use HasPlane() to check if the wire plane actually exists.
+     * Use HasPlaneID() to check if the wire plane actually exists.
      */
     readout::ROPID WirePlaneToROP(geo::PlaneID const& planeid) const;
     
@@ -4604,11 +4604,11 @@ namespace geo {
     
     /// Initializes the specified ID with the ID of the first readout plane.
     void GetBeginID(readout::ROPID& id) const
-      { GetBeginID(static_cast<readout::TPCsetID&>(id)); id.ROP = 0; }
+      { GetBeginID(id.asTPCsetID()); id.ROP = 0; }
     
     /// Initializes the specified ID with the invalid ID after the last ROP.
     void GetEndID(readout::ROPID& id) const
-      { GetEndID(static_cast<readout::TPCsetID&>(id)); id.ROP = 0; }
+      { GetEndID(id.asTPCsetID()); id.ROP = 0; }
     
     /// Sets the ID to the ID after the specified one.
     /// @return whether the ID is actually valid (validity flag is also set)
@@ -5022,7 +5022,7 @@ inline bool geo::GeometryCore::IncrementID(geo::TPCID& id) const {
   if (++id.TPC < nTPCsInCryo) return bool(id); // if was invalid, it stays so
   // no more TPCs in this cryostat
   id.TPC = 0;
-  return IncrementID(static_cast<geo::CryostatID&>(id)); // also sets validity
+  return IncrementID(id.asCryostatID()); // also sets validity
 } // geo::GeometryCore::IncrementID(geo::TPCID)
 
 inline bool geo::GeometryCore::IncrementID(geo::PlaneID& id) const {
@@ -5032,7 +5032,7 @@ inline bool geo::GeometryCore::IncrementID(geo::PlaneID& id) const {
   if (++id.Plane < nPlanesInTPC) return bool(id); // if was invalid, stays so
   // no more planes in this TPCs
   id.Plane = 0;
-  return IncrementID(static_cast<geo::TPCID&>(id)); // also sets validity
+  return IncrementID(id.asTPCID()); // also sets validity
 } // geo::GeometryCore::IncrementID(geo::PlaneID)
 
 inline bool geo::GeometryCore::IncrementID(geo::WireID& id) const {
@@ -5042,7 +5042,7 @@ inline bool geo::GeometryCore::IncrementID(geo::WireID& id) const {
   if (++id.Wire < nWiresInPlane) return bool(id); // if was invalid, stays so
   // no more wires in this plane
   id.Wire = 0;
-  return IncrementID(static_cast<geo::PlaneID&>(id)); // also sets validity
+  return IncrementID(id.asPlaneID()); // also sets validity
 } // geo::GeometryCore::IncrementID(geo::WireID)
 
 inline bool geo::GeometryCore::IncrementID(readout::TPCsetID& id) const {
@@ -5051,7 +5051,7 @@ inline bool geo::GeometryCore::IncrementID(readout::TPCsetID& id) const {
     return bool(id); // if was invalid, it stays so
   // no more TPC sets in this cryostat
   id.TPCset = 0;
-  return IncrementID(static_cast<geo::CryostatID&>(id)); // also sets validity
+  return IncrementID(id.asCryostatID()); // also sets validity
 } // geo::GeometryCore::IncrementID(readout::TPCsetID)
 
 inline bool geo::GeometryCore::IncrementID(readout::ROPID& id) const {
@@ -5061,7 +5061,7 @@ inline bool geo::GeometryCore::IncrementID(readout::ROPID& id) const {
   if (++id.ROP < nROPinTPC) return bool(id); // if was invalid, stays so
   // no more readout planes in this TPC set
   id.ROP = 0;
-  return IncrementID(static_cast<readout::TPCsetID&>(id)); // also sets validity
+  return IncrementID(id.asTPCsetID()); // also sets validity
 } // geo::GeometryCore::IncrementID(readout::ROPID)
 
 
