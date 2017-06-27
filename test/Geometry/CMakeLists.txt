@@ -147,7 +147,7 @@ cet_test(geometry HANDBUILT
 # are not installed.
 # 
 # This test is equivalent to geometry_iterator_loop_test, but run in art environment
-cet_test(geometry_iterator HANDBUILT
+cet_test(geometry_iterator_loop HANDBUILT
   DATAFILES test_geometry_iterator_loop.fcl
   TEST_EXEC lar
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
@@ -174,7 +174,7 @@ cet_test(SimpleGeo_test
 set( mrb_build_dir $ENV{MRB_BUILDDIR} )
 if( NOT mrb_build_dir )
   #message(STATUS "MRB_BUILDDIR is undefined, set FHICL_FILE_PATH and FW_SEARCH_PATH")
-  set_tests_properties( geometry geometry_iterator 
+  set_tests_properties( geometry geometry_iterator_loop
                         PROPERTIES ENVIRONMENT 
                         "FHICL_FILE_PATH=.:${CMAKE_BINARY_DIR}/job;FW_SEARCH_PATH=${CMAKE_BINARY_DIR}/gdml" )
 endif()
