@@ -13,6 +13,13 @@
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
 
+namespace {
+  
+  // Tolerance when comparing distances in geometry:
+  static constexpr double DistanceTol = 0.001; // cm
+
+} // local namespace
+
 namespace geo{
 
   //----------------------------------------------------------------------------
@@ -90,11 +97,11 @@ namespace geo{
     p2->LocalToWorld(local, xyz2);
 
     // drift direction is negative, plane number increases in drift direction
-    if(std::abs(xyz1[0]-xyz2[0]) > std::numeric_limits<double>::epsilon())
+    if(std::abs(xyz1[0]-xyz2[0]) > DistanceTol)
       return xyz1[0] > xyz2[0];
 
     //if same drift, sort by z
-    if(std::abs(xyz1[2]-xyz2[2]) > std::numeric_limits<double>::epsilon())
+    if(std::abs(xyz1[2]-xyz2[2]) > DistanceTol)
       return xyz1[2] < xyz2[2];
 
     //if same z, sort by y
@@ -110,11 +117,11 @@ namespace geo{
     w1->GetCenter(xyz1); w2->GetCenter(xyz2);
 
     //sort by z first
-    if(std::abs(xyz1[2]-xyz2[2]) > std::numeric_limits<double>::epsilon())
+    if(std::abs(xyz1[2]-xyz2[2]) > DistanceTol)
       return xyz1[2] < xyz2[2];
 
     //if same z sort by y
-    if(std::abs(xyz1[1]-xyz2[1]) > std::numeric_limits<double>::epsilon())
+    if(std::abs(xyz1[1]-xyz2[1]) > DistanceTol)
       return xyz1[1] < xyz2[1];
 
     //if same y sort by x
