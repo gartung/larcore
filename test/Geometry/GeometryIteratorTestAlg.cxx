@@ -100,6 +100,8 @@ unsigned int geo::GeometryIteratorTestAlg::Run() const {
   TPCIDIteratorsTest();
   PlaneIDIteratorsTest();
   WireIDIteratorsTest();
+  TPCsetIDIteratorsTest();
+  ROPIDIteratorsTest();
   
   // - geometry element iterators
   CryostatIteratorsTest();
@@ -1745,5 +1747,444 @@ void geo::GeometryIteratorTestAlg::WireIteratorsTest() const {
   
 } // GeometryIteratorTestAlg::WireIteratorsTest()
 
+
+
+//-----------------------------------------------------------------------------
+void geo::GeometryIteratorTestAlg::TPCsetIDIteratorsTest() const {
+  
+  /*
+   * public interface (TPCset_id_iterator_base):
+   *
+   *   
+   *   /// Default constructor; effect not defined: assign to it before using!
+   *   TPCset_id_iterator_base()
+   *   
+   *   /// Constructor: points to begin.
+   *   TPCset_id_iterator_base(geo::GeometryCore const* geom)
+   *   
+   *   /// Constructor: points to the specified cryostat.
+   *   TPCset_id_iterator_base
+   *     (geo::GeometryCore const* geom, GeoID_t const& start_from)
+   *   
+   *   /// Constructor: points to begin.
+   *   TPCset_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t const)
+   *   
+   *   /// Constructor: points to end.
+   *   TPCset_id_iterator_base(geo::GeometryCore const* geom, EndPos_t)
+   *   
+   *   /// Returns true if the two iterators point to the same TPC set.
+   *   template <typename OTHERID>
+   *   bool operator== (TPCset_id_iterator_base<OTHERID> const& as) const
+   *   
+   *   /// Returns true if the two iterators point to different TPC sets.
+   *   template <typename OTHERID>
+   *   bool operator!= (TPCset_id_iterator_base<OTHERID> const& as) const 
+   *   
+   *   /// Returns the TPCsetID the iterator points to.
+   *   LocalID_t const& operator* () const
+   *   
+   *   /// Returns the TPCsetID the iterator points to.
+   *   LocalID_t const* operator-> () const
+   *   
+   *   /// Prefix increment: returns this iterator pointing to the next TPC set.
+   *   iterator& operator++ ()
+   *   
+   *   /// Postfix increment: returns the current iterator, then increments it.
+   *   iterator operator++ (int)
+   *   
+   *   /// Returns whether the iterator is pointing to a valid TPC set.
+   *   operator bool() const
+   *   
+   * 
+   */
+  
+  //
+  // default constructed
+  //
+  {
+    geo::TPCset_id_iterator iTPCset;
+    BOOST_TEST_CHECKPOINT
+      ("Default created TPC set ID iterator: " << std::string(*iTPCset));
+    
+    BOOST_CHECK_EQUAL(iTPCset->Cryostat, geo::CryostatID::getInvalidID());
+    BOOST_CHECK_EQUAL(iTPCset->TPCset, readout::TPCsetID::getInvalidID());
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!iTPCset);
+    BOOST_CHECK(!(bool(iTPCset)));
+  
+  }
+  
+  //
+  // begin-constructed
+  //
+  {
+    geo::TPCset_id_iterator iTPCset(geom);
+    BOOST_TEST_CHECKPOINT
+      ("Begin-created TPC set ID iterator: " << std::string(*iTPCset));
+    
+    BOOST_CHECK_EQUAL(iTPCset->Cryostat, geo::CryostatID::CryostatID_t(0));
+    BOOST_CHECK_EQUAL(iTPCset->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iTPCset));
+    BOOST_CHECK(!!iTPCset);
+    
+    // initialize to the beginning directly; this has probably ID's isValid true
+    readout::TPCsetID BeginID;
+    geom->GetBeginID(BeginID);
+    geo::TPCset_id_iterator iTPCsetD(geom, BeginID);
+    BOOST_CHECK_EQUAL(iTPCsetD->Cryostat, geo::CryostatID::CryostatID_t(0));
+    BOOST_CHECK_EQUAL(iTPCsetD->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iTPCsetD, iTPCset);
+    
+    // construct from explicit begin position
+    geo::TPCset_id_iterator iTPCsetBC(geom, geo::iterators::begin_pos);
+    BOOST_CHECK_EQUAL(iTPCsetBC, iTPCset);
+    
+    // construct at begin position by geometry
+    geo::TPCset_id_iterator iTPCsetGB = geom->begin_TPCset_id();
+    BOOST_CHECK_EQUAL(iTPCsetGB, iTPCset);
+    
+    // check access to ID
+    BOOST_CHECK_EQUAL(*iTPCset, BeginID);
+    BOOST_CHECK_EQUAL(iTPCset->Cryostat, BeginID.Cryostat);
+    BOOST_CHECK_EQUAL(iTPCset->TPCset, BeginID.TPCset);
+    
+    // test copy and postfix increment
+    geo::TPCset_id_iterator iTPCsetI(iTPCset++);
+    
+    const unsigned int nTPCsetsInC0 = geom->NTPCsets(geo::CryostatID(0));
+    if (nTPCsetsInC0 > 1) {
+      BOOST_CHECK_EQUAL(iTPCsetI->Cryostat, geo::CryostatID::CryostatID_t(0));
+      BOOST_CHECK_EQUAL(iTPCsetI->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+      BOOST_CHECK_EQUAL(iTPCset->Cryostat,  geo::CryostatID::CryostatID_t(0));
+      BOOST_CHECK_EQUAL(iTPCset->TPCset,    readout::TPCsetID::TPCsetID_t(1));
+    }
+    BOOST_CHECK_NE(iTPCsetI, iTPCset);
+    
+    // test copy and prefix increment
+    ++iTPCsetI;
+    BOOST_CHECK_EQUAL(iTPCsetI, iTPCset); // arguable if both are end-iterators by now
+    
+  }
+  
+  //
+  // constructed from starting point
+  //
+  {
+    // test increment flipping cryostat
+    readout::TPCsetID ID(0, 0);
+    ID.TPCset = geom->NTPCsets(ID) - 1; // last TPC set of first cryostat
+    
+    geo::TPCset_id_iterator iTPCset(geom, ID);
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iTPCset));
+    BOOST_CHECK(!!iTPCset);
+    
+    // check that the pointed ID is as expected
+    BOOST_CHECK_EQUAL(*iTPCset, ID);
+    BOOST_CHECK_EQUAL(iTPCset->Cryostat, ID.Cryostat);
+    BOOST_CHECK_EQUAL(iTPCset->TPCset, ID.TPCset);
+    
+    ++iTPCset;
+    // check that the pointed ID is as expected
+    BOOST_CHECK_EQUAL
+      (iTPCset->Cryostat, geo::CryostatID::CryostatID_t(ID.Cryostat + 1));
+    BOOST_CHECK_EQUAL(iTPCset->TPCset, readout::TPCsetID::TPCsetID_t(0));
+    
+    
+    // test iterator to last TPC
+    readout::TPCsetID LastID(geom->Ncryostats() - 1, 0);
+    LastID.TPCset = geom->NTPCsets(LastID) - 1; // last TPC set of last cryostat
+    geo::TPCset_id_iterator iLastTPCset(geom, LastID);
+    BOOST_TEST_CHECKPOINT("Position-created iterator to last TPC set ID: "
+      << std::string(*iLastTPCset));
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iLastTPCset));
+    BOOST_CHECK(!!iLastTPCset);
+    
+    // check that the pointed ID is as expected
+    BOOST_CHECK_EQUAL(*iLastTPCset, LastID);
+    BOOST_CHECK_EQUAL(iLastTPCset->Cryostat, LastID.Cryostat);
+    BOOST_CHECK_EQUAL(iLastTPCset->TPCset, LastID.TPCset);
+    
+    // test increment to past-the-end
+    geo::TPCset_id_iterator iEndTPCset = iLastTPCset;
+    ++iEndTPCset;
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!bool(iEndTPCset));
+    BOOST_CHECK(!iEndTPCset);
+    
+    BOOST_CHECK_EQUAL
+      (iEndTPCset->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iEndTPCset->TPCset, readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iEndTPCset, geom->end_TPCset_id());
+    
+  }
+  
+  //
+  // end-constructed
+  //
+  {
+    // construct from end position
+    geo::TPCset_id_iterator iTPCset(geom, geo::iterators::end_pos);
+    BOOST_TEST_CHECKPOINT
+      ("End-created TPC set ID iterator: " << std::string(*iTPCset));
+    
+    BOOST_CHECK_EQUAL
+      (iTPCset->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iTPCset->TPCset, readout::TPCsetID::TPCsetID_t(0));
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!bool(iTPCset));
+    BOOST_CHECK(!iTPCset);
+    
+    // construct at end position by geometry
+    geo::TPCset_id_iterator iTPCsetGE = geom->end_TPCset_id();
+    BOOST_CHECK_EQUAL(iTPCsetGE, iTPCset);
+    
+    // initialize to the end directly; this has probably ID's isValid true
+    geo::TPCset_id_iterator iTPCset2
+      (geom, readout::TPCsetID(geom->Ncryostats(), 0));
+    BOOST_CHECK_EQUAL
+      (iTPCset2->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iTPCset2->TPCset, readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iTPCset2, iTPCset);
+    
+  }
+  
+} // GeometryIteratorTestAlg::TPCsetIDIteratorsTest()
+
+
+
+//-----------------------------------------------------------------------------
+void geo::GeometryIteratorTestAlg::ROPIDIteratorsTest() const {
+  
+  /*
+   * public interface (ROP_id_iterator_base):
+   *
+   *     /// Default constructor; effect not defined: assign to it before using!
+   *     ROP_id_iterator_base()
+   *     
+   *     /// Constructor: points to begin.
+   *     ROP_id_iterator_base(geo::GeometryCore const* geom)
+   *     
+   *     /// Constructor: points to the specified readout plane.
+   *     ROP_id_iterator_base
+   *       (geo::GeometryCore const* geom, GeoID_t const& start_from)
+   *     
+   *     /// Constructor: points to begin.
+   *     ROP_id_iterator_base(geo::GeometryCore const* geom, BeginPos_t const)
+   *     
+   *     /// Constructor: points to end.
+   *     ROP_id_iterator_base(geo::GeometryCore const* geom, EndPos_t)
+   *     
+   *     /// Returns true if the two iterators point to the same readout plane.
+   *     template <typename OTHERID>
+   *     bool operator== (ROP_id_iterator_base<OTHERID> const& as) const
+   *     
+   *     /// Returns true if the two iterators point to different readout planes.
+   *     template <typename OTHERID>
+   *     bool operator!= (ROP_id_iterator_base<OTHERID> const& as) const 
+   *     
+   *     /// Returns the PlaneID the iterator points to
+   *     LocalID_t const& operator* ()
+   *     
+   *     /// Returns the PlaneID the iterator points to
+   *     LocalID_t const* operator-> () const
+   *     
+   *     /// Prefix increment: returns this iterator pointing to the next plane
+   *     iterator& operator++ ()
+   *     
+   *     /// Postfix increment: returns the current iterator, then increments it.
+   *     iterator operator++ (int)
+   *     
+   *     /// Returns whether the iterator is pointing to a valid plane.
+   *     operator bool() const
+   *     
+   */
+  
+  //
+  // default constructed
+  //
+  {
+    geo::ROP_id_iterator iROP;
+    BOOST_TEST_CHECKPOINT
+      ("Default created readout plane ID iterator: " << std::string(*iROP));
+    
+    BOOST_CHECK_EQUAL(iROP->Cryostat, geo::CryostatID::getInvalidID());
+    BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::getInvalidID());
+    BOOST_CHECK_EQUAL(iROP->ROP,      readout::ROPID::getInvalidID());
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!iROP);
+    BOOST_CHECK(!(bool(iROP)));
+  
+  }
+  
+  //
+  // begin-constructed
+  //
+  {
+    geo::ROP_id_iterator iROP(geom);
+    BOOST_TEST_CHECKPOINT
+      ("Begin-created readout plane ID iterator: " << std::string(*iROP));
+    
+    BOOST_CHECK_EQUAL(iROP->Cryostat, geo::CryostatID::CryostatID_t(0));
+    BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iROP->ROP,      readout::ROPID::ROPID_t(0));
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iROP));
+    BOOST_CHECK(!!iROP);
+    
+    // initialize to the beginning directly; this has probably ID's isValid true
+    readout::ROPID BeginID;
+    geom->GetBeginID(BeginID);
+    geo::ROP_id_iterator iROPD(geom, BeginID);
+    BOOST_CHECK_EQUAL(iROPD->Cryostat, geo::CryostatID::CryostatID_t(0));
+    BOOST_CHECK_EQUAL(iROPD->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iROPD->ROP,      readout::ROPID::ROPID_t(0));
+    BOOST_CHECK_EQUAL(iROPD, iROP);
+    
+    // construct from explicit begin position
+    geo::ROP_id_iterator iROPBC(geom, geo::iterators::begin_pos);
+    BOOST_CHECK_EQUAL(iROPBC, iROP);
+    
+    // construct at begin position by geometry
+    geo::ROP_id_iterator iROPGB = geom->begin_ROP_id();
+    BOOST_CHECK_EQUAL(iROPGB, iROP);
+    
+    // check access to ID
+    BOOST_CHECK_EQUAL(*iROP, BeginID);
+    BOOST_CHECK_EQUAL(iROP->Cryostat, BeginID.Cryostat);
+    BOOST_CHECK_EQUAL(iROP->TPCset, BeginID.TPCset);
+    BOOST_CHECK_EQUAL(iROP->ROP, BeginID.ROP);
+    
+    // test copy and postfix increment
+    geo::ROP_id_iterator iROPI(iROP++);
+    
+    const unsigned int nReadoutPlanesInC0S0
+      = geom->NROPs(readout::TPCsetID(0, 0));
+    if (nReadoutPlanesInC0S0 > 1) {
+      BOOST_CHECK_EQUAL(iROPI->Cryostat, geo::CryostatID::CryostatID_t(0));
+      BOOST_CHECK_EQUAL(iROPI->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+      BOOST_CHECK_EQUAL(iROPI->ROP,            readout::ROPID::ROPID_t(0));
+      BOOST_CHECK_EQUAL(iROP->Cryostat, geo::CryostatID::CryostatID_t(0));
+      BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+      BOOST_CHECK_EQUAL(iROP->ROP,            readout::ROPID::ROPID_t(1));
+    }
+    BOOST_CHECK_NE(iROPI, iROP);
+    
+    // test copy and prefix increment
+    ++iROPI;
+    BOOST_CHECK_EQUAL(iROPI, iROP); // arguable if both are end-iterators by now
+    
+  }
+  
+  //
+  // constructed from starting point
+  //
+  {
+    // test increment flipping TPC
+    readout::ROPID ID(0, 0, 0);
+    ID.ROP = geom->NROPs(ID) - 1; // last plane of first TPC set
+    
+    geo::ROP_id_iterator iROP(geom, ID);
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iROP));
+    BOOST_CHECK(!!iROP);
+    
+    // check that the pointed ID is as expected
+    BOOST_CHECK_EQUAL(*iROP, ID);
+    BOOST_CHECK_EQUAL(iROP->Cryostat, ID.Cryostat);
+    BOOST_CHECK_EQUAL(iROP->TPCset, ID.TPCset);
+    BOOST_CHECK_EQUAL(iROP->ROP, ID.ROP);
+   
+    // check that the pointed ID is as expected
+    ++iROP;
+    if (ID.TPCset + 1 < (int) geom->NTPCsets(ID)) {
+      BOOST_CHECK_EQUAL(iROP->Cryostat, ID.Cryostat);
+      BOOST_CHECK_EQUAL(iROP->TPCset,   ID.TPCset + 1);
+      BOOST_CHECK_EQUAL(iROP->ROP,      readout::ROPID::ROPID_t(0));
+    }
+    else {
+      BOOST_CHECK_EQUAL(iROP->Cryostat, ID.Cryostat + 1);
+      BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+      BOOST_CHECK_EQUAL(iROP->ROP,      readout::ROPID::ROPID_t(0));
+    }
+    
+    // test iterator to last plane
+    readout::ROPID LastID(geom->Ncryostats() - 1, 0, 0);
+    LastID.TPCset = geom->NTPCsets(LastID) - 1; // last TPC set of last cryostat
+    LastID.ROP = geom->NROPs(LastID) - 1; // last readout plane of last TPC set
+    geo::ROP_id_iterator iLastROP(geom, LastID);
+    BOOST_TEST_CHECKPOINT("Position-created iterator to last readout plane ID: "
+      << std::string(*iLastROP));
+    
+    // check that the iterator tests true
+    BOOST_CHECK(bool(iLastROP));
+    BOOST_CHECK(!!iLastROP);
+    
+    // check that the pointed ID is as expected
+    BOOST_CHECK_EQUAL(*iLastROP, LastID);
+    BOOST_CHECK_EQUAL(iLastROP->Cryostat, LastID.Cryostat);
+    BOOST_CHECK_EQUAL(iLastROP->TPCset,   LastID.TPCset);
+    BOOST_CHECK_EQUAL(iLastROP->ROP,      LastID.ROP);
+   
+    // test increment to past-the-end
+    geo::ROP_id_iterator iEndROP = iLastROP;
+    ++iEndROP;
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!bool(iEndROP));
+    BOOST_CHECK(!iEndROP);
+    
+    BOOST_CHECK_EQUAL
+      (iEndROP->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iEndROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iEndROP->ROP,      readout::ROPID::ROPID_t(0));
+    BOOST_CHECK_EQUAL(iEndROP, geom->end_ROP_id());
+    
+  }
+  
+  //
+  // end-constructed
+  //
+  {
+    // construct from end position
+    geo::ROP_id_iterator iROP(geom, geo::iterators::end_pos);
+    BOOST_TEST_CHECKPOINT
+      ("End-created readout plane ID iterator: " << std::string(*iROP));
+    
+    BOOST_CHECK_EQUAL
+      (iROP->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iROP->ROP,            readout::ROPID::ROPID_t(0));
+    
+    // check that the iterator tests false
+    BOOST_CHECK(!bool(iROP));
+    BOOST_CHECK(!iROP);
+    
+    // construct at end position by geometry
+    geo::ROP_id_iterator iROPGE = geom->end_ROP_id();
+    BOOST_CHECK_EQUAL(iROPGE, iROP);
+    
+    // initialize to the end directly; this has probably ID's isValid true
+    geo::ROP_id_iterator iROP2
+      (geom, readout::ROPID(geom->Ncryostats(), 0, 0));
+    BOOST_CHECK_EQUAL
+      (iROP->Cryostat, geo::CryostatID::CryostatID_t(geom->Ncryostats()));
+    BOOST_CHECK_EQUAL(iROP->TPCset,   readout::TPCsetID::TPCsetID_t(0));
+    BOOST_CHECK_EQUAL(iROP->ROP,            readout::ROPID::ROPID_t(0));
+    BOOST_CHECK_EQUAL(iROP2, iROP);
+    
+  }
+} // GeometryIteratorTestAlg::ROPIDIteratorsTest()
 
 

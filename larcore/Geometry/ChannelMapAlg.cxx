@@ -2,7 +2,6 @@
 /// \file  ChannelMapAlg.cxx
 /// \brief Interface to algorithm class for a specific detector channel mapping
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
@@ -102,7 +101,7 @@ namespace geo{
     }// for loop over AudDet a
 
     // throw an exception because we couldn't find the sensitive volume
-    throw cet::exception("ChannelMapLArIAT") << "Can't find AuxDet for position ("
+    throw cet::exception("ChannelMap") << "Can't find AuxDet for position ("
 					     << point[0] << ","
 					     << point[1] << ","
 					     << point[2] << ")\n";

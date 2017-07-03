@@ -2,7 +2,6 @@
 /// \file  ChannelMapStandardAlg.cxx
 /// \brief Interface to algorithm class for the standar, simplest detector channel mapping
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
@@ -25,23 +24,17 @@ namespace geo{
   }
 
   //----------------------------------------------------------------------------
-  void ChannelMapStandardAlg::Initialize( GeometryData_t& geodata )
+  void ChannelMapStandardAlg::Initialize( GeometryData_t const& geodata )
   {
     // start over:
     Uninitialize();
     
-    std::vector<geo::CryostatGeo*>& cgeo = geodata.cryostats;
-    std::vector<geo::AuxDetGeo*>  & adgeo = geodata.auxDets;
+    std::vector<geo::CryostatGeo*> const& cgeo = geodata.cryostats;
     
     fNcryostat = cgeo.size();
     
     mf::LogInfo("ChannelMapStandardAlg") << "Initializing Standard ChannelMap...";
 
-    fSorter.SortCryostats(cgeo);
-    fSorter.SortAuxDets(adgeo);
-    for(size_t c = 0; c < cgeo.size(); ++c) 
-      cgeo[c]->SortSubVolumes(fSorter);
-    
     fNTPC.resize(fNcryostat);
     fWireCounts.resize(fNcryostat);
     fNPlanes.resize(fNcryostat);
@@ -467,11 +460,13 @@ namespace geo{
   readout::ROPID ChannelMapStandardAlg::ChannelToROP
     (raw::ChannelID_t channel) const
   {
+    if (!raw::isValidChannelID(channel)) return {}; // invalid ROP returned
+    
     // which wires does the channel cover?
     std::vector<geo::WireID> wires = ChannelToWire(channel);
     
     // - none:
-    if (wires.empty()) return {}; // default-constructed ID, invalid
+    if (wires.empty()) return {}; // invalid ROP returned
     
     // - one: maps its plane ID into a ROP ID
     return WirePlaneToROP(wires[0]);

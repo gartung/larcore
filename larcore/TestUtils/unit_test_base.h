@@ -1155,9 +1155,9 @@ namespace testing {
         << mf_pset.to_indented_string(1) << std::endl;
     } // if no configuration is available
     
-    mf::StartMessageFacility(mf::MessageFacilityService::SingleThread, mf_pset);
+    mf::StartMessageFacility(mf_pset);
     if (!appl_name.empty()) mf::SetApplicationName(appl_name);
-    mf::SetContext("Initialization");
+    mf::SetContextIteration("Initialization");
     if (options.MessageLevels) {
       std::cout << "Printing message levels in 'MessageFacility' category."
         << std::endl;
@@ -1170,7 +1170,7 @@ namespace testing {
         << "LOG_TRACE/LOG_DEBUG messages are not compiled away.";
     } // if print message levels
     mf::LogInfo("MessageFacility") << "MessageFacility started.";
-    mf::SetModuleName("main");
+    mf::SetContextSinglet("main");
   } // BasicTesterEnvironment::SetupMessageFacility()
   
   

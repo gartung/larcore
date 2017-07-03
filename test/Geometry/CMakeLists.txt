@@ -10,11 +10,12 @@ art_make_library( LIBRARY_NAME GeometryTestLib
                     ChannelMapStandardTestAlg.cxx
                   LIBRARIES larcore_Geometry
                         larcore_TestUtils
-                        art_Utilities canvas_Utilities
+                        art_Utilities
+			canvas
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
-                        ${CETLIB}
+                        cetlib cetlib_except
                         ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
           )
 
@@ -27,7 +28,7 @@ simple_plugin ( GeometryIteratorLoopTest "module"
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
-                    ${CETLIB}
+                    cetlib cetlib_except
              )
 
 simple_plugin ( GeometryTest "module"
@@ -37,7 +38,7 @@ simple_plugin ( GeometryTest "module"
                     ${MF_MESSAGELOGGER}
                     ${MF_UTILITIES}
                     ${FHICLCPP}
-                    ${CETLIB}
+                    cetlib cetlib_except
                     ${ROOT_BASIC_LIB_LIST}
               )
 
@@ -52,7 +53,7 @@ cet_test(geometry_iterator_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
@@ -67,7 +68,7 @@ cet_test(geometry_geoid_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
@@ -83,7 +84,7 @@ cet_test(geometry_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
 )
 
 # unit test (use the hard-coded channel mapping for "standard" LArTPCdetector)
@@ -96,7 +97,7 @@ cet_test(geometry_iterator_loop_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
 )
 
 
@@ -108,7 +109,7 @@ cet_test(geometry_standardchannelmapping_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS ./test_geometry.fcl
@@ -123,7 +124,7 @@ cet_test(geometry_thirdplaneslope_test
             ${MF_MESSAGELOGGER}
             ${MF_UTILITIES}
             ${FHICLCPP}
-            ${CETLIB}
+            cetlib cetlib_except
   USE_BOOST_UNIT
   DATAFILES test_geometry.fcl
   TEST_ARGS -- ./test_geometry.fcl
@@ -146,18 +147,34 @@ cet_test(geometry HANDBUILT
 # are not installed.
 # 
 # This test is equivalent to geometry_iterator_loop_test, but run in art environment
-cet_test(geometry_iterator HANDBUILT
+cet_test(geometry_iterator_loop HANDBUILT
   DATAFILES test_geometry_iterator_loop.fcl
   TEST_EXEC lar
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
+
+# decomposition engine tests
+cet_test(Decomposer_test
+  SOURCES Decomposer_test.cxx
+  LIBRARIES
+    ${ROOT_PHYSICS}
+    ${ROOT_GENVECTOR}
+    ${ROOT_CORE} # TVersionCheck
+  USE_BOOST_UNIT
+  )
+
+cet_test(SimpleGeo_test
+  SOURCES SimpleGeo_test.cxx
+  USE_BOOST_UNIT
+)
+
 
 # set FHICL_FILE_PATH and FW_SEARCH_PATH for the case where building without mrb
 # this is not generic, we take advantage of knowing the subdirectories for the fcl and gdml files
 set( mrb_build_dir $ENV{MRB_BUILDDIR} )
 if( NOT mrb_build_dir )
   #message(STATUS "MRB_BUILDDIR is undefined, set FHICL_FILE_PATH and FW_SEARCH_PATH")
-  set_tests_properties( geometry geometry_iterator 
+  set_tests_properties( geometry geometry_iterator_loop
                         PROPERTIES ENVIRONMENT 
                         "FHICL_FILE_PATH=.:${CMAKE_BINARY_DIR}/job;FW_SEARCH_PATH=${CMAKE_BINARY_DIR}/gdml" )
 endif()

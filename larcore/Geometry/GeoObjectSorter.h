@@ -2,7 +2,6 @@
 /// \file  GeoObjectSorter.h
 /// \brief Interface to algorithm class for sorting geo::XXXGeo objects
 ///
-/// \version $Id:  $
 /// \author  brebel@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 #ifndef GEO_GEOOBJECTSORTER_H

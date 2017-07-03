@@ -14,7 +14,7 @@
 #define LARCORE_COREUTILS_DEBUGUTILS_H 1
 
 // framework and support libraries
-#include "cetlib/demangle.h"
+#include "cetlib_except/demangle.h"
 
 // C/C++ standard libraries
 #include <cstddef> // std::ptrdiff_t
@@ -37,27 +37,27 @@ namespace lar {
   namespace debug {
     
     /** ***********************************************************************
-     * @brief Outputs a demangled name for type T
+     * @brief Outputs a demangled name for type T.
      * @param T type whose name must be demangled (optional)
      * @return a string with demangled name
      *
      * It relies on cetlib.
      * The type to be demangled can be specified either as template argument:
-     *     
-     *     auto name = lar::debug::demangle<std::string>();
-     *     
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * auto name = lar::debug::demangle<std::string>();
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      * or via a argument pointer:
-     *     
-     *     auto name = lar::debug::demangle(this);
-     *     
-     *
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+     * auto name = lar::debug::demangle(this);
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * 
      */
     template <typename T>
     inline std::string demangle(T const* = nullptr)
       { return cet::demangle_symbol(typeid(std::decay_t<T>).name()); }
     
     
-    /// Structure with information about a single call, parsed
+    /// Structure with information about a single call, parsed.
     struct CallInfo_t {
         private:
       using range_t = std::pair<size_t, size_t>;
@@ -66,21 +66,21 @@ namespace lar {
       CallInfo_t(std::string const& s) { ParseString(s); }
       CallInfo_t(const char* s) { ParseString(std::string(s)); }
         
-      /// Returns whether there is some information parsed
+      /// Returns whether there is some information parsed.
       operator bool() const
          { return !libraryName.empty() || !mangledFunctionName.empty(); }
-      /// Returns whether no information was parsed out of the original
+      /// Returns whether no information was parsed out of the original.
       bool operator! () const
          { return libraryName.empty() && mangledFunctionName.empty(); }
         
-      /// Returns whether the translation was complete (offset is optional!)
+      /// Returns whether the translation was complete (offset is optional!).
       bool ParseString(std::string const& s);
        
-      /// Returns the function name (mangled if nothing better)
+      /// Returns the function name (mangled if nothing better).
       std::string const& function() const
         { return functionName.empty()? mangledFunctionName: functionName; }
       
-      /// Returns only the library name (with suffix)
+      /// Returns only the library name (with suffix).
       std::string shortLibrary() const
         {
           size_t sep = libraryName.rfind('/');
@@ -89,27 +89,27 @@ namespace lar {
         //  return std::experimental::filesystem::path(libraryName).filename();
         }
         
-      std::string original;            ///< string from the backtrace, unparsed
-      std::string libraryName;         ///< parsed library name
-      std::string functionName;        ///< parsed function name, demangled
-      std::string mangledFunctionName; ///< parsed function name, unprocessed
-      void* address = nullptr;         ///< function address
-      std::ptrdiff_t offset = 0;       ///< instruction pointer offset
+      std::string original;            ///< String from the backtrace, unparsed.
+      std::string libraryName;         ///< Parsed library name.
+      std::string functionName;        ///< Parsed function name, demangled.
+      std::string mangledFunctionName; ///< Parsed function name, unprocessed.
+      void* address = nullptr;         ///< Function address.
+      std::ptrdiff_t offset = 0;       ///< Instruction pointer offset.
         
          private:
   
-      /// Returns whether the range is empty or invalid
+      /// Returns whether the range is empty or invalid.
       static bool emptyRange(range_t const& r) { return r.first >= r.second; }
   
-      /// Translates a range into a string
+      /// Translates a range into a string.
       static std::string extract(std::string const& s, range_t const& r)
         { return emptyRange(r)? "": s.substr(r.first, r.second - r.first); }
       
-      /// Runs the demangler and stores the result
+      /// Runs the demangler and stores the result.
       void demangleFunction()
         { functionName = cet::demangle_symbol(mangledFunctionName); }
       
-      /// Fills the information from an original string and parsed ranges
+      /// Fills the information from an original string and parsed ranges.
       void setAll(
         std::string const& s,
         range_t addressStr, range_t libraryStr,
@@ -120,7 +120,7 @@ namespace lar {
      
     
     /**
-     * @brief Class handling the output of information in a CallInfo_t object
+     * @brief Class handling the output of information in a CallInfo_t object.
      *
      * This class has a "default" print function (also replicated as a call
      * operator), and a set of options that can be tweaked to change the amount
@@ -129,41 +129,41 @@ namespace lar {
      */
     class CallInfoPrinter {
         public:
-      /// Set of options for printing
+      /// Set of options for printing.
       struct opt {
-        /// List of available options
+        /// List of available options.
         enum option_t {
-          address,       ///< print the instruction pointer memory address
-          demangled,     ///< use demangled function names when possible
-          library,       ///< print the library name the function lives in
-          shortLibrary,  ///< print a shorter library name (base name only) 
-          offset,        ///< print the offset from the beginning of function
-          NOptions       ///< number of available options
+          address,       ///< Print the instruction pointer memory address.
+          demangled,     ///< Use demangled function names when possible.
+          library,       ///< Print the library name the function lives in.
+          shortLibrary,  ///< Print a shorter library name (base name only).
+          offset,        ///< Print the offset from the beginning of function.
+          NOptions       ///< Number of available options.
         }; // option_t
         
-        std::bitset<NOptions> options; ///< value of current options
+        std::bitset<NOptions> options; ///< Value of current options.
         
-        /// Set one option o to the specified set value (true by default)
+        /// Set one option `o` to the specified set value (true by default).
         opt& set(option_t o, bool set = true)
           { options.set(o, set); return *this; }
         
-        /// Returns whether the specified option is set
+        /// Returns whether the specified option is set.
         bool has(option_t o) const { return options.test(o); }
 
       }; // opt
       
-      opt options; ///< set of current options
+      opt options; ///< Set of current options.
       
-      /// Default constructor: use default options
+      /// Default constructor: use default options.
       CallInfoPrinter() { setDefaultOptions(); }
       
-      /// Constructor: use specified options
+      /// Constructor: use specified options.
       CallInfoPrinter(opt opts): options(opts) {}
       
-      /// Override all the options
+      /// Override all the options.
       void setOptions(opt opts) { options = opts; }
       
-      /// Print the content of info into the stream out, using the current options
+      /// Print the content of info into the stream out, using the current options.
       template <typename Stream>
       void print(Stream&& out, CallInfo_t const& info) const {      
         if (!info) {
@@ -223,7 +223,7 @@ namespace lar {
       
     }; // CallInfoPrinter
     
-    /// Helper operator to insert a call information in a stream with default options
+    /// Helper operator to insert a call information in a stream with default options.
     template <typename Stream>
     inline Stream& operator<< (Stream&& out, CallInfo_t const& info)
       {
@@ -232,54 +232,65 @@ namespace lar {
         return out;
       }
     
+    /// Backtrace printing options
+    struct BacktracePrintOptions {
+      
+      unsigned int maxLines = 5; ///< Total number of lines to print.
+      unsigned int skipLines = 1; ///< Number of lines to skip.
+      bool countOthers = true; ///< Whether to print number of omitted lines.
+      std::string indent; ///< Indentation string for all lines.
+      std::string firstIndent; ///< Special indentation for the first line.
+      
+      /// Options for each single backtrace call information line.
+      CallInfoPrinter::opt callInfoOptions = CallInfoPrinter::defaultOptions();
+      
+      /// Sets all indentation to the same specified `uniformIndent` string.
+      void setUniformIndent(std::string uniformIndent)
+        { indent = firstIndent = uniformIndent; }
+      
+    }; // struct BacktracePrintOptions
+    
+    
     /**
-     * @brief Prints the full backtrace into a stream
+     * @brief Prints the full backtrace into a stream.
      * @tparam Stream type of output stream
      * @param out the output stream to insert output into
-     * @param maxLines print at most this many lines in the output (default: 5)
-     * @param indent prepend a string in front of any new line (default: "  ")
-     * @param options use these output options (default ones if null pointer)
-     *
-     * The output options are described in CallInfo_t::opt structure.
-     *
+     * @param options printing options (see BacktracePrintOptions)
      *
      */
     template <typename Stream>
-    void printBacktrace(
-      Stream&& out,
-      unsigned int maxLines = 5, std::string indent = "  ",
-      CallInfoPrinter::opt const* options = nullptr
-      )
-    {
-      constexpr unsigned int nSkip = 1;
-      std::vector<void*> buffer(nSkip + std::max(maxLines, 200U), nullptr);
+    void printBacktrace(Stream&& out, BacktracePrintOptions options) {
+      unsigned int nSkip = std::max(options.skipLines, 0U);
+      std::vector<void*> buffer
+        (nSkip + std::max(options.maxLines, 200U), nullptr);
       
-      unsigned int nItems
+      unsigned int const nItems
         = (unsigned int) backtrace(buffer.data(), buffer.size());
       
       // convert the calls in the buffer into a vector of strings
       char** symbols = backtrace_symbols(buffer.data(), buffer.size());
       if (!symbols) {
-        out << indent << "<failed to get the call stack>" << std::endl;
+        out << options.firstIndent << "<failed to get the call stack>\n"
+          << std::flush;
+        return;
       }
       std::vector<CallInfo_t> callStack;
       for (size_t i = 0; i < buffer.size(); ++i)
-      callStack.push_back((const char*) symbols[i]);
+        callStack.push_back((const char*) symbols[i]);
       std::free(symbols);
       
-      size_t lastItem = nSkip + maxLines;
+      size_t lastItem = nSkip + options.maxLines;
       if (lastItem > nItems) lastItem = nItems;
       if (lastItem >= buffer.size()) --lastItem;
       
-      CallInfoPrinter print;
-      if (options) print.setOptions(*options);
+      CallInfoPrinter print(options.callInfoOptions);
       for (size_t i = nSkip; i < lastItem; ++i) {
-        out << indent;
+        out << (i == 0? options.firstIndent: options.indent);
         print(std::forward<Stream>(out), callStack[i]);
         out << "\n";
       }
-      if (lastItem < nItems) {
-        out << indent << " ... and other " << (nItems - lastItem);
+      if ((lastItem < nItems) && options.countOthers) {
+        out << options.indent << " ... and other " << (nItems - lastItem);
         if (nItems == buffer.size()) out << " (or more)";
         out << " levels\n";
       }
@@ -287,6 +298,42 @@ namespace lar {
       
     } // printBacktrace()
   
+    /**
+     * @brief Prints the full backtrace into a stream with default options.
+     * @tparam Stream type of output stream
+     * @param out the output stream to insert output into
+     */
+    template <typename Stream>
+    void printBacktrace(Stream&& out)
+      { printBacktrace(std::forward<Stream>(out), BacktracePrintOptions()); }
+    
+    /**
+     * @brief Prints the full backtrace into a stream.
+     * @tparam Stream type of output stream
+     * @param out the output stream to insert output into
+     * @param maxLines print at most this many lines in the output (default: 5)
+     * @param indent prepend a string in front of any new line (default: "  ")
+     * @param callInfoOptions use these output options (default ones if null)
+     *
+     * The call information output options are described in
+     * `CallInfoPrinter::opt` structure.
+     *
+     */
+    template <typename Stream>
+    void printBacktrace(
+      Stream&& out,
+      unsigned int maxLines, std::string indent = "  ",
+      CallInfoPrinter::opt const* callInfoOptions = nullptr
+      )
+    {
+      BacktracePrintOptions options;
+      options.maxLines = maxLines;
+      options.indent = options.firstIndent = indent;
+      if (callInfoOptions) options.callInfoOptions = *callInfoOptions;
+      printBacktrace(std::forward<Stream>(out), options);
+    }
+    
+    
   } // namespace debug
 } // namespace lar
 

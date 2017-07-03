@@ -15,6 +15,9 @@
 #include "larcore/TestUtils/NameSelector.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+// ROOT
+#include "TVector3.h"
+
 // C/C++ standard libraries
 #include <string>
 #include <set>
@@ -34,6 +37,8 @@ namespace geo {
   class GeometryCore;
   class TPCGeo;
   class PlaneGeo;
+  class AuxDetGeo;
+  class AuxDetSensitiveGeo;
   
   namespace details {
     class TestTrackerClassBase;
@@ -67,13 +72,21 @@ namespace geo {
    *   explicitly marked as excluded by default in the list below:
    *   + `CheckOverlaps` (not in default) perform overlap checks
    *   + `ThoroughCheck` (not in default) makes ROOT perform full geometry check
+   *   + `DetectorIntro`: prints some information about the detector
    *   + `FindVolumes`: checks it can find the volumes corresponding to world
    *     and all cryostats
    *   + `Cryostat`:
+   *   + `WireOrientations`: checks that the definition of wire coordinates is
+   *     matching the prescription
+   *   + `WireCoordFromPlane`: checks `PlaneGeo::WireCoordinateFrom()`
    *   + `ChannelToWire`:
    *   + `FindPlaneCenters`:
    *   + `Projection`:
    *   + `WirePos`: currently disabled
+   *   + `PlanePointDecomposition`: methods for projections and decompositions
+   *     on the wire coordinate reference system
+   *   + `PlaneProjections`: methods for projections on the wire planes in the
+   *     reference system of the frame of the plane
    *   + `WireCoordAngle`: tests geo::PlaneGeo::PhiZ()
    *   + `NearestWire`: tests `WireCoordinate()` and `NearestWire()`
    *   + `WireIntersection`: tests `WireIDsIntersect()`
@@ -82,6 +95,7 @@ namespace geo {
    *   + `WirePitch`:
    *   + `PlanePitch`:
    *   + `Stepping`:
+   *   + `FindAuxDet`: test on location of nearest auxiliary detector
    *   + `PrintWires`: (not in default) prints *all* the wires in the geometry
    *   + `default`: represents the default set (optionally prepended by '@')
    *   + `!` (special): means to forget the tests configured so far; used as the
@@ -117,10 +131,10 @@ namespace geo {
     std::vector<double> fExpectedWirePitches; ///< wire pitch on each plane
     std::vector<double> fExpectedPlanePitches; ///< plane pitch on each plane
     
-  //  std::unique_ptr<details::TestTrackerClassBase> fRunTests; ///< test filter
     // using as pointer just not to have to write the declaration in the header
     testing::NameSelector fRunTests; ///< test filter
     
+    void printDetectorIntro() const;
     void printChannelSummary();
     void printVolBounds();
     void printDetDim();
@@ -129,10 +143,20 @@ namespace geo {
     void printAllGeometry() const;
     void testFindVolumes();
     void testCryostat();
-    void testTPC(unsigned int const& c);
+    void testTPC(geo::CryostatID const& cid);
+    void testPlaneDirections() const;
+    void testWireOrientations() const;
+    void testChannelToROP() const;
     void testChannelToWire() const;
     void testFindPlaneCenters();
     void testProject();
+    void testPlaneProjectionReference() const;
+    void testPlanePointDecompositionFrame() const;
+    void testPlaneProjectionOnFrame() const;
+    void testPlaneProjection() const;
+    void testWireCoordFromPlane() const;
+    void testParallelWires() const;
+    void testPlanePointDecomposition() const;
     void testWireCoordAngle() const;
     void testWirePitch();
     void testPlanePitch();
@@ -143,6 +167,7 @@ namespace geo {
     void testThirdPlane() const;
     void testThirdPlane_dTdW() const;
     void testStepping();
+    void testFindAuxDet() const;
 
     bool shouldRunTests(std::string test_name) const;
     
@@ -151,9 +176,53 @@ namespace geo {
     unsigned int testFindCryostatVolumes();
     unsigned int testFindTPCvolumePaths();
     
+    /// Method to print the auxiliary detectors on screen.
+    void printAuxiliaryDetectors() const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo(
+      Stream&& out, geo::AuxDetGeo const& auxDet,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of an auxiliary detector into the specified stream.
+    template <typename Stream>
+    void printAuxDetGeo
+      (Stream&& out, geo::AuxDetGeo const& auxDet, std::string indent = "")
+      const
+      { printAuxDetGeo(std::forward<Stream>(out), auxDet, indent, indent); }
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent, std::string firstIndent
+      ) const;
+    
+    /// Prints information of the sensitive auxiliary detector into a stream.
+    template <typename Stream>
+    void printAuxDetSensitiveGeo(
+      Stream&& out, geo::AuxDetSensitiveGeo const& auxDetSens,
+      std::string indent = ""
+      ) const
+      {
+        printAuxDetSensitiveGeo
+          (std::forward<Stream>(out), auxDetSens, indent, indent);
+      }
+    
+    /// Returns whether the auxiliary detector at `pos` is the `expected` one.
+    bool CheckAuxDetAtPosition
+      (double const pos[3], unsigned int expected) const;
+    
+    /// Returns whether the auxiliary sensitive detector at `pos` is expected.
+    bool CheckAuxDetSensitiveAtPosition
+      (double const pos[3], unsigned int expectedDet, unsigned int expectedSens)
+      const;
+      
     /// Performs the wire intersection test at a single point
     unsigned int testWireIntersectionAt
-      (const TPCID& tpcid, double x, double y, double z) const;
+      (geo::TPCGeo const& TPC, TVector3 const& point) const;
     
     /// Returns dT/dW expected from the specified segment A-to-B
     std::vector<std::pair<geo::PlaneID, double>> ExpectedPlane_dTdW(

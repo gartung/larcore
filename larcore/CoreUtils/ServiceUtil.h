@@ -26,7 +26,7 @@
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Utilities/Exception.h"
-#include "cetlib/demangle.h"
+#include "cetlib_except/demangle.h"
 
 // C/C++ standard libraries
 #include <type_traits> // std::decay<>, std::is_same<>
@@ -83,7 +83,7 @@ namespace lar {
       typename T::provider_type const* pProvider = h->provider();
       if (!pProvider) {
         throw art::Exception(art::errors::NotFound)
-          << "Service <" << cet::demangle(typeid(T).name())
+          << "Service <" << cet::demangle_symbol(typeid(T).name())
           << "> offered a null provider";
       }
       

@@ -4,37 +4,29 @@ art_make(
           LIB_LIBRARIES ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
                         ${FHICLCPP}
-                        ${CETLIB}
+                        cetlib cetlib_except
                         ${CLHEP}
                         ${ROOT_BASIC_LIB_LIST}
                         ${ROOT_GEOM}
                         ${ROOT_XMLIO}
                         ${ROOT_GDML}
                         ${ROOT_EG}
+                        ${ROOT_GENVECTOR}
           SERVICE_LIBRARIES larcore_Geometry
-                            ${ART_FRAMEWORK_CORE}
-                            ${ART_FRAMEWORK_IO_SOURCES}
-                            ${ART_FRAMEWORK_PRINCIPAL}
-                            art_Persistency_Common canvas_Persistency_Common
-                            art_Persistency_Provenance canvas_Persistency_Provenance
-                            art_Utilities canvas_Utilities
-                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                            art_Framework_Principal
+                            art_Framework_Services_Registry
+                            cetlib cetlib_except
                             ${MF_MESSAGELOGGER}
                             ${MF_UTILITIES}
                             ${FHICLCPP}
-                            ${CETLIB}
           MODULE_LIBRARIES larcore_Geometry
-#                           ${ART_FRAMEWORK_CORE}
-#                           ${ART_FRAMEWORK_IO_SOURCES}
-                           ${ART_FRAMEWORK_PRINCIPAL}
-#                           art_Persistency_Common canvas_Persistency_Common
-#                           art_Persistency_Provenance canvas_Persistency_Provenance
-                           art_Utilities canvas_Utilities
-                           ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                           art_Framework_Core
+                           art_Framework_Services_Registry
+                           canvas
                            ${MF_MESSAGELOGGER}
                            ${MF_UTILITIES}
                            ${FHICLCPP}
-                           ${CETLIB}
+                           cetlib cetlib_except
           )
 
 install_headers()

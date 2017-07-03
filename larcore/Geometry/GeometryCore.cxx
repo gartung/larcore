@@ -11,6 +11,7 @@
 
 // lar includes
 #include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h" // util::pi<>
+#include "larcore/CoreUtils/DereferenceIterator.h" // lar::util::dereferenceIteratorLoop()
 #include "larcore/Geometry/OpDetGeo.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "larcore/Geometry/AuxDetSensitiveGeo.h"
@@ -37,12 +38,19 @@
 #include <utility> // std::swap()
 #include <limits> // std::numeric_limits<>
 #include <memory> // std::default_deleter<>
+#include <numeric> // std::accumulate
 
 
 namespace geo {
   
   template <typename T>
   inline T sqr(T v) { return v * v; }
+  
+  
+  
+  //......................................................................
+  lar::util::RealComparisons<GeometryCore::Coord_t> GeometryCore::coordIs
+    { 1e-8 };
   
   
   //......................................................................
@@ -70,9 +78,11 @@ namespace geo {
   void GeometryCore::ApplyChannelMap
     (std::shared_ptr<geo::ChannelMapAlg> pChannelMap)
   {
+    SortGeometry(pChannelMap->Sorter());
+    UpdateAfterSorting(); // after channel mapping has sorted objects, set their IDs
     pChannelMap->Initialize(fGeoData);
-    ResetIDs(); // after channel mapping has sorted objects, set their IDs
     fChannelMapAlg = pChannelMap;
+    
   } // GeometryCore::ApplyChannelMap()
 
   //......................................................................
@@ -92,7 +102,7 @@ namespace geo {
     }
     
     ClearGeometry();
-
+    
     // Open the GDML file, and convert it into ROOT TGeoManager format.
     // Then lock the gGeoManager to prevent future imports, for example
     // in AuxDetGeometry
@@ -133,14 +143,31 @@ namespace geo {
 
 
   //......................................................................
-  void GeometryCore::ResetIDs() {
+  void GeometryCore::SortGeometry(geo::GeoObjectSorter const& sorter) {
     
-    // This implementation is very low level because we want this to be working
-    // even if the geometry is not perfectly initialised yet
+    mf::LogInfo("GeometryCore") << "Sorting volumes...";
+    
+    sorter.SortAuxDets(AuxDets());
+    sorter.SortCryostats(Cryostats());
+    
+    geo::CryostatID::CryostatID_t c = 0;
+    for (geo::CryostatGeo& cryo: lar::util::dereferenceIteratorLoop(Cryostats()))
+    {
+      cryo.SortSubVolumes(sorter);
+      cryo.UpdateAfterSorting(geo::CryostatID(c));
+      ++c;
+    } // for
+    
+  } // GeometryCore::SortGeometry()
+  
+  
+  //......................................................................
+  void GeometryCore::UpdateAfterSorting() {
+    
     for (size_t c = 0; c < Ncryostats(); ++c)
-      Cryostats()[c]->ResetIDs(geo::CryostatID(c));
+      Cryostats()[c]->UpdateAfterSorting(geo::CryostatID(c));
     
-  } // GeometryCore::ResetIDs()
+  } // GeometryCore::UpdateAfterSorting()
   
   
   //......................................................................
@@ -353,6 +380,13 @@ namespace geo {
 
   //......................................................................
   const CryostatGeo& GeometryCore::PositionToCryostat
+    (double const worldLoc[3]) const
+  {
+    geo::CryostatID cid;
+    return PositionToCryostat(worldLoc, cid);
+  } // GeometryCore::PositionToCryostat(double[3])
+  
+  const CryostatGeo& GeometryCore::PositionToCryostat
     (double const  worldLoc[3], geo::CryostatID& cid) const
   {
     geo::CryostatID::CryostatID_t cstat = FindCryostatAtPosition(worldLoc);
@@ -364,7 +398,7 @@ namespace geo {
                                        << worldLoc[2] << ")\n";
     cid = geo::CryostatID(cstat);
     return Cryostat(cid);
-  }
+  } // GeometryCore::PositionToCryostat(double[3], CryostatID)
   
   const CryostatGeo& GeometryCore::PositionToCryostat
     (double const worldLoc[3], unsigned int &cstat) const
@@ -373,7 +407,7 @@ namespace geo {
     geo::CryostatGeo const& cryo = PositionToCryostat(worldLoc, cid);
     cstat = cid.Cryostat;
     return cryo;
-  }
+  } // GeometryCore::PositionToCryostat(double[3], unsigned int)
   
   //......................................................................
   unsigned int GeometryCore::FindAuxDetAtPosition(double const  worldPos[3]) const
@@ -624,40 +658,12 @@ namespace geo {
   }
 
   //......................................................................
-  // Boundaries of the cryostat in 3 pairs
-  // [0]: -x
-  // [1]: +x
-  // [2]: -y
-  // [3]: +y
-  // [4]: -z
-  // [5]: +z
-  void GeometryCore::CryostatBoundaries(double* boundaries,
-                                    geo::CryostatID const& cid) const
+  void GeometryCore::CryostatBoundaries
+    (double* boundaries, geo::CryostatID const& cid) const
   {
     geo::CryostatGeo const& cryo = Cryostat(cid);
-    TGeoBBox const* CryoShape = ((TGeoBBox*) cryo.Volume()->GetShape());
-    // get the half width, height, etc of the cryostat
-    const double halflength = CryoShape->GetDZ();
-    const double halfwidth  = CryoShape->GetDX();
-    const double halfheight = CryoShape->GetDY();
-    
-    double posW[3] = {0.};
-    double negW[3] = {0.};
-    double pos[3]  = { halfwidth,  halfheight,  halflength};
-    double neg[3]  = {-halfwidth, -halfheight, -halflength};
-    
-    cryo.LocalToWorld(pos, posW);
-    cryo.LocalToWorld(neg, negW);
-
-    boundaries[0] = negW[0];
-    boundaries[1] = posW[0];
-    boundaries[2] = negW[1];
-    boundaries[3] = posW[1];
-    boundaries[4] = negW[2];
-    boundaries[5] = posW[2];
-    
-    return;
-  }
+    cryo.Boundaries(boundaries);
+  } // GeometryCore::CryostatBoundaries()
 
   //......................................................................
   // This method returns the distance between the specified planes.
@@ -673,8 +679,7 @@ namespace geo {
   double GeometryCore::PlanePitch
     (geo::PlaneID const& pid1, geo::PlaneID const& pid2) const
   {
-    return PlanePitch
-      (static_cast<geo::TPCID const&>(pid1), pid1.Plane, pid2.Plane);
+    return PlanePitch(pid1.asTPCID(), pid1.Plane, pid2.Plane);
   }
   
   double GeometryCore::PlanePitch(unsigned int p1, 
@@ -1008,6 +1013,13 @@ namespace geo {
   
   //----------------------------------------------------------------------------
   double GeometryCore::WireCoordinate
+    (TVector3 const& pos, geo::PlaneID const& planeid) const
+  {
+    return Plane(planeid).WireCoordinate(pos);
+  }
+
+  //----------------------------------------------------------------------------
+  double GeometryCore::WireCoordinate
     (double YPos, double ZPos, geo::PlaneID const& planeid) const
   {
     return fChannelMapAlg->WireCoordinate(YPos, ZPos, planeid);
@@ -1023,7 +1035,8 @@ namespace geo {
   unsigned int GeometryCore::NearestWire
     (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWire(worldPos, planeid);
+    return NearestWireID(worldPos, planeid).Wire;
+    // return fChannelMapAlg->NearestWire(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
@@ -1048,7 +1061,8 @@ namespace geo {
   geo::WireID GeometryCore::NearestWireID
     (const TVector3& worldPos, geo::PlaneID const& planeid) const
   {
-    return fChannelMapAlg->NearestWireID(worldPos, planeid);
+    return Plane(planeid).NearestWireID(worldPos); 
+  //  return fChannelMapAlg->NearestWireID(worldPos, planeid);
   }
 
   //----------------------------------------------------------------------------
@@ -1115,12 +1129,25 @@ namespace geo {
   }
 
   //......................................................................
+  GeometryCore::Segment_t GeometryCore::WireEndPoints
+    (geo::WireID const& wireid) const
+  {
+    geo::WireGeo const& wire = Wire(wireid);
+    return { wire.GetStart(), wire.GetEnd() };
+  } // GeometryCore::WireEndPoints(WireID)
+  
+  //......................................................................
   void GeometryCore::WireEndPoints
     (geo::WireID const& wireid, double *xyzStart, double *xyzEnd) const
   {
-    geo::WireGeo const& wire = Wire(wireid);
-    wire.GetStart(xyzStart);
-    wire.GetEnd(xyzEnd);
+    Segment_t result = WireEndPoints(wireid);
+    
+    xyzStart[0] = result.start().X();
+    xyzStart[1] = result.start().Y();
+    xyzStart[2] = result.start().Z();
+    xyzEnd[0]   = result.end().X();
+    xyzEnd[1]   = result.end().Y();
+    xyzEnd[2]   = result.end().Z();
     
     if(xyzEnd[2]<xyzStart[2]){
       //ensure that "End" has higher z-value than "Start"
@@ -1135,7 +1162,7 @@ namespace geo {
       std::swap(xyzStart[2],xyzEnd[2]);
     }
     
-  }
+  } // GeometryCore::WireEndPoints(WireID, 2x double*)
    
   //Changed to use WireIDsIntersect(). Apr, 2015 T.Yang
   //......................................................................
@@ -1144,18 +1171,35 @@ namespace geo {
                                    double &y, 
                                    double &z) const
   {
-
-    std::vector< geo::WireID > chan1wires, chan2wires; 
-
-    chan1wires = ChannelToWire(c1);
-    chan2wires = ChannelToWire(c2);
-
-    if ( chan1wires.size() == 0 || chan2wires.size() == 0 ) {
-      mf::LogWarning("ChannelsIntersect") << "one of the channels you gave was out of range " << std::endl
-                                          << "channel 1 " << c1 << std::endl
-                                          << "channel 2 " << c2 << std::endl;
+    
+    // [GP] these errors should be exceptions, and this function is deprecated
+    // because it violates interoperability
+    std::vector<geo::WireID> chan1wires = ChannelToWire(c1);
+    if (chan1wires.empty()) {
+      mf::LogError("ChannelsIntersect")
+        << "1st channel " << c1 << " maps to no wire (is it a real one?)";
       return false;
     }
+    std::vector<geo::WireID> chan2wires = ChannelToWire(c2);
+    if (chan2wires.empty()) {
+      mf::LogError("ChannelsIntersect")
+        << "2nd channel " << c2 << " maps to no wire (is it a real one?)";
+      return false;
+    }
+    
+    if (chan1wires.size() > 1) {
+      mf::LogWarning("ChannelsIntersect")
+        << "1st channel " << c1 << " maps to " << chan2wires.size()
+        << " wires; using the first!";
+      return false;
+    }
+    if (chan2wires.size() > 1) {
+      mf::LogError("ChannelsIntersect")
+        << "2nd channel " << c2 << " maps to " << chan2wires.size()
+        << " wires; using the first!";
+      return false;
+    }
+    
     geo::WireIDIntersection widIntersect;
     if (this->WireIDsIntersect(chan1wires[0],chan2wires[0],widIntersect)){
       y = widIntersect.y;
@@ -1169,77 +1213,174 @@ namespace geo {
     }
   }
 
-  // This function always calculates the intersection of two wires as long as they are in the same TPC and cryostat and not parallel. If the intersection is on both wires, it returns ture, otherwise it returns false. T.Yang
-  //......................................................................
-  bool GeometryCore::WireIDsIntersect(const geo::WireID& wid1, const geo::WireID& wid2, 
-                                   geo::WireIDIntersection & widIntersect   ) const
-  {
-    widIntersect.y = -9999;
-    widIntersect.z = -9999;
-    widIntersect.TPC = 9999;
-
-    double w1_Start[3] = {0.};
-    double w1_End[3]   = {0.};
-    double w2_Start[3] = {0.};
-    double w2_End[3]   = {0.};
-
-    if( wid1.Plane == wid2.Plane ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in the same plane, return false";
-      return false;     }
-    if( wid1.TPC != wid2.TPC ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different TPCs, return false";
-      return false;     }
-    if( wid1.Cryostat != wid2.Cryostat ){
-      mf::LogWarning("WireIDsIntersect") << "Comparing two wires in different Cryostats, return false";
-      return false;     }
-    if( wid1.Wire<0 || wid1.Wire>=this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat)){
-      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid1.Wire<< "max wire number = "<< this->Nwires(wid1.Plane, wid1.TPC, wid1.Cryostat);
-      return false;
-    }
-    if( wid2.Wire<0 || wid2.Wire>=this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat)){
-      mf::LogWarning("WireIDsIntersect") <<"wire number = "<<wid2.Wire<< "max wire number = "<< this->Nwires(wid2.Plane, wid2.TPC, wid2.Cryostat);
-      return false;
-    }
   
-
-    // get the endpoints to see if i1 and i2 even intersect
-    this->WireEndPoints(wid1.Cryostat, wid1.TPC, wid1.Plane, wid1.Wire, w1_Start, w1_End);
-    this->WireEndPoints(wid2.Cryostat, wid2.TPC, wid2.Plane, wid2.Wire, w2_Start, w2_End);
-
-    //Equation from http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
-    //T.Yang Nov, 2014
-    double x1 = w1_Start[1];
-    double y1 = w1_Start[2];
-    double x2 = w1_End[1];
-    double y2 = w1_End[2];
-    double x3 = w2_Start[1];
-    double y3 = w2_Start[2];
-    double x4 = w2_End[1];
-    double y4 = w2_End[2];
-
-    double denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
-    if (!denom) {
-      mf::LogWarning("WireIDsIntersect") << "Two wires are parallel, return false";
+  //......................................................................
+  bool GeometryCore::IntersectLines(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double& x, double& y
+  ) const {
+    
+    // Equation from http://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+    // T.Yang Nov, 2014
+    // Notation: x => coordinate orthogonal to the drift direction and to the beam direction
+    //           y => direction orthogonal to the previous and to beam direction
+    
+    double const denom = (A_start_x - A_end_x)*(B_start_y - B_end_y)
+      - (A_start_y - A_end_y)*(B_start_x - B_end_x);
+    
+    if (coordIs.zero(denom)) return false;
+    
+    double const A = (A_start_x * A_end_y - A_start_y * A_end_x) / denom;
+    double const B = (B_start_x * B_end_y - B_start_y * B_end_x) / denom;
+    
+    x = (B_start_x - B_end_x) * A - (A_start_x - A_end_x) * B;
+    y = (B_start_y - B_end_y) * A - (A_start_y - A_end_y) * B;
+    
+    return true;
+    
+  } // GeometryCore::IntersectLines()
+  
+  //......................................................................
+  bool GeometryCore::IntersectSegments(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double& x, double& y
+  ) const {
+    
+    bool bCross = IntersectLines(
+      A_start_x, A_start_y, A_end_x, A_end_y,
+      B_start_x, B_start_y, B_end_x, B_end_y,
+      x, y
+      );
+    
+    if (bCross) {
+      mf::LogWarning("IntersectSegments") << "The segments are parallel!";
       return false;
     }
-    double x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/denom;
-    double y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/denom;
-
-    widIntersect.y = x;
-    widIntersect.z = y;
-    widIntersect.TPC = wid1.TPC;
-    if (this->ValueInRange(x,x1,x2) &&
-        this->ValueInRange(x,x3,x4) &&
-        this->ValueInRange(y,y1,y2) &&
-        this->ValueInRange(y,y3,y4)){
-      return true;
-    }
-    else{
+    
+    return PointWithinSegments(
+      A_start_x, A_start_y, A_end_x, A_end_y,
+      B_start_x, B_start_y, B_end_x, B_end_y,
+      x, y
+      );
+    
+  } // GeometryCore::IntersectSegments()
+  
+  //......................................................................
+  bool GeometryCore::WireIDsIntersect(
+    const geo::WireID& wid1, const geo::WireID& wid2,
+    geo::WireIDIntersection & widIntersect
+  ) const {
+    
+    static_assert(
+      std::numeric_limits<decltype(widIntersect.y)>::has_infinity,
+      "the vector coordinate type can't represent infinity!"
+      );
+    constexpr auto infinity
+      = std::numeric_limits<decltype(widIntersect.y)>::infinity();
+    
+    if (!WireIDIntersectionCheck(wid1, wid2)) {
+      widIntersect.y = widIntersect.z = infinity;
+      widIntersect.TPC = geo::TPCID::InvalidID;
       return false;
     }
-
-    return false;
-  }
+    
+    // get the endpoints to see if wires intersect
+    Segment_t const w1 = WireEndPoints(wid1);
+    Segment_t const w2 = WireEndPoints(wid2);
+    
+    // TODO extract the coordinates in the right way;
+    // is it any worth, since then the result is in (y, z), whatever it means?
+    bool const cross = IntersectLines(
+      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
+      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      widIntersect.y, widIntersect.z
+      );
+    if (!cross) {
+      widIntersect.y = widIntersect.z = infinity;
+      widIntersect.TPC = geo::TPCID::InvalidID;
+      return false;
+    }
+    bool const within = PointWithinSegments(
+      w1.start()[1], w1.start()[2], w1.end()[1], w1.end()[2],
+      w2.start()[1], w2.start()[2], w2.end()[1], w2.end()[2],
+      widIntersect.y, widIntersect.z
+      );
+    
+    widIntersect.TPC = (within? wid1.TPC: geo::TPCID::InvalidID);
+    
+    // return whether the intersection is within the length of both wires
+    return within;
+    
+  } // GeometryCore::WireIDsIntersect(WireIDIntersection)
+  
+  
+  //......................................................................
+  bool GeometryCore::WireIDsIntersect
+    (const geo::WireID& wid1, const geo::WireID& wid2, Point3D_t& intersection)
+    const
+  {
+    //
+    // This is not a real 3D intersection: the wires do not cross, since they
+    // are required to belong to two different planes.
+    // 
+    // Therefore, the wires are projected on the same plane and the intersection
+    // is found there, and then we are brought back to the 3D world.
+    // 
+    // The coordinate of the intersection that is from the component orthogonal
+    // to the plane is arbitrarily set to 0.
+    //
+    static_assert(
+      std::numeric_limits<decltype(intersection.X())>::has_infinity,
+      "the vector coordinate type can't represent infinity!"
+      );
+    constexpr auto infinity
+      = std::numeric_limits<decltype(intersection.X())>::infinity();
+    
+    if (!WireIDIntersectionCheck(wid1, wid2)) {
+      intersection = { infinity, infinity, infinity };
+      return false;
+    }
+    
+    // get the endpoints to see if wires intersect
+    Segment_t const w1 = WireEndPoints(wid1);
+    Segment_t const w2 = WireEndPoints(wid2);
+    
+    // we need a consistent representation of the projections;
+    // so we pick the first plane
+    // (when issue #14365 will be solved, we'll be able to talk to the TPC instead)
+    auto const& plane1 = Plane(wid1);
+    auto w1startProj = plane1.PointWidthDepthProjection(w1.start());
+    auto w1endProj   = plane1.PointWidthDepthProjection(w1.end());
+    auto w2startProj = plane1.PointWidthDepthProjection(w2.start());
+    auto w2endProj   = plane1.PointWidthDepthProjection(w2.end());
+    
+    double x, y; // "width" and "depth"
+    bool const cross = IntersectLines(
+      w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
+      w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
+      x, y
+      );
+    
+    if (!cross) {
+      intersection = { infinity, infinity, infinity };
+      return false;
+    }
+    
+    bool const within = PointWithinSegments(
+      w1startProj.X(), w1startProj.Y(), w1endProj.X(), w1endProj.Y(),
+      w2startProj.X(), w2startProj.Y(), w2endProj.X(), w2endProj.Y(),
+      x, y
+      );
+    
+    intersection
+      = plane1.ComposePoint(0., geo::PlaneGeo::WireCoordProjection_t(x, y));
+    
+    // return whether the intersection is within the length of both wires
+    return within;
+    
+  } // GeometryCore::WireIDsIntersect(Point3D_t)
   
   
   //----------------------------------------------------------------------------
@@ -1278,7 +1419,7 @@ namespace geo {
   void GeometryCore::CheckIndependentPlanesOnSameTPC
     (geo::PlaneID const& pid1, geo::PlaneID const& pid2, const char* caller)
   {
-    if(static_cast<geo::TPCID const&>(pid1) != static_cast<geo::TPCID const&>(pid2)) {
+    if(pid1.asTPCID() != pid2.asTPCID()) {
       throw cet::exception("GeometryCore")
         << caller << " needs two planes on the same TPC (got "
         << std::string(pid1) << " and " << std::string(pid2) << ")\n";
@@ -1418,38 +1559,16 @@ namespace geo {
   // Note: This calculation is entirely dependent  on an accurate GDML description of the TPC!
   // Mitch - Feb., 2011
   // Changed to use WireIDsIntersect(). It does not check whether the intersection is on both wires (the same as the old behavior). T. Yang - Apr, 2015
-  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
+  //--------------------------------------------------------------------
+  bool GeometryCore::IntersectionPoint(geo::WireID const& wid1,
                                    geo::WireID const& wid2,
-                                   double start_w1[3], 
-                                   double end_w1[3], 
-                                   double start_w2[3], 
-                                   double end_w2[3], 
-                                   double &y, double &z)
+                                   double &y, double &z) const
   {
     geo::WireIDIntersection widIntersect;
-    this->WireIDsIntersect(wid1,wid2,widIntersect);
+    bool const found = WireIDsIntersect(wid1, wid2, widIntersect);
     y = widIntersect.y;
     z = widIntersect.z;
-    return;    
-  }
-    
-  // Added shorthand function where start and endpoints are looked up automatically
-  //  - whether to use this or the full function depends on optimization of your
-  //    particular algorithm.  Ben J, Oct 2011
-  //--------------------------------------------------------------------
-  void GeometryCore::IntersectionPoint(geo::WireID const& wid1,
-                                   geo::WireID const& wid2,
-                                   double &y, double &z)
-  {
-    double WireStart1[3] = {0.};
-    double WireStart2[3] = {0.};
-    double WireEnd1[3]   = {0.};
-    double WireEnd2[3]   = {0.};
-
-    WireEndPoints(wid1, WireStart1, WireEnd1);
-    WireEndPoints(wid2, WireStart2, WireEnd2);
-    this->IntersectionPoint
-      (wid1, wid2, WireStart1, WireEnd1, WireStart2, WireEnd2, y, z);
+    return found;
   }
   
   //============================================================================
@@ -1659,6 +1778,50 @@ namespace geo {
     return OpDetFromCryo(o, cid.Cryostat);
   }
   
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::WireIDIntersectionCheck
+    (const geo::WireID& wid1, const geo::WireID& wid2) const
+  {
+    if (wid1.asTPCID() != wid2) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "Comparing two wires on different TPCs: return failure.";
+      return false;
+    }
+    if (wid1.Plane == wid2.Plane) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "Comparing two wires in the same plane: return failure";
+      return false;
+    }
+    if (!HasWire(wid1)) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "1st wire " << wid1 << " does not exist (max wire number: "
+        << Nwires(wid1.planeID()) << ")";
+      return false;
+    }
+    if (!HasWire(wid2)) {
+      mf::LogError("WireIDIntersectionCheck")
+        << "2nd wire " << wid2 << " does not exist (max wire number: "
+        << Nwires(wid2.planeID()) << ")";
+      return false;
+    }
+    return true;
+  } // GeometryCore::WireIDIntersectionCheck()
+  
+  
+  //--------------------------------------------------------------------
+  bool GeometryCore::PointWithinSegments(
+    double A_start_x, double A_start_y, double A_end_x, double A_end_y,
+    double B_start_x, double B_start_y, double B_end_x, double B_end_y,
+    double x, double y
+  ) {
+    return coordIs.withinSorted(x, A_start_x, A_end_x)
+      && coordIs.withinSorted(y, A_start_y, A_end_y)
+      && coordIs.withinSorted(x, B_start_x, B_end_x)
+      && coordIs.withinSorted(y, B_start_y, B_end_y)
+      ;
+    
+  } // GeometryCore::PointWithinSegments()
   
   //--------------------------------------------------------------------
   constexpr details::geometry_iterator_types::BeginPos_t
