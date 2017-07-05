@@ -19,7 +19,7 @@
 #define BOOST_TEST_MODULE ( ServiceUtil_test )
 
 // LArSoft libraries
-#include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
+#include "larcorealg/CoreUtils/UncopiableAndUnmovableClass.h"
 #include "larcore/CoreUtils/ServiceUtil.h"
 
 // art libraries

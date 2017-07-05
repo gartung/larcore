@@ -161,7 +161,7 @@ namespace {
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 
 // framework libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -214,7 +214,7 @@ DEFINE_ART_MODULE(geo::DumpChannelMap)
 
 // LArSoft libraries
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h" // geo::WireID
-#include "larcore/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 
 // framework libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"

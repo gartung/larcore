@@ -20,8 +20,8 @@
 #define LARCORE_COREUTILS_SERVICEUTIL_H
 
 // LArSoft libraries
-#include "larcore/CoreUtils/UncopiableAndUnmovableClass.h"
-#include "larcore/CoreUtils/ProviderPack.h"
+#include "larcorealg/CoreUtils/UncopiableAndUnmovableClass.h"
+#include "larcorealg/CoreUtils/ProviderPack.h"
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"

@@ -8,8 +8,8 @@
 #include "larcore/Geometry/StandardGeometryHelper.h"
 
 // LArSoft libraries
-#include "larcore/Geometry/ChannelMapStandardAlg.h"
-#include "larcore/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/ChannelMapStandardAlg.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 
 // C/C++ libraries
 #include <string>

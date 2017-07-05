@@ -12,9 +12,9 @@
 // LArSoft libraries
 
 // the following are included for convenience only
-#include "larcore/Geometry/AuxDetGeometryCore.h"
-#include "larcore/Geometry/AuxDetChannelMapAlg.h"
-#include "larcore/Geometry/AuxDetGeo.h"
+#include "larcorealg/Geometry/AuxDetGeometryCore.h"
+#include "larcorealg/Geometry/AuxDetChannelMapAlg.h"
+#include "larcorealg/Geometry/AuxDetGeo.h"
 
 // framework libraries
 #include "fhiclcpp/ParameterSet.h"
