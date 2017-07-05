@@ -8,14 +8,14 @@ gdmldir product_dir
 #
 product         version
 art		v2_07_03
-larcoreobj	v1_15_01
+larcorealg	v1_04_00
 
 cetbuildtools	v5_09_01	-	only_for_build
 end_product_list
 
   
 # e14  - with gcc 6.3.0 and -std=c++14
-qualifier	art		larcoreobj	notes
+qualifier	art		larcorealg	notes
 e14:debug	e14:nu:debug	e14:debug
 e14:opt		e14:nu:opt	e14:opt
 e14:prof	e14:nu:prof	e14:prof
