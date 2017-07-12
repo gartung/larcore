@@ -39,17 +39,6 @@ cet_test(geometry_iterator_loop HANDBUILT
   TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
 )
 
-# set FHICL_FILE_PATH and FW_SEARCH_PATH for the case where building without mrb
-# this is not generic, we take advantage of knowing the subdirectories for the fcl and gdml files
-set( mrb_build_dir $ENV{MRB_BUILDDIR} )
-if( NOT mrb_build_dir )
-  #message(STATUS "MRB_BUILDDIR is undefined, set FHICL_FILE_PATH and FW_SEARCH_PATH")
-  set_tests_properties( geometry geometry_iterator_loop
-                        PROPERTIES ENVIRONMENT 
-                        "FHICL_FILE_PATH=.:${CMAKE_BINARY_DIR}/job;FW_SEARCH_PATH=${CMAKE_BINARY_DIR}/gdml" )
-endif()
-
-
 # FCL files need to be copied to the test area (DATAFILES directive) since they
 # are not installed.
 cet_test(dump_channel_map_test HANDBUILT
