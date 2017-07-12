@@ -7,6 +7,7 @@ art_make(
                             ${MF_MESSAGELOGGER}
                             ${MF_UTILITIES}
                             ${FHICLCPP}
+                            ${ROOT_BASIC_LIB_LIST}
           MODULE_LIBRARIES larcorealg_Geometry
                            art_Framework_Core
                            art_Framework_Services_Registry
