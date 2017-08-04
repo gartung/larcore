@@ -69,9 +69,9 @@ namespace geo {
     std::vector< art::Handle<sumdata::RunData> > rdcol;
     run.getManyByType(rdcol);
     if (rdcol.empty()) {
-      mf::LogWarning("LoadNewGeometry") << "cannot find sumdata::RunData object to grab detector name\n" 
-                                        << "this is expected if generating MC files\n"
-                                        << "using default geometry from configuration file\n";
+      mf::LogWarning("Geometry") << "cannot find sumdata::RunData object to grab detector name\n" 
+                                 << "this is expected if generating MC files\n"
+                                 << "using default geometry from configuration file\n";
       return;
     }
     
