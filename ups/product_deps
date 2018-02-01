@@ -1,21 +1,24 @@
 # The parent line must be the first non-comment line in the file
 # This line defines the product name and version
-parent	larcore	v06_16_00
-defaultqual	e14
+parent	larcore	v06_17_00
+defaultqual	e15
 #
 fcldir product_dir job
 gdmldir product_dir
 #
 product         version
 art		v2_09_06
-larcorealg	v1_16_00
+larcorealg	v1_17_00
 
 cetbuildtools	v6_01_01	-	only_for_build
 end_product_list
 
   
-# e14  - with gcc 6.3.0 and -std=c++14
+# e15  - with gcc 6.4.0 and -std=c++14
 qualifier	art		larcorealg	notes
+e15:debug	e15:nu:debug	e15:debug
+e15:opt		e15:nu:opt	e15:opt
+e15:prof	e15:nu:prof	e15:prof
 e14:debug	e14:nu:debug	e14:debug
 e14:opt		e14:nu:opt	e14:opt
 e14:prof	e14:nu:prof	e14:prof
