@@ -146,7 +146,7 @@ namespace geo {
 DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
 
 // check that the requirements for geo::Geometry are satisfied
-template class lar::details::ServiceRequirementsChecker<geo::Geometry>;
+template struct lar::details::ServiceRequirementsChecker<geo::Geometry>;
 
 
 #endif // GEO_GEOMETRY_H
