@@ -5,7 +5,7 @@ art_make(
                             art_Framework_Services_Registry
                             cetlib cetlib_except
                             ${MF_MESSAGELOGGER}
-                            ${MF_UTILITIES}
+                            
                             ${FHICLCPP}
                             ${ROOT_BASIC_LIB_LIST}
           MODULE_LIBRARIES larcorealg_Geometry
@@ -13,7 +13,7 @@ art_make(
                            art_Framework_Services_Registry
                            canvas
                            ${MF_MESSAGELOGGER}
-                           ${MF_UTILITIES}
+                           
                            ${FHICLCPP}
                            cetlib cetlib_except
                            ${ROOT_GEOM}
