@@ -1,0 +1,78 @@
+#
+# File:    geometry_lartpcdetector.fcl
+# Purpose: Configuration for a simple TPC detector.
+# Author:  Gianluca Petrillo (petrillo@slac.stanford.edu)
+# Date:    May 30, 2018
+# Version: 1.0
+#
+# The simple geometry includes all is needed to be used in LArSoft.
+# The current version (1.0) is a MicroBooNE old geometry description.
+# 
+# Configuration provided include:
+#
+# * `lartpcdetector_geometry`: configuration for the geometry service
+# * `lartpcdetector_geometry_helper`: configuration for ExptGeoHelperInterface
+#     service
+# * `lartpcdetector_geometry_services`: a table with the whole geometry
+#     configuration
+#
+# Currently, no configuration is provided for `AuxDetGeometry` service.
+#
+#
+# Example of usage
+# -----------------
+#
+# The following snippet configures the geometry in a single step:
+#     
+#     #include "geometry_lartpcdetector.fcl"
+#
+#     services: {
+#       @table::geometry_lartpcdetector_services
+#     }
+#     
+#
+# Changes
+# --------
+#
+# 20180530 (petrillo@slac.stanford.edu) [v1.0]
+#   original version, extracted from `geometry.fcl`
+#
+
+BEGIN_PROLOG
+
+################################################################################
+#
+# Geometry service configurtion
+#
+lartpcdetector_geometry:
+{
+  SurfaceY:        2.0e2                           #in cm, vertical distance to the surface
+  Name:            "lartpcdetector"
+  GDML:            "LArTPCdetector.gdml"
+  ROOT:            "LArTPCdetector.gdml"
+  DisableWiresInG4: true                           # Whether to use wirefree geometry in LArG4
+                                                   #  As per Brian's request, wire free file is specified by
+                                                   #  [GDMLFileName]_nowires.gdml
+  SortingParameters: {}                            # empty parameter set for default
+} # lartpcdetector_geometry
+
+
+#
+# ExptGeoHelperInterface service configuration
+#
+lartpcdetector_geometry_helper: {
+  service_provider: StandardGeometryHelper
+}
+
+#
+# complete geometry-related service configuration
+#
+lartpcdetector_geometry_services: {
+  Geometry:               @local::lartpcdetector_geometry
+  ExptGeoHelperInterface: @local::lartpcdetector_geometry_helper
+}
+
+################################################################################
+
+END_PROLOG
+

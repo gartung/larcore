@@ -1,0 +1,68 @@
+#
+# File:     dump_lartpcdetector_geometry.fcl
+# Purpouse: Example of geometry dumping job
+# Author:   Gianluca Petrillo (petrillo@slac.stanford.edu)
+# Date:     May 30, 2018
+# Version:  1.0
+#
+# This configuration is intended mostly as example to dump the geometry
+# as seen by LArSoft. Experiments may want to replace the geometry service
+# configuration with their own, and change the name of the output file
+# accordingly.
+#
+# Service dependencies:
+#  * Geometry service
+#  * message facility
+#
+
+#include "geometry_lartpcdetector.fcl"
+
+
+process_name: GeometryDump
+
+
+services: {
+  # use a specific configuration which dumps the geometry on a file.
+  message: {
+    destinations: {
+      GeometryLog: {
+        type: file
+        filename:  "lartpcdetector_geometry.txt"
+        threshold:  INFO
+        categories: {
+          DumpGeometry: { limit: -1 }
+          default: { limit: 0 }
+        }
+      }
+    } # destinations
+  } # message
+
+  @table::lartpcdetector_geometry_services
+  
+} # services
+
+
+# since the dumper will dump on every run change, it is important to have
+# at least one event processed (0 won't do):
+source: {
+  module_type: EmptyEvent
+  maxEvents:   1
+} # source
+
+
+physics: {
+  analyzers: {
+    geometrydump: {
+      module_type: DumpGeometry
+      
+      # message facility category for the output (default: "DumpGeometry")
+      outputCategory: "DumpGeometry"
+    }
+  } # analyzers
+
+  dumpers: [ geometrydump ]
+  
+  end_paths: [ dumpers ]
+  
+} # physics
+

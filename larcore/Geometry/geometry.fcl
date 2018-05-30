@@ -1,3 +1,4 @@
+#include "geometry_lartpcdetector.fcl"
 #include "geometry_bo.fcl"
 #include "geometry_csu40L.fcl"
 #include "geometry_icarus_old.fcl"
@@ -6,24 +7,12 @@
 
 BEGIN_PROLOG
 
-# Define geometry configurations in detector specific 
-# files, but include this in service configuration files 
-
-standard_geo:
-{
- SurfaceY:        2.0e2                           #in cm, vertical distance to the surface
- Name:            "lartpcdetector"
- GDML:            "LArTPCdetector.gdml"
- ROOT:            "LArTPCdetector.gdml"
- DisableWiresInG4: true                           # Whether to use wirefree geometry in LArG4
-                                                  #  As per Brian's request, wire free file is specified by
-                                                  #  [GDMLFileName]_nowires.gdml
- SortingParameters: {}                            # empty parameter set for default
-}
-
-standard_geometry_helper:
-{
- service_provider : StandardGeometryHelper
-}
+#
+# the "standard" geometry configuration is from the "LArTPCdetector":
+#
+standard_geo:               @local::lartpcdetector_geometry
+standard_geometry_helper:   @local::lartpcdetector_geometry_helper
+standard_geometry_services: @local::lartpcdetector_geometry_services
 
 END_PROLOG
+
