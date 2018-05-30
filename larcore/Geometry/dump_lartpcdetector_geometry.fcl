@@ -27,7 +27,7 @@ services: {
     destinations: {
       GeometryLog: {
         type: file
-        filename:  "lartpcdetector_geometry.txt"
+        filename:  "LArTPCdetector-geometry.txt"
         threshold:  INFO
         categories: {
           DumpGeometry: { limit: -1 }
@@ -40,14 +40,6 @@ services: {
   @table::lartpcdetector_geometry_services
   
 } # services
-
-
-# since the dumper will dump on every run change, it is important to have
-# at least one event processed (0 won't do):
-source: {
-  module_type: EmptyEvent
-  maxEvents:   1
-} # source
 
 
 physics: {
