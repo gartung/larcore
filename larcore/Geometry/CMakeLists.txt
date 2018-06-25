@@ -16,6 +16,8 @@ art_make(
                            
                            ${FHICLCPP}
                            cetlib cetlib_except
+                           ${ROOT_GEOM}
+                           ${ROOT_GENVECTOR}
           )
 
 install_headers()

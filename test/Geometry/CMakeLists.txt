@@ -27,24 +27,28 @@ simple_plugin ( GeometryTest "module"
 # This test is equivalent to geometry_test, but run in art environment
 cet_test(geometry HANDBUILT
   TEST_EXEC lar
-  TEST_ARGS --rethrow-all --config ./test_geometry.fcl
+  TEST_ARGS --rethrow-all --config test_geometry.fcl
 )
 
-# FCL files need to be copied to the test area (DATAFILES directive) since they
-# are not installed.
-# 
 # This test is equivalent to geometry_iterator_loop_test, but run in art environment
 cet_test(geometry_iterator_loop HANDBUILT
   TEST_EXEC lar
-  TEST_ARGS --rethrow-all --config ./test_geometry_iterator_loop.fcl
+  TEST_ARGS --rethrow-all --config test_geometry_iterator_loop.fcl
 )
+
+# this test just dumps the geometry on a file
+cet_test(dump_geometry_test HANDBUILT
+  TEST_EXEC lar
+  TEST_ARGS --rethrow-all --config dump_lartpcdetector_geometry.fcl
+)
+
 
 # FCL files need to be copied to the test area (DATAFILES directive) since they
 # are not installed.
 cet_test(dump_channel_map_test HANDBUILT
-  DATAFILES dump_lartpcdetector_channelmap.fcl
   TEST_EXEC lar
   TEST_ARGS --rethrow-all --config ./dump_lartpcdetector_channelmap.fcl
+  DATAFILES dump_lartpcdetector_channelmap.fcl
 )
 
 
