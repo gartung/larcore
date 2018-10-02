@@ -1,8 +1,8 @@
-
 art_make( 
           SERVICE_LIBRARIES larcorealg_Geometry
                             art_Framework_Principal
                             art_Framework_Services_Registry
+                            art_Persistency_Provenance
                             cetlib cetlib_except
                             ${MF_MESSAGELOGGER}
                             
