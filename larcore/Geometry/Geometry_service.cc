@@ -83,7 +83,7 @@ namespace geo {
     // object has not been set.
     std::string const nodetname("nodetectorname");
     if (newDetectorName == nodetname) {
-      LOG_WARNING("Geometry") << "Detector name not set: " << newDetectorName;
+      MF_LOG_WARNING("Geometry") << "Detector name not set: " << newDetectorName;
     } // if no detector name stored
     else {
       // the detector name is specified in the RunData object
