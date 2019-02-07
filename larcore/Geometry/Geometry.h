@@ -101,7 +101,13 @@ namespace geo {
    * - *SortingParameters* (a parameter set; default: empty): this configuration
    *   is directly passed to the channel mapping algorithm (see
    *   geo::ChannelMapAlg); its content is dependent on the chosen
-   *   implementation of ChannelMapAlg
+   *   implementation of `geo::ChannelMapAlg`
+   * - *Builder* (a parameter set: default: empty): configuration for the
+   *   geometry builder; if omitted, the standard builder
+   *   (`geo::GeometryBuilderStandard`) with standard configuration will be
+   *   used; if specified, currently the standard builder is nevertheless used;
+   *   this interface can be "toolized", in which case this parameter set will
+   *   select and configure the chosen tool.
    * 
    * @note Currently, the file defined by `GDML` parameter is also served to
    * ROOT for the internal geometry representation.
@@ -139,6 +145,9 @@ namespace geo {
     bool                      fForceUseFCLOnly;  ///< Force Geometry to only use the geometry
                                                  ///< files specified in the fcl file
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
+    
+    fhicl::ParameterSet       fBuilderParameters;///< Parameter set for geometry builder.
+    
   };
   
 } // namespace geo
