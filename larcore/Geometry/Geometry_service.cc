@@ -9,13 +9,11 @@
 #include "larcore/Geometry/Geometry.h"
 
 // lar includes
-#include "larcorealg/Geometry/GeometryBuilderStandard.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SummaryData/RunData.h"
 #include "larcore/Geometry/ExptGeoHelperInterface.h"
 
 // Framework includes
-#include "fhiclcpp/types/Table.h"
 #include "cetlib_except/exception.h"
 #include "cetlib/search_path.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -36,7 +34,6 @@ namespace geo {
     , fDisableWiresInG4 (pset.get< bool              >("DisableWiresInG4", false))
     , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" , false))
     , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
-    , fBuilderParameters(pset.get<fhicl::ParameterSet>("Builder",          fhicl::ParameterSet() ))
   {
     // add a final directory separator ("/") to fRelPath if not already there
     if (!fRelPath.empty() && (fRelPath.back() != '/')) fRelPath += '/';
@@ -150,17 +147,8 @@ namespace geo {
         << "\nbail ungracefully.\n";
     }
     
-    std::unique_ptr<geo::GeometryBuilder> builder
-      = std::make_unique<geo::GeometryBuilderStandard>(
-        fhicl::Table<geo::GeometryBuilderStandard::Config>
-        (fBuilderParameters, { "tool_type" })
-        ()
-      );
-    
     // initialize the geometry with the files we have found
-    LoadGeometryFile(GDMLfile, ROOTfile, *builder, bForceReload);
-    
-    builder.release(); // done with it: release immediately
+    LoadGeometryFile(GDMLfile, ROOTfile, bForceReload);
     
     // now update the channel map
     InitializeChannelMap();
