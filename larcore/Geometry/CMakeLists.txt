@@ -1,24 +1,13 @@
-art_make( 
-          SERVICE_LIBRARIES larcorealg_Geometry
-                            art_Framework_Principal
-                            art_Framework_Services_Registry
-                            art_Persistency_Provenance
-                            cetlib cetlib_except
-                            ${MF_MESSAGELOGGER}
-                            
-                            ${FHICLCPP}
-                            ${ROOT_BASIC_LIB_LIST}
-          MODULE_LIBRARIES larcorealg_Geometry
-                           art_Framework_Core
-                           art_Framework_Services_Registry
-                           canvas
+art_make(SERVICE_LIBRARIES larcorealg_Geometry
+                           art_Framework_Principal
+                           art_Persistency_Provenance
                            ${MF_MESSAGELOGGER}
-                           
-                           ${FHICLCPP}
-                           cetlib cetlib_except
-                           ${ROOT_GEOM}
-                           ${ROOT_GENVECTOR}
-          )
+                           ${ROOT_CORE}
+         MODULE_LIBRARIES larcorealg_Geometry
+                          art_Framework_Services_Registry
+                          ${MF_MESSAGELOGGER}
+                          ${ROOT_GEOM}
+                          ${ROOT_GENVECTOR})
 
 install_headers()
 install_fhicl()

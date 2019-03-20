@@ -36,11 +36,6 @@
 #include "art/Framework/Services/Registry/ServiceMacros.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" // for the convenience of includers
 
-// ROOT libraries
-// #include <TString.h>
-// #include <TVector3.h>
-// #include <Rtypes.h>
-
 // C/C++ standard libraries
 #include <vector>
 #include <map>
