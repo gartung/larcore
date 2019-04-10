@@ -19,8 +19,7 @@ namespace geo
 {
 
   //----------------------------------------------------------------------------
-  StandardGeometryHelper::StandardGeometryHelper
-    (fhicl::ParameterSet const& pset, art::ActivityRegistry&)
+  StandardGeometryHelper::StandardGeometryHelper(fhicl::ParameterSet const& pset)
     : fPset( pset )
     , fChannelMap()
     {}

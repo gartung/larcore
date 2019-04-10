@@ -32,8 +32,7 @@ namespace geo
   public:
     
     /// Constructor; follows the standard art service signature
-    StandardGeometryHelper
-      ( fhicl::ParameterSet const & pset, art::ActivityRegistry &reg );
+    StandardGeometryHelper(fhicl::ParameterSet const & pset);
     
     /*
       Public interface for ExptGeoHelperInterface (for reference purposes)
