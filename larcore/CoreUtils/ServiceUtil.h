@@ -218,4 +218,3 @@ namespace lar {
 } // namespace lar
 
 #endif //#LARCORE_COREUTILS_SERVICEUTIL_H
-

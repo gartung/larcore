@@ -187,7 +187,7 @@ geo::DumpChannelMap::DumpChannelMap(fhicl::ParameterSet const& p)
 //------------------------------------------------------------------------------
 void geo::DumpChannelMap::beginRun(art::Run const&) {
   
-  geo::GeometryCore const& geom = *(art::ServiceHandle<geo::Geometry>());
+  geo::GeometryCore const& geom = *(art::ServiceHandle<geo::Geometry const>());
   
   if (DoChannelToWires) {
     DumpChannelToWires dumper;
@@ -221,7 +221,6 @@ DEFINE_ART_MODULE(geo::DumpChannelMap)
 #include "canvas/Utilities/Exception.h"
 
 // C/C++ standard libraries
-#include <vector>
 
 //------------------------------------------------------------------------------
 //--- DumpChannelToWires

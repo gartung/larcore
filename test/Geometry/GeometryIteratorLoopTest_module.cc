@@ -59,7 +59,7 @@ namespace geo {
   //......................................................................
   void GeometryIteratorLoopTest::beginJob()
   {
-    art::ServiceHandle<geo::Geometry> geom;
+    art::ServiceHandle<geo::Geometry const> geom;
     
     // 1. we set it up with the geometry from the environment
     tester->Setup(*geom);
