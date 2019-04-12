@@ -3,7 +3,7 @@
  * @brief   Prints on screen the current channel-wire map
  * @author  Gianluca Petrillo (petrillo@fnal.gov)
  * @date    October 27th, 2015
- * 
+ *
  */
 
 // LArSoft libraries
@@ -25,13 +25,13 @@ namespace geo {
 
 /** ****************************************************************************
  * @brief Prints on screen the current channel-wire map
- * 
+ *
  * One print is performed at the beginning of each run.
- * 
- * 
+ *
+ *
  * Configuration parameters
  * =========================
- * 
+ *
  * - *ChannelToWires* (boolean, default: true): prints all the wires
  *   corresponding to each channel
  * - *WireToChannel* (boolean, default: false): prints which channel covers
@@ -42,7 +42,7 @@ namespace geo {
  *   printed
  * - *OutputCategory* (string, default: DumpChannelMap): output category used
  *   by the message facility to output information (INFO level)
- * 
+ *
  */
 
 
@@ -58,19 +58,19 @@ public:
 
   // Required functions
   virtual void analyze(art::Event const&) override {}
-  
+
   /// Drives the dumping
   virtual void beginRun(art::Run const&) override;
-  
+
     private:
-  
+
   std::string OutputCategory; ///< name of the category for output
   bool DoChannelToWires; ///< dump channel -> wires mapping
   bool DoWireToChannel; ///< dump wire -> channel mapping
-  
+
   raw::ChannelID_t FirstChannel; ///< first channel to be printed
   raw::ChannelID_t LastChannel; ///< last channel to be printed
-  
+
 }; // geo::DumpChannelMap
 
 
@@ -91,66 +91,66 @@ namespace geo {
 } // namespace geo
 
 namespace {
-  
+
   /// Dumps channel-to-wires mapping
   class DumpChannelToWires {
       public:
-    
+
     /// Constructor; includes a working default configuration
     DumpChannelToWires()
       : FirstChannel(raw::InvalidChannelID)
       , LastChannel(raw::InvalidChannelID)
       {}
-    
+
     /// Sets up the required environment
     void Setup(geo::GeometryCore const& geometry)
       { pGeom = &geometry; }
-    
+
     /// Sets the lowest and highest channel ID to be printed (inclusive)
     void SetLimits
       (raw::ChannelID_t first_channel, raw::ChannelID_t last_channel)
       { FirstChannel = first_channel; LastChannel = last_channel; }
-    
+
     /// Dumps to the specified output category
     void Dump(std::string OutputCategory) const;
-    
-    
+
+
       protected:
     geo::GeometryCore const* pGeom = nullptr; ///< pointer to geometry
-    
+
     raw::ChannelID_t FirstChannel; ///< lowest channel to be printed
     raw::ChannelID_t LastChannel; ///< highest channel to be printed
-    
+
     /// Throws an exception if the object is not ready to dump
     void CheckConfig() const;
-    
+
   }; // class DumpChannelToWires
-  
-  
+
+
   /// Dumps wire-to-channel mapping
   class DumpWireToChannel {
       public:
-    
+
     /// Constructor; includes a working default configuration
     DumpWireToChannel() {}
-    
+
     /// Sets up the required environment
     void Setup(geo::GeometryCore const& geometry)
       { pGeom = &geometry; }
-    
+
     /// Dumps to the specified output category
     void Dump(std::string OutputCategory) const;
-    
-    
+
+
       protected:
     geo::GeometryCore const* pGeom = nullptr; ///< pointer to geometry
-    
+
     /// Throws an exception if the object is not ready to dump
     void CheckConfig() const;
-    
+
   }; // class DumpWireToChannel
-  
-  
+
+
 } // local namespace
 
 
@@ -181,28 +181,28 @@ geo::DumpChannelMap::DumpChannelMap(fhicl::ParameterSet const& p)
   , FirstChannel(p.get<raw::ChannelID_t>("FirstChannel",   raw::InvalidChannelID))
   , LastChannel(p.get<raw::ChannelID_t> ("LastChannel",    raw::InvalidChannelID))
 {
-  
+
 } // geo::DumpChannelMap::DumpChannelMap()
 
 //------------------------------------------------------------------------------
 void geo::DumpChannelMap::beginRun(art::Run const&) {
-  
+
   geo::GeometryCore const& geom = *(art::ServiceHandle<geo::Geometry const>());
-  
+
   if (DoChannelToWires) {
     DumpChannelToWires dumper;
     dumper.Setup(geom);
     dumper.SetLimits(FirstChannel, LastChannel);
     dumper.Dump(OutputCategory);
   }
-  
+
   if (DoWireToChannel) {
     DumpWireToChannel dumper;
     dumper.Setup(geom);
   //  dumper.SetLimits(FirstChannel, LastChannel);
     dumper.Dump(OutputCategory);
   }
-  
+
 } // geo::DumpChannelMap::beginRun()
 
 //------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ DEFINE_ART_MODULE(geo::DumpChannelMap)
 //--- DumpChannelToWires
 //------------------------------------------------------------------------------
 void DumpChannelToWires::CheckConfig() const {
-  
+
   /// check that the configuration is complete
   if (!pGeom) {
     throw art::Exception(art::errors::LogicError)
@@ -236,24 +236,24 @@ void DumpChannelToWires::CheckConfig() const {
 
 //------------------------------------------------------------------------------
 void DumpChannelToWires::Dump(std::string OutputCategory) const {
-  
+
   /// check that the configuration is complete
   CheckConfig();
-  
+
   /// extract general channel range information
   unsigned int const NChannels = pGeom->Nchannels();
-  
+
   if (NChannels == 0) {
     mf::LogError(OutputCategory)
       << "Nice detector we have here, with no channels.";
     return;
   }
-  
+
   raw::ChannelID_t const PrintFirst
     = raw::isValidChannelID(FirstChannel)? FirstChannel: raw::ChannelID_t(0);
   raw::ChannelID_t const PrintLast
     = raw::isValidChannelID(LastChannel)? LastChannel: raw::ChannelID_t(NChannels-1);
-  
+
   // print intro
   unsigned int const NPrintedChannels = (PrintLast - PrintFirst) + 1;
   if (NPrintedChannels == NChannels) {
@@ -264,31 +264,31 @@ void DumpChannelToWires::Dump(std::string OutputCategory) const {
       << " to " << LastChannel << " (" << NPrintedChannels
       << " channels out of " << NChannels << ")";
   }
-  
+
   // print map
   mf::LogVerbatim log(OutputCategory);
   for (raw::ChannelID_t channel = PrintFirst; channel <= PrintLast; ++channel) {
     std::vector<geo::WireID> const Wires = pGeom->ChannelToWire(channel);
-    
+
     log << "\n " << ((int) channel) << " ->";
     switch (Wires.size()) {
       case 0:  log << " no wires";                       break;
       case 1:                                            break;
       default: log << " [" << Wires.size() << " wires]"; break;
     } // switch
-    
+
     for (geo::WireID const& wireID: Wires)
       log << " { " << std::string(wireID) << " };";
-    
+
   } // for (channels)
-  
+
 } // DumpChannelToWires::Dump()
 
 //------------------------------------------------------------------------------
 //--- DumpWireToChannel
 //------------------------------------------------------------------------------
 void DumpWireToChannel::CheckConfig() const {
-  
+
   /// check that the configuration is complete
   if (!pGeom) {
     throw art::Exception(art::errors::LogicError)
@@ -298,23 +298,23 @@ void DumpWireToChannel::CheckConfig() const {
 
 //------------------------------------------------------------------------------
 void DumpWireToChannel::Dump(std::string OutputCategory) const {
-  
+
   /// check that the configuration is complete
   CheckConfig();
-  
+
   /// extract general channel range information
   unsigned int const NChannels = pGeom->Nchannels();
-  
+
   if (NChannels == 0) {
     mf::LogError(OutputCategory)
       << "Nice detector we have here, with no channels.";
     return;
   }
-  
+
   // print intro
   mf::LogInfo(OutputCategory)
     << "Printing wire channels for up to " << NChannels << " channels";
-  
+
   // print map
   mf::LogVerbatim log(OutputCategory);
   for (geo::WireID const& wireID: pGeom->IterateWireIDs()) {
@@ -323,7 +323,7 @@ void DumpWireToChannel::Dump(std::string OutputCategory) const {
     if (raw::isValidChannelID(channel)) log << channel;
     else                                log << "invalid!";
   } // for
-  
+
 } // DumpWireToChannel::Dump()
 
 

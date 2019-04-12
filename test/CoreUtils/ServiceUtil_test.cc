@@ -4,9 +4,9 @@
  * @author Gianluca Petrillo (petrillo@fnal.gov)
  * @date   April 28, 2016
  * @see    ServiceUtil.h
- * 
+ *
  * This test takes no command line argument.
- * 
+ *
  */
 
 /*
@@ -51,7 +51,7 @@ class MyServiceTemplate {
    using provider_type = Provider;
 
    provider_type const* provider() const { return prov; }
-  
+
 }; // MyServiceTemplate
 
 using MyService = MyServiceTemplate<MyProvider>;
@@ -63,9 +63,9 @@ namespace lar {
    namespace details {
 
       template struct ServiceProviderRequirementsChecker<MyProvider>;
-      
+
       template struct ServiceRequirementsChecker<MyService>;
-      
+
    } // namespace details
 } // namespace lar
 
@@ -90,7 +90,7 @@ class ServiceHandleBase {
 
 
 namespace art {
-   
+
    namespace detail {
       template <>
       struct ServiceHelper<MyService> {
@@ -109,13 +109,13 @@ namespace art {
       };
 
    } // namespace detail
-   
-   
+
+
    template <>
    struct ServiceHandle<MyService, art::ServiceScope::LEGACY>
       : ::ServiceHandleBase<MyService>
    { ServiceHandle() { instance = GlobalServices.myServicePtr.get(); } };
-   
+
    template <>
    struct ServiceHandle<MyOtherService, art::ServiceScope::LEGACY>
       : ::ServiceHandleBase<MyOtherService>
@@ -133,36 +133,36 @@ namespace art {
 
 
 BOOST_AUTO_TEST_CASE(providerFromTest) {
-   
+
    // on the first try, there is no service provider.
-   
+
    GlobalServices.myServicePtr = std::make_unique<MyService>();
    BOOST_CHECK_EXCEPTION(lar::providerFrom<MyService>(), art::Exception,
      [](art::Exception const& e)
        { return e.categoryCode() == art::errors::NotFound; }
      );
-   
+
    // now let's create a "real" provider
    MyProvider prov;
    GlobalServices.myServicePtr = std::make_unique<MyService>(&prov);
    BOOST_CHECK_EQUAL(lar::providerFrom<MyService>(), &prov);
-   
+
    // that's enough; let's clean up
    GlobalServices.myServicePtr.reset();
-   
+
 } // BOOST_AUTO_TEST_CASE(providerFromTest)
 
 
 
 BOOST_AUTO_TEST_CASE(providersFromTest) {
-   
+
    // on the first try, there is no "other" service provider.
-   
+
    MyProvider prov;
    GlobalServices.myServicePtr = std::make_unique<MyService>(&prov);
    GlobalServices.myOtherServicePtr = std::make_unique<MyOtherService>();
    GlobalServices.yetAnotherServicePtr = std::make_unique<YetAnotherService>();
-   
+
    auto provPack1 = lar::providersFrom<MyService>();
    BOOST_CHECK_EQUAL(provPack1.get<MyProvider>(), &prov);
    BOOST_CHECK_EXCEPTION(lar::providersFrom<MyOtherService>(), art::Exception,
@@ -174,28 +174,28 @@ BOOST_AUTO_TEST_CASE(providersFromTest) {
      [](art::Exception const& e)
        { return e.categoryCode() == art::errors::NotFound; }
      );
-   
+
    // now let's create a "real" provider
    MyOtherProvider oprov;
    YetAnotherProvider yaprov;
    GlobalServices.myOtherServicePtr = std::make_unique<MyOtherService>(&oprov);
    GlobalServices.yetAnotherServicePtr
      = std::make_unique<YetAnotherService>(&yaprov);
-     
+
    auto provPack
      = lar::providersFrom<MyService, MyOtherService, YetAnotherService>();
-   
+
    // not using BOOST_CHECK_EQUAL because we can't stream ProviderPacks
    BOOST_CHECK(provPack == lar::makeProviderPack(&prov, &oprov, &yaprov));
-   
+
    BOOST_CHECK_EQUAL(lar::providerFrom<MyService>(), &prov);
    BOOST_CHECK_EQUAL(lar::providerFrom<MyOtherService>(), &oprov);
    BOOST_CHECK_EQUAL(lar::providerFrom<YetAnotherService>(), &yaprov);
-   
-   
+
+
    // that's enough; let's clean up
    GlobalServices.myServicePtr.reset();
-   
+
 } // BOOST_AUTO_TEST_CASE(providersFromTest)
 
 

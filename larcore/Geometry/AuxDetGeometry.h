@@ -33,27 +33,27 @@
 
 
 namespace geo {
-  
+
   /**
    * @brief The geometry of one entire detector, as served by art
    *
    * This class extends the interface of the geometry service provider,
    * GeometryCore, to the one of an art service.
    * It handles the correct initialization of the provider using information
-   * 
+   *
    * It relies on geo::ExptGeoHelperInterface service to obtain the
    * channel mapping algorithm proper for the selected geometry.
-   * 
+   *
    * The geometry initialization happens immediately on construction.
    * Optionally, the geometry is automatically reinitialized on each run based
    * on the information contained in the art::Run object.
-   * 
+   *
    * Configuration
    * ==============
-   * 
+   *
    * In addition to the parameters documented in geo::GeometryCore, the
    * following parameters are supported:
-   * 
+   *
    * - *RelativePath* (string, default: no path): this path is prepended to the
    *   geometry file names before searching from them; the path string does not
    *   affect the file name
@@ -84,43 +84,43 @@ namespace geo {
    *   is directly passed to the channel mapping algorithm (see
    *   geo::ChannelMapAlg); its content is dependent on the chosen
    *   implementation of ChannelMapAlg
-   * 
+   *
    * @note Currently, the file defined by `GDML` parameter is also served to
    * ROOT for the internal geometry representation.
-   * 
+   *
    */
   class AuxDetGeometry
   {
   public:
-    
+
     AuxDetGeometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
-    
+
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
-    
+
     /// Returns a constant reference to the service provider
     AuxDetGeometryCore const& GetProvider() const { return fProvider; }
-    
+
     /// Returns a constant pointer to the service provider
     AuxDetGeometryCore const* GetProviderPtr() const { return &GetProvider(); }
-    
+
   private:
-    
+
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(std::string gdmlfile, std::string rootfile);
-    
+
     void InitializeChannelMap();
-    
+
     /// Returns a reference to the service provider
     AuxDetGeometryCore& GetProvider() { return fProvider; }
-    
+
     /// Returns a pointer to the service provider
     AuxDetGeometryCore* GetProviderPtr() { return &GetProvider(); }
-    
-    
+
+
     AuxDetGeometryCore fProvider; ///< the actual service provider
 
-    std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
+    std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for
                                                  ///< geometry file
     bool                      fForceUseFCLOnly;  ///< Force Geometry to only use the geometry
                                                  ///< files specified in the fcl file

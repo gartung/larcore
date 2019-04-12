@@ -46,27 +46,27 @@
 
 
 namespace geo {
-  
+
   /**
    * @brief The geometry of one entire detector, as served by art
    *
    * This class extends the interface of the geometry service provider,
    * GeometryCore, to the one of an art service.
    * It handles the correct initialization of the provider using information
-   * 
+   *
    * It relies on geo::ExptGeoHelperInterface service to obtain the
    * channel mapping algorithm proper for the selected geometry.
-   * 
+   *
    * The geometry initialization happens immediately on construction.
    * Optionally, the geometry is automatically reinitialized on each run based
    * on the information contained in the art::Run object.
-   * 
+   *
    * Configuration
    * ==============
-   * 
+   *
    * In addition to the parameters documented in geo::GeometryCore, the
    * following parameters are supported:
-   * 
+   *
    * - *RelativePath* (string, default: no path): this path is prepended to the
    *   geometry file names before searching from them; the path string does not
    *   affect the file name
@@ -103,48 +103,48 @@ namespace geo {
    *   used; if specified, currently the standard builder is nevertheless used;
    *   this interface can be "toolized", in which case this parameter set will
    *   select and configure the chosen tool.
-   * 
+   *
    * @note Currently, the file defined by `GDML` parameter is also served to
    * ROOT for the internal geometry representation.
-   * 
+   *
    */
   class Geometry: public GeometryCore
   {
   public:
-    
+
     using provider_type = GeometryCore; ///< type of service provider
-    
+
     Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
-    
+
     /// Updates the geometry if needed at the beginning of each new run
     void preBeginRun(art::Run const& run);
-    
+
     /// Returns a pointer to the geometry service provider
     provider_type const* provider() const
       { return static_cast<provider_type const*>(this); }
-    
+
   private:
-    
+
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(
       std::string gdmlfile, std::string rootfile,
       bool bForceReload = false
       );
-    
+
     void InitializeChannelMap();
 
-    std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for 
+    std::string               fRelPath;          ///< Relative path added to FW_SEARCH_PATH to search for
                                                  ///< geometry file
     bool                      fDisableWiresInG4; ///< If set true, supply G4 with GDMLfileNoWires
                                                  ///< rather than GDMLfile
     bool                      fForceUseFCLOnly;  ///< Force Geometry to only use the geometry
                                                  ///< files specified in the fcl file
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
-    
+
     fhicl::ParameterSet       fBuilderParameters;///< Parameter set for geometry builder.
-    
+
   };
-  
+
 } // namespace geo
 
 DECLARE_ART_SERVICE(geo::Geometry, LEGACY)

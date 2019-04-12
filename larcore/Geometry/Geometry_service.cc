@@ -39,10 +39,10 @@ namespace geo {
   {
     // add a final directory separator ("/") to fRelPath if not already there
     if (!fRelPath.empty() && (fRelPath.back() != '/')) fRelPath += '/';
-    
+
     // register a callback to be executed when a new run starts
     reg.sPreBeginRun.watch(this, &Geometry::preBeginRun);
-    
+
     //......................................................................
     // 5.15.12 BJR: use the gdml file for both the fGDMLFile and fROOTFile
     // variables as ROOT v5.30.06 is once again able to read in gdml files
@@ -51,10 +51,10 @@ namespace geo {
     // the separate variables in case ROOT breaks again
     std::string GDMLFileName = pset.get<std::string>("GDML");
     std::string ROOTFileName = pset.get<std::string>("GDML");
-    
+
     // load the geometry
     LoadNewGeometry(GDMLFileName, ROOTFileName);
-    
+
   } // Geometry::Geometry()
 
 
@@ -62,25 +62,25 @@ namespace geo {
   {
     // FIXME this seems utterly wrong: constructor loads geometry based on an
     // explicit parameter, whereas here we load it by detector name
-    
+
     // if we are requested to stick to the configured geometry, do nothing
     if (fForceUseFCLOnly) return;
-    
+
     // check here to see if we need to load a new geometry.
     // get the detector id from the run object
     std::vector< art::Handle<sumdata::RunData> > rdcol;
     run.getManyByType(rdcol);
     if (rdcol.empty()) {
-      mf::LogWarning("Geometry") << "cannot find sumdata::RunData object to grab detector name\n" 
+      mf::LogWarning("Geometry") << "cannot find sumdata::RunData object to grab detector name\n"
                                  << "this is expected if generating MC files\n"
                                  << "using default geometry from configuration file\n";
       return;
     }
-    
+
     // if the detector name is still the same, everything is fine
     std::string newDetectorName = rdcol.front()->DetName();
     if (DetectorName() == newDetectorName) return;
-    
+
     // check to see if the detector name in the RunData
     // object has not been set.
     std::string const nodetname("nodetectorname");
@@ -91,11 +91,11 @@ namespace geo {
       // the detector name is specified in the RunData object
       SetDetectorName(newDetectorName);
     }
-    
+
     LoadNewGeometry(DetectorName() + ".gdml", DetectorName() + ".gdml", true);
   } // Geometry::preBeginRun()
-  
-  
+
+
   //......................................................................
   void Geometry::InitializeChannelMap()
   {
@@ -103,12 +103,12 @@ namespace geo {
     // of the geometry
     art::ServiceHandle<geo::ExptGeoHelperInterface>()
       ->ConfigureChannelMapAlg(fSortingParameters, this);
-    
+
     if ( ! ChannelMap() ) {
       throw cet::exception("ChannelMapLoadFail")
         << " failed to load new channel map";
     }
-    
+
   } // Geometry::InitializeChannelMap()
 
   //......................................................................
@@ -118,29 +118,29 @@ namespace geo {
   ) {
     // start with the relative path
     std::string GDMLFileName(fRelPath), ROOTFileName(fRelPath);
-    
+
     // add the base file names
     ROOTFileName.append(gdmlfile); // not rootfile (why?)
     GDMLFileName.append(gdmlfile);
-    
+
     // special for GDML if geometry with no wires is used for Geant4 simulation
     if(fDisableWiresInG4)
       GDMLFileName.insert(GDMLFileName.find(".gdml"), "_nowires");
-    
+
     // Search all reasonable locations for the GDML file that contains
     // the detector geometry.
     // cet::search_path constructor decides if initialized value is a path
     // or an environment variable
     cet::search_path sp("FW_SEARCH_PATH");
-    
+
     std::string GDMLfile;
     if( !sp.find_file(GDMLFileName, GDMLfile) ) {
       throw cet::exception("Geometry")
-        << "cannot find the gdml geometry file:" 
+        << "cannot find the gdml geometry file:"
         << "\n" << GDMLFileName
         << "\nbail ungracefully.\n";
     }
-    
+
     std::string ROOTfile;
     if( !sp.find_file(ROOTFileName, ROOTfile) ) {
       throw cet::exception("Geometry")
@@ -148,23 +148,23 @@ namespace geo {
         << "\n" << ROOTFileName
         << "\nbail ungracefully.\n";
     }
-    
+
     std::unique_ptr<geo::GeometryBuilder> builder
       = std::make_unique<geo::GeometryBuilderStandard>(
         fhicl::Table<geo::GeometryBuilderStandard::Config>
         (fBuilderParameters, { "tool_type" })
         ()
       );
-    
+
     // initialize the geometry with the files we have found
     LoadGeometryFile(GDMLfile, ROOTfile, *builder, bForceReload);
-    
+
     builder.release(); // done with it: release immediately
-    
+
     // now update the channel map
     InitializeChannelMap();
-    
+
   } // Geometry::LoadNewGeometry()
-  
+
   DEFINE_ART_SERVICE(Geometry)
 } // namespace geo
