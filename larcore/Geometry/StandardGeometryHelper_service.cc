@@ -19,8 +19,7 @@ namespace geo
 {
 
   //----------------------------------------------------------------------------
-  StandardGeometryHelper::StandardGeometryHelper
-    (fhicl::ParameterSet const& pset, art::ActivityRegistry&)
+  StandardGeometryHelper::StandardGeometryHelper(fhicl::ParameterSet const& pset)
     : fPset( pset )
     , fChannelMap()
     {}
@@ -31,14 +30,14 @@ namespace geo
     (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom)
   {
     mf::LogInfo("StandardGeometryHelper")
-      << "Loading channel mapping: ChannelMapStandardAlg"; 
+      << "Loading channel mapping: ChannelMapStandardAlg";
     fChannelMap
       = std::make_shared<geo::ChannelMapStandardAlg>(sortingParameters);
     geom->ApplyChannelMap(fChannelMap);
-    
+
   } // StandardGeometryHelper::doConfigureChannelMapAlg()
-  
-  
+
+
   //----------------------------------------------------------------------------
   StandardGeometryHelper::ChannelMapAlgPtr_t
   StandardGeometryHelper::doGetChannelMapAlg() const
@@ -47,7 +46,7 @@ namespace geo
   }
 
   //----------------------------------------------------------------------------
-  
+
 } // namespace geo
 
 DEFINE_ART_SERVICE_INTERFACE_IMPL(

@@ -2,7 +2,7 @@
  * @file   StandardGeometryHelper.h
  * @brief  Geometry helper service for detectors with strictly standard mapping
  * @author rs@fnal.gov
- * 
+ *
  * Handles detector-specific information for the generic Geometry service
  * within LArSoft. Derived from the ExptGeoHelperInterface class. This version
  * provides strictly standard functionality
@@ -30,35 +30,34 @@ namespace geo
   class StandardGeometryHelper : public ExptGeoHelperInterface
   {
   public:
-    
+
     /// Constructor; follows the standard art service signature
-    StandardGeometryHelper
-      ( fhicl::ParameterSet const & pset, art::ActivityRegistry &reg );
-    
+    StandardGeometryHelper(fhicl::ParameterSet const & pset);
+
     /*
       Public interface for ExptGeoHelperInterface (for reference purposes)
-      
+
       Configure, initialize and return the channel map:
-      
+
       void ConfigureChannelMapAlg
         (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom);
-      
+
       Returns null pointer if the initialization failed:
-      
+
       ChannelMapAlgPtr_t GetChannelMapAlg() const;
     */
-    
+
   private:
-    
+
     virtual void doConfigureChannelMapAlg
       (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom)
       override;
     virtual ChannelMapAlgPtr_t doGetChannelMapAlg() const override;
-    
-    
+
+
     fhicl::ParameterSet fPset; ///< copy of configuration parameter set
     std::shared_ptr<geo::ChannelMapAlg> fChannelMap; ///< channel map algorithm
-    
+
   };
 
 }

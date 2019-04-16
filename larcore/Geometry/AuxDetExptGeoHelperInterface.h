@@ -2,11 +2,11 @@
 /// \file  AuxDetExptGeoHelperInterface.h
 /// \brief Interface to a service that handles any experiment-specific knowledge
 ///        that is needed by the AuxDetGeometry service.
-/// 
+///
 ///  This is an interface to a service that virtualizes detector or experiment-specific
-///  knowledge that is required by the Geometry service. Experiments implement the 
+///  knowledge that is required by the Geometry service. Experiments implement the
 ///  private virtual functions within a concrete service provider class to perform
-///  the specified actions as appropriate for the particular experiment. It is 
+///  the specified actions as appropriate for the particular experiment. It is
 ///  expected that such requests will occur infrequently within a job. Calculations
 ///  that occur frequently should be handled via interfaces that are passed
 ///  back to the Geometry service.
@@ -39,12 +39,12 @@ namespace geo
   class AuxDetGeometryCore;
 }
 
-namespace geo 
+namespace geo
 {
 
   /**
    * @brief Interface to a service with detector-specific geometry knowledge
-   * 
+   *
    * This is an interface to a service that virtualizes detector or
    * experiment-specific knowledge that is required by the Geometry service.
    * Experiments implement the private virtual functions within a concrete
@@ -53,7 +53,7 @@ namespace geo
    * It is expected that such requests will occur infrequently within a job.
    * Calculations that occur frequently should be handled via interfaces that
    * are passed back to the Geometry service.
-   * 
+   *
    * @note The public interface for this service cannot be overriden.
    * The experiment-specific sub-classes should implement only the private
    * methods without promoting their visibility.
@@ -62,53 +62,53 @@ namespace geo
   {
   public:
     using AuxDetChannelMapAlgPtr_t = std::shared_ptr<const AuxDetChannelMapAlg>;
-    
+
     /// Virtual destructor; does nothing
     virtual ~AuxDetExptGeoHelperInterface() = default;
-    
+
     /**
      * @brief Configure and initialize the channel map
      * @param sortingParameters parameters for the channel map algorithm
      * @param geom pointer to a geometry description object
      * @return a (shared) pointer to the channel mapping algorithm
-     * 
+     *
      * This method creates a new ChannelMapAlg according to the geometry and
      * specified configuration, then it configures the geometry itself
      * according to the channel map (usually, it resorts the data).
      */
-    void ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters, 
+    void ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters,
                                       geo::AuxDetGeometryCore* geom);
-    
+
     /// Returns null pointer if the initialization failed
     /// NOTE:  the sub-class owns the ChannelMapAlg object
     ///
     AuxDetChannelMapAlgPtr_t GetAuxDetChannelMapAlg() const;
-  
+
   private:
-    
+
     /// Implementation of ConfigureChannelMapAlg (pure virtual)
-    virtual 
+    virtual
     void doConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters,
                                         geo::AuxDetGeometryCore* geom) = 0;
-    
+
     /// Returns the ChannelMapAlg
-    virtual 
+    virtual
     AuxDetChannelMapAlgPtr_t doGetAuxDetChannelMapAlg() const    = 0;
-  
+
   }; // end ExptGeoHelperInterface class declaration
-  
+
 
 
   //-------------------------------------------------------------------------------------------
 
-  inline 
+  inline
   void AuxDetExptGeoHelperInterface::ConfigureAuxDetChannelMapAlg
     (fhicl::ParameterSet const& sortingParameters, geo::AuxDetGeometryCore* geom)
   {
     doConfigureAuxDetChannelMapAlg(sortingParameters, geom);
   }
 
-  inline 
+  inline
   AuxDetExptGeoHelperInterface::AuxDetChannelMapAlgPtr_t
     AuxDetExptGeoHelperInterface::GetAuxDetChannelMapAlg() const
   {
