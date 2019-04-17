@@ -7,14 +7,14 @@ fcldir product_dir job
 gdmldir product_dir
 #
 product         version
-art		v3_01_02
+art_root_io	v1_00_03
 larcorealg	v08_07_01
 
 cetbuildtools	v7_11_00	-	only_for_build
 end_product_list
 
   
-qualifier	art		larcorealg	notes
+qualifier	art_root_io	larcorealg	notes
 e17:debug	e17:debug	e17:debug
 e17:prof	e17:prof	e17:prof
 c2:debug	c2:debug	c2:debug

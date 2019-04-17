@@ -34,7 +34,6 @@ cet_cmake_env()
 cet_set_compiler_flags(DIAGS CAUTIOUS
   WERROR
   NO_UNDEFINED
-  ALLOW_DEPRECATIONS
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
 )
 
@@ -44,6 +43,7 @@ cet_report_compiler_flags()
 find_ups_product( larcoreobj )
 find_ups_product( larcorealg )
 find_ups_product( art )
+find_ups_product(art_root_io)
 find_ups_product( messagefacility )
 find_ups_product( cetbuildtools )
 find_ups_root( )
