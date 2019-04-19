@@ -6,6 +6,7 @@ art_make(SERVICE_LIBRARIES larcorealg_Geometry
          MODULE_LIBRARIES larcorealg_Geometry
                           art_Framework_Services_Registry
                           ${MF_MESSAGELOGGER}
+                          ${ROOT_CORE}
                           ${ROOT_GEOM}
                           ${ROOT_GENVECTOR})
 
