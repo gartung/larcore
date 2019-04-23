@@ -29,7 +29,7 @@
 #include "cetlib_except/demangle.h"
 
 // C/C++ standard libraries
-#include <type_traits> // std::decay<>, std::is_same<>
+#include <type_traits> // std::decay<>, std::is_same<>, std::add_const_t<>
 #include <typeinfo>
 
 
@@ -46,14 +46,14 @@ namespace lar {
 
 
   /** **************************************************************************
-   * @brief Returns a constant pointer to the provider of specified service
+   * @brief Returns a constant pointer to the provider of specified service.
    * @tparam T type of the service
    * @return a constant pointer to the provider of specified service
-   * @throws art::Exception (category art::errors::NotFound) if pointer is null
+   * @throws art::Exception (category `art::errors::NotFound`) if pointer is null
    *
    * This function relies on the following service and provider interface:
-   * - provider is not movable nor copiable
-   * - service contains a type "provider_type" defined as the class of the
+   * - provider is not movable nor copyable
+   * - service contains a type `provider_type` defined as the class of the
    *   service provider
    * - service contains a method "provider()" that returns a non-null pointer
    *   to a service provider; the service provider is owned and managed by
@@ -76,14 +76,17 @@ namespace lar {
   template <typename T>
   typename T::provider_type const* providerFrom()
     {
-      details::ServiceRequirementsChecker<T>(); // instantiate a temporary...
+      using Service_t = std::add_const_t<T>;
+      using Provider_t = typename Service_t::provider_type;
+      
+      (void) details::ServiceRequirementsChecker<Service_t>();
 
       // retrieve the provider
-      art::ServiceHandle<T> h;
-      typename T::provider_type const* pProvider = h->provider();
+      art::ServiceHandle<Service_t> h;
+      Provider_t const* const pProvider { h->provider() };
       if (!pProvider) {
         throw art::Exception(art::errors::NotFound)
-          << "Service <" << cet::demangle_symbol(typeid(T).name())
+          << "ServiceHandle <" << cet::demangle_symbol(typeid(Service_t).name())
           << "> offered a null provider";
       }
 

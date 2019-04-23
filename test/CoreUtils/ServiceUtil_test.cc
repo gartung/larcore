@@ -35,6 +35,9 @@
 
 
 //------------------------------------------------------------------------------
+//
+// here are some services: three of them, all different classes.
+//
 struct MyProvider: protected lar::UncopiableAndUnmovableClass {};
 
 struct MyOtherProvider: protected lar::UncopiableAndUnmovableClass {};
@@ -70,7 +73,11 @@ namespace lar {
 } // namespace lar
 
 
-// This is art. Well, kind of.
+//
+// And this is art. Well, kind of.
+// 
+// We are actually hijacking `art::ServiceHandle` for a few specific classes.
+//
 struct GlobalServicesClass {
    std::unique_ptr<MyService> myServicePtr;
    std::unique_ptr<MyOtherService> myOtherServicePtr;
@@ -117,14 +124,29 @@ namespace art {
    { ServiceHandle() { instance = GlobalServices.myServicePtr.get(); } };
 
    template <>
+   struct ServiceHandle<MyService const, art::ServiceScope::LEGACY>
+      : ServiceHandle<MyService, art::ServiceScope::LEGACY>
+   {};
+
+   template <>
    struct ServiceHandle<MyOtherService, art::ServiceScope::LEGACY>
       : ::ServiceHandleBase<MyOtherService>
    { ServiceHandle() { instance = GlobalServices.myOtherServicePtr.get(); } };
 
    template <>
+   struct ServiceHandle<MyOtherService const, art::ServiceScope::LEGACY>
+      : ServiceHandle<MyOtherService, art::ServiceScope::LEGACY>
+   {};
+
+   template <>
    struct ServiceHandle<YetAnotherService, art::ServiceScope::LEGACY>
       : ::ServiceHandleBase<YetAnotherService>
    { ServiceHandle() { instance = GlobalServices.yetAnotherServicePtr.get(); } };
+
+   template <>
+   struct ServiceHandle<YetAnotherService const, art::ServiceScope::LEGACY>
+      : ServiceHandle<YetAnotherService, art::ServiceScope::LEGACY>
+   {};
 
 } // namespace art
 

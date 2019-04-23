@@ -6,11 +6,12 @@
 
 cet_test(ServiceUtil_test
   LIBRARIES
-    art_Utilities canvas
+    ${ART_FRAMEWORK_SERVICES_REGISTRY}
+    ${ART_UTILITIES}
+    ${CANVAS}
     ${MF_MESSAGELOGGER}
-    
     ${FHICLCPP}
-    cetlib cetlib_except
+    ${CETLIB_EXCEPT}
   USE_BOOST_UNIT
   )
 
