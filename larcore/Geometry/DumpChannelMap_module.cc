@@ -21,6 +21,7 @@
 
 namespace geo {
   class DumpChannelMap;
+  class GeometryCore;
 }
 
 /** ****************************************************************************
@@ -77,18 +78,6 @@ public:
 //==============================================================================
 //=== Algorithms declaration
 //===
-
-// LArSoft libraries
-#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
-
-// C/C++ standard libraries
-#include <string>
-
-// ... and more below...
-
-namespace geo {
-  class GeometryCore;
-} // namespace geo
 
 namespace {
 
@@ -159,18 +148,10 @@ namespace {
 //===
 
 // LArSoft libraries
-#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/GeometryCore.h"
 
 // framework libraries
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-
-// C/C++ standard libraries
-#include <string>
-
-// ... and more below ...
 
 //------------------------------------------------------------------------------
 geo::DumpChannelMap::DumpChannelMap(fhicl::ParameterSet const& p)

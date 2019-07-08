@@ -10,7 +10,6 @@
 
 // lar includes
 #include "larcorealg/Geometry/GeometryBuilderStandard.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SummaryData/RunData.h"
 #include "larcore/Geometry/ExptGeoHelperInterface.h"
 

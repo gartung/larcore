@@ -10,7 +10,6 @@
 #include "larcore/Geometry/Geometry.h"
 
 // Framework includes
-#include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -20,6 +19,7 @@
 
 
 namespace art { class Event; } // art::Event declaration
+namespace fhicl { class ParameterSet; }
 
 namespace geo {
   /**
