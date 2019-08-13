@@ -17,11 +17,9 @@
 // C/C++ standard libraries
 #include <string>
 
-// ... more follow
-
 namespace geo {
-  class GeometryCore;
   class DumpGeometry;
+  class GeometryCore;
 }
 
 /** ****************************************************************************
@@ -101,8 +99,6 @@ class geo::DumpGeometry: public art::EDAnalyzer {
 
 // framework libraries
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-
 
 //------------------------------------------------------------------------------
 geo::DumpGeometry::DumpGeometry(Parameters const& config)
@@ -169,4 +165,3 @@ bool geo::DumpGeometry::shouldDumpGeometry(geo::GeometryCore const& geom) const
 DEFINE_ART_MODULE(geo::DumpGeometry)
 
 //==============================================================================
-

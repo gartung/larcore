@@ -10,7 +10,6 @@
 #include "larcore/Geometry/AuxDetExptGeoHelperInterface.h"
 
 // lar includes
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SummaryData/RunData.h"
 
 // Framework includes
@@ -121,15 +120,15 @@ namespace geo {
     std::string GDMLfile;
     if( !sp.find_file(GDMLFileName, GDMLfile) ) {
       throw cet::exception("AuxDetGeometry") << "cannot find the gdml geometry file:"
-					     << "\n" << GDMLFileName
-					     << "\nbail ungracefully.\n";
+                                             << "\n" << GDMLFileName
+                                             << "\nbail ungracefully.\n";
     }
 
     std::string ROOTfile;
     if( !sp.find_file(ROOTFileName, ROOTfile) ) {
       throw cet::exception("AuxDetGeometry") << "cannot find the root geometry file:\n"
-					     << "\n" << ROOTFileName
-					     << "\nbail ungracefully.\n";
+                                             << "\n" << ROOTFileName
+                                             << "\nbail ungracefully.\n";
     }
 
     // initialize the geometry with the files we have found

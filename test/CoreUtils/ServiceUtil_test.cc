@@ -30,10 +30,6 @@
 #include <cetlib/quiet_unit_test.hpp> // BOOST_AUTO_TEST_CASE()
 #include <boost/test/test_tools.hpp> // BOOST_CHECK(), BOOST_CHECK_EQUAL()
 
-// C/C++ standard libraries
-#include <type_traits>
-
-
 //------------------------------------------------------------------------------
 //
 // here are some services: three of them, all different classes.
@@ -75,7 +71,7 @@ namespace lar {
 
 //
 // And this is art. Well, kind of.
-// 
+//
 // We are actually hijacking `art::ServiceHandle` for a few specific classes.
 //
 struct GlobalServicesClass {
