@@ -25,7 +25,7 @@ namespace geo {
 }
 
 /** ****************************************************************************
- * @brief Prints on screen the current channel-wire map
+ * @brief Prints on screen the current channel-wire and optical detector maps.
  *
  * One print is performed at the beginning of each run.
  *
@@ -37,6 +37,8 @@ namespace geo {
  *   corresponding to each channel
  * - *WireToChannel* (boolean, default: false): prints which channel covers
  *   each wire
+ * - *OpDetChannels* (boolean, default: false): prints for each optical detector
+ *   channel ID the optical detector ID and its center
  * - *FirstChannel* (integer, default: no limit): ID of the lowest channel to be
  *   printed
  * - *LastChannel* (integer, default: no limit): ID of the highest channel to be
@@ -65,12 +67,13 @@ public:
 
     private:
 
-  std::string OutputCategory; ///< name of the category for output
-  bool DoChannelToWires; ///< dump channel -> wires mapping
-  bool DoWireToChannel; ///< dump wire -> channel mapping
+  std::string OutputCategory; ///< Name of the category for output.
+  bool DoChannelToWires; ///< Dump channel -> wires mapping.
+  bool DoWireToChannel; ///< Dump wire -> channel mapping.
+  bool DoOpDetChannels; ///< Dump optical detector channel -> optical detector.
 
-  raw::ChannelID_t FirstChannel; ///< first channel to be printed
-  raw::ChannelID_t LastChannel; ///< last channel to be printed
+  raw::ChannelID_t FirstChannel; ///< First channel to be printed.
+  raw::ChannelID_t LastChannel; ///< Last channel to be printed.
 
 }; // geo::DumpChannelMap
 
@@ -78,6 +81,11 @@ public:
 //==============================================================================
 //=== Algorithms declaration
 //===
+
+namespace geo {
+  class GeometryCore;
+  class OpDetGeo;
+} // namespace geo
 
 namespace {
 
@@ -140,6 +148,34 @@ namespace {
   }; // class DumpWireToChannel
 
 
+  /// Dumps optical detector channel-to-optical detector mapping.
+  class DumpOpticalDetectorChannels {
+      public:
+
+    /// Constructor; includes a working default configuration
+    DumpOpticalDetectorChannels() {}
+
+    /// Sets up the required environment
+    void Setup(geo::GeometryCore const& geometry)
+      { pGeom = &geometry; }
+
+    /// Dumps to the specified output category
+    void Dump(std::string OutputCategory) const;
+
+
+      protected:
+    geo::GeometryCore const* pGeom = nullptr; ///< pointer to geometry
+
+    /// Throws an exception if the object is not ready to dump
+    void CheckConfig() const;
+
+    /// Returns the optical detector serving `channelID`,
+    /// `nullptr` if not found.
+    geo::OpDetGeo const* getOpticalDetector(unsigned int channelID) const;
+    
+  }; // class DumpOpticalDetectorChannels
+
+
 } // local namespace
 
 
@@ -149,6 +185,8 @@ namespace {
 
 // LArSoft libraries
 #include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/OpDetGeo.h"
 
 // framework libraries
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -159,6 +197,7 @@ geo::DumpChannelMap::DumpChannelMap(fhicl::ParameterSet const& p)
   , OutputCategory(p.get<std::string>   ("OutputCategory", "DumpChannelMap"))
   , DoChannelToWires(p.get<bool>        ("ChannelToWires", true))
   , DoWireToChannel(p.get<bool>         ("WireToChannel",  false))
+  , DoOpDetChannels(p.get<bool>         ("OpDetChannels",  false))
   , FirstChannel(p.get<raw::ChannelID_t>("FirstChannel",   raw::InvalidChannelID))
   , LastChannel(p.get<raw::ChannelID_t> ("LastChannel",    raw::InvalidChannelID))
 {
@@ -181,6 +220,12 @@ void geo::DumpChannelMap::beginRun(art::Run const&) {
     DumpWireToChannel dumper;
     dumper.Setup(geom);
   //  dumper.SetLimits(FirstChannel, LastChannel);
+    dumper.Dump(OutputCategory);
+  }
+
+  if (DoOpDetChannels) {
+    DumpOpticalDetectorChannels dumper;
+    dumper.Setup(geom);
     dumper.Dump(OutputCategory);
   }
 
@@ -306,6 +351,67 @@ void DumpWireToChannel::Dump(std::string OutputCategory) const {
   } // for
 
 } // DumpWireToChannel::Dump()
+
+
+//------------------------------------------------------------------------------
+//--- DumpOpticalDetectorChannels
+//------------------------------------------------------------------------------
+void DumpOpticalDetectorChannels::CheckConfig() const {
+
+  /// check that the configuration is complete
+  if (!pGeom) {
+    throw art::Exception(art::errors::LogicError)
+      << "DumpOpticalDetectorChannels: no valid geometry available!";
+  }
+} // DumpOpticalDetectorChannels::CheckConfig()
+
+
+//------------------------------------------------------------------------------
+geo::OpDetGeo const* DumpOpticalDetectorChannels::getOpticalDetector
+  (unsigned int channelID) const
+{
+  try {
+    return &(pGeom->OpDetGeoFromOpChannel(channelID));
+  }
+  catch (cet::exception const&) {
+    return nullptr;
+  }
+} // DumpOpticalDetectorChannels::getOpticalDetector()
+
+
+//------------------------------------------------------------------------------
+void DumpOpticalDetectorChannels::Dump(std::string OutputCategory) const {
+
+  /// check that the configuration is complete
+  CheckConfig();
+  
+  
+  /// extract general channel range information
+  unsigned int const NChannels = pGeom->NOpChannels();
+
+  if (NChannels == 0) {
+    mf::LogError(OutputCategory)
+      << "Nice detector we have here, with no optical channels.";
+    return;
+  }
+
+  // print intro
+  mf::LogInfo(OutputCategory)
+    << "Printing optical detectors for up to " << NChannels << " channels";
+
+  // print map
+  mf::LogVerbatim log(OutputCategory);
+  for (unsigned int channelID = 0; channelID < NChannels; ++channelID) {
+    log << "\nChannel " << channelID << " => ";
+    geo::OpDetGeo const* opDet = getOpticalDetector(channelID);
+    if (!opDet) {
+      log << "invalid";
+      continue;
+    }
+    log << opDet->ID() << " at " << opDet->GetCenter() << " cm";
+  } // for
+
+} // DumpOpticalDetectorChannels::Dump()
 
 
 //==============================================================================

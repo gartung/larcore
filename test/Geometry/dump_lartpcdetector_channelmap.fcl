@@ -67,6 +67,7 @@ physics: {
       
       ChannelToWires: true
       WireToChannel:  true
+      OpDetChannels:  true
       
       OutputCategory: DumpChannelMap
       
