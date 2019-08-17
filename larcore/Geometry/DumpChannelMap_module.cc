@@ -10,9 +10,9 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h" // raw::ChannelID_t
 
 // framework libraries
-#include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
+#include "fhiclcpp/types/Atom.h"
 
 // C/C++ standard libraries
 #include <string>
@@ -51,7 +51,58 @@ namespace geo {
 
 class geo::DumpChannelMap: public art::EDAnalyzer {
 public:
-  explicit DumpChannelMap(fhicl::ParameterSet const & p);
+  
+  /// Module configuration.
+  struct Config {
+    using Name = fhicl::Name;
+    using Comment = fhicl::Comment;
+    
+    fhicl::Atom<std::string> OutputCategory {
+      Name("OutputCategory"),
+      Comment(
+        "output category used by the message facility to output information (INFO level)"
+        ),
+      "DumpChannelMap"
+      };
+    
+    fhicl::Atom<bool> ChannelToWires {
+      Name("ChannelToWires"),
+      Comment("print all the wires corresponding to each channel"),
+      true
+      };
+    
+    fhicl::Atom<bool> WireToChannel {
+      Name("WireToChannel"),
+      Comment("print which channel covers each wire"),
+      false
+      };
+    
+    fhicl::Atom<bool> OpDetChannels {
+      Name("OpDetChannels"),
+      Comment(
+        "print for each optical detector channel ID the optical detector ID and its center"
+        ),
+      false
+      };
+    
+    fhicl::Atom<raw::ChannelID_t> FirstChannel {
+      Name("FirstChannel"),
+      Comment("ID of the lowest channel to be printed (default: no limit)"),
+      raw::InvalidChannelID
+      };
+    
+    fhicl::Atom<raw::ChannelID_t> LastChannel {
+      Name("LastChannel"),
+      Comment("ID of the highest channel to be printed (default: no limit)"),
+      raw::InvalidChannelID
+      };
+    
+  }; // Config
+  
+  using Parameters = art::EDAnalyzer::Table<Config>;
+  
+  
+  explicit DumpChannelMap(Parameters const& config);
 
   // Plugins should not be copied or assigned.
   DumpChannelMap(DumpChannelMap const &) = delete;
@@ -192,14 +243,14 @@ namespace {
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 
 //------------------------------------------------------------------------------
-geo::DumpChannelMap::DumpChannelMap(fhicl::ParameterSet const& p)
-  : EDAnalyzer(p)
-  , OutputCategory(p.get<std::string>   ("OutputCategory", "DumpChannelMap"))
-  , DoChannelToWires(p.get<bool>        ("ChannelToWires", true))
-  , DoWireToChannel(p.get<bool>         ("WireToChannel",  false))
-  , DoOpDetChannels(p.get<bool>         ("OpDetChannels",  false))
-  , FirstChannel(p.get<raw::ChannelID_t>("FirstChannel",   raw::InvalidChannelID))
-  , LastChannel(p.get<raw::ChannelID_t> ("LastChannel",    raw::InvalidChannelID))
+geo::DumpChannelMap::DumpChannelMap(Parameters const& config)
+  : art::EDAnalyzer(config)
+  , OutputCategory  (config().OutputCategory())
+  , DoChannelToWires(config().ChannelToWires())
+  , DoWireToChannel (config().WireToChannel())
+  , DoOpDetChannels (config().OpDetChannels())
+  , FirstChannel    (config().FirstChannel())
+  , LastChannel     (config().LastChannel())
 {
 
 } // geo::DumpChannelMap::DumpChannelMap()
