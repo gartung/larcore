@@ -34,6 +34,10 @@ services: {
           default: { limit: 0 }
         }
       }
+      CriticalLog: {
+        type: cerr
+        threshold: SYSTEM
+      }
     } # destinations
   } # message
 
