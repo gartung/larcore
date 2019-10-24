@@ -9,11 +9,12 @@
 #include "larcore/Geometry/Geometry.h"
 
 // lar includes
-#include "larcorealg/Geometry/GeometryBuilderStandard.h"
-#include "larcoreobj/SummaryData/RunData.h"
+#include "larcore/Geometry/GeometryBuilderTool.h"
 #include "larcore/Geometry/ExptGeoHelperInterface.h"
+#include "larcoreobj/SummaryData/RunData.h"
 
 // Framework includes
+#include "art/Utilities/make_tool.h"
 #include "fhiclcpp/types/Table.h"
 #include "cetlib_except/exception.h"
 #include "cetlib/search_path.h"
@@ -149,11 +150,7 @@ namespace geo {
     }
 
     std::unique_ptr<geo::GeometryBuilder> builder
-      = std::make_unique<geo::GeometryBuilderStandard>(
-        fhicl::Table<geo::GeometryBuilderStandard::Config>
-        (fBuilderParameters, { "tool_type" })
-        ()
-      );
+      = makeBuilder(fBuilderParameters);
 
     // initialize the geometry with the files we have found
     LoadGeometryFile(GDMLfile, ROOTfile, *builder, bForceReload);
@@ -164,6 +161,16 @@ namespace geo {
     InitializeChannelMap();
 
   } // Geometry::LoadNewGeometry()
-
+  
+  
+  std::unique_ptr<geo::GeometryBuilder> Geometry::makeBuilder
+    (fhicl::ParameterSet config)
+  {
+    if (!config.has_key("tool_type"))
+      config.put("tool_type", "GeometryBuilderStandardTool");
+    return art::make_tool<geo::GeometryBuilderTool>(config)->makeBuilder();
+  } // Geometry::makeBuilder()
+  
+  
   DEFINE_ART_SERVICE(Geometry)
 } // namespace geo

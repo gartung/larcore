@@ -143,6 +143,12 @@ namespace geo {
 
     fhicl::ParameterSet       fBuilderParameters;///< Parameter set for geometry builder.
 
+    
+    /// Returns a `geo::GeometryBuilder` tool with the specified configuration.
+    static std::unique_ptr<geo::GeometryBuilder> makeBuilder
+      (fhicl::ParameterSet config);
+  
+  
   };
 
 } // namespace geo
