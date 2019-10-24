@@ -6,6 +6,9 @@
  *
  */
 
+// LArSoft libraries
+#include "larcorealg/Geometry/GeometryCore.h"
+
 // framework libraries
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
@@ -19,7 +22,6 @@
 
 namespace geo {
   class DumpGeometry;
-  class GeometryCore;
 }
 
 /** ****************************************************************************
@@ -48,7 +50,13 @@ class geo::DumpGeometry: public art::EDAnalyzer {
         ("name of message facility output category to stream the information into (INFO level)"),
       "DumpGeometry"
       };
-
+    
+    fhicl::Atom<unsigned int> verbosity {
+      Name("verbosity"),
+      Comment("verbosity level (see `geo::GeometryCore::Print()"),
+      geo::GeometryCore::MaxPrintVerbosity
+      };
+    
   }; // struct Config
 
   using Parameters = art::EDAnalyzer::Table<Config>;
@@ -71,8 +79,14 @@ class geo::DumpGeometry: public art::EDAnalyzer {
   virtual void beginRun(art::Run const& run) override;
 
     private:
-
+  
+  // --- BEGIN -- Configuration parameters -------------------------------------
+  
   std::string fOutputCategory; ///< Name of the category for output.
+  unsigned int fVerbosity; ///< Verbosity of the dump.
+  
+  // --- END -- Configuration parameters ---------------------------------------
+  
   std::string fLastDetectorName; ///< Name of the last geometry dumped.
 
   /// Dumps the specified geometry into the specified output stream.
@@ -104,6 +118,7 @@ class geo::DumpGeometry: public art::EDAnalyzer {
 geo::DumpGeometry::DumpGeometry(Parameters const& config)
   : EDAnalyzer(config)
   , fOutputCategory(config().outputCategory())
+  , fVerbosity(config().verbosity())
   {}
 
 
@@ -136,7 +151,7 @@ void geo::DumpGeometry::dumpGeometryCore
 {
 
   out << "Detector description: '" << geom.ROOTFile() << "'\n";
-  geom.Print(std::forward<Stream>(out));
+  geom.Print(std::forward<Stream>(out), "  ", fVerbosity);
 
 } // geo::DumpGeometry::dumpGeometryCore()
 
