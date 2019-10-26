@@ -14,6 +14,9 @@
 // LArSoft libraries
 #include "larcorealg/Geometry/GeometryBuilder.h"
 
+// C/C++ standard libraries
+#include <memory> // std::unique_ptr<>
+
 
 // -----------------------------------------------------------------------------
 namespace geo {

@@ -10,6 +10,8 @@
 
 // lar includes
 #include "larcore/Geometry/GeometryBuilderTool.h"
+#include "larcore/Geometry/ChannelMapSetupTool.h"
+#include "larcore/Geometry/GeoObjectSorterSetupTool.h"
 #include "larcore/Geometry/ExptGeoHelperInterface.h"
 #include "larcoreobj/SummaryData/RunData.h"
 
@@ -31,11 +33,13 @@ namespace geo {
   // Constructor.
   Geometry::Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry &reg)
     : GeometryCore(pset)
-    , fRelPath          (pset.get< std::string       >("RelativePath",     ""   ))
-    , fDisableWiresInG4 (pset.get< bool              >("DisableWiresInG4", false))
-    , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" , false))
-    , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
-    , fBuilderParameters(pset.get<fhicl::ParameterSet>("Builder",          fhicl::ParameterSet() ))
+    , fRelPath             (pset.get< std::string       >("RelativePath",     ""   ))
+    , fDisableWiresInG4    (pset.get< bool              >("DisableWiresInG4", false))
+    , fForceUseFCLOnly     (pset.get< bool              >("ForceUseFCLOnly" , false))
+    , fSortingParameters   (pset.get<fhicl::ParameterSet>("SortingParameters", {}  ))
+    , fBuilderParameters   (pset.get<fhicl::ParameterSet>("Builder",           {}  ))
+    , fChannelMapParameters(pset.get<fhicl::ParameterSet>("ChannelMapping",    {}  ))
+    , fSorterParameters    (pset.get<fhicl::ParameterSet>("Sorter",            {}  ))
   {
     // add a final directory separator ("/") to fRelPath if not already there
     if (!fRelPath.empty() && (fRelPath.back() != '/')) fRelPath += '/';
@@ -99,18 +103,96 @@ namespace geo {
   //......................................................................
   void Geometry::InitializeChannelMap()
   {
-    // the channel map is responsible of calling the channel map configuration
-    // of the geometry
-    art::ServiceHandle<geo::ExptGeoHelperInterface>()
-      ->ConfigureChannelMapAlg(fSortingParameters, this);
-
+    
+    // channel mapping can be loaded from a tool,
+    // in which case the configuration must at least specify the tool_type:
+    if (!fChannelMapParameters.is_empty()) {
+      std::shared_ptr<geo::ChannelMapAlg> channelMap
+        = art::make_tool<geo::ChannelMapSetupTool>(fChannelMapParameters)
+          ->setupChannelMap()
+        ;
+      
+      std::unique_ptr<geo::GeoObjectSorter> ownedSorter;
+      geo::GeoObjectSorter const* sorter
+        = getSorter(ownedSorter, channelMap.get());
+      
+      ApplyChannelMap(channelMap, sorter); // will take ownership of the object
+    }
+    else {
+      // the service is responsible of calling the channel map configuration
+      // of the geometry
+      geo::ExptGeoHelperInterface* helper = nullptr;
+      try {
+        helper = art::ServiceHandle<geo::ExptGeoHelperInterface>().get();
+      }
+      catch (art::Exception const& e) {
+        if (e.categoryCode() != art::errors::ServiceNotFound) throw;
+        throw cet::exception("Geometry")
+          << "Can't create any channel mapping! Please either:"
+          "\n1) configure a `ChannelMapSetupTool` in `Geometry` service"
+          "\n2) configure a `ExptGeoHelperInterface` service"
+          "\n";
+      }
+      if (helper)
+        helper->ConfigureChannelMapAlg(fSortingParameters, this);
+    } // if ... else
+    
     if ( ! ChannelMap() ) {
       throw cet::exception("ChannelMapLoadFail")
         << " failed to load new channel map";
     }
 
   } // Geometry::InitializeChannelMap()
-
+  
+  
+  //......................................................................
+  geo::GeoObjectSorter const* Geometry::getSorter(
+    std::unique_ptr<geo::GeoObjectSorter>& owned,
+    geo::ChannelMapAlg const* channelMap /* = nullptr */
+  ) const {
+    
+    /*
+     * This method returns a object sorter:
+     * 
+     * 1) if a sorter configuration is specified, it loads a tool with that
+     *    configuration
+     * 2) if no sorter configuration is present, obtains a sorter from
+     *    channel mapping
+     * 3) if channel mapping is not available or throws a
+     *    `geo::ChannelMapAlg::NoSorter` exception, no sorter is returned
+     * 
+     */
+    
+    // if no channel mapping is specified, use the one the class owns
+    // (but it might not own any yet)
+    if (!channelMap) channelMap = ChannelMap();
+    
+    geo::GeoObjectSorter const* sorter = nullptr;
+    
+    if (!fSorterParameters.is_empty()) {
+      owned = art::make_tool<geo::GeoObjectSorterSetupTool>(fSorterParameters)
+        ->setupSorter();
+      sorter = owned.get();
+    }
+    else if (channelMap) {
+      try {
+        sorter = &(channelMap->Sorter());
+      }
+      catch (geo::ChannelMapAlg::NoSorter const& e) {
+        MF_LOG_DEBUG("Geometry") << "Geometry::getSorter(): "
+          "Channel mapping declined the use of a geometry sorter:\n"
+          << e.what();
+      }
+    }
+    else {
+      MF_LOG_WARNING("Geometry")
+        << "No channel mapping available: no sorting algorithm will be used.";
+    }
+    
+    return sorter;
+  } // Geometry::getSorter()
+  
+  
   //......................................................................
   void Geometry::LoadNewGeometry(
     std::string gdmlfile, std::string /* rootfile */,
@@ -155,7 +237,7 @@ namespace geo {
     // initialize the geometry with the files we have found
     LoadGeometryFile(GDMLfile, ROOTfile, *builder, bForceReload);
 
-    builder.release(); // done with it: release immediately
+    builder.reset(); // done with it: release immediately
 
     // now update the channel map
     InitializeChannelMap();
@@ -163,6 +245,7 @@ namespace geo {
   } // Geometry::LoadNewGeometry()
   
   
+  //......................................................................
   std::unique_ptr<geo::GeometryBuilder> Geometry::makeBuilder
     (fhicl::ParameterSet config)
   {
@@ -171,6 +254,8 @@ namespace geo {
     return art::make_tool<geo::GeometryBuilderTool>(config)->makeBuilder();
   } // Geometry::makeBuilder()
   
+  
+  //......................................................................
   
   DEFINE_ART_SERVICE(Geometry)
 } // namespace geo

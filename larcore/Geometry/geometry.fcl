@@ -8,6 +8,24 @@
 BEGIN_PROLOG
 
 #
+# the following are the configurations for the standard tools
+#
+
+standard_channel_mapping_tool: {
+  tool_type: "ChannelMapStandardSetupTool"
+  # no configuration required; will create a standard sorter too
+} # standard_channel_mapping_tool
+
+standard_geometry_sorter: {
+  tool_type: "GeoObjectSorterStandardSetupTool"
+} # standard_geometry_sorter
+
+standard_geometry_builder: {
+  tool_type: "GeometryBuilderStandardTool"
+} # standard_geometry_builder
+
+
+#
 # the "standard" geometry configuration is from the "LArTPCdetector":
 #
 standard_geo:               @local::lartpcdetector_geometry

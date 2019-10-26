@@ -2,6 +2,8 @@ art_make(
          EXCLUDE
            "GeometryBuilderStandardTool_tool.cc"
            "GeometryBuilderWirelessTool_tool.cc"
+           "ChannelMapStandardSetupTool_tool.cc"
+           "GeoObjectSorterStandardSetupTool_tool.cc"
          SERVICE_LIBRARIES larcorealg_Geometry
                            art_Framework_Principal
                            art_Persistency_Provenance
@@ -18,6 +20,14 @@ simple_plugin(GeometryBuilderStandardTool "tool"
   larcorealg_Geometry
   )
 simple_plugin(GeometryBuilderWirelessTool "tool"
+  larcorealg_Geometry
+  )
+
+simple_plugin(ChannelMapStandardSetupTool "tool"
+  larcorealg_Geometry
+  )
+
+simple_plugin(GeoObjectSorterStandardSetupTool "tool"
   larcorealg_Geometry
   )
 
