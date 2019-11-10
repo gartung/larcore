@@ -2,7 +2,7 @@
  * @file   larcore/Geometry/GeometryBuilderWirelessTool_tool.cc
  * @brief  Tool to create a `geo::GeometryBuilderWireless` geometry builder.
  * @author Gianluca Petrillo (petrillo@slac.stanford.edu)
- * @date   October 23, 2019
+ * @date   November 5, 2019
  * @see    `larcorealg/Geometry/GeometryBuilderWireless.h`
  */
 
@@ -22,7 +22,7 @@ namespace geo {
 
 
 /**
- * @brief Interface for a tool creating a geometry builder ignoring wires.
+ * @brief Tool creating a geometry builder ignoring wires.
  * 
  * This tool creates a `geo::GeometryBuilderWireless` geometry builder.
  * 
@@ -37,7 +37,7 @@ class geo::GeometryBuilderWirelessTool: public geo::GeometryBuilderTool {
   using Parameters = art::ToolConfigTable<Builder_t::Config>;
   
   
-  /// Constructor: passes all parameters to the channel mapping algorithm.
+  /// Constructor: passes all parameters to the geometry builder algorithm.
   GeometryBuilderWirelessTool(Parameters const& config);
   
   
@@ -50,7 +50,7 @@ class geo::GeometryBuilderWirelessTool: public geo::GeometryBuilderTool {
   /// @name Virtual interface
   /// @{
   
-  /// Returns a pointer to the channel mapping.
+  /// Returns a pointer to the geometry builder.
   virtual std::unique_ptr<geo::GeometryBuilder> doMakeBuilder() override
     { return std::move(fBuilder); }
   
@@ -58,7 +58,7 @@ class geo::GeometryBuilderWirelessTool: public geo::GeometryBuilderTool {
   // --- END -- Virtual interface implementation -----------------------------
   
   
-  /// Creates and returns the channel mapping algorithm.
+  /// Creates and returns the geometry builder.
   std::unique_ptr<Builder_t> createBuilder
     (Builder_t::Config const& config) const;
   
