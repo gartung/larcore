@@ -13,7 +13,7 @@ larcorealg	v08_20_01
 cetbuildtools	v7_15_01	-	only_for_build
 end_product_list
 
-  
+
 qualifier	art_root_io	larcorealg	notes
 e19:py2:debug	e19:py2:debug	e19:py2:debug
 e19:py2:prof	e19:py2:prof	e19:py2:prof
@@ -25,7 +25,7 @@ c7:debug	c7:debug	c7:debug
 c7:prof		c7:prof		c7:prof
 end_qualifier_list
 
-# table fragment to set FW_SEARCH_PATH needed 
+# table fragment to set FW_SEARCH_PATH needed
 # to find gdml files:
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${UPS_PROD_DIR}/gdml)
