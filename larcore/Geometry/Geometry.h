@@ -116,14 +116,14 @@ namespace geo {
 
     Geometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
 
-    /// Updates the geometry if needed at the beginning of each new run
-    void preBeginRun(art::Run const& run);
-
     /// Returns a pointer to the geometry service provider
     provider_type const* provider() const
       { return static_cast<provider_type const*>(this); }
 
   private:
+
+    /// Updates the geometry if needed at the beginning of each new run
+    void preBeginRun(art::Run const& run);
 
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(
@@ -140,17 +140,11 @@ namespace geo {
     bool                      fForceUseFCLOnly;  ///< Force Geometry to only use the geometry
                                                  ///< files specified in the fcl file
     fhicl::ParameterSet       fSortingParameters;///< Parameter set to define the channel map sorting
-
     fhicl::ParameterSet       fBuilderParameters;///< Parameter set for geometry builder.
-
   };
 
 } // namespace geo
 
 DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
-
-// check that the requirements for geo::Geometry are satisfied
-template struct lar::details::ServiceRequirementsChecker<geo::Geometry>;
-
 
 #endif // GEO_GEOMETRY_H
