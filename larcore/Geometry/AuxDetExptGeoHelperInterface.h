@@ -28,7 +28,7 @@
 #include "fhiclcpp/ParameterSet.h"
 
 // C/C++ standard libraries
-#include <memory> // std::shared_ptr<>
+#include <memory> // std::unique_ptr<>
 #include <vector>
 
 
@@ -36,7 +36,6 @@
 namespace geo
 {
   class AuxDetChannelMapAlg;
-  class AuxDetGeometryCore;
 }
 
 namespace geo
@@ -61,7 +60,7 @@ namespace geo
   class AuxDetExptGeoHelperInterface
   {
   public:
-    using AuxDetChannelMapAlgPtr_t = std::shared_ptr<const AuxDetChannelMapAlg>;
+    using AuxDetChannelMapAlgPtr_t = std::unique_ptr<AuxDetChannelMapAlg>;
 
     /// Virtual destructor; does nothing
     virtual ~AuxDetExptGeoHelperInterface() = default;
@@ -76,24 +75,14 @@ namespace geo
      * specified configuration, then it configures the geometry itself
      * according to the channel map (usually, it resorts the data).
      */
-    void ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters,
-                                      geo::AuxDetGeometryCore* geom);
-
-    /// Returns null pointer if the initialization failed
-    /// NOTE:  the sub-class owns the ChannelMapAlg object
-    ///
-    AuxDetChannelMapAlgPtr_t GetAuxDetChannelMapAlg() const;
+    AuxDetChannelMapAlgPtr_t
+    ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters) const;
 
   private:
 
     /// Implementation of ConfigureChannelMapAlg (pure virtual)
-    virtual
-    void doConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters,
-                                        geo::AuxDetGeometryCore* geom) = 0;
-
-    /// Returns the ChannelMapAlg
-    virtual
-    AuxDetChannelMapAlgPtr_t doGetAuxDetChannelMapAlg() const    = 0;
+    virtual AuxDetChannelMapAlgPtr_t
+    doConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const & sortingParameters) const = 0;
 
   }; // end ExptGeoHelperInterface class declaration
 
@@ -102,21 +91,14 @@ namespace geo
   //-------------------------------------------------------------------------------------------
 
   inline
-  void AuxDetExptGeoHelperInterface::ConfigureAuxDetChannelMapAlg
-    (fhicl::ParameterSet const& sortingParameters, geo::AuxDetGeometryCore* geom)
+  AuxDetExptGeoHelperInterface::AuxDetChannelMapAlgPtr_t
+  AuxDetExptGeoHelperInterface::ConfigureAuxDetChannelMapAlg(fhicl::ParameterSet const& sortingParameters) const
   {
-    doConfigureAuxDetChannelMapAlg(sortingParameters, geom);
+    return doConfigureAuxDetChannelMapAlg(sortingParameters);
   }
 
-  inline
-  AuxDetExptGeoHelperInterface::AuxDetChannelMapAlgPtr_t
-    AuxDetExptGeoHelperInterface::GetAuxDetChannelMapAlg() const
-  {
-    return doGetAuxDetChannelMapAlg();
-  }
 }
 
-DECLARE_ART_SERVICE_INTERFACE(geo::AuxDetExptGeoHelperInterface, LEGACY)
+DECLARE_ART_SERVICE_INTERFACE(geo::AuxDetExptGeoHelperInterface, SHARED)
 
 #endif // GEO_ExptGeoHelperInterface_h
-

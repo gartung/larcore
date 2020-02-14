@@ -95,9 +95,6 @@ namespace geo {
 
     AuxDetGeometry(fhicl::ParameterSet const& pset, art::ActivityRegistry& reg);
 
-    /// Updates the geometry if needed at the beginning of each new run
-    void preBeginRun(art::Run const& run);
-
     /// Returns a constant reference to the service provider
     AuxDetGeometryCore const& GetProvider() const { return fProvider; }
 
@@ -105,6 +102,9 @@ namespace geo {
     AuxDetGeometryCore const* GetProviderPtr() const { return &GetProvider(); }
 
   private:
+
+    /// Updates the geometry if needed at the beginning of each new run
+    void preBeginRun(art::Run const& run);
 
     /// Expands the provided paths and loads the geometry description(s)
     void LoadNewGeometry(std::string gdmlfile, std::string rootfile);
@@ -129,6 +129,6 @@ namespace geo {
 
 } // namespace geo
 
-DECLARE_ART_SERVICE(geo::AuxDetGeometry, LEGACY)
+DECLARE_ART_SERVICE(geo::AuxDetGeometry, SHARED)
 
 #endif // GEO_AUXDETGEOMETRY_H

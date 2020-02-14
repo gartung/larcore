@@ -145,6 +145,6 @@ namespace geo {
 
 } // namespace geo
 
-DECLARE_ART_SERVICE(geo::Geometry, LEGACY)
+DECLARE_ART_SERVICE(geo::Geometry, SHARED)
 
 #endif // GEO_GEOMETRY_H

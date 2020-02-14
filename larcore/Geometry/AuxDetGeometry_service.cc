@@ -30,7 +30,7 @@ namespace geo {
     : fProvider         (pset)
     , fRelPath          (pset.get< std::string       >("RelativePath",      ""   ))
     , fForceUseFCLOnly  (pset.get< bool              >("ForceUseFCLOnly" ,  false))
-    , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", fhicl::ParameterSet() ))
+    , fSortingParameters(pset.get<fhicl::ParameterSet>("SortingParameters", {}))
   {
     // add a final directory separator ("/") to fRelPath if not already there
     if (!fRelPath.empty() && (fRelPath.back() != '/')) fRelPath += '/';
@@ -93,12 +93,11 @@ namespace geo {
   {
     // the channel map is responsible of calling the channel map configuration
     // of the geometry
-    art::ServiceHandle<geo::AuxDetExptGeoHelperInterface>()->ConfigureAuxDetChannelMapAlg(fSortingParameters, GetProviderPtr());
-
-    if ( ! GetProvider().hasAuxDetChannelMap() ) {
+    auto channelMap = art::ServiceHandle<geo::AuxDetExptGeoHelperInterface>()->ConfigureAuxDetChannelMapAlg(fSortingParameters);
+    if (!channelMap) {
       throw cet::exception("ChannelMapLoadFail") << " failed to load new channel map";
     }
-
+    fProvider.ApplyChannelMap(move(channelMap));
   } // Geometry::InitializeChannelMap()
 
   //......................................................................
