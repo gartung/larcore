@@ -17,8 +17,6 @@
 // C/C++ standard libraries
 #include <memory> // std::shared_ptr<>
 
-// Declaration
-//
 namespace geo
 {
   /**
@@ -27,42 +25,20 @@ namespace geo
    * This ExptGeoHelperInterface implementation serves a ChannelMapStandardAlg
    * for experiments that are known to work well with it.
    */
-  class StandardGeometryHelper : public ExptGeoHelperInterface
-  {
+  class StandardGeometryHelper : public ExptGeoHelperInterface {
   public:
-
-    /// Constructor; follows the standard art service signature
-    StandardGeometryHelper(fhicl::ParameterSet const & pset);
-
-    /*
-      Public interface for ExptGeoHelperInterface (for reference purposes)
-
-      Configure, initialize and return the channel map:
-
-      void ConfigureChannelMapAlg
-        (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom);
-
-      Returns null pointer if the initialization failed:
-
-      ChannelMapAlgPtr_t GetChannelMapAlg() const;
-    */
+    explicit StandardGeometryHelper(fhicl::ParameterSet const& pset);
 
   private:
-
-    virtual void doConfigureChannelMapAlg
-      (fhicl::ParameterSet const& sortingParameters, geo::GeometryCore* geom)
-      override;
-    virtual ChannelMapAlgPtr_t doGetChannelMapAlg() const override;
-
-
-    fhicl::ParameterSet fPset; ///< copy of configuration parameter set
-    std::shared_ptr<geo::ChannelMapAlg> fChannelMap; ///< channel map algorithm
-
+    ChannelMapAlgPtr_t
+    doConfigureChannelMapAlg(fhicl::ParameterSet const& sortingParameters,
+                             std::string const& detectorName) const override;
   };
 
 }
-DECLARE_ART_SERVICE_INTERFACE_IMPL(
-  geo::StandardGeometryHelper, geo::ExptGeoHelperInterface, LEGACY
-  )
+
+DECLARE_ART_SERVICE_INTERFACE_IMPL(geo::StandardGeometryHelper,
+                                   geo::ExptGeoHelperInterface,
+                                   SHARED)
 
 #endif // GEO_StandardGeometryHelper_h

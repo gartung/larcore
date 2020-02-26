@@ -22,9 +22,10 @@
 // C/C++ standard libraries
 #include <string>
 
+// check that the requirements for geo::Geometry are satisfied
+template struct lar::details::ServiceRequirementsChecker<geo::Geometry>;
 
 namespace geo {
-
 
   //......................................................................
   // Constructor.
@@ -77,7 +78,7 @@ namespace geo {
     }
 
     // if the detector name is still the same, everything is fine
-    std::string newDetectorName = rdcol.front()->DetName();
+    auto const& newDetectorName = rdcol.front()->DetName();
     if (DetectorName() == newDetectorName) return;
 
     // check to see if the detector name in the RunData
@@ -91,7 +92,7 @@ namespace geo {
       SetDetectorName(newDetectorName);
     }
 
-    LoadNewGeometry(DetectorName() + ".gdml", DetectorName() + ".gdml", true);
+    LoadNewGeometry(newDetectorName + ".gdml", newDetectorName + ".gdml", true);
   } // Geometry::preBeginRun()
 
 
@@ -100,14 +101,14 @@ namespace geo {
   {
     // the channel map is responsible of calling the channel map configuration
     // of the geometry
-    art::ServiceHandle<geo::ExptGeoHelperInterface>()
-      ->ConfigureChannelMapAlg(fSortingParameters, this);
-
-    if ( ! ChannelMap() ) {
+    art::ServiceHandle<geo::ExptGeoHelperInterface const> helper{};
+    auto channelMapAlg = helper->ConfigureChannelMapAlg(fSortingParameters,
+                                                        DetectorName());
+    if (!channelMapAlg) {
       throw cet::exception("ChannelMapLoadFail")
         << " failed to load new channel map";
     }
-
+    ApplyChannelMap(move(channelMapAlg));
   } // Geometry::InitializeChannelMap()
 
   //......................................................................
@@ -130,7 +131,7 @@ namespace geo {
     // the detector geometry.
     // cet::search_path constructor decides if initialized value is a path
     // or an environment variable
-    cet::search_path sp("FW_SEARCH_PATH");
+    cet::search_path const sp{"FW_SEARCH_PATH"};
 
     std::string GDMLfile;
     if( !sp.find_file(GDMLFileName, GDMLfile) ) {
@@ -148,17 +149,13 @@ namespace geo {
         << "\nbail ungracefully.\n";
     }
 
-    std::unique_ptr<geo::GeometryBuilder> builder
-      = std::make_unique<geo::GeometryBuilderStandard>(
-        fhicl::Table<geo::GeometryBuilderStandard::Config>
-        (fBuilderParameters, { "tool_type" })
-        ()
-      );
+    {
+      fhicl::Table<geo::GeometryBuilderStandard::Config> const config{fBuilderParameters, {"tool_type"}};
+      geo::GeometryBuilderStandard builder{config()};
 
-    // initialize the geometry with the files we have found
-    LoadGeometryFile(GDMLfile, ROOTfile, *builder, bForceReload);
-
-    builder.release(); // done with it: release immediately
+      // initialize the geometry with the files we have found
+      LoadGeometryFile(GDMLfile, ROOTfile, builder, bForceReload);
+    }
 
     // now update the channel map
     InitializeChannelMap();
