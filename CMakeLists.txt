@@ -50,7 +50,7 @@ include(BuildPlugins)
 # source
 add_subdirectory(larcore)
 
-# tests 
+# tests
 add_subdirectory(test)
 
 # ups - table and config files
